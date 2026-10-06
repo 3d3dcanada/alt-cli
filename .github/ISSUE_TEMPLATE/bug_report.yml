@@ -1,0 +1,38 @@
+name: Bug report
+description: Report a reproducible application or installation problem.
+title: "[Bug] "
+body:
+  - type: markdown
+    attributes:
+      value: "Please use disposable examples and remove credentials or private project text from attachments."
+  - type: textarea
+    id: problem
+    attributes:
+      label: What happened?
+      description: Describe what you expected and what Alt did instead.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to reproduce
+      description: Include the page/action or command and the exact error.
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Alt version or commit
+      placeholder: Output of alt --version, or the commit you built
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Computer and runtime
+      description: Linux distribution, terminal, RAM/GPU, access mode, model/provider and runtime versions when relevant.
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Relevant evidence
+      description: Redacted error output, small example files or a screenshot. Identify whether the issue reproduces without a model.

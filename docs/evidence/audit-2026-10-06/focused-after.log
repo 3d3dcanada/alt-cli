@@ -1,0 +1,52 @@
+   Compiling alt-cli v0.4.0 (/workspace/alt-cli)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 14.73s
+     Running unittests src/lib.rs (target/debug/deps/alt_cli-4e43613ce822ffce)
+
+running 9 tests
+test runtime::memory_tests::container_cache_does_not_hide_available_ram_or_free_anonymous_memory ... ok
+test tui::input::tests::pasted_source_preserves_tabs_and_accepts_the_documented_editor_limit ... ok
+test tui::input::tests::unicode_editing_and_paste_preserve_boundaries ... ok
+test tui::app::recovery_tests::damaged_runtime_is_preserved_without_resetting_project_preferences ... ok
+test extensions::sse_tests::framing_survives_every_chunk_boundary_and_requires_event_termination ... ok
+test tui::view::tests::settings_persist_and_permission_typing_cannot_accidentally_allow ... ok
+test tui::view::tests::first_run_is_usable_without_config_and_errors_preserve_forms ... ok
+test tui::view::tests::corrupt_settings_are_preserved_and_setup_still_opens ... ok
+test tui::view::tests::every_page_and_dialog_renders_at_supported_sizes ... ok
+
+test result: ok. 9 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.35s
+
+     Running tests/extensions.rs (target/debug/deps/extensions-3d389d2831174847)
+
+running 4 tests
+test external_calls_require_actual_alt_approval_and_respect_access ... ok
+test selected_stdio_tools_keep_state_and_reconnect_without_replay ... ok
+test remote_sse_accepts_multiline_data_and_optional_space ... ok
+test remote_auth_session_and_sse ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.18s
+
+     Running tests/jobs.rs (target/debug/deps/jobs-c83718c92b72332f)
+
+running 5 tests
+test control_keys_are_bytes_not_numeric_strings ... ok
+test disconnected_control_client_does_not_terminate_persistent_job ... ok
+test persistent_pty_accepts_input_resize_and_reconnect_then_stops ... ok
+test timeout_and_exit_are_saved_and_pid_reuse_cannot_signal_another_process ... ok
+test exiting_owner_stops_only_owned_jobs_and_large_output_is_bounded ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.70s
+
+     Running tests/project_services.rs (target/debug/deps/project_services-e6f3fed15232d596)
+
+running 8 tests
+test migrations_preserve_legacy_data_and_reject_newer_schema ... ok
+test incremental_index_reuses_unchanged_rows_and_detects_edits_deletions_cancellation ... ok
+test pinned_requirements_and_actual_context_survive_restart ... ok
+test syntax_and_old_decision_retrieval_keep_current_evidence_at_all_budgets ... ok
+test zero_tests_are_distinguished_from_unknown_output_and_mixed_rust_targets ... ok
+test verification_requires_every_check_and_current_source_command_environment ... ok
+test zero_tests_after_large_output_cannot_verify_a_requirement ... ok
+test discovery_enforces_file_limit_in_a_flat_directory_without_partial_index_commit ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.44s
+

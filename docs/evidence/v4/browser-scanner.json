@@ -1,0 +1,169 @@
+{
+  "scope": "Actual browser/scanner; no inference model",
+  "records": [
+    {
+      "id": "d808f30c-bc24-48c7-bca2-be4910bfa4ef",
+      "pack": "browser",
+      "version": 1,
+      "input": {
+        "click": "#go",
+        "contains": "Ready",
+        "executable": "/usr/bin/chromium",
+        "screenshot": "/tmp/alt-pack-acceptance-mfecs0s8/state/projects/7f718fb7b1e9b7164b3fbab947ef020bc915ca7eecf36dbd9cf251261d5a3a9e/workflows/d808f30c-bc24-48c7-bca2-be4910bfa4ef.png",
+        "selector": "#result",
+        "url": "http://127.0.0.1:34121/"
+      },
+      "status": "findings",
+      "error": null,
+      "evidence": {
+        "command": [
+          "node",
+          "-e",
+          "// Playwright is an optional project dependency. No browser download occurs here.\nconst input = JSON.parse(process.argv[1]);\n(async () => {\n  const { chromium } = require('playwright');\n  const browser = await chromium.launch({ headless: true, executablePath: input.executable || undefined });\n  try {\n    const page = await browser.newPage();\n    const response = await page.goto(input.url, { timeout: 20000, waitUntil: 'domcontentloaded' });\n    if (!response || !response.ok()) throw new Error(`Page returned ${response && response.status()}`);\n    if (input.click) await page.locator(input.click).click({ timeout: 10000 });\n    const locator = page.locator(input.selector || 'body');\n    await locator.waitFor({ state: 'visible', timeout: 10000 });\n    const text = await locator.innerText({ timeout: 10000 });\n    if (input.contains && !text.includes(input.contains)) throw new Error(`Expected text absent: ${input.contains}`);\n    if (input.screenshot) await page.screenshot({ path: input.screenshot, fullPage: false });\n    console.log(JSON.stringify({ passed: true, url: page.url(), status: response.status(), observed: text.slice(0, 4000) }));\n  } finally { await browser.close(); }\n})().catch(error => { console.log(JSON.stringify({ passed: false, error: error.message })); process.exitCode = 1; });\n",
+          "{\"click\":\"#go\",\"contains\":\"Ready\",\"executable\":\"/usr/bin/chromium\",\"screenshot\":\"/tmp/alt-pack-acceptance-mfecs0s8/state/projects/7f718fb7b1e9b7164b3fbab947ef020bc915ca7eecf36dbd9cf251261d5a3a9e/workflows/d808f30c-bc24-48c7-bca2-be4910bfa4ef.png\",\"selector\":\"#result\",\"url\":\"http://127.0.0.1:34121/\"}"
+        ],
+        "terminal": {
+          "cancelled": false,
+          "elapsed_ms": 1435,
+          "exit_code": 1,
+          "id": "90ea1092-25ba-4ba5-851c-a756fb409c57",
+          "output": "stdout:\n{\"passed\":false,\"error\":\"Expected text absent: Ready\"}\n\nstderr:\n",
+          "output_truncated": false,
+          "timed_out": false,
+          "undoable": false
+        }
+      },
+      "findings": [
+        {
+          "id": "2799022d-2eed-4598-8e0c-37105b9a23e1",
+          "rule": "browser.expected-behavior",
+          "title": "Expected text absent: Ready",
+          "severity": "medium",
+          "confidence": "review required",
+          "path": null,
+          "line": null,
+          "evidence": "d808f30c-bc24-48c7-bca2-be4910bfa4ef",
+          "reproduction": {
+            "click": "#go",
+            "contains": "Ready",
+            "executable": "/usr/bin/chromium",
+            "screenshot": "/tmp/alt-pack-acceptance-mfecs0s8/state/projects/7f718fb7b1e9b7164b3fbab947ef020bc915ca7eecf36dbd9cf251261d5a3a9e/workflows/d808f30c-bc24-48c7-bca2-be4910bfa4ef.png",
+            "selector": "#result",
+            "url": "http://127.0.0.1:34121/"
+          },
+          "proposed_fix": "Review the recorded location and upstream advisory; change the implementation or dependency, then retest.",
+          "retests": []
+        }
+      ]
+    },
+    {
+      "id": "31001242-fbac-4853-a59e-86c6da467a95",
+      "pack": "browser",
+      "version": 1,
+      "input": {
+        "click": "#go",
+        "contains": "Ready",
+        "executable": "/usr/bin/chromium",
+        "screenshot": "/tmp/alt-pack-acceptance-mfecs0s8/state/projects/7f718fb7b1e9b7164b3fbab947ef020bc915ca7eecf36dbd9cf251261d5a3a9e/workflows/31001242-fbac-4853-a59e-86c6da467a95.png",
+        "selector": "#result",
+        "url": "http://127.0.0.1:34121/"
+      },
+      "status": "passed",
+      "error": null,
+      "evidence": {
+        "command": [
+          "node",
+          "-e",
+          "// Playwright is an optional project dependency. No browser download occurs here.\nconst input = JSON.parse(process.argv[1]);\n(async () => {\n  const { chromium } = require('playwright');\n  const browser = await chromium.launch({ headless: true, executablePath: input.executable || undefined });\n  try {\n    const page = await browser.newPage();\n    const response = await page.goto(input.url, { timeout: 20000, waitUntil: 'domcontentloaded' });\n    if (!response || !response.ok()) throw new Error(`Page returned ${response && response.status()}`);\n    if (input.click) await page.locator(input.click).click({ timeout: 10000 });\n    const locator = page.locator(input.selector || 'body');\n    await locator.waitFor({ state: 'visible', timeout: 10000 });\n    const text = await locator.innerText({ timeout: 10000 });\n    if (input.contains && !text.includes(input.contains)) throw new Error(`Expected text absent: ${input.contains}`);\n    if (input.screenshot) await page.screenshot({ path: input.screenshot, fullPage: false });\n    console.log(JSON.stringify({ passed: true, url: page.url(), status: response.status(), observed: text.slice(0, 4000) }));\n  } finally { await browser.close(); }\n})().catch(error => { console.log(JSON.stringify({ passed: false, error: error.message })); process.exitCode = 1; });\n",
+          "{\"click\":\"#go\",\"contains\":\"Ready\",\"executable\":\"/usr/bin/chromium\",\"screenshot\":\"/tmp/alt-pack-acceptance-mfecs0s8/state/projects/7f718fb7b1e9b7164b3fbab947ef020bc915ca7eecf36dbd9cf251261d5a3a9e/workflows/31001242-fbac-4853-a59e-86c6da467a95.png\",\"selector\":\"#result\",\"url\":\"http://127.0.0.1:34121/\"}"
+        ],
+        "terminal": {
+          "cancelled": false,
+          "elapsed_ms": 1757,
+          "exit_code": 0,
+          "id": "9b58dd03-8cfc-4923-a74e-353d729fcf25",
+          "output": "stdout:\n{\"passed\":true,\"url\":\"http://127.0.0.1:34121/\",\"status\":200,\"observed\":\"Ready\"}\n\nstderr:\n",
+          "output_truncated": false,
+          "timed_out": false,
+          "undoable": false
+        }
+      },
+      "findings": [],
+      "retained_screenshot": "31001242-fbac-4853-a59e-86c6da467a95.png"
+    },
+    {
+      "id": "5b45aacf-81de-496c-a984-76ca5bf51cbe",
+      "pack": "semgrep",
+      "version": 1,
+      "input": {},
+      "status": "findings",
+      "error": null,
+      "evidence": {
+        "command": [
+          "semgrep",
+          "--json",
+          "--metrics=off",
+          "--no-git-ignore",
+          "--config",
+          "/tmp/alt-pack-acceptance-mfecs0s8/state/pack-assets-v1/semgrep.yml",
+          "."
+        ],
+        "terminal": {
+          "cancelled": false,
+          "elapsed_ms": 27581,
+          "exit_code": 0,
+          "id": "39246c2d-501f-4878-bffa-3b988dc9e133",
+          "output": "stdout:\n{\"version\":\"1.140.0\",\"results\":[{\"check_id\":\"tmp.alt-pack-acceptance-mfecs0s8.state.pack-assets-v1.alt.python.dynamic-eval\",\"path\":\"app.py\",\"start\":{\"line\":2,\"col\":12,\"offset\":33},\"end\":{\"line\":2,\"col\":23,\"offset\":44},\"extra\":{\"message\":\"Dynamic evaluation requires review of input provenance.\",\"metadata\":{\"confidence\":\"LOW\",\"recommendation\":\"Replace dynamic evaluation with explicit parsing or approved operations.\"},\"severity\":\"WARNING\",\"fingerprint\":\"requires login\",\"lines\":\"requires login\",\"validation_state\":\"NO_VALIDATOR\",\"engine_kind\":\"OSS\"}}],\"errors\":[],\"paths\":{\"scanned\":[\"app.py\"]},\"time\":{\"rules\":[],\"rules_parse_time\":0.0045359134674072266,\"profiling_times\":{\"config_time\":0.17992186546325684,\"core_time\":0.5130176544189453,\"ignores_time\":4.029273986816406e-05,\"total_time\":0.6934008598327637},\"parsing_time\":{\"total_time\":0.0,\"per_file_time\":{\"mean\":0.0,\"std_dev\":0.0},\"very_slow_stats\":{\"time_ratio\":0.0,\"count_ratio\":0.0},\"very_slow_files\":[]},\"scanning_time\":{\"total_time\":0.020238161087036133,\"per_file_time\":{\"mean\":0.020238161087036133,\"std_dev\":0.0},\"very_slow_stats\":{\"time_ratio\":0.0,\"count_ratio\":0.0},\"very_slow_files\":[]},\"matching_time\":{\"total_time\":0.0,\"per_file_and_rule_time\":{\"mean\":0.0,\"std_dev\":0.0},\"very_slow_stats\":{\"time_ratio\":0.0,\"count_ratio\":0.0},\"very_slow_rules_on_files\":[]},\"tainting_time\":{\"total_time\":0.0,\"per_def_and_rule_time\":{\"mean\":0.0,\"std_dev\":0.0},\"very_slow_stats\":{\"time_ratio\":0.0,\"count_ratio\":0.0},\"very_slow_rules_on_defs\":[]},\"fixpoint_timeouts\":[],\"prefiltering\":{\"project_level_time\":0.0,\"file_level_time\":0.0,\"rules_with_project_prefilters_ratio\":0.0,\"rules_with_file_prefilters_ratio\":1.0,\"rules_selected_ratio\":0.5,\"rules_matched_ratio\":0.5},\"targets\":[],\"total_bytes\":0,\"max_memory_bytes\":78026432},\"engine_requested\":\"OSS\",\"skipped_rules\":[]}\n\nstderr:\n               \n               \n\u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510\n\u2502 Scan Status \u2502\n\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518\n  Scanning 1 file with 2 Code rules:\n  Scanning 1 file with 2 python rules.\n                \n                \n\u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510\n\u2502 Scan Summary \u2502\n\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518\n\u2705 Scan completed successfully.\n \u2022 Findings: 1 (1 blocking)\n \u2022 Rules run: 2\n \u2022 Targets scanned: 1\n \u2022 Parsed lines: ~100.0%\n \u2022 No ignore information available\nRan 2 rules on 1 file: 1 finding.\n",
+          "output_truncated": false,
+          "timed_out": false,
+          "undoable": false
+        }
+      },
+      "findings": [
+        {
+          "id": "c1270a75-0bd8-4acc-b62f-48ed5acd1027",
+          "rule": "tmp.alt-pack-acceptance-mfecs0s8.state.pack-assets-v1.alt.python.dynamic-eval",
+          "title": "Dynamic evaluation requires review of input provenance.",
+          "severity": "medium",
+          "confidence": "review required",
+          "path": "app.py",
+          "line": 2,
+          "evidence": "5b45aacf-81de-496c-a984-76ca5bf51cbe",
+          "reproduction": {},
+          "proposed_fix": "Review the recorded location and upstream advisory; change the implementation or dependency, then retest.",
+          "retests": []
+        }
+      ]
+    },
+    {
+      "id": "b870acde-b4fb-46ca-ad1f-4a982405b06a",
+      "pack": "semgrep",
+      "version": 1,
+      "input": {},
+      "status": "passed",
+      "error": null,
+      "evidence": {
+        "command": [
+          "semgrep",
+          "--json",
+          "--metrics=off",
+          "--no-git-ignore",
+          "--config",
+          "/tmp/alt-pack-acceptance-mfecs0s8/state/pack-assets-v1/semgrep.yml",
+          "."
+        ],
+        "terminal": {
+          "cancelled": false,
+          "elapsed_ms": 26999,
+          "exit_code": 0,
+          "id": "6961fae4-19c8-45ac-bbb7-f09f09964697",
+          "output": "stdout:\n{\"version\":\"1.140.0\",\"results\":[],\"errors\":[],\"paths\":{\"scanned\":[\"app.py\"]},\"time\":{\"rules\":[],\"rules_parse_time\":0.0042858123779296875,\"profiling_times\":{\"config_time\":0.15688276290893555,\"core_time\":0.3432590961456299,\"ignores_time\":9.822845458984375e-05,\"total_time\":0.5005826950073242},\"parsing_time\":{\"total_time\":0.0,\"per_file_time\":{\"mean\":0.0,\"std_dev\":0.0},\"very_slow_stats\":{\"time_ratio\":0.0,\"count_ratio\":0.0},\"very_slow_files\":[]},\"scanning_time\":{\"total_time\":0.0003390312194824219,\"per_file_time\":{\"mean\":0.0003390312194824219,\"std_dev\":0.0},\"very_slow_stats\":{\"time_ratio\":0.0,\"count_ratio\":0.0},\"very_slow_files\":[]},\"matching_time\":{\"total_time\":0.0,\"per_file_and_rule_time\":{\"mean\":0.0,\"std_dev\":0.0},\"very_slow_stats\":{\"time_ratio\":0.0,\"count_ratio\":0.0},\"very_slow_rules_on_files\":[]},\"tainting_time\":{\"total_time\":0.0,\"per_def_and_rule_time\":{\"mean\":0.0,\"std_dev\":0.0},\"very_slow_stats\":{\"time_ratio\":0.0,\"count_ratio\":0.0},\"very_slow_rules_on_defs\":[]},\"fixpoint_timeouts\":[],\"prefiltering\":{\"project_level_time\":0.0,\"file_level_time\":0.0,\"rules_with_project_prefilters_ratio\":0.0,\"rules_with_file_prefilters_ratio\":1.0,\"rules_selected_ratio\":0.0,\"rules_matched_ratio\":0.0},\"targets\":[],\"total_bytes\":0,\"max_memory_bytes\":78026432},\"engine_requested\":\"OSS\",\"skipped_rules\":[]}\n\nstderr:\n               \n               \n\u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510\n\u2502 Scan Status \u2502\n\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518\n  Scanning 1 file with 2 Code rules:\n  Scanning 1 file with 2 python rules.\n                \n                \n\u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510\n\u2502 Scan Summary \u2502\n\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518\n\u2705 Scan completed successfully.\n \u2022 Findings: 0 (0 blocking)\n \u2022 Rules run: 2\n \u2022 Targets scanned: 1\n \u2022 Parsed lines: ~100.0%\n \u2022 No ignore information available\nRan 2 rules on 1 file: 0 findings.\n",
+          "output_truncated": false,
+          "timed_out": false,
+          "undoable": false
+        }
+      },
+      "findings": []
+    }
+  ]
+}

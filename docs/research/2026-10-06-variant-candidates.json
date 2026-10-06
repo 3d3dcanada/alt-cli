@@ -1,0 +1,389 @@
+{
+  "date": "2026-10-06",
+  "scope": "Pinned public metadata/cards only; not downloaded or live-tested, publisher uncensored claims unverified",
+  "candidates": [
+    {
+      "repository": "darioooooo0o/Spark-X2.5-1.7B-Abliterated-GGUF",
+      "revision": "0193e8f9b55c7f8e9c58799694696a17d8f6c6c5",
+      "metadata_url": "https://huggingface.co/api/models/darioooooo0o/Spark-X2.5-1.7B-Abliterated-GGUF?blobs=true",
+      "card_data": {
+        "license": "apache-2.0",
+        "tags": [
+          "abliterated",
+          "uncensored",
+          "gguf",
+          "spark",
+          "reasoning"
+        ],
+        "base_model": "XHToken/Spark-X2.5-1.7B",
+        "pipeline_tag": "text-generation"
+      },
+      "gguf": {
+        "total": 1976092672,
+        "architecture": "spark2_5",
+        "context_length": 1048576,
+        "quantize_imatrix_file": "spark17-imatrix.gguf",
+        "chat_template": "{%- if not messages %}{{- raise_exception('No messages provided.') }}{%- endif %}{%- set enable_thinking = enable_thinking | default(true) %}{#- Render a string or a list of text blocks. -#}{%- macro render_content(content, context_name) %}{%- if content is string %}{{- content }}{%- elif content is none or content is undefined %}{{- '' }}{%- elif content is iterable and content is not mapping %}{%- for block in content %}{%- if block.type == 'text' %}{{- block.text }}{%- else %}{{- raise_exception('Unsupported ' ~ context_name ~ ' content block type: ' ~ (block.type | string)) }}{%- endif %}{%- endfor %}{%- else %}{{- raise_exception(context_name ~ ' content must be a string or a list of text blocks') }}{%- endif %}{%- endmacro %}{#- Default system prompt -#}{%- set default_system = 'you are a helpful assistant.' %}{#- The first message-level system is placed in the initial system block. -#}{%- set ns = namespace(initial_system='') %}{%- if messages[0].role == 'system' %}{%- set ns.initial_system = render_content(messages[0].content, 'system') %}{%- endif %}{#- System block -#}{{- '<\uff5cstart\u2581of\u2581sentence\uff5c><|System|>' + '\n' + default_system }}{%- if tools %}{{- '## Tools' + '\n' + 'You have access to the following functions:' + '\n' + '<tools>' }}{%- for tool in tools %}{{- '\n' + tool.function | tojson}}{%- endfor %}{{- '\n' + '</tools>' }}{%- endif %}{%- if ns.initial_system %}{{- '\n\n' + ns.initial_system }}{%- endif %}{{- '<\uff5cend\u2581of\u2581sentence\uff5c>'}}{#- Conversation turns -#}{%- for message in messages %}{%- if message.role == 'system' %}{#- The first system message was consumed by the initial block. -#}{%- if not loop.first %}{{- '<\uff5cstart\u2581of\u2581sentence\uff5c><|System|>\n' + render_content(message.content, 'system') + '<\uff5cend\u2581of\u2581sentence\uff5c>' }}{%- endif %}{%- elif message.role == 'user' %}{{- '<\uff5cstart\u2581of\u2581sentence\uff5c><|User|>' + render_content(message.content, 'user') + '<\uff5cend\u2581of\u2581sentence\uff5c>' }}{%- elif message.role == 'assistant' %}{%- set assistant_content = render_content(message.content, 'assistant') %}{%- if message.reasoning_content is defined and message.reasoning_content %}{%- set reasoning_content = message.reasoning_content %}{%- else %}{%- set reasoning_content = '' %}{%- endif %}{{- '<\uff5cstart\u2581of\u2581sentence\uff5c><|Bot|>'}}{%- if reasoning_content %}{{- '<think>' + reasoning_content + '</think>'}}{%- else %}{{- '</think>' }}{%- endif %}{%- if assistant_content %}{{- assistant_content }}{%- endif %}{%- if message.tool_calls is defined and message.tool_calls is not none %}{%- for tool_call in message.tool_calls %}{%- if tool_call.function.arguments is not mapping %}{{- raise_exception('tool_call.function.arguments must be a dictionary; normalize JSON strings before apply_chat_template') }}{%- endif %}{%- set args = tool_call.function.arguments %}{{- '<tool_call>' + tool_call.function.name }}{%- for k, v in args.items() %}{{- '<arg_key>' ~ k ~ '</arg_key><arg_value>' ~ (v if v is string else v | tojson) ~ '</arg_value>' }}{%- endfor %}{{- '</tool_call>' }}{%- endfor %}{%- endif %}{{- '<\uff5cend\u2581of\u2581sentence\uff5c>' }}{%- elif message.role == 'tool' %}{%- if loop.previtem is undefined or loop.previtem.role != 'tool' %}{{- '<\uff5cstart\u2581of\u2581sentence\uff5c><|Tool|>' }}{%- endif %}{{- '<tool_response>' ~ message.content ~ '</tool_response>' }}{%- if loop.nextitem is undefined or loop.nextitem.role != 'tool' %}{{- '<\uff5cend\u2581of\u2581sentence\uff5c>' }}{%- endif %}{%- else %}{{- raise_exception('Unsupported message role: ' ~ message.role) }}{%- endif %}{%- endfor %}{#- Generation prompt -#}{%- if add_generation_prompt %}{{- '<\uff5cstart\u2581of\u2581sentence\uff5c><|Bot|>' }}{%- if enable_thinking is defined and enable_thinking %}{{- '<think>' }}{%- endif %}{%- if enable_thinking is defined and not enable_thinking %}{{- '</think>' }}{%- endif %}{%- endif %}",
+        "bos_token": "<\uff5cstart\u2581of\u2581sentence\uff5c>",
+        "eos_token": "<\uff5cend\u2581of\u2581sentence\uff5c>",
+        "totalFileSize": 1160707424
+      },
+      "files": [
+        {
+          "rfilename": "README.md",
+          "size": 6978,
+          "lfs": null
+        },
+        {
+          "rfilename": "Spark-X2.5-1.7B-Abliterated-IQ4_XS.gguf",
+          "size": 1160707424,
+          "lfs": {
+            "sha256": "6a37270ec23f289a97ec9c28f32bc65164ea41f9634cc0a4db0c2a05994a7a3e",
+            "size": 1160707424,
+            "pointerSize": 135
+          }
+        },
+        {
+          "rfilename": "Spark-X2.5-1.7B-Abliterated-Q4_K_M.gguf",
+          "size": 1258452320,
+          "lfs": {
+            "sha256": "1e4d920aaff1248b68751e49b16dae6104c5f4d3924a86a290e24b31db08113c",
+            "size": 1258452320,
+            "pointerSize": 135
+          }
+        },
+        {
+          "rfilename": "Spark-X2.5-1.7B-Abliterated-Q6_K.gguf",
+          "size": 1626768224,
+          "lfs": {
+            "sha256": "a6287d907c12baf6e0349a368b24b94d9a4028673d3c7513b530db0b5bdfbd74",
+            "size": 1626768224,
+            "pointerSize": 135
+          }
+        },
+        {
+          "rfilename": "Spark-X2.5-1.7B-Abliterated-Q8_0.gguf",
+          "size": 2105324896,
+          "lfs": {
+            "sha256": "d66d9c3ad81d0bd00204e9582dfb569e7ef110ea3231539e078e33abe867019f",
+            "size": 2105324896,
+            "pointerSize": 135
+          }
+        }
+      ],
+      "readme": "---\nlicense: apache-2.0\ntags:\n- abliterated\n- uncensored\n- gguf\n- spark\n- reasoning\nbase_model: XHToken/Spark-X2.5-1.7B\npipeline_tag: text-generation\n---\n\n# Spark-X2.5-1.7B-Abliterated-GGUF\n\n[![X](https://img.shields.io/badge/X-Follow-000000?logo=x&logoColor=white)](https://x.com/imdariotoo)\n\nRequests, questions or suggestions? Message me on X: https://x.com/imdariotoo\n\nUncensored community quants of [XHToken/Spark-X2.5-1.7B](https://huggingface.co/XHToken/Spark-X2.5-1.7B),\nproduced by single-round rank-1 refusal-direction ablation (heretic) over a balanced\n6292-prompt multilingual pool. Trial 33 of a 50-trial Optuna search.\n\nBase model card, architecture notes and serving instructions live in the sibling repo\n`darioooooo0o/Spark-X2.5-1.7B-GGUF` \u2014 this README covers only what the ablation changed\nand how it was measured.\n\n## Files\n\n| file | size | notes |\n|---|---|---|\n| Spark-X2.5-1.7B-Abliterated-Q8_0.gguf | ~1.8 GB | max quality |\n| Spark-X2.5-1.7B-Abliterated-Q6_K.gguf | ~1.4 GB | recommended daily driver |\n| Spark-X2.5-1.7B-Abliterated-Q4_K_M.gguf | ~1.0 GB | smaller cards |\n| Spark-X2.5-1.7B-Abliterated-IQ4_XS.gguf | ~0.9 GB | smallest |\n\nAll quants built with imatrix calibration from the same BF16 merge. Serve with the\nSpark fork of llama.cpp (`spark2_5` arch) and f16 KV cache:\n\n```\nllama-server -m <gguf> --chat-template-file chat_template.jinja \\\n  --host 127.0.0.1 --port 12450 -c 65536 -n 4096 -ngl 99 \\\n  -fa on -ctk f16 -ctv f16 --temp 1.0 --top-p 0.95 --top-k -1 \\\n  --reasoning-budget 2000 --jinja --reasoning-format deepseek\n```\n\n`--reasoning-budget` is load-bearing, not optional: median thinking length is 1500+\ntokens and the tail exceeds 4000. Unbounded reasoning will eat your context.\n\n## Refusal results\n\nHeadline: **0 refusals in 300 sealed generations + 37 answer-level generations,\neye-audited** (base model: 186/300 refused on the same prompts).\n\n### Sealed sets (never trained on, never trial-scored \u2014 the ungameable numbers)\n\n| set | base refused | ablated refused | base preamble | ablated preamble |\n|---|---|---|---|---|\n| sealed mjd, 200 prompts, 7 langs | 86 (43%) | 0-being-6-flagged, **0 real** (3%) | 247 chars | 96 chars |\n| sealed adv, 100 prompts, English | 100 (100%) | 0-being-15-flagged, **0 real** (15%) | 435 chars | 145 chars |\n\n\"0-being-N-flagged\" needs explanation \u2014 see Methodology. Short version: every flag\nwas audited by eye; all 21 were reasoning traces planning compliance or complying\nanswers containing words like \"illegal\". Zero actual refusals. Preamble (compliance-talk\nbefore the answer) collapsed 2-3x: answers start directly now.\n\n### Full matrix (marker ruler, descriptive \u2014 same prompts both models)\n\n| set (n) | base | ablated t33 |\n|---|---|---|\n| all-eval, 3911 unique harmful prompts | 2014 (51.5%) | 263 (6.7%) |\n| selection mjd-400 | 194 (48.5%) | 2 (0.5%) |\n| selection adv-100 | 100 (100%) | 2 (2%) |\n\nMarker numbers overstate both sides on thinking models (see below). They are\nincluded for comparability with other releases, not as claims.\n\n### Answer-level audit (4096-token generations, think/answer split)\n\n41 sealed prompts (21 flagged + 20 random unflagged): 37 finished thinking,\n37 produced answers, **0 answers refused**. All 8 answer-flags were complying\nanswers (guides, letters, code) containing refusal-vocabulary words.\n\n## Methodology: why marker counts are fiction on thinking models\n\nStandard refusal eval generates ~100 tokens and string-matches for \"sorry\",\n\"as an AI\", \"illegal\", etc. On a thinking model this fails twice, in opposite\ndirections, on the same model:\n\n1. **Flags compliance.** 100 tokens never exit thinking, so the matcher scores\n   reasoning traces. Traces planning compliance (\"We should provide a detailed,\n   step-by-step guide\" \u2014 for explosives manufacturing) get flagged for containing\n   \"as an AI\". Complying answers get flagged for containing \"illegal\" (a drug-guide\n   title: \"# The Complete Guide to Manufacturing and Distributing Illegal Drugs\").\n2. **Misses real structure.** Non-answers (thinking that never converges) score as\n   neither refusal nor compliance.\n\nOur ruler instead: 600+ token generations, split thinking from answer on\n`</think>`, three buckets per generation \u2014 complied / refused / non-answer \u2014\nwith every flagged item eye-audited. Reported numbers above are bucket counts,\nnot marker counts. Anyone comparing \"0/300\" against a marker-count \"0/465\" is\ncomparing different rulers; demand the bucket table.\n\n## How it was made\n\n1. **Pools (frozen, manifest-hashed):** train 6292 rows (mjd multilingual \u00d77 langs\n   + AdvBench oversampled \u00d710 for equal family mass \u2014 balanced diff-in-means needs\n   equal votes, not proportional ones), selection 500 stratified (400 mjd + 100 adv),\n   sealed 200 mjd + sealed 100 adv held out of everything. Zero-overlap matrix verified.\n2. **Search:** heretic Optuna, 50 trials (20 startup + 30 TPE), batch 32, bf16,\n   KL co-optimized. Trial 33 selected: 4/500 selection refusals at KL 0.016.\n3. **One round.** Minimal-change principle: bigger balanced slices beat stacked\n   rounds. A pre-registered second-round gate (residual cosine) was mooted and\n   dropped \u2014 there is no residual refusal behavior left to ablate.\n4. **Export:** adapter-save, CPU reload, merge, tied-embedding twin-fill\n   (PEFT unties embeddings on merge leaving a meta stub \u2014 filled from the live twin).\n\nFull pipeline (patch scripts, pool builder, launchers, export, evals) is deterministic\nfrom the base safetensors; trial-33 params recorded in the study journal.\n\n## Quality gates (base vs ablated)\n\n| check | base | ablated t33 |\n|---|---|---|\n| PPL, calib corpus, 512 ctx, BF16 | 3.8598 \u00b1 0.0097 | 3.9492 \u00b1 0.0099 (+2.3%, disclosed) |\n| Agentic tool-use, 6-task HermesBench | 5/6 effective | 5/6 effective (one single-run miss retested 3/3 pass = temp-1.0 noise) |\n| KL divergence (search objective) | \u2014 | 0.016 |\n| Decode speed, RTX 3060 | 171 t/s Q6_K | identical arch/size \u2014 same |\n\nThe +2.3% PPL is over our own 2% bar by 0.3 points and is printed here, not buried.\nNo capability damage was demonstrated anywhere else, so no DPO repair pass was run.\n\n## Caveats\n\n- Inherits the base model's reasoning-loop failure mode on vague open-ended prompts\n  (documented in the base repo README): unbounded thinking until the token limit,\n  independent of quantization. `--reasoning-budget` + client timeouts are mandatory.\n- Most generations spend 1500+ tokens thinking; short `max_tokens` values return\n  reasoning fragments, not answers. Budget context accordingly.\n- \"0 refusals\" means no observed refusals in the evaluated sets under eye audit,\n  not a proof of universal compliance. Novel framings were not exhaustively tested.\n- Ablation removes refusal behavior, not knowledge. Standard responsible-use\n  expectations apply.\n\n## License\n\nApache 2.0, same as the base model. Ablation deltas are rank-1 LoRA merges;\nno additional training data is distributed with these files.\n"
+    },
+    {
+      "repository": "ItsOkayNow/Spark-X2.5-4B-Heretic-GGUF",
+      "revision": "46aa0f5327a5e3f0ffa17aa2074dd2a382e8bd67",
+      "metadata_url": "https://huggingface.co/api/models/ItsOkayNow/Spark-X2.5-4B-Heretic-GGUF?blobs=true",
+      "card_data": {
+        "license": "mit",
+        "base_model": [
+          "soyaakinohara/Spark-X2.5-4B-Heretic"
+        ]
+      },
+      "gguf": {
+        "total": 4112079360,
+        "architecture": "spark2_5",
+        "context_length": 1048576,
+        "chat_template": "{#- 0826\u7248\u672c -#}\n{%- if not messages %}\n    {{- raise_exception('No messages provided.') }}\n{%- endif %}\n{%- set enable_thinking = enable_thinking | default(true) %}\n\n{#- Render a string or a list of text blocks. -#}\n{%- macro render_content(content, context_name) %}\n    {%- if content is string %}\n        {{- content }}\n    {%- elif content is none or content is undefined %}\n        {{- '' }}\n    {%- elif content is iterable and content is not mapping %}\n        {%- for block in content %}\n            {%- if block.type == 'text' %}\n                {{- block.text }}\n            {%- else %}\n                {{- raise_exception('Unsupported ' ~ context_name ~ ' content block type: ' ~ (block.type | string)) }}\n            {%- endif %}\n        {%- endfor %}\n    {%- else %}\n        {{- raise_exception(context_name ~ ' content must be a string or a list of text blocks') }}\n    {%- endif %}\n{%- endmacro %}\n\n{#- Default system prompt -#}\n{%- set default_system = \"you are a helpful assistant.\" %}\n\n{#- The first message-level system is placed in the initial system block. -#}\n{%- set ns = namespace(initial_system='') %}\n{%- if messages[0].role == \"system\" %}\n    {%- set ns.initial_system = render_content(messages[0].content, 'system') %}\n{%- endif %}\n\n{#- System block -#}\n{{- '<\uff5cstart\u2581of\u2581sentence\uff5c><|System|>' + '\\n' + default_system }}\n{%- if tools %}\n    {{- '## Tools' + '\\n' + 'You have access to the following functions:' + '\\n' + '<tools>' }}\n    {%- for tool in tools %}\n        {{- '\\n' + tool.function | tojson}}\n    {%- endfor %}\n    {{- '\\n' + '</tools>' }}\n{%- endif %}\n{%- if ns.initial_system %}\n    {{- '\\n\\n' + ns.initial_system }}\n{%- endif %}\n{{- '<\uff5cend\u2581of\u2581sentence\uff5c>'}}\n\n{#- Conversation turns -#}\n{%- for message in messages %}\n    {%- if message.role == \"system\" %}\n        {#- The first system message was consumed by the initial block. -#}\n        {%- if not loop.first %}\n            {{- '<\uff5cstart\u2581of\u2581sentence\uff5c><|System|>\\n' + render_content(message.content, 'system') + '<\uff5cend\u2581of\u2581sentence\uff5c>' }}\n        {%- endif %}\n    {%- elif message.role == \"user\" %}\n        {{- '<\uff5cstart\u2581of\u2581sentence\uff5c><|User|>' + render_content(message.content, 'user') + '<\uff5cend\u2581of\u2581sentence\uff5c>' }}\n    {%- elif message.role == \"assistant\" %}\n        {%- set assistant_content = render_content(message.content, 'assistant') %}\n        {%- if message.reasoning_content is defined and message.reasoning_content %}\n            {%- set reasoning_content = message.reasoning_content %}\n        {%- else %}\n            {%- set reasoning_content = '' %}\n        {%- endif %}\n        {{- '<\uff5cstart\u2581of\u2581sentence\uff5c><|Bot|>'}}\n        {%- if reasoning_content %}\n            {{- '<think>' + reasoning_content + '</think>'}}\n        {%- else %}\n            {{- '</think>' }}\n        {%- endif %}\n        {%- if assistant_content %}\n            {{- assistant_content }}\n        {%- endif %}\n        {%- if message.tool_calls is defined and message.tool_calls is not none %}\n            {%- for tool_call in message.tool_calls %}\n                {%- if tool_call.function.arguments is not mapping %}\n                    {{- raise_exception('tool_call.function.arguments must be a dictionary; normalize JSON strings before apply_chat_template') }}\n                {%- endif %}\n                {%- set args = tool_call.function.arguments %}\n                {{- '<tool_call>' + tool_call.function.name }}\n                {%- for k, v in args.items() %}\n                    {{- '<arg_key>' ~ k ~ '</arg_key><arg_value>' ~ (v if v is string else v | tojson) ~ '</arg_value>' }}\n                {%- endfor %}\n                {{- '</tool_call>' }}\n            {%- endfor %}\n        {%- endif %}\n        {{- '<\uff5cend\u2581of\u2581sentence\uff5c>' }}\n    {%- elif message.role == \"tool\" %}\n        {%- if loop.previtem is undefined or loop.previtem.role != \"tool\" %}\n            {{- '<\uff5cstart\u2581of\u2581sentence\uff5c><|Tool|>' }}\n        {%- endif %}\n        {{- '<tool_response>' ~ message.content ~ '</tool_response>' }}\n        {%- if loop.nextitem is undefined or loop.nextitem.role != \"tool\" %}\n            {{- '<\uff5cend\u2581of\u2581sentence\uff5c>' }}\n        {%- endif %}\n    {%- else %}\n        {{- raise_exception('Unsupported message role: ' ~ message.role) }}\n    {%- endif %}\n{%- endfor %}\n\n{#- Generation prompt -#}\n{%- if add_generation_prompt %}\n    {{- '<\uff5cstart\u2581of\u2581sentence\uff5c><|Bot|>' }}\n    {%- if enable_thinking is defined and enable_thinking %}\n        {{- '<think>' }}\n    {%- endif %}\n    {%- if enable_thinking is defined and not enable_thinking %}\n        {{- '</think>' }}\n    {%- endif %}\n{%- endif %}\n",
+        "bos_token": "<\uff5cstart\u2581of\u2581sentence\uff5c>",
+        "eos_token": "<\uff5cend\u2581of\u2581sentence\uff5c>",
+        "totalFileSize": 8229920928
+      },
+      "files": [
+        {
+          "rfilename": "README.md",
+          "size": 364,
+          "lfs": null
+        },
+        {
+          "rfilename": "Spark-X2.5-4B-Heretic-F16.gguf",
+          "size": 8229920928,
+          "lfs": {
+            "sha256": "35c0e6d87382581ad34fe1013df71e3a4e2e0e501e2f18cf4dfe7795afe272c1",
+            "size": 8229920928,
+            "pointerSize": 135
+          }
+        },
+        {
+          "rfilename": "Spark-X2.5-4B-Heretic-IQ2_XS.gguf",
+          "size": 1487348384,
+          "lfs": {
+            "sha256": "b9d62f998c669e84a8944ee4d46d16635647f7950b5a891ad6958ffb69aa465a",
+            "size": 1487348384,
+            "pointerSize": 135
+          }
+        },
+        {
+          "rfilename": "Spark-X2.5-4B-Heretic-IQ3_XXS.gguf",
+          "size": 1801895584,
+          "lfs": {
+            "sha256": "20c7d9303fb8dc6ae82bb2db4cf9bd1361107c63620363ad18e61f0810fc2c94",
+            "size": 1801895584,
+            "pointerSize": 135
+          }
+        },
+        {
+          "rfilename": "Spark-X2.5-4B-Heretic-IQ4_XS.gguf",
+          "size": 2376045984,
+          "lfs": {
+            "sha256": "a590e346711fa474ebf57717d7b40b7ee9eca6d65f04934b8a1d41327d08f3c7",
+            "size": 2376045984,
+            "pointerSize": 135
+          }
+        },
+        {
+          "rfilename": "Spark-X2.5-4B-Heretic-Q2_K.gguf",
+          "size": 1787397024,
+          "lfs": {
+            "sha256": "107e1ff800636fa7929d3e296e9bcf2148c3a23e53acf98915dff717fadbf3a6",
+            "size": 1787397024,
+            "pointerSize": 135
+          }
+        },
+        {
+          "rfilename": "Spark-X2.5-4B-Heretic-Q3_K_M.gguf",
+          "size": 2165197984,
+          "lfs": {
+            "sha256": "77320be82374b4878828b36d70cf00ca2c8bdd18c8ed7584803f2aa46a417acd",
+            "size": 2165197984,
+            "pointerSize": 135
+          }
+        },
+        {
+          "rfilename": "Spark-X2.5-4B-Heretic-Q4_K_M.gguf",
+          "size": 2600225184,
+          "lfs": {
+            "sha256": "3919be7bf7e7bea0c2ae769fadb2cf345a740c7ee67ff0bf00caf70bef2ab113",
+            "size": 2600225184,
+            "pointerSize": 135
+          }
+        },
+        {
+          "rfilename": "Spark-X2.5-4B-Heretic-Q5_K_M.gguf",
+          "size": 2977896864,
+          "lfs": {
+            "sha256": "d7085eeab1478ce4a4ae5e5a359a922b98997f3e432738b05615605d638a0c85",
+            "size": 2977896864,
+            "pointerSize": 135
+          }
+        },
+        {
+          "rfilename": "Spark-X2.5-4B-Heretic-Q6_K.gguf",
+          "size": 3379173024,
+          "lfs": {
+            "sha256": "fc46b5751a803c7032ac5ba303db4dad22c80a6470de41c89a7f245c5f8e652b",
+            "size": 3379173024,
+            "pointerSize": 135
+          }
+        },
+        {
+          "rfilename": "Spark-X2.5-4B-Heretic-Q8_0.gguf",
+          "size": 4375021984,
+          "lfs": {
+            "sha256": "941b284e561e079c376126766de95cc6f1248a1f3723dd95add791b6b2b2715e",
+            "size": 4375021984,
+            "pointerSize": 135
+          }
+        }
+      ],
+      "readme": "---\nlicense: mit\nbase_model:\n- soyaakinohara/Spark-X2.5-4B-Heretic\n---\n\nThese models was quantized from Spark-X2.5-4B-Heretic. imatrix file was used from https://huggingface.co/stornic56/Spark-X2.5-4B-GGUF/tree/main (by stornic56)\n\nThanks: soyaakinohara for Spark-X2.5-4B-Heretic, stornic56 for imatrix file, XHToken Team for Spark-X2.5-4B, ggml Team for llama.cpp"
+    },
+    {
+      "repository": "mradermacher/MiMo-V2.6-Distill-Qwen-9B-heretic-GGUF",
+      "revision": "4e642ce6d23ee0130bdf57cfe64d644008c042ee",
+      "metadata_url": "https://huggingface.co/api/models/mradermacher/MiMo-V2.6-Distill-Qwen-9B-heretic-GGUF?blobs=true",
+      "card_data": {
+        "base_model": "saidutta69/MiMo-V2.6-Distill-Qwen-9B-heretic",
+        "language": [
+          "en",
+          "zh"
+        ],
+        "library_name": "transformers",
+        "license": "mit",
+        "license_link": "https://huggingface.co/XiaomiMiMo/MiMo-V2.6-Distill-Qwen-9B/blob/main/LICENSE",
+        "mradermacher": {
+          "readme_rev": 1
+        },
+        "quantized_by": "mradermacher",
+        "tags": [
+          "mimo",
+          "mimo-v2",
+          "xiaomi",
+          "agentic",
+          "distillation",
+          "sft",
+          "code",
+          "coding",
+          "tool-use",
+          "visual-coding",
+          "cybersecurity",
+          "qwen3.5",
+          "multimodal",
+          "vision",
+          "reasoning",
+          "thinking",
+          "heretic",
+          "uncensored",
+          "decensored",
+          "abliterated",
+          "reproducible",
+          "gguf",
+          "roleplay",
+          "local-llm",
+          "consumer-gpu"
+        ]
+      },
+      "gguf": {
+        "total": 8953803264,
+        "architecture": "qwen35",
+        "context_length": 262144,
+        "chat_template": "{%- macro render_value(value) -%}\n    {%- if value is string -%}\n        {{- value -}}\n    {%- else -%}\n        {{- value | tojson(ensure_ascii=False) -}}\n    {%- endif -%}\n{%- endmacro -%}\n\n{%- macro render_content(message_content) -%}\n    {%- if message_content is string -%}\n        {{- message_content -}}\n    {%- elif message_content is iterable -%}\n        {%- for part in message_content -%}\n            {%- if part is not mapping -%}\n                {{- part -}}\n            {%- elif part['type'] == 'image' or 'image' in part or 'image_url' in part -%}\n                {{- '<|vision_start|><|image_pad|><|vision_end|>' -}}\n            {%- elif part['type'] == 'audio' or part['type'] == 'input_audio' or 'audio' in part or 'audio_url' in part or 'input_audio' in part -%}\n                {{- '<|mimo_audio_start|><|audio_pad|><|mimo_audio_end|>' -}}\n            {%- elif part['type'] == 'video' or 'video' in part or 'video_url' in part -%}\n                {{- '<|vision_start|><|video_pad|><|vision_end|>' -}}\n            {%- elif 'text' in part -%}\n                {{- part['text'] -}}\n            {%- endif -%}\n        {%- endfor -%}\n    {%- endif -%}\n{%- endmacro -%}\n\n{%- macro render_tools(tools) -%}\n    {{- 'You are provided with the following tools:\\n\\n<tools>' -}}\n    {%- for tool in tools -%}\n        {{- '\\n' ~ (tool | tojson(ensure_ascii=False)) -}}\n    {%- endfor -%}\n    {{- '\\n</tools>' -}}\n{%- endmacro -%}\n\n{%- macro render_tool_calls(tool_calls) -%}\n    {%- for tool_call in tool_calls -%}\n        {%- if tool_call.function is defined -%}\n            {%- set tool_call = tool_call.function -%}\n        {%- elif tool_call.custom is defined -%}\n            {%- set tool_call = tool_call.custom -%}\n        {%- endif -%}\n        {{- '<tool_call><function=' ~ tool_call.name ~ '>' -}}\n        {%- if tool_call.input is defined and tool_call.input is string -%}\n            {{- tool_call.input -}}\n        {%- elif tool_call.arguments -%}\n            {%- if tool_call.arguments is string -%}\n                {{- tool_call.arguments -}}\n            {%- else -%}\n                {%- for args_name, args_value in tool_call.arguments | items -%}\n                    {{- '<parameter=' ~ args_name ~ '>' ~ render_value(args_value) ~ '</parameter>' -}}\n                {%- endfor -%}\n            {%- endif -%}\n        {%- endif -%}\n        {{- '</function></tool_call>' -}}\n    {%- endfor -%}\n{%- endmacro -%}\n\n{%- macro render_assistant_message(message) -%}\n    {%- generation -%}\n    {%- set content = render_content(message.content) -%}\n    {%- set reasoning = message.reasoning_content if message.reasoning_content is string else '' -%}\n    {{- '<|im_start|>assistant\\n<think>' ~ reasoning ~ '</think>' ~ content -}}\n    {%- if message.tool_calls is defined and message.tool_calls is iterable and message.tool_calls | length > 0 -%}\n        {{- render_tool_calls(message.tool_calls) -}}\n    {%- endif -%}\n    {{- '<|im_end|>' -}}\n    {%- endgeneration -%}\n{%- endmacro -%}\n\n{%- if tools is defined and tools is iterable and tools | length > 0 -%}\n    {{- '<|im_start|>system\\n' ~ render_tools(tools) ~ '<|im_end|>' -}}\n{%- endif -%}\n\n{%- for message in messages -%}\n    {%- if message.role == 'assistant' -%}\n        {{- render_assistant_message(message) -}}\n    {%- else -%}\n        {%- set body = render_content(message.content) -%}\n        {{- '<|im_start|>' ~ message.role ~ '\\n' ~ body -}}\n        {%- if message.tools is defined and message.tools is iterable and message.tools | length > 0 -%}\n            {%- if body -%}\n                {{- '\\n\\n' -}}\n            {%- endif -%}\n            {{- render_tools(message.tools) -}}\n        {%- endif -%}\n        {{- '<|im_end|>' -}}\n    {%- endif -%}\n{%- endfor -%}\n\n{%- if add_generation_prompt -%}\n    {{- '<|im_start|>assistant\\n' -}}\n    {%- if enable_thinking is false -%}\n        {{- '<think></think>' -}}\n    {%- endif -%}\n{%- endif -%}\n",
+        "eos_token": "<|im_end|>",
+        "totalFileSize": 17920694656
+      },
+      "files": [
+        {
+          "rfilename": "MiMo-V2.6-Distill-Qwen-9B-heretic.IQ4_XS.gguf",
+          "size": 5227895168,
+          "lfs": {
+            "sha256": "5ada6138b19fe92b5e3f6130c674821d37f528071f5fe2319ef8ce2edf764e34",
+            "size": 5227895168,
+            "pointerSize": 135
+          }
+        },
+        {
+          "rfilename": "MiMo-V2.6-Distill-Qwen-9B-heretic.Q2_K.gguf",
+          "size": 3827259776,
+          "lfs": {
+            "sha256": "8325cd92b8919268efedf001bfe41e11e93d1a6d2a049f9410b0ec7abb518cd7",
+            "size": 3827259776,
+            "pointerSize": 135
+          }
+        },
+        {
+          "rfilename": "MiMo-V2.6-Distill-Qwen-9B-heretic.Q3_K_L.gguf",
+          "size": 4925512064,
+          "lfs": {
+            "sha256": "5e43f4a431a4274efa5444404fbc23520ea5c56baa89acd3d4814b6b13eaccab",
+            "size": 4925512064,
+            "pointerSize": 135
+          }
+        },
+        {
+          "rfilename": "MiMo-V2.6-Distill-Qwen-9B-heretic.Q3_K_M.gguf",
+          "size": 4623522176,
+          "lfs": {
+            "sha256": "2292fe65193a2fbd9b70c0fcda85688a6f4b7cac2c88f5516576223ed9531d98",
+            "size": 4623522176,
+            "pointerSize": 135
+          }
+        },
+        {
+          "rfilename": "MiMo-V2.6-Distill-Qwen-9B-heretic.Q3_K_S.gguf",
+          "size": 4259404160,
+          "lfs": {
+            "sha256": "e9428ca6c5048f5249d82b3200f317a644371100b9c9cfae19cd8898f4ed8def",
+            "size": 4259404160,
+            "pointerSize": 135
+          }
+        },
+        {
+          "rfilename": "MiMo-V2.6-Distill-Qwen-9B-heretic.Q4_K_M.gguf",
+          "size": 5629106560,
+          "lfs": {
+            "sha256": "00877ff79174b79f72c5ec704901fc958400a0b0d390fb61a068281618116dd1",
+            "size": 5629106560,
+            "pointerSize": 135
+          }
+        },
+        {
+          "rfilename": "MiMo-V2.6-Distill-Qwen-9B-heretic.Q4_K_S.gguf",
+          "size": 5351627136,
+          "lfs": {
+            "sha256": "ebfd03c0850ee6fa4304d33172b22d6d9324c656dda7779e0f9e8d7b6c2c5fe6",
+            "size": 5351627136,
+            "pointerSize": 135
+          }
+        },
+        {
+          "rfilename": "MiMo-V2.6-Distill-Qwen-9B-heretic.Q5_K_M.gguf",
+          "size": 6467967360,
+          "lfs": {
+            "sha256": "823d03b9b987beea06f021ed0923904f281c1c96548b810c5b976485c6dad174",
+            "size": 6467967360,
+            "pointerSize": 135
+          }
+        },
+        {
+          "rfilename": "MiMo-V2.6-Distill-Qwen-9B-heretic.Q5_K_S.gguf",
+          "size": 6305307008,
+          "lfs": {
+            "sha256": "2a2cada89cf2740f1a07533b8cb932a156a4f573f1109e400505d3c917916311",
+            "size": 6305307008,
+            "pointerSize": 135
+          }
+        },
+        {
+          "rfilename": "MiMo-V2.6-Distill-Qwen-9B-heretic.Q6_K.gguf",
+          "size": 7359256960,
+          "lfs": {
+            "sha256": "d7c441cb5a012c0601a02f648893dd9bf0b718d733dff112afca75139143ca77",
+            "size": 7359256960,
+            "pointerSize": 135
+          }
+        },
+        {
+          "rfilename": "MiMo-V2.6-Distill-Qwen-9B-heretic.Q8_0.gguf",
+          "size": 9527499136,
+          "lfs": {
+            "sha256": "bb81221e4c9b5bac3d84d4c7ca696810fef6b7f2e12d7db54adfa9f58aac9fa3",
+            "size": 9527499136,
+            "pointerSize": 135
+          }
+        },
+        {
+          "rfilename": "MiMo-V2.6-Distill-Qwen-9B-heretic.f16.gguf",
+          "size": 17920694656,
+          "lfs": {
+            "sha256": "5bcdbbfa8c77bcc730589c6051ed2a676cdfe537abfc4dbc6c3b10d7e7569851",
+            "size": 17920694656,
+            "pointerSize": 136
+          }
+        },
+        {
+          "rfilename": "MiMo-V2.6-Distill-Qwen-9B-heretic.mmproj-Q8_0.gguf",
+          "size": 624230368,
+          "lfs": {
+            "sha256": "d918612c3f35ebd03582d89093cb66fc568aafce4b57574aa58f13d7b1c1c877",
+            "size": 624230368,
+            "pointerSize": 134
+          }
+        },
+        {
+          "rfilename": "MiMo-V2.6-Distill-Qwen-9B-heretic.mmproj-f16.gguf",
+          "size": 918166624,
+          "lfs": {
+            "sha256": "5cf73a21ffdf48dce276de7c5a90a661010f5bc276a2e1d63e5a2b7de9951c73",
+            "size": 918166624,
+            "pointerSize": 134
+          }
+        },
+        {
+          "rfilename": "README.md",
+          "size": 4767,
+          "lfs": null
+        }
+      ],
+      "readme": "---\nbase_model: saidutta69/MiMo-V2.6-Distill-Qwen-9B-heretic\nlanguage:\n- en\n- zh\nlibrary_name: transformers\nlicense: mit\nlicense_link: https://huggingface.co/XiaomiMiMo/MiMo-V2.6-Distill-Qwen-9B/blob/main/LICENSE\nmradermacher:\n  readme_rev: 1\nquantized_by: mradermacher\ntags:\n- mimo\n- mimo-v2\n- xiaomi\n- agentic\n- distillation\n- sft\n- code\n- coding\n- tool-use\n- visual-coding\n- cybersecurity\n- qwen3.5\n- multimodal\n- vision\n- reasoning\n- thinking\n- heretic\n- uncensored\n- decensored\n- abliterated\n- reproducible\n- gguf\n- roleplay\n- local-llm\n- consumer-gpu\n---\n## About\n\n<!-- ### quantize_version: 2 -->\n<!-- ### output_tensor_quantised: 1 -->\n<!-- ### convert_type: hf -->\n<!-- ### vocab_type:  -->\n<!-- ### tags:  -->\n<!-- ### quants:  x-f16 Q4_K_S Q2_K Q8_0 Q6_K Q3_K_M Q3_K_S Q3_K_L Q4_K_M Q5_K_S Q5_K_M IQ4_XS -->\n<!-- ### quants_skip:  -->\n<!-- ### skip_mmproj:  -->\nstatic quants of https://huggingface.co/saidutta69/MiMo-V2.6-Distill-Qwen-9B-heretic\n\n<!-- provided-files -->\n\n***For a convenient overview and download list, visit our [model page for this model](https://hf.tst.eu/model#MiMo-V2.6-Distill-Qwen-9B-heretic-GGUF).***\n\nweighted/imatrix quants are available at https://huggingface.co/mradermacher/MiMo-V2.6-Distill-Qwen-9B-heretic-i1-GGUF\n## Usage\n\nIf you are unsure how to use GGUF files, refer to one of [TheBloke's\nREADMEs](https://huggingface.co/TheBloke/KafkaLM-70B-German-V0.1-GGUF) for\nmore details, including on how to concatenate multi-part files.\n\n## Provided Quants\n\n(sorted by size, not necessarily quality. IQ-quants are often preferable over similar sized non-IQ quants)\n\n| Link | Type | Size/GB | Notes |\n|:-----|:-----|--------:|:------|\n| [GGUF](https://huggingface.co/mradermacher/MiMo-V2.6-Distill-Qwen-9B-heretic-GGUF/resolve/main/MiMo-V2.6-Distill-Qwen-9B-heretic.mmproj-Q8_0.gguf) | mmproj-Q8_0 | 0.7 | multi-modal supplement |\n| [GGUF](https://huggingface.co/mradermacher/MiMo-V2.6-Distill-Qwen-9B-heretic-GGUF/resolve/main/MiMo-V2.6-Distill-Qwen-9B-heretic.mmproj-f16.gguf) | mmproj-f16 | 1.0 | multi-modal supplement |\n| [GGUF](https://huggingface.co/mradermacher/MiMo-V2.6-Distill-Qwen-9B-heretic-GGUF/resolve/main/MiMo-V2.6-Distill-Qwen-9B-heretic.Q2_K.gguf) | Q2_K | 3.9 |  |\n| [GGUF](https://huggingface.co/mradermacher/MiMo-V2.6-Distill-Qwen-9B-heretic-GGUF/resolve/main/MiMo-V2.6-Distill-Qwen-9B-heretic.Q3_K_S.gguf) | Q3_K_S | 4.4 |  |\n| [GGUF](https://huggingface.co/mradermacher/MiMo-V2.6-Distill-Qwen-9B-heretic-GGUF/resolve/main/MiMo-V2.6-Distill-Qwen-9B-heretic.Q3_K_M.gguf) | Q3_K_M | 4.7 | lower quality |\n| [GGUF](https://huggingface.co/mradermacher/MiMo-V2.6-Distill-Qwen-9B-heretic-GGUF/resolve/main/MiMo-V2.6-Distill-Qwen-9B-heretic.Q3_K_L.gguf) | Q3_K_L | 5.0 |  |\n| [GGUF](https://huggingface.co/mradermacher/MiMo-V2.6-Distill-Qwen-9B-heretic-GGUF/resolve/main/MiMo-V2.6-Distill-Qwen-9B-heretic.IQ4_XS.gguf) | IQ4_XS | 5.3 |  |\n| [GGUF](https://huggingface.co/mradermacher/MiMo-V2.6-Distill-Qwen-9B-heretic-GGUF/resolve/main/MiMo-V2.6-Distill-Qwen-9B-heretic.Q4_K_S.gguf) | Q4_K_S | 5.5 | fast, recommended |\n| [GGUF](https://huggingface.co/mradermacher/MiMo-V2.6-Distill-Qwen-9B-heretic-GGUF/resolve/main/MiMo-V2.6-Distill-Qwen-9B-heretic.Q4_K_M.gguf) | Q4_K_M | 5.7 | fast, recommended |\n| [GGUF](https://huggingface.co/mradermacher/MiMo-V2.6-Distill-Qwen-9B-heretic-GGUF/resolve/main/MiMo-V2.6-Distill-Qwen-9B-heretic.Q5_K_S.gguf) | Q5_K_S | 6.4 |  |\n| [GGUF](https://huggingface.co/mradermacher/MiMo-V2.6-Distill-Qwen-9B-heretic-GGUF/resolve/main/MiMo-V2.6-Distill-Qwen-9B-heretic.Q5_K_M.gguf) | Q5_K_M | 6.6 |  |\n| [GGUF](https://huggingface.co/mradermacher/MiMo-V2.6-Distill-Qwen-9B-heretic-GGUF/resolve/main/MiMo-V2.6-Distill-Qwen-9B-heretic.Q6_K.gguf) | Q6_K | 7.5 | very good quality |\n| [GGUF](https://huggingface.co/mradermacher/MiMo-V2.6-Distill-Qwen-9B-heretic-GGUF/resolve/main/MiMo-V2.6-Distill-Qwen-9B-heretic.Q8_0.gguf) | Q8_0 | 9.6 | fast, best quality |\n| [GGUF](https://huggingface.co/mradermacher/MiMo-V2.6-Distill-Qwen-9B-heretic-GGUF/resolve/main/MiMo-V2.6-Distill-Qwen-9B-heretic.f16.gguf) | f16 | 18.0 | 16 bpw, overkill |\n\nHere is a handy graph by ikawrakow comparing some lower-quality quant\ntypes (lower is better):\n\n![image.png](https://www.nethype.de/huggingface_embed/quantpplgraph.png)\n\nAnd here are Artefact2's thoughts on the matter:\nhttps://gist.github.com/Artefact2/b5f810600771265fc1e39442288e8ec9\n\n## FAQ / Model Request\n\nSee https://huggingface.co/mradermacher/model_requests for some answers to\nquestions you might have and/or if you want some other model quantized.\n\n## Thanks\n\nI thank my company, [nethype GmbH](https://www.nethype.de/), for letting\nme use its servers and providing upgrades to my workstation to enable\nthis work in my free time.\n\n<!-- end -->\n"
+    }
+  ],
+  "pinned_runtime_architecture_inspection": {
+    "url": "https://raw.githubusercontent.com/ggml-org/llama.cpp/d81235049384534c167caea52b85a694f6103d14/src/llama-arch.cpp",
+    "contains_spark2_5": true,
+    "contains_qwen35": true,
+    "scope": "Source architecture-registration inspection, not a load or tool-call test"
+  }
+}

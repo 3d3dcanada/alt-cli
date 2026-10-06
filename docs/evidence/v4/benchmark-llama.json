@@ -1,0 +1,248 @@
+{
+  "alt_version": "0.4.0",
+  "artifact": {
+    "bytes": 2497279584,
+    "id": "5d38e532cf33a5b56760bc7803aaabffb240d0604f1e389e4db148830c2bb747",
+    "license": "Imported file \u2014 check its publisher's license",
+    "name": "Qwen3-4B-Instruct-2507-heretic.Q4_K_M.gguf",
+    "path": "/workspace/.alt-models/Qwen3-4B-Instruct-2507-heretic.Q4_K_M.gguf",
+    "pieces": [],
+    "sha256": "5d38e532cf33a5b56760bc7803aaabffb240d0604f1e389e4db148830c2bb747",
+    "source": null,
+    "uncensored_claim": true
+  },
+  "context": 8192,
+  "error": null,
+  "gpu_measurement": "Unavailable unless a local owned runtime and nvidia-smi report process allocation",
+  "hardware": {
+    "architecture": "x86_64",
+    "available_ram": 11310768128,
+    "cpu_flags": [
+      "sse2",
+      "sse4_2",
+      "avx",
+      "avx2",
+      "avx512f"
+    ],
+    "cpu_threads": 4,
+    "driver": "Driver/free VRAM/compute capability unavailable",
+    "gpu": "No NVIDIA GPU detected; CPU mode is available",
+    "isolation": {
+      "available": false,
+      "detail": "Isolation is unavailable: bwrap: setting up uid map: Read-only file system\n"
+    },
+    "libc": "2.41",
+    "notes": [
+      "RAM and discrete VRAM are separate budgets. Estimates do not guarantee fit or tool quality.",
+      "GTX 1070 is Pascal sm_61. Use a compatible CUDA 12 build or CPU runtime; CUDA 13-only binaries do not cover it.",
+      "Spark-X2.5 and MiMo are discoverable through arbitrary Hub search/compatible endpoints; publisher uncensored labels require separate verification.",
+      "The managed download defaults to CPU. Select a compatible GPU runtime and configure layers in Settings, or use an external Ollama/llama.cpp/LM Studio/ORA endpoint."
+    ],
+    "os": "linux",
+    "profiles": [
+      {
+        "context": 4096,
+        "estimated_weight_budget": 2147483648,
+        "explanation": "One loaded model, small context, leave RAM for the desktop and tools",
+        "model_hint": "1.7\u20133B Q4 GGUF; verify an uncensored derivative",
+        "name": "Low memory"
+      },
+      {
+        "context": 8192,
+        "estimated_weight_budget": 4581642240,
+        "explanation": "A starting estimate. Weight size excludes KV cache, runtime and process memory",
+        "model_hint": "3\u20134B Q4 GGUF; first evaluation target for 16 GB RAM",
+        "name": "Balanced"
+      },
+      {
+        "context": 16384,
+        "estimated_weight_budget": 3507900416,
+        "explanation": "Run the capability check, then measure memory and latency. Reduce context on allocation failure",
+        "model_hint": "Use a model whose native context supports this size",
+        "name": "More context"
+      }
+    ],
+    "ram": 34359738368
+  },
+  "id": "2fb1e54f-c1cc-47df-a5a8-7d28335a0604",
+  "load_and_integrity_seconds": 6.677954511,
+  "model": "Qwen3-4B-Instruct-2507-heretic.Q4_K_M.gguf",
+  "owned_runtime_stopped": true,
+  "provider": "openai",
+  "runtime_log": "/workspace/.alt-evaluations/v4/benchmark-llama-state/logs/runtime-00a97e40-63a2-4fec-9967-e454904aa4f0.log",
+  "sampled_generation_peak_runtime_rss_bytes": 5581758464,
+  "sampled_generation_peak_runtime_vram_bytes": null,
+  "settings": {
+    "batch": 128,
+    "cache_k": "f16",
+    "cache_v": "f16",
+    "flash_attention": false,
+    "gpu_layers": 0,
+    "threads": 0
+  },
+  "task_completion": "Not measured by generation throughput; use the live project acceptance suite",
+  "trials": [
+    {
+      "generated_tokens": 145,
+      "ollama_eval_duration_ns": null,
+      "response": {
+        "choices": [
+          {
+            "finish_reason": "stop",
+            "index": 0,
+            "message": {
+              "content": "1. **Define clear test cases** \u2013 Identify key functionalities and create specific, testable scenarios that cover normal and edge cases.  \n2. **Set up a test environment** \u2013 Use a development or staging environment that mirrors production as closely as possible to ensure realistic testing.  \n3. **Run unit tests** \u2013 Execute automated tests for individual components or functions to catch bugs early in the development cycle.  \n4. **Perform manual testing** \u2013 Manually verify user flows, interface behavior, and usability to detect issues not caught by automated tests.  \n5. **Review and document results** \u2013 Log test outcomes, track bugs, and share findings with the development team to ensure issues are addressed and improvements are made.",
+              "role": "assistant"
+            }
+          }
+        ],
+        "created": 1791289021,
+        "id": "chatcmpl-fdKmrMa5PiDn8mDQM4j0Ge4uSyT2DzxN",
+        "model": "Qwen3-4B-Instruct-2507-heretic.Q4_K_M.gguf",
+        "object": "chat.completion",
+        "system_fingerprint": "b11429-d81235049",
+        "timings": {
+          "cache_n": 0,
+          "predicted_ms": 10279.937,
+          "predicted_n": 145,
+          "predicted_per_second": 14.007867947050649,
+          "predicted_per_token_ms": 71.38845138888888,
+          "prompt_ms": 747.306,
+          "prompt_n": 24,
+          "prompt_per_second": 32.115358367255176,
+          "prompt_per_token_ms": 31.13775
+        },
+        "usage": {
+          "completion_tokens": 145,
+          "prompt_tokens": 24,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          },
+          "total_tokens": 169
+        }
+      },
+      "runtime_timings": {
+        "cache_n": 0,
+        "predicted_ms": 10279.937,
+        "predicted_n": 145,
+        "predicted_per_second": 14.007867947050649,
+        "predicted_per_token_ms": 71.38845138888888,
+        "prompt_ms": 747.306,
+        "prompt_n": 24,
+        "prompt_per_second": 32.115358367255176,
+        "prompt_per_token_ms": 31.13775
+      },
+      "seconds_including_prompt_processing": 11.035717876,
+      "tokens_per_wall_second": 13.139154301446915,
+      "trial": 1
+    },
+    {
+      "generated_tokens": 137,
+      "ollama_eval_duration_ns": null,
+      "response": {
+        "choices": [
+          {
+            "finish_reason": "stop",
+            "index": 0,
+            "message": {
+              "content": "1. **Define clear test cases** \u2013 Identify key functionalities and create specific, testable scenarios that cover normal and edge cases.  \n2. **Set up a test environment** \u2013 Use a development or staging environment that mirrors production as closely as possible to ensure realistic testing.  \n3. **Run unit tests** \u2013 Execute automated tests for individual components or functions to verify correctness and catch bugs early.  \n4. **Perform manual testing** \u2013 Manually explore user flows, interfaces, and error conditions to detect usability and design issues.  \n5. **Review results and iterate** \u2013 Analyze test outcomes, document bugs, and refine the software based on feedback before final deployment.",
+              "role": "assistant"
+            }
+          }
+        ],
+        "created": 1791289030,
+        "id": "chatcmpl-Zn6xymEmwpvBimi3zvWTfrCNAka1Hgsh",
+        "model": "Qwen3-4B-Instruct-2507-heretic.Q4_K_M.gguf",
+        "object": "chat.completion",
+        "system_fingerprint": "b11429-d81235049",
+        "timings": {
+          "cache_n": 23,
+          "predicted_ms": 8653.555,
+          "predicted_n": 137,
+          "predicted_per_second": 15.716084314481158,
+          "predicted_per_token_ms": 63.629080882352945,
+          "prompt_ms": 61.468,
+          "prompt_n": 1,
+          "prompt_per_second": 16.26862757857747,
+          "prompt_per_token_ms": 61.468
+        },
+        "usage": {
+          "completion_tokens": 137,
+          "prompt_tokens": 24,
+          "prompt_tokens_details": {
+            "cached_tokens": 23
+          },
+          "total_tokens": 161
+        }
+      },
+      "runtime_timings": {
+        "cache_n": 23,
+        "predicted_ms": 8653.555,
+        "predicted_n": 137,
+        "predicted_per_second": 15.716084314481158,
+        "predicted_per_token_ms": 63.629080882352945,
+        "prompt_ms": 61.468,
+        "prompt_n": 1,
+        "prompt_per_second": 16.26862757857747,
+        "prompt_per_token_ms": 61.468
+      },
+      "seconds_including_prompt_processing": 8.738100728,
+      "tokens_per_wall_second": 15.6784642640938,
+      "trial": 2
+    },
+    {
+      "generated_tokens": 137,
+      "ollama_eval_duration_ns": null,
+      "response": {
+        "choices": [
+          {
+            "finish_reason": "stop",
+            "index": 0,
+            "message": {
+              "content": "1. **Define clear test cases** \u2013 Identify key functionalities and create specific, testable scenarios that cover normal and edge cases.  \n2. **Set up a test environment** \u2013 Use a development or staging environment that mirrors production as closely as possible to ensure realistic testing.  \n3. **Run unit tests** \u2013 Execute automated tests for individual components or functions to verify correctness and catch bugs early.  \n4. **Perform manual testing** \u2013 Manually explore user flows, interfaces, and error conditions to detect usability and design issues.  \n5. **Review results and iterate** \u2013 Analyze test outcomes, document bugs, and refine the software based on feedback before final deployment.",
+              "role": "assistant"
+            }
+          }
+        ],
+        "created": 1791289037,
+        "id": "chatcmpl-w2pxzeS9AMALxJTJ6Ar3FzeP64uSkmOV",
+        "model": "Qwen3-4B-Instruct-2507-heretic.Q4_K_M.gguf",
+        "object": "chat.completion",
+        "system_fingerprint": "b11429-d81235049",
+        "timings": {
+          "cache_n": 23,
+          "predicted_ms": 7750.727,
+          "predicted_n": 137,
+          "predicted_per_second": 17.5467410992543,
+          "predicted_per_token_ms": 56.99063970588235,
+          "prompt_ms": 54.624,
+          "prompt_n": 1,
+          "prompt_per_second": 18.306971294669008,
+          "prompt_per_token_ms": 54.624
+        },
+        "usage": {
+          "completion_tokens": 137,
+          "prompt_tokens": 24,
+          "prompt_tokens_details": {
+            "cached_tokens": 23
+          },
+          "total_tokens": 161
+        }
+      },
+      "runtime_timings": {
+        "cache_n": 23,
+        "predicted_ms": 7750.727,
+        "predicted_n": 137,
+        "predicted_per_second": 17.5467410992543,
+        "predicted_per_token_ms": 56.99063970588235,
+        "prompt_ms": 54.624,
+        "prompt_n": 1,
+        "prompt_per_second": 18.306971294669008,
+        "prompt_per_token_ms": 54.624
+      },
+      "seconds_including_prompt_processing": 7.82729769,
+      "tokens_per_wall_second": 17.502847780406828,
+      "trial": 3
+    }
+  ]
+}

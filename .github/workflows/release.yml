@@ -1,0 +1,52 @@
+name: Produce signed release candidate
+on:
+  workflow_dispatch:
+    inputs:
+      previous_package_url:
+        description: Exact prior published Linux package URL
+        required: true
+        type: string
+      previous_package_sha256:
+        description: Independently verified SHA256 of prior package
+        required: true
+        type: string
+permissions:
+  contents: read
+jobs:
+  candidate:
+    runs-on: ubuntu-24.04
+    environment: release
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - name: Prepare workspace and validate
+        run: |
+          sudo mkdir -p /workspace
+          sudo chown "$USER" /workspace
+          ln -s "$GITHUB_WORKSPACE" /workspace/alt-cli
+          bash scripts/setup-cloud.sh
+      - name: Build, sign and validate exact package
+        env:
+          ALT_RELEASE_PRIVATE_KEY: ${{ secrets.ALT_RELEASE_PRIVATE_KEY }}
+          PREVIOUS_URL: ${{ inputs.previous_package_url }}
+          PREVIOUS_SHA: ${{ inputs.previous_package_sha256 }}
+        run: |
+          set -euo pipefail
+          export CARGO_HOME=/workspace/.cargo RUSTUP_HOME=/workspace/.rustup
+          export PATH="/workspace/.cargo/bin:/workspace/.alt-tools:$PATH"
+          test -n "$ALT_RELEASE_PRIVATE_KEY"
+          umask 077
+          export ALT_SIGNING_KEY="$RUNNER_TEMP/release-key.pem"
+          trap 'rm -f "$ALT_SIGNING_KEY"' EXIT
+          printf '%s\n' "$ALT_RELEASE_PRIVATE_KEY" > "$ALT_SIGNING_KEY"
+          export PYTHONPATH=/workspace/.alt-tools/python
+          bash scripts/build-portable.sh
+          python3 scripts/fetch_previous.py --url "$PREVIOUS_URL" --sha256 "$PREVIOUS_SHA" --output "$RUNNER_TEMP/previous.tar.gz"
+          openssl pkey -in "$ALT_SIGNING_KEY" -pubout -out dist/release-public.pem
+          python3 scripts/release_gate.py dist/alt-*.tar.gz --previous "$RUNNER_TEMP/previous.tar.gz" --require-upgrade --verify-key dist/release-public.pem --output dist/release-gate.json
+          openssl dgst -sha256 -verify dist/release-public.pem -signature dist/alt-*.tar.gz.sig dist/alt-*.tar.gz
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: signed-unpublished-candidate
+          path: dist/
+# Uploads a reviewable candidate; it never publishes or tags a release automatically.

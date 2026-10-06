@@ -1,0 +1,33 @@
+{
+  "command": [
+    "docker",
+    "run",
+    "--rm",
+    "--network",
+    "none",
+    "--memory",
+    "16g",
+    "--memory-swap",
+    "16g",
+    "--cpus",
+    "2",
+    "-v",
+    "/workspace:/workspace",
+    "-w",
+    "/workspace/alt-cli",
+    "python:3.11-bookworm",
+    "/workspace/alt-cli/target/portable-glibc231/release/alt",
+    "--data-dir",
+    "/workspace/.alt-evaluations/v5/qualification-qwen-16g-16k-bookworm",
+    "qualify",
+    "--contexts",
+    "16384",
+    "--repeats",
+    "1"
+  ],
+  "exit": 0,
+  "binary_sha256": "99a93230fe4ccc17eb9fca329719647fa83b1fbb14c806b8f8c167797f0c11ac",
+  "scope": "CPU with real cgroup memory and CPU limits on shared cloud host. Not a physical older PC or GPU measurement.",
+  "profile_unchanged": true,
+  "image_id": "sha256:00e5e3e1446e6c3dba0a3d05f1a769f4d02a43a8348bd2ad8638f185cae85ccc"
+}

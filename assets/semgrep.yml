@@ -1,0 +1,17 @@
+rules:
+  - id: alt.python.dynamic-eval
+    languages: [python]
+    message: Dynamic evaluation requires review of input provenance.
+    severity: WARNING
+    pattern: eval($EXPRESSION)
+    metadata:
+      confidence: LOW
+      recommendation: Replace dynamic evaluation with explicit parsing or approved operations.
+  - id: alt.python.shell-command
+    languages: [python]
+    message: Shell execution requires review for untrusted interpolation.
+    severity: WARNING
+    pattern: subprocess.$METHOD(..., shell=True, ...)
+    metadata:
+      confidence: MEDIUM
+      recommendation: Pass an argument list with shell=False when possible.

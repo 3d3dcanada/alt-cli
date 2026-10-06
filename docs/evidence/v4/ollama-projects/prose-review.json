@@ -1,0 +1,53 @@
+{
+  "method": "Manual comparison of retained native calls, resulting source, prose and independent assertions. Partial progress and process exit are separate from task completion.",
+  "attempts": {
+    "8192-python-feature-1": {
+      "accuracy": "inaccurate",
+      "reason": "Claims slug was implemented but formatter.py remains the original stub; no edit tool ran."
+    },
+    "8192-python-feature-2": {
+      "accuracy": "incomplete",
+      "reason": "Timed out after proposed code and a plan; no edit or completed outcome report. Proposed regex also fails run collapsing."
+    },
+    "8192-python-multifile-1": {
+      "accuracy": "inaccurate",
+      "reason": "Says both fixes were implemented while saved files remain unchanged; no edit tool ran."
+    },
+    "8192-python-multifile-2": {
+      "accuracy": "inaccurate",
+      "reason": "Describes internal logic as corrected but only read/search/remember ran; source unchanged."
+    },
+    "8192-rust-feature-1": {
+      "accuracy": "incomplete",
+      "reason": "Inspect/plan only before Ollama stream-stall error. Does not claim an applied fix; its parameter-type criticism is unsupported."
+    },
+    "8192-rust-feature-2": {
+      "accuracy": "inaccurate",
+      "reason": "Claims a complete correct function but the applied edit removes its declaration and the independent crate cannot compile."
+    },
+    "8192-javascript-config-1": {
+      "accuracy": "inaccurate",
+      "reason": "Trimming edit applied, but claim that main.js works ignores CommonJS exports in an ES module. Oracle fails."
+    },
+    "8192-javascript-config-2": {
+      "accuracy": "inaccurate",
+      "reason": "Claims a changed function and working app while source is unchanged and ES-module error persists."
+    },
+    "8192-python-dependency-1": {
+      "accuracy": "inaccurate",
+      "reason": "Correct import edit passes independent oracle, but answer says a fresh check verified it when the only check request failed as unconfigured; output then truncates at deadline."
+    },
+    "8192-python-dependency-2": {
+      "accuracy": "inaccurate",
+      "reason": "Final import fix passes the independent oracle, but answer falsely describes a failed vendor import before any edit; the actual earlier terminal failure was the original third-party import. Turn times out."
+    },
+    "8192-python-http-security-1": {
+      "accuracy": "inaccurate",
+      "reason": "Parameterized-query repair applied, but says implementation is complete while required /health is still 503/starting."
+    },
+    "8192-python-http-security-2": {
+      "accuracy": "consistent_partial",
+      "reason": "Correctly describes the applied query repair and leaves health verification unfinished. The required health change was not made, so overall task fails."
+    }
+  }
+}

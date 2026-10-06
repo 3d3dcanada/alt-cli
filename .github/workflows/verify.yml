@@ -1,0 +1,43 @@
+name: Verify Alt
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  linux:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - name: Prepare the documented workspace
+        run: |
+          sudo mkdir -p /workspace
+          sudo chown "$USER" /workspace
+          ln -s "$GITHUB_WORKSPACE" /workspace/alt-cli
+      - name: Build and exercise Rust, terminal and real-engine protocols
+        run: bash scripts/setup-cloud.sh
+      - name: Audit locked dependencies
+        run: |
+          export CARGO_HOME=/workspace/.cargo RUSTUP_HOME=/workspace/.rustup
+          export PATH="/workspace/.cargo/bin:/workspace/.alt-tools/audit/bin:$PATH"
+          cargo install cargo-audit --version 0.22.2 --locked --root /workspace/.alt-tools/audit
+          mkdir -p dist
+          cargo audit --db /workspace/.alt-tools/advisory-db --deny warnings --json > dist/dependency-audit.json
+      - name: Package and test the installed artifact
+        run: |
+          export CARGO_HOME=/workspace/.cargo RUSTUP_HOME=/workspace/.rustup
+          export PATH="/workspace/.cargo/bin:/workspace/.alt-tools:$PATH"
+          export PYTHONPATH=/workspace/.alt-tools/python
+          bash scripts/build-portable.sh
+          python3 scripts/smoke_package.py dist/alt-*.tar.gz
+          python3 scripts/release_gate.py dist/alt-*.tar.gz --output dist/release-gate.json
+          python3 scripts/acceptance_projects.py > dist/oracle-self-test.json
+          python3 scripts/soak.py --rounds 30 --output dist/soak.json
+          python3 scripts/smoke_pressure_tui.py --rounds 30 --output dist/ui-pressure.json
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: linux-build-and-evidence
+          path: dist/

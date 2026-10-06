@@ -1,0 +1,39 @@
+{
+  "case": "python-feature",
+  "context": 16384,
+  "repeat": 1,
+  "passed": false,
+  "cli_exit": 1,
+  "wall_seconds": 0.22,
+  "outer_timeout": false,
+  "sampled_alt_tree_peak_rss_bytes": 0,
+  "rss_scope": "Alt, Goose and managed inference runtime",
+  "vram": null,
+  "oracle_unchanged": true,
+  "before": {
+    "passed": false,
+    "exit": 1,
+    "stdout": "",
+    "stderr": "Traceback (most recent call last):\n  File \"/workspace/.alt-evaluations/v4/final-llama-verification-context/16384-python-feature-1/independent/check.py\", line 4, in <module>\n    assert slug(\" Hello, CEDAR! \")==\"hello-cedar\"\n           ^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/workspace/.alt-evaluations/v4/final-llama-verification-context/16384-python-feature-1/project/formatter.py\", line 2, in slug\n    raise NotImplementedError(\"slug\")\nNotImplementedError: slug\n"
+  },
+  "after": {
+    "passed": false,
+    "exit": 1,
+    "stdout": "",
+    "stderr": "Traceback (most recent call last):\n  File \"/workspace/.alt-evaluations/v4/final-llama-verification-context/16384-python-feature-1/independent/check.py\", line 4, in <module>\n    assert slug(\" Hello, CEDAR! \")==\"hello-cedar\"\n           ^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/workspace/.alt-evaluations/v4/final-llama-verification-context/16384-python-feature-1/project/formatter.py\", line 2, in slug\n    raise NotImplementedError(\"slug\")\nNotImplementedError: slug\n"
+  },
+  "tool_calls": [],
+  "failed_tool_updates": 0,
+  "final_prose": "",
+  "prose_accuracy": "Retained for manual assessment; not inferred from process exit",
+  "resulting_source": {
+    "formatter.py": "def slug(text):\n    raise NotImplementedError(\"slug\")\n",
+    "main.py": "from formatter import slug\nprint(slug(\"Hello, Cedar!\"))\n"
+  },
+  "context_views": [],
+  "independent_alt_verification": {
+    "exit": 1,
+    "stdout": "{\n  \"complete\": false,\n  \"requirements\": [\n    {\n      \"requirement\": {\n        \"name\": \"requested-behavior\",\n        \"description\": \"Implement slug(text) in formatter.py: lowercase ASCII letters, preserve digits, replace runs of other characters with one hyphen, and strip edge hyphens. Keep main.py working.\",\n        \"check_name\": \"acceptance\"\n      },\n      \"status\": \"failed\",\n      \"evidence\": \"ef2d2c52-7e90-4a72-9573-a3e139a25b3a\"\n    }\n  ],\n  \"source_snapshot\": \"bf8cecb95814f3a7aaff0abc5f99a492db5f6e0c65a3086974a492b29364ffad\"\n}\n",
+    "stderr": "alt: Required checks are incomplete; inspect the verification report\n"
+  }
+}

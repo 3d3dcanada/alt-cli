@@ -1,0 +1,9 @@
+{
+  "goose_version": "1.53.0",
+  "goose_source": "https://github.com/aaif-goose/goose/blob/v1.53.0/crates/goose-providers/src/ollama.rs",
+  "ollama_version": "0.35.1",
+  "ollama_source": "https://github.com/ollama/ollama/blob/v0.35.1/openai/openai.go",
+  "finding": "Goose Ollama provider sends max token count as options.num_predict to /v1/chat/completions. Ollama OpenAI ChatCompletionRequest has top-level max_tokens but no options field, so that budget is ignored. Native num_ctx is likewise a server/tag setting on this compatible route.",
+  "fix": "Use the pinned Goose standard OpenAI-compatible client for Ollama chat while retaining the exact chosen server/model tag and native inventory/benchmark/capability APIs. Strip inherited OpenAI routing/auth configuration. Assert top-level max_tokens in both actual-engine fixtures.",
+  "historical_scope": "Earlier Ollama 4K/16K trials varied Alt/engine memory budget with a tag configured for an 8K native window. They must not be labelled native 4K/16K trials."
+}

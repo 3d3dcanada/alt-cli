@@ -1,0 +1,116 @@
+{
+  "contexts": [
+    2048
+  ],
+  "guidance": [
+    {
+      "context": 2048,
+      "repeat": 1,
+      "text": "Not qualified for owned operation by this attempt. Inspect the error or complete external lifecycle checks before relying on it."
+    }
+  ],
+  "id": "2a74e037-c24f-42ee-a3ca-9bc677e2064b",
+  "repeats": 1,
+  "rows": [
+    {
+      "context": 2048,
+      "generation_passed": false,
+      "lifecycle": {
+        "reason": "Generation failed or cancelled",
+        "status": "unmeasured"
+      },
+      "measurement": {
+        "alt_version": "0.5.0",
+        "artifact": {
+          "bytes": 1258452320,
+          "id": "1e4d920aaff1248b68751e49b16dae6104c5f4d3924a86a290e24b31db08113c",
+          "license": "Imported file — check its publisher's license",
+          "name": "Spark-X2.5-1.7B-Abliterated-Q4_K_M.gguf",
+          "path": "/workspace/.alt-models/Spark-X2.5-1.7B-Abliterated-Q4_K_M.gguf",
+          "pieces": [],
+          "sha256": "1e4d920aaff1248b68751e49b16dae6104c5f4d3924a86a290e24b31db08113c",
+          "source": null,
+          "uncensored_claim": true
+        },
+        "context": 2048,
+        "error": "Available RAM is below this file size plus minimal runtime headroom. Select a smaller model, close other applications, or connect to an external runtime. Actual context memory needs may be higher.",
+        "gpu_measurement": "Unavailable unless a local owned runtime and nvidia-smi report process allocation",
+        "hardware": {
+          "architecture": "x86_64",
+          "available_ram": 534110208,
+          "cpu_flags": [
+            "sse2",
+            "sse4_2",
+            "avx",
+            "avx2",
+            "avx512f"
+          ],
+          "cpu_threads": 2,
+          "driver": "Driver/free VRAM/compute capability unavailable",
+          "gpu": "No NVIDIA GPU detected; CPU mode is available",
+          "isolation": {
+            "available": false,
+            "detail": "Install bubblewrap to enable isolated checks: No such file or directory (os error 2)"
+          },
+          "libc": "2.39",
+          "notes": [
+            "RAM and discrete VRAM are separate budgets. Estimates do not guarantee fit or tool quality.",
+            "GTX 1070 is Pascal sm_61. Use a compatible CUDA 12 build or CPU runtime; CUDA 13-only binaries do not cover it.",
+            "Spark-X2.5 and MiMo are discoverable through arbitrary Hub search/compatible endpoints; publisher uncensored labels require separate verification.",
+            "The managed download defaults to CPU. Select a compatible GPU runtime and configure layers in Settings, or use an external Ollama/llama.cpp/LM Studio/ORA endpoint."
+          ],
+          "os": "linux",
+          "profiles": [
+            {
+              "context": 4096,
+              "estimated_weight_budget": 0,
+              "explanation": "One loaded model, small context, leave RAM for the desktop and tools",
+              "model_hint": "1.7–3B Q4 GGUF; verify an uncensored derivative",
+              "name": "Low memory"
+            },
+            {
+              "context": 8192,
+              "estimated_weight_budget": 0,
+              "explanation": "A starting estimate. Weight size excludes KV cache, runtime and process memory",
+              "model_hint": "3–4B Q4 GGUF; first evaluation target for 16 GB RAM",
+              "name": "Balanced"
+            },
+            {
+              "context": 16384,
+              "estimated_weight_budget": 0,
+              "explanation": "Run the capability check, then measure memory and latency. Reduce context on allocation failure",
+              "model_hint": "Use a model whose native context supports this size",
+              "name": "More context"
+            }
+          ],
+          "ram": 536870912
+        },
+        "id": "1e54426d-d530-4dd3-bc54-6c9102d635a9",
+        "model": "Spark-X2.5-1.7B-Abliterated-Q4_K_M.gguf",
+        "observed_native_context": null,
+        "provider": "openai",
+        "ram_measurement": "Sampled owned runtime from process spawn through load and generation. Sampling may miss short peaks; external servers are not measured. Null means unavailable, not zero memory use.",
+        "recovery": "The owned runtime was stopped. Reduce context/batch/layers or choose another explicitly selected model and rerun; no automatic substitution occurred.",
+        "requested_context": 2048,
+        "sampled_peak_runtime_rss_bytes": null,
+        "sampled_peak_runtime_vram_bytes": null,
+        "settings": {
+          "batch": 128,
+          "cache_k": "f16",
+          "cache_v": "f16",
+          "flash_attention": false,
+          "gpu_layers": 0,
+          "thinking": null,
+          "threads": 2
+        },
+        "task_completion": "Not measured by generation throughput; use the live project acceptance suite"
+      },
+      "owned_lifecycle_passed": false,
+      "repeat": 1
+    }
+  ],
+  "saved_report": "/workspace/.alt-evaluations/v5/low-memory-measured/state/evaluations/qualification-2a74e037-c24f-42ee-a3ca-9bc677e2064b.json",
+  "schema": 1,
+  "scope": "Measured generation and owned-runtime lifecycle, not coding reliability. Remote context is requested; only runtime-reported context is measured. Resource-limited CPU tests are not physical GPU tests.",
+  "status": "completed"
+}

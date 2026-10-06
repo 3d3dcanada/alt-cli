@@ -1,0 +1,123 @@
+{
+  "scope": "Actual browser/scanner; no inference model",
+  "records": [
+    {
+      "id": "655824fd-6420-4414-aac8-d4d29df32baf",
+      "pack": "browser",
+      "version": 1,
+      "input": {
+        "click": "#go",
+        "contains": "Ready",
+        "executable": "/usr/bin/chromium",
+        "screenshot": "/tmp/alt-pack-acceptance-7pnv56x5/state/projects/2f1080e94cb77894335909223939073612ebe8d697db378537b9861ee4082476/workflows/655824fd-6420-4414-aac8-d4d29df32baf.png",
+        "selector": "#result",
+        "url": "http://127.0.0.1:34129/"
+      },
+      "status": "findings",
+      "error": null,
+      "evidence": {
+        "command": [
+          "node",
+          "-e",
+          "// Playwright is an optional project dependency. No browser download occurs here.\nconst input = JSON.parse(process.argv[1]);\n(async () => {\n  const { chromium } = require('playwright');\n  const browser = await chromium.launch({ headless: true, executablePath: input.executable || undefined });\n  try {\n    const page = await browser.newPage();\n    const response = await page.goto(input.url, { timeout: 20000, waitUntil: 'domcontentloaded' });\n    if (!response || !response.ok()) throw new Error(`Page returned ${response && response.status()}`);\n    if (input.click) await page.locator(input.click).click({ timeout: 10000 });\n    const locator = page.locator(input.selector || 'body');\n    await locator.waitFor({ state: 'visible', timeout: 10000 });\n    const text = await locator.innerText({ timeout: 10000 });\n    if (input.contains && !text.includes(input.contains)) throw new Error(`Expected text absent: ${input.contains}`);\n    if (input.screenshot) await page.screenshot({ path: input.screenshot, fullPage: false });\n    console.log(JSON.stringify({ passed: true, url: page.url(), status: response.status(), observed: text.slice(0, 4000) }));\n  } finally { await browser.close(); }\n})().catch(error => { console.log(JSON.stringify({ passed: false, error: error.message })); process.exitCode = 1; });\n",
+          "{\"click\":\"#go\",\"contains\":\"Ready\",\"executable\":\"/usr/bin/chromium\",\"screenshot\":\"/tmp/alt-pack-acceptance-7pnv56x5/state/projects/2f1080e94cb77894335909223939073612ebe8d697db378537b9861ee4082476/workflows/655824fd-6420-4414-aac8-d4d29df32baf.png\",\"selector\":\"#result\",\"url\":\"http://127.0.0.1:34129/\"}"
+        ],
+        "terminal": {
+          "cancelled": false,
+          "elapsed_ms": 809,
+          "exit_code": 1,
+          "id": "a4be3ee3-10b6-44d5-a3ef-a36c6976d772",
+          "output": "stdout:\n{\"passed\":false,\"error\":\"Expected text absent: Ready\"}\n\nstderr:\n",
+          "output_truncated": false,
+          "timed_out": false,
+          "undoable": false
+        }
+      },
+      "findings": [
+        {
+          "id": "1e38ab06-121f-49a7-8737-6d7d7f844210",
+          "rule": "browser.expected-behavior",
+          "title": "Expected text absent: Ready",
+          "severity": "medium",
+          "confidence": "review required",
+          "path": null,
+          "line": null,
+          "evidence": "655824fd-6420-4414-aac8-d4d29df32baf",
+          "reproduction": {
+            "click": "#go",
+            "contains": "Ready",
+            "executable": "/usr/bin/chromium",
+            "screenshot": "/tmp/alt-pack-acceptance-7pnv56x5/state/projects/2f1080e94cb77894335909223939073612ebe8d697db378537b9861ee4082476/workflows/655824fd-6420-4414-aac8-d4d29df32baf.png",
+            "selector": "#result",
+            "url": "http://127.0.0.1:34129/"
+          },
+          "proposed_fix": "Review the recorded location and upstream advisory; change the implementation or dependency, then retest.",
+          "retests": []
+        }
+      ]
+    },
+    {
+      "id": "95de4ef8-88f3-47ad-bebb-ed68f5430901",
+      "pack": "browser",
+      "version": 1,
+      "input": {
+        "click": "#go",
+        "contains": "Ready",
+        "executable": "/usr/bin/chromium",
+        "screenshot": "/tmp/alt-pack-acceptance-7pnv56x5/state/projects/2f1080e94cb77894335909223939073612ebe8d697db378537b9861ee4082476/workflows/95de4ef8-88f3-47ad-bebb-ed68f5430901.png",
+        "selector": "#result",
+        "url": "http://127.0.0.1:34129/"
+      },
+      "status": "passed",
+      "error": null,
+      "evidence": {
+        "command": [
+          "node",
+          "-e",
+          "// Playwright is an optional project dependency. No browser download occurs here.\nconst input = JSON.parse(process.argv[1]);\n(async () => {\n  const { chromium } = require('playwright');\n  const browser = await chromium.launch({ headless: true, executablePath: input.executable || undefined });\n  try {\n    const page = await browser.newPage();\n    const response = await page.goto(input.url, { timeout: 20000, waitUntil: 'domcontentloaded' });\n    if (!response || !response.ok()) throw new Error(`Page returned ${response && response.status()}`);\n    if (input.click) await page.locator(input.click).click({ timeout: 10000 });\n    const locator = page.locator(input.selector || 'body');\n    await locator.waitFor({ state: 'visible', timeout: 10000 });\n    const text = await locator.innerText({ timeout: 10000 });\n    if (input.contains && !text.includes(input.contains)) throw new Error(`Expected text absent: ${input.contains}`);\n    if (input.screenshot) await page.screenshot({ path: input.screenshot, fullPage: false });\n    console.log(JSON.stringify({ passed: true, url: page.url(), status: response.status(), observed: text.slice(0, 4000) }));\n  } finally { await browser.close(); }\n})().catch(error => { console.log(JSON.stringify({ passed: false, error: error.message })); process.exitCode = 1; });\n",
+          "{\"click\":\"#go\",\"contains\":\"Ready\",\"executable\":\"/usr/bin/chromium\",\"screenshot\":\"/tmp/alt-pack-acceptance-7pnv56x5/state/projects/2f1080e94cb77894335909223939073612ebe8d697db378537b9861ee4082476/workflows/95de4ef8-88f3-47ad-bebb-ed68f5430901.png\",\"selector\":\"#result\",\"url\":\"http://127.0.0.1:34129/\"}"
+        ],
+        "terminal": {
+          "cancelled": false,
+          "elapsed_ms": 831,
+          "exit_code": 0,
+          "id": "aae23660-4266-428f-abbe-afcfbb5053fe",
+          "output": "stdout:\n{\"passed\":true,\"url\":\"http://127.0.0.1:34129/\",\"status\":200,\"observed\":\"Ready\"}\n\nstderr:\n",
+          "output_truncated": false,
+          "timed_out": false,
+          "undoable": false
+        }
+      },
+      "findings": []
+    },
+    {
+      "id": "a47ca809-b04a-4af3-9823-6d9b0e832f84",
+      "pack": "semgrep",
+      "version": 1,
+      "input": {},
+      "status": "passed",
+      "error": null,
+      "evidence": {
+        "command": [
+          "semgrep",
+          "--json",
+          "--metrics=off",
+          "--config",
+          "/tmp/alt-pack-acceptance-7pnv56x5/state/pack-assets-v1/semgrep.yml",
+          "."
+        ],
+        "terminal": {
+          "cancelled": false,
+          "elapsed_ms": 25324,
+          "exit_code": 0,
+          "id": "5f7787c0-d0b1-49dd-b76f-ece75df6cc72",
+          "output": "stdout:\n{\"version\":\"1.140.0\",\"results\":[],\"errors\":[],\"paths\":{\"scanned\":[]},\"time\":{\"rules\":[],\"rules_parse_time\":0.0031549930572509766,\"profiling_times\":{\"config_time\":0.08645391464233398,\"core_time\":0.1685657501220703,\"ignores_time\":4.100799560546875e-05,\"total_time\":0.2552471160888672},\"fixpoint_timeouts\":[],\"targets\":[],\"total_bytes\":0,\"max_memory_bytes\":77240000},\"engine_requested\":\"OSS\",\"skipped_rules\":[]}\n\nstderr:\nRPC response indicated an error: Error handling RPC request:\nGit_wrapper.Git_error(\"Could not get files from git ls-files: exit 128; command: 'git' '-C' '/tmp/alt-pack-acceptance-7pnv56x5/project' 'ls-files' '-z' '--cached'\")\nRaised at Git_wrapper.fatal in file \"OSS/libs/git_wrapper/Git_wrapper.ml\", line 101, characters 17-38\nCalled from Find_targets.git_list_files.(fun) in file \"OSS/src/targeting/Find_targets.ml\", lines 520-522, characters 17-54\nCalled from Stdlib__List.concat_map in file \"list.ml\", line 286, characters 32-37\nCalled from Find_targets.git_list_files in file \"OSS/src/targeting/Find_targets.ml\", lines 505-532, characters 9-21\nCalled from Find_targets.git_list_tracked_files in file \"OSS/src/targeting/Find_targets.ml\" (inlined), lines 553-554, characters 2-17\nCalled from Find_targets.get_targets_for_project in file \"OSS/src/targeting/Find_targets.ml\", line 804, characters 4-78\nCalled from List_.fast_map in file \"OSS/libs/collections/List_.ml\", line 79, characters 17-20\nCalled from Find_targets.get_targets in file \"OSS/src/targeting/Find_targets.ml\", lines 865-866, characters 2-50\nCalled from Core_scan.targets_of_scanning_roots in file \"OSS/src/core_scan/Core_scan.ml\", line 324, characters 4-63\nCalled from Core_scan.get_targets_for_pysemgrep in file \"OSS/src/core_scan/Core_scan.ml\", line 334, characters 4-44\nCalled from RPC.handle_call in file \"OSS/src/rpc/RPC.ml\", line 118, characters 25-77\nCalled from RPC.handle_single_request in file \"OSS/src/rpc/RPC.ml\", line 171, characters 8-29\n\nFailed to obtain target files from semgrep-core\n               \n               \n\u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510\n\u2502 Scan Status \u2502\n\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518\n  Scanning 0 files tracked by git with 2 Code rules:\n  Nothing to scan.\n                \n                \n\u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510\n\u2502 Scan Summary \u2502\n\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518\n\u2705 Scan completed successfully.\n \u2022 Findings: 0 (0 blocking)\n \u2022 Rules run: 2\n \u2022 Targets scanned: 0\n \u2022 Parsed lines: an unknown percentage\n \u2022 No ignore information available\nRan 2 rules on 0 files: 0 findings.\n",
+          "output_truncated": false,
+          "timed_out": false,
+          "undoable": false
+        }
+      },
+      "findings": []
+    }
+  ]
+}

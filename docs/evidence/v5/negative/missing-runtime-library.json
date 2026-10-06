@@ -1,0 +1,116 @@
+{
+  "contexts": [
+    16384
+  ],
+  "guidance": [
+    {
+      "context": 16384,
+      "repeat": 1,
+      "text": "Not qualified for owned operation by this attempt. Inspect the error or complete external lifecycle checks before relying on it."
+    }
+  ],
+  "id": "f46c83f8-69fd-41b7-bae2-fa5757d67b1c",
+  "repeats": 1,
+  "rows": [
+    {
+      "context": 16384,
+      "generation_passed": false,
+      "lifecycle": {
+        "reason": "Generation failed or cancelled",
+        "status": "unmeasured"
+      },
+      "measurement": {
+        "alt_version": "0.5.0",
+        "artifact": {
+          "bytes": 1258452320,
+          "id": "1e4d920aaff1248b68751e49b16dae6104c5f4d3924a86a290e24b31db08113c",
+          "license": "Imported file — check its publisher's license",
+          "name": "Spark-X2.5-1.7B-Abliterated-Q4_K_M.gguf",
+          "path": "/workspace/.alt-models/Spark-X2.5-1.7B-Abliterated-Q4_K_M.gguf",
+          "pieces": [],
+          "sha256": "1e4d920aaff1248b68751e49b16dae6104c5f4d3924a86a290e24b31db08113c",
+          "source": null,
+          "uncensored_claim": true
+        },
+        "context": 16384,
+        "error": "Local runtime stopped (exit status: 127). If GPU initialization failed, choose a compatible runtime in Settings or select CPU (0 GPU layers); for allocation failures reduce context, batch or layers. The selected model was not changed. Details: /workspace/.alt-tools/llama-b11429/llama-b11429/llama-server: error while loading shared libraries: libgomp.so.1: cannot open shared object file: No such file or directory\n",
+        "gpu_measurement": "Unavailable unless a local owned runtime and nvidia-smi report process allocation",
+        "hardware": {
+          "architecture": "x86_64",
+          "available_ram": 8587251712,
+          "cpu_flags": [
+            "sse2",
+            "sse4_2",
+            "avx",
+            "avx2",
+            "avx512f"
+          ],
+          "cpu_threads": 2,
+          "driver": "Driver/free VRAM/compute capability unavailable",
+          "gpu": "No NVIDIA GPU detected; CPU mode is available",
+          "isolation": {
+            "available": false,
+            "detail": "Install bubblewrap to enable isolated checks: No such file or directory (os error 2)"
+          },
+          "libc": "2.39",
+          "notes": [
+            "RAM and discrete VRAM are separate budgets. Estimates do not guarantee fit or tool quality.",
+            "GTX 1070 is Pascal sm_61. Use a compatible CUDA 12 build or CPU runtime; CUDA 13-only binaries do not cover it.",
+            "Spark-X2.5 and MiMo are discoverable through arbitrary Hub search/compatible endpoints; publisher uncensored labels require separate verification.",
+            "The managed download defaults to CPU. Select a compatible GPU runtime and configure layers in Settings, or use an external Ollama/llama.cpp/LM Studio/ORA endpoint."
+          ],
+          "os": "linux",
+          "profiles": [
+            {
+              "context": 4096,
+              "estimated_weight_budget": 2147483648,
+              "explanation": "One loaded model, small context, leave RAM for the desktop and tools",
+              "model_hint": "1.7–3B Q4 GGUF; verify an uncensored derivative",
+              "name": "Low memory"
+            },
+            {
+              "context": 8192,
+              "estimated_weight_budget": 3219884032,
+              "explanation": "A starting estimate. Weight size excludes KV cache, runtime and process memory",
+              "model_hint": "3–4B Q4 GGUF; first evaluation target for 16 GB RAM",
+              "name": "Balanced"
+            },
+            {
+              "context": 16384,
+              "estimated_weight_budget": 2146142208,
+              "explanation": "Run the capability check, then measure memory and latency. Reduce context on allocation failure",
+              "model_hint": "Use a model whose native context supports this size",
+              "name": "More context"
+            }
+          ],
+          "ram": 8589934592
+        },
+        "id": "6d618be2-65e4-450d-97bd-811f3219623f",
+        "model": "Spark-X2.5-1.7B-Abliterated-Q4_K_M.gguf",
+        "observed_native_context": null,
+        "provider": "openai",
+        "ram_measurement": "Sampled owned runtime from process spawn through load and generation. Sampling may miss short peaks; external servers are not measured. Null means unavailable, not zero memory use.",
+        "recovery": "The owned runtime was stopped. Reduce context/batch/layers or choose another explicitly selected model and rerun; no automatic substitution occurred.",
+        "requested_context": 16384,
+        "sampled_peak_runtime_rss_bytes": 118784,
+        "sampled_peak_runtime_vram_bytes": null,
+        "settings": {
+          "batch": 128,
+          "cache_k": "f16",
+          "cache_v": "f16",
+          "flash_attention": false,
+          "gpu_layers": 0,
+          "thinking": null,
+          "threads": 2
+        },
+        "task_completion": "Not measured by generation throughput; use the live project acceptance suite"
+      },
+      "owned_lifecycle_passed": false,
+      "repeat": 1
+    }
+  ],
+  "saved_report": "/workspace/.alt-evaluations/v5/qualification-spark-8g-16k/evaluations/qualification-f46c83f8-69fd-41b7-bae2-fa5757d67b1c.json",
+  "schema": 1,
+  "scope": "Measured generation and owned-runtime lifecycle, not coding reliability. Remote context is requested; only runtime-reported context is measured. Resource-limited CPU tests are not physical GPU tests.",
+  "status": "completed"
+}

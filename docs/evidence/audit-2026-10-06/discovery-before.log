@@ -1,0 +1,22 @@
+   Compiling alt-cli v0.4.0 (/workspace/alt-cli)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.93s
+     Running tests/project_services.rs (target/debug/deps/project_services-e6f3fed15232d596)
+
+running 1 test
+test discovery_enforces_file_limit_in_a_flat_directory_without_partial_index_commit ... FAILED
+
+failures:
+
+---- discovery_enforces_file_limit_in_a_flat_directory_without_partial_index_commit stdout ----
+
+thread 'discovery_enforces_file_limit_in_a_flat_directory_without_partial_index_commit' (119853) panicked at tests/project_services.rs:96:5:
+50,001 files must exceed the documented limit
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    discovery_enforces_file_limit_in_a_flat_directory_without_partial_index_commit
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 6 filtered out; finished in 0.30s
+
+error: test failed, to rerun pass `--test project_services`
