@@ -1,0 +1,44 @@
+{
+  "id": "dba4792b-b29f-4755-b16e-07d53d12954c",
+  "model": "Spark-X2.5-1.7B-Abliterated-Q4_K_M.gguf",
+  "endpoint": "http://127.0.0.1:33291/v1",
+  "provider": "openai",
+  "context": 8192,
+  "artifact": {
+    "bytes": 1258452320,
+    "id": "1e4d920aaff1248b68751e49b16dae6104c5f4d3924a86a290e24b31db08113c",
+    "license": "Imported file — check its publisher's license",
+    "name": "Spark-X2.5-1.7B-Abliterated-Q4_K_M.gguf",
+    "path": "/tmp/alt-v4-candidate-models/spark/blobs/1e4d920aaff1248b68751e49b16dae6104c5f4d3924a86a290e24b31db08113c/Spark-X2.5-1.7B-Abliterated-Q4_K_M.gguf",
+    "pieces": [],
+    "sha256": "1e4d920aaff1248b68751e49b16dae6104c5f4d3924a86a290e24b31db08113c",
+    "source": null,
+    "uncensored_claim": true
+  },
+  "native_tool_call": true,
+  "tool_result_used": true,
+  "elapsed_ms": 6663,
+  "observations": [
+    {
+      "content": "I'll call the `alt_probe` tool with left=19 and right=23.\n\n",
+      "reasoning_content": "The user wants me to call alt_probe with left=19 and right=23, then report the exact sum and receipt. Let me make the call first.",
+      "role": "assistant",
+      "tool_calls": [
+        {
+          "function": {
+            "arguments": "{\"left\":19,\"right\":23}",
+            "name": "alt_probe"
+          },
+          "id": "eJO0YE6brUeeVoCjefLsQCSb0qLN07km",
+          "type": "function"
+        }
+      ]
+    },
+    {
+      "content": "Here are the exact results from the `alt_probe` tool:\n\n- **Sum:** 42\n- **Receipt:** `ALT_PROBE_dba4792b`",
+      "reasoning_content": "The tool returned the sum and receipt. I should report them exactly as returned.",
+      "role": "assistant"
+    }
+  ],
+  "error": null
+}

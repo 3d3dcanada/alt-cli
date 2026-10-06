@@ -1,0 +1,31 @@
+name: Model or runtime compatibility
+description: Share a measured model/runtime result, including failures.
+title: "[Compatibility] "
+body:
+  - type: input
+    id: version
+    attributes:
+      label: Alt version or commit
+    validations:
+      required: true
+  - type: textarea
+    id: configuration
+    attributes:
+      label: Exact configuration
+      description: Model repository/file/hash, quantization, template, runtime/version, native context and selected tool focus. Never include an API key.
+    validations:
+      required: true
+  - type: textarea
+    id: hardware
+    attributes:
+      label: Actual hardware
+      description: CPU, RAM, GPU/VRAM, driver, OS and whether these are physical resources or container limits.
+    validations:
+      required: true
+  - type: textarea
+    id: measurement
+    attributes:
+      label: What was measured?
+      description: Separate loading/generation/tool use from independently checked task correctness. Include failed attempts and the total number of attempts.
+    validations:
+      required: true

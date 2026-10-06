@@ -1,0 +1,24 @@
+   Compiling alt-cli v0.4.0 (/workspace/alt-cli)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 10.58s
+     Running unittests src/lib.rs (target/debug/deps/alt_cli-4e43613ce822ffce)
+
+running 1 test
+test tui::input::tests::pasted_source_preserves_tabs_and_accepts_the_documented_editor_limit ... FAILED
+
+failures:
+
+---- tui::input::tests::pasted_source_preserves_tabs_and_accepts_the_documented_editor_limit stdout ----
+
+thread 'tui::input::tests::pasted_source_preserves_tabs_and_accepts_the_documented_editor_limit' (120199) panicked at src/tui/input.rs:157:9:
+assertion `left == right` failed: A pasted Makefile must retain its recipe tab
+  left: "all:\n printf 'hello\\n'\n"
+ right: "all:\n\tprintf 'hello\\n'\n"
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    tui::input::tests::pasted_source_preserves_tabs_and_accepts_the_documented_editor_limit
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 7 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `--lib`

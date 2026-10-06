@@ -1,0 +1,65 @@
+{
+  "checkpoint": "Qwen3-4B-Instruct-2507-heretic.Q4_K_M.gguf",
+  "sha256": "5d38e532cf33a5b56760bc7803aaabffb240d0604f1e389e4db148830c2bb747",
+  "uncensored_status": "publisher claim, explicitly selected for evaluation",
+  "context_tokens": 8192,
+  "mode": "managed llama.cpp CPU",
+  "session": "31594e6a-1a30-4648-b7f6-36d942d7d979",
+  "repair": {
+    "elapsed_seconds": 88.77,
+    "sampled_process_tree_peak_rss_bytes": 5746601984,
+    "tool_calls": [
+      {
+        "title": "tree \u00b7 .",
+        "input": {
+          "depth": 2,
+          "path": "."
+        }
+      },
+      {
+        "title": "shell \u00b7 python3 calculator.py",
+        "input": {
+          "command": "python3 calculator.py"
+        }
+      },
+      {
+        "title": "shell \u00b7 cat calculator.py",
+        "input": {
+          "command": "cat calculator.py"
+        }
+      },
+      {
+        "title": "edit \u00b7 calculator.py",
+        "input": {
+          "after": "def total(items):\n    return sum(items)",
+          "before": "def total(items):\n    return sum(items) + 1",
+          "path": "calculator.py"
+        }
+      },
+      {
+        "title": "shell \u00b7 python3 calculator.py",
+        "input": {
+          "command": "python3 calculator.py"
+        }
+      }
+    ],
+    "owned_processes_stopped": true,
+    "observed_child_process_count": 2
+  },
+  "resume": {
+    "elapsed_seconds": 64.73,
+    "sampled_process_tree_peak_rss_bytes": 5700702208,
+    "tool_calls": [
+      {
+        "title": "shell \u00b7 python3 calculator.py",
+        "input": {
+          "command": "python3 calculator.py"
+        }
+      }
+    ],
+    "owned_processes_stopped": true,
+    "observed_child_process_count": 2
+  },
+  "independent_check": "passed",
+  "gtx_1070_tested": false
+}

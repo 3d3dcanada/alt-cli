@@ -1,0 +1,60 @@
+{
+  "version": "0.3.0",
+  "date": "2026-10-06",
+  "scope": "Linux x86_64; current cloud instance and disposable Debian containers",
+  "setup": {
+    "command": "bash scripts/setup-cloud.sh",
+    "passed": true,
+    "rust_tests_passed": 21,
+    "rust_tests_failed": 0,
+    "formatting_passed": true,
+    "strict_clippy_passed": true,
+    "original_tui_pty_passed": true,
+    "task_tui_pty_passed": true,
+    "real_goose_openai_fixture_passed": true,
+    "real_goose_ollama_fixture_passed": true,
+    "fixture_note": "Deterministic protocol fixtures contain no model weights; live inference reports are separate.",
+    "crowded_history_current_evidence_and_chronology_regression_passed": true,
+    "final_source_tests_passed": 21,
+    "memory_revision_goose_openai_and_ollama_passed": true
+  },
+  "portable_binary": {
+    "command": "bash scripts/build-portable.sh",
+    "build_image": "rust:1.85.1-bullseye@sha256:033a8da97a1e4d53d51fcef8f8eefaba69ff2208fbee583c4ea84f704b307db2",
+    "compiler": "mounted pinned Rust 1.99.0; image provides Debian 11 C/C++ ABI",
+    "sha256": "56231b9f6ab5f4c8caf230f391c91be25ac512ef371e51459801803f3f28c7fe",
+    "measured_glibc_minimum": "2.30",
+    "debian_11_frontend_and_goose_start_passed": true,
+    "debian_11_runtime_preflight_rejected_before_download": true,
+    "debian_12_frontend_goose_runtime_start_passed": true,
+    "debian_12_real_goose_protocol_fixture_passed": true,
+    "managed_goose_glibc_minimum": "2.28",
+    "managed_runtime_glibc_minimum": "2.34",
+    "container_note": "Shared host kernel/CPU; these checks do not establish every older Linux kernel or physical machine.",
+    "debian_12_memory_revision_fixture_passed": true
+  },
+  "package": {
+    "artifact": "dist/alt-0.3.0-linux-x86_64.tar.gz",
+    "checksum_sidecar_verified": true,
+    "install_twice_under_temporary_prefix_passed": true,
+    "installed_binary_identity_verified": true,
+    "documentation_and_dependency_licenses_verified": true,
+    "published": false
+  },
+  "isolation": {
+    "command": "scripts/smoke_isolation.py --alt target/portable-glibc231/release/alt",
+    "environment": "Debian 12 Python container, seccomp=unconfined, CAP_SYS_ADMIN; nested user namespaces enabled",
+    "passed": true,
+    "host_file_hidden": true,
+    "network_blocked": true,
+    "original_source_unchanged": true,
+    "cloud_host_unavailable_isolation_fails_closed": true,
+    "note": "Optional Guided mode only; Full access intentionally uses normal host permissions."
+  },
+  "hardware_limits": {
+    "gtx_1070_tested": false,
+    "gpu_inference_tested": false,
+    "native_long_context_benchmark_completed": false,
+    "all_models_certified": false
+  }
+}

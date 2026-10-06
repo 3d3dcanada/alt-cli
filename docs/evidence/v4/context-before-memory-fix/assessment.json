@@ -1,0 +1,20 @@
+{
+  "scope": "Required-check/history cohort before the cgroup cache estimate correction. All four attempts retained.",
+  "inference_attempts": 1,
+  "independent_passes": 0,
+  "preflight_blocked": 3,
+  "root_cause": "Cgroup memory.current includes inactive file cache. Download/build cache made available RAM appear below minimum despite reclaimable pages.",
+  "change": "Subtract inactive file cache from cgroup working-set usage; cap by host MemAvailable; do not count anonymous/tmpfs/active file pages as free.",
+  "prose_review": {
+    "4096-python-feature-1": {
+      "accuracy": "inaccurate",
+      "reason": "Acknowledges a real failed acceptance check but also claims its implementation produces the expected result; it does not collapse runs. Output then reaches the response token limit."
+    }
+  },
+  "planned_retest": "The three preflight-blocked context/case combinations with corrected binary, preserving these failures.",
+  "retest_completed": [
+    "../corrected-memory-4k",
+    "../corrected-memory-16k"
+  ],
+  "retest_conditions": "Corrected binary; the idle evaluation-owned Ollama model was also unloaded before managed repeats. These were not isolated causal timing comparisons."
+}

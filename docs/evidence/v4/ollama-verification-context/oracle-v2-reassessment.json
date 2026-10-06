@@ -1,0 +1,53 @@
+{
+  "oracle_version": 2,
+  "method": "Recreated exact saved sources in disposable folders and ran stronger assertions. Original sources/events/oracles/reports preserved. No new model inference.",
+  "original_passed": 2,
+  "current_passed": 0,
+  "total": 4,
+  "attempts": [
+    {
+      "attempt": "16384-python-dependency-1",
+      "original_report_sha256": "934ac23f0ad082258632b45798bfe9026cf0d98504e0d561cdccdbd7d0ff5fed",
+      "original_oracle_passed": true,
+      "current_oracle": {
+        "passed": false,
+        "exit": 1,
+        "stdout": "",
+        "stderr": "Traceback (most recent call last):\n  File \"/tmp/alt-reassessment-co52yj3b/independent/check.py\", line 7, in <module>\n    assert subprocess.check_output([sys.executable,\"app.py\"],text=True).strip()==\"cedar-project\"\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError\n"
+      }
+    },
+    {
+      "attempt": "16384-python-feature-1",
+      "original_report_sha256": "60534570f23dc7d39edf0ef2fd145b8321c15dfc223386f85aced405b77ada45",
+      "original_oracle_passed": false,
+      "current_oracle": {
+        "passed": false,
+        "exit": 1,
+        "stdout": "",
+        "stderr": "Traceback (most recent call last):\n  File \"/tmp/alt-reassessment-tlm7ucsm/independent/check.py\", line 4, in <module>\n    assert slug(\" Hello, CEDAR! \")==\"hello-cedar\"\n           ^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/tmp/alt-reassessment-tlm7ucsm/project/formatter.py\", line 2, in slug\n    raise NotImplementedError(\"slug\")\nNotImplementedError: slug\n"
+      }
+    },
+    {
+      "attempt": "4096-python-dependency-1",
+      "original_report_sha256": "238809fcd24e390f57c9157350a9d9e12c108376f1de596667dccf1190dea04a",
+      "original_oracle_passed": true,
+      "current_oracle": {
+        "passed": false,
+        "exit": 1,
+        "stdout": "",
+        "stderr": "Traceback (most recent call last):\n  File \"/tmp/alt-reassessment-t3_yunia/independent/check.py\", line 15, in <module>\n    assert importlib.import_module(\"app\").label(\"probe\")==\"ALT_BUNDLED_RECEIPT:probe\", \"label must call the bundled helper, not duplicate its logic\"\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError: label must call the bundled helper, not duplicate its logic\n"
+      }
+    },
+    {
+      "attempt": "4096-python-feature-1",
+      "original_report_sha256": "fedc52671164935f8046e94a393b752c34de000627afeb0afdfdf39006cfc366",
+      "original_oracle_passed": false,
+      "current_oracle": {
+        "passed": false,
+        "exit": 1,
+        "stdout": "",
+        "stderr": "Traceback (most recent call last):\n  File \"/tmp/alt-reassessment-i80w6avk/independent/check.py\", line 4, in <module>\n    assert slug(\" Hello, CEDAR! \")==\"hello-cedar\"\n           ^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/tmp/alt-reassessment-i80w6avk/project/formatter.py\", line 2, in slug\n    raise NotImplementedError(\"slug\")\nNotImplementedError: slug\n"
+      }
+    }
+  ]
+}

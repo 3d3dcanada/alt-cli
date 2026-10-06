@@ -1,0 +1,30 @@
+name: Scheduled parser and terminal soak
+on:
+  schedule:
+    - cron: '17 4 * * 1'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  bounded-soak:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - run: |
+          sudo mkdir -p /workspace
+          sudo chown "$USER" /workspace
+          ln -s "$GITHUB_WORKSPACE" /workspace/alt-cli
+          bash scripts/setup-cloud.sh
+          export PATH="/workspace/.cargo/bin:/workspace/.alt-tools:$PATH"
+          export CARGO_HOME=/workspace/.cargo RUSTUP_HOME=/workspace/.rustup
+          export PYTHONPATH=/workspace/.alt-tools/python
+          cargo test --locked --test parser_properties
+          cargo test --locked bounded_seeded_mutation_corpus
+          python3 scripts/soak.py --rounds 200 --output dist/scheduled-soak.json
+          python3 scripts/smoke_pressure_tui.py --rounds 100 --output dist/scheduled-ui.json
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: scheduled-soak-evidence
+          path: dist/

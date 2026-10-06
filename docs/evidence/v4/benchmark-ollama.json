@@ -1,0 +1,152 @@
+{
+  "alt_version": "0.4.0",
+  "artifact": {
+    "external_model_id": "alt-heretic-qwen3-4b",
+    "weights_verified_by_alt": false
+  },
+  "context": 8192,
+  "error": null,
+  "gpu_measurement": "Unavailable unless a local owned runtime and nvidia-smi report process allocation",
+  "hardware": {
+    "architecture": "x86_64",
+    "available_ram": 11331772416,
+    "cpu_flags": [
+      "sse2",
+      "sse4_2",
+      "avx",
+      "avx2",
+      "avx512f"
+    ],
+    "cpu_threads": 4,
+    "driver": "Driver/free VRAM/compute capability unavailable",
+    "gpu": "No NVIDIA GPU detected; CPU mode is available",
+    "isolation": {
+      "available": false,
+      "detail": "Isolation is unavailable: bwrap: setting up uid map: Read-only file system\n"
+    },
+    "libc": "2.41",
+    "notes": [
+      "RAM and discrete VRAM are separate budgets. Estimates do not guarantee fit or tool quality.",
+      "GTX 1070 is Pascal sm_61. Use a compatible CUDA 12 build or CPU runtime; CUDA 13-only binaries do not cover it.",
+      "Spark-X2.5 and MiMo are discoverable through arbitrary Hub search/compatible endpoints; publisher uncensored labels require separate verification.",
+      "The managed download defaults to CPU. Select a compatible GPU runtime and configure layers in Settings, or use an external Ollama/llama.cpp/LM Studio/ORA endpoint."
+    ],
+    "os": "linux",
+    "profiles": [
+      {
+        "context": 4096,
+        "estimated_weight_budget": 2147483648,
+        "explanation": "One loaded model, small context, leave RAM for the desktop and tools",
+        "model_hint": "1.7\u20133B Q4 GGUF; verify an uncensored derivative",
+        "name": "Low memory"
+      },
+      {
+        "context": 8192,
+        "estimated_weight_budget": 4592144384,
+        "explanation": "A starting estimate. Weight size excludes KV cache, runtime and process memory",
+        "model_hint": "3\u20134B Q4 GGUF; first evaluation target for 16 GB RAM",
+        "name": "Balanced"
+      },
+      {
+        "context": 16384,
+        "estimated_weight_budget": 3518402560,
+        "explanation": "Run the capability check, then measure memory and latency. Reduce context on allocation failure",
+        "model_hint": "Use a model whose native context supports this size",
+        "name": "More context"
+      }
+    ],
+    "ram": 34359738368
+  },
+  "id": "0776acf2-7e59-4812-b8b5-e836a3bd123a",
+  "load_and_integrity_seconds": null,
+  "model": "alt-heretic-qwen3-4b",
+  "provider": "ollama",
+  "sampled_generation_peak_runtime_rss_bytes": 0,
+  "sampled_generation_peak_runtime_vram_bytes": null,
+  "settings": {
+    "batch": 128,
+    "cache_k": "f16",
+    "cache_v": "f16",
+    "flash_attention": false,
+    "gpu_layers": 0,
+    "threads": 0
+  },
+  "task_completion": "Not measured by generation throughput; use the live project acceptance suite",
+  "trials": [
+    {
+      "generated_tokens": 153,
+      "ollama_eval_duration_ns": 13571563000,
+      "response": {
+        "created_at": "2026-10-06T12:17:40.360496315Z",
+        "done": true,
+        "done_reason": "stop",
+        "eval_count": 153,
+        "eval_duration": 13571563000,
+        "load_duration": 7857867919,
+        "message": {
+          "content": "1. **Define clear test objectives and success criteria** \u2013 Identify what you're testing (e.g., functionality, performance, security) and set measurable goals to determine success.\n\n2. **Create a test plan with key scenarios** \u2013 Outline test cases covering normal, edge, and error conditions, including user flows and failure paths.\n\n3. **Write and execute unit and integration tests** \u2013 Test individual components and their interactions to catch bugs early in development.\n\n4. **Perform manual testing on key user paths** \u2013 Simulate real user interactions to verify usability, navigation, and expected behavior in different environments.\n\n5. **Review results and iterate** \u2013 Analyze test outcomes, document issues, and refine the software or test cases based on feedback before final deployment.",
+          "role": "assistant"
+        },
+        "model": "alt-heretic-qwen3-4b",
+        "prompt_eval_cached_count": 0,
+        "prompt_eval_count": 24,
+        "prompt_eval_duration": 692899000,
+        "total_duration": 22154755467
+      },
+      "runtime_timings": null,
+      "seconds_including_prompt_processing": 22.158818676,
+      "tokens_per_wall_second": 6.904700211555628,
+      "trial": 1
+    },
+    {
+      "generated_tokens": 160,
+      "ollama_eval_duration_ns": 13267456000,
+      "response": {
+        "created_at": "2026-10-06T12:17:53.814944033Z",
+        "done": true,
+        "done_reason": "length",
+        "eval_count": 160,
+        "eval_duration": 13267456000,
+        "load_duration": 1166069,
+        "message": {
+          "content": "1. **Define clear test objectives and success criteria** \u2013 Identify what you're testing (e.g., functionality, performance, security) and establish measurable goals to determine success.\n\n2. **Create a test plan with key test cases** \u2013 Outline specific scenarios, including both normal and edge cases, to ensure all core features are validated.\n\n3. **Set up a test environment** \u2013 Use a development or staging environment that mirrors production as closely as possible to avoid environment-specific issues.\n\n4. **Execute manual and automated tests** \u2013 Run both manual checks (e.g., usability, user flow) and automated scripts (e.g., API calls, form validation) to catch bugs efficiently.\n\n5. **Review results and iterate** \u2013 Analyze test outcomes, document bugs, and refine the software accordingly before",
+          "role": "assistant"
+        },
+        "model": "alt-heretic-qwen3-4b",
+        "prompt_eval_cached_count": 23,
+        "prompt_eval_count": 24,
+        "prompt_eval_duration": 59207000,
+        "total_duration": 13453148012
+      },
+      "runtime_timings": null,
+      "seconds_including_prompt_processing": 13.454178094,
+      "tokens_per_wall_second": 11.892216594884626,
+      "trial": 2
+    },
+    {
+      "generated_tokens": 160,
+      "ollama_eval_duration_ns": 11317676000,
+      "response": {
+        "created_at": "2026-10-06T12:18:05.260276931Z",
+        "done": true,
+        "done_reason": "length",
+        "eval_count": 160,
+        "eval_duration": 11317676000,
+        "load_duration": 1155294,
+        "message": {
+          "content": "1. **Define clear test objectives and success criteria** \u2013 Identify what you're testing (e.g., functionality, performance, security) and establish measurable goals to determine success.\n\n2. **Create a test plan with key test cases** \u2013 Outline specific scenarios, including both normal and edge cases, to ensure all core features are validated.\n\n3. **Set up a test environment** \u2013 Use a development or staging environment that mirrors production as closely as possible to avoid environment-specific issues.\n\n4. **Execute manual and automated tests** \u2013 Run both manual checks (e.g., usability, user flow) and automated scripts (e.g., API calls, form validation) to catch bugs efficiently.\n\n5. **Review results and iterate** \u2013 Analyze test outcomes, document bugs, and refine the software accordingly before",
+          "role": "assistant"
+        },
+        "model": "alt-heretic-qwen3-4b",
+        "prompt_eval_cached_count": 23,
+        "prompt_eval_count": 24,
+        "prompt_eval_duration": 48583000,
+        "total_duration": 11443984890
+      },
+      "runtime_timings": null,
+      "seconds_including_prompt_processing": 11.444956599,
+      "tokens_per_wall_second": 13.979956902062867,
+      "trial": 3
+    }
+  ]
+}

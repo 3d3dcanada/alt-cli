@@ -1,0 +1,32 @@
+{
+  "command": [
+    "docker",
+    "run",
+    "--rm",
+    "--network",
+    "none",
+    "--memory",
+    "8g",
+    "--memory-swap",
+    "8g",
+    "--cpus",
+    "2",
+    "-v",
+    "/workspace:/workspace",
+    "-w",
+    "/workspace/alt-cli",
+    "ubuntu:24.04",
+    "/workspace/alt-cli/target/portable-glibc231/release/alt",
+    "--data-dir",
+    "/workspace/.alt-evaluations/v5/qualification-spark-8g-16k",
+    "qualify",
+    "--contexts",
+    "16384",
+    "--repeats",
+    "1"
+  ],
+  "exit": 1,
+  "binary_sha256": "92a572333603956382d579fcd8d4d655873f89722698223221640b0ea6ba31b1",
+  "scope": "CPU with real cgroup memory and CPU limits on the shared cloud host. Not a physical older PC or GPU measurement.",
+  "profile_unchanged": true
+}

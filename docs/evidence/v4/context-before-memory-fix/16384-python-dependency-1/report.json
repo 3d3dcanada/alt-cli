@@ -1,0 +1,40 @@
+{
+  "case": "python-dependency",
+  "context": 16384,
+  "repeat": 1,
+  "passed": false,
+  "cli_exit": 1,
+  "wall_seconds": 0.22,
+  "outer_timeout": false,
+  "sampled_alt_tree_peak_rss_bytes": 0,
+  "rss_scope": "Alt, Goose and managed inference runtime",
+  "vram": null,
+  "oracle_unchanged": true,
+  "before": {
+    "passed": false,
+    "exit": 1,
+    "stdout": "",
+    "stderr": "Traceback (most recent call last):\n  File \"/workspace/.alt-evaluations/v4/final-llama-verification-context/16384-python-dependency-1/independent/check.py\", line 3, in <module>\n    from app import label\n  File \"/workspace/.alt-evaluations/v4/final-llama-verification-context/16384-python-dependency-1/project/app.py\", line 1, in <module>\n    from slugify import slugify\nModuleNotFoundError: No module named 'slugify'\n"
+  },
+  "after": {
+    "passed": false,
+    "exit": 1,
+    "stdout": "",
+    "stderr": "Traceback (most recent call last):\n  File \"/workspace/.alt-evaluations/v4/final-llama-verification-context/16384-python-dependency-1/independent/check.py\", line 3, in <module>\n    from app import label\n  File \"/workspace/.alt-evaluations/v4/final-llama-verification-context/16384-python-dependency-1/project/app.py\", line 1, in <module>\n    from slugify import slugify\nModuleNotFoundError: No module named 'slugify'\n"
+  },
+  "tool_calls": [],
+  "failed_tool_updates": 0,
+  "final_prose": "",
+  "prose_accuracy": "Retained for manual assessment; not inferred from process exit",
+  "resulting_source": {
+    "app.py": "from slugify import slugify\n\ndef label(text):\n    return slugify(text)\n\nif __name__ == '__main__':\n    print(label('Cedar Project'))\n",
+    "vendor/__init__.py": "",
+    "vendor/slugify.py": "def slugify(text):\n    return \"-\".join(text.lower().split())\n"
+  },
+  "context_views": [],
+  "independent_alt_verification": {
+    "exit": 1,
+    "stdout": "{\n  \"complete\": false,\n  \"requirements\": [\n    {\n      \"requirement\": {\n        \"name\": \"requested-behavior\",\n        \"description\": \"Fix app.py so it runs without installing any third-party dependency. The slugify import is unavailable; use the bundled vendor/slugify.py helper and preserve the app entry point and helper behavior. Running python3 app.py must print cedar-project.\",\n        \"check_name\": \"acceptance\"\n      },\n      \"status\": \"failed\",\n      \"evidence\": \"0ba55f1d-d0fd-4b7c-8657-74e42535a823\"\n    }\n  ],\n  \"source_snapshot\": \"fa956d3e0afcdb512ce01a6c8552d0f48fa84fad5101e71bdaf1cabf77736e45\"\n}\n",
+    "stderr": "alt: Required checks are incomplete; inspect the verification report\n"
+  }
+}

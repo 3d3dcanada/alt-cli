@@ -1,0 +1,22 @@
+   Compiling alt-cli v0.4.0 (/workspace/alt-cli)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.31s
+     Running tests/jobs.rs (target/debug/deps/jobs-c83718c92b72332f)
+
+running 1 test
+test disconnected_control_client_does_not_terminate_persistent_job ... FAILED
+
+failures:
+
+---- disconnected_control_client_does_not_terminate_persistent_job stdout ----
+
+thread 'disconnected_control_client_does_not_terminate_persistent_job' (119738) panicked at tests/jobs.rs:157:10:
+Another client must still be able to attach: Connection reset by peer (os error 104)
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    disconnected_control_client_does_not_terminate_persistent_job
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 4 filtered out; finished in 0.06s
+
+error: test failed, to rerun pass `--test jobs`

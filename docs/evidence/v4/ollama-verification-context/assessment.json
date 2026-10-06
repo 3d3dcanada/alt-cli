@@ -1,0 +1,21 @@
+{
+  "scope": "These are Alt/engine-budget 4K/16K trials against an 8K native Ollama tag using the old Goose Ollama client. Do not interpret them as native 4K/16K measurements.",
+  "prose_review": {
+    "4096-python-feature-1": {
+      "accuracy": "inaccurate",
+      "reason": "Says the stub was replaced but no edit ran; response times out while printing proposed code."
+    },
+    "4096-python-dependency-1": {
+      "accuracy": "inaccurate",
+      "reason": "Correctly reports a v1 check pass but incorrectly says the bundled helper is used; code inlines its logic. Stronger oracle rejects it."
+    },
+    "16384-python-feature-1": {
+      "accuracy": "inaccurate",
+      "reason": "Claims formatter.py was replaced, but saved source remains the original stub and no edit applied."
+    },
+    "16384-python-dependency-1": {
+      "accuracy": "inaccurate",
+      "reason": "Correctly reports a v1 check pass but says app.py prints the single expected output; the file duplicates the entry point and prints it twice. Stronger oracle rejects it."
+    }
+  }
+}

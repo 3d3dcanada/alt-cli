@@ -1,0 +1,214 @@
+{
+  "version": "0.4.0-beta",
+  "date": "2026-10-06",
+  "binary": {
+    "path": "target/portable-glibc231/release/alt",
+    "sha256": "4967e6390509ecc88ba8621717eb9a45e8b807c23a5086dc95ce25b14fb3c96e",
+    "glibc_minimum": "2.30",
+    "rust": "1.99.0"
+  },
+  "rust": {
+    "passed": 52,
+    "failed": 0,
+    "fmt": "passed",
+    "clippy": "passed --all-targets --locked -- -D warnings",
+    "scope": "Final Rust source including inactive-file-cache cgroup memory regression; complete Cargo test, formatting and strict Clippy passed."
+  },
+  "acceptance": {
+    "first_run_pty": "passed debug and final portable binary",
+    "task_pty": "passed debug and final portable binary",
+    "workbench_pty": "passed debug and installed signed-test portable package",
+    "independent_project_oracles": {
+      "version": 2,
+      "defects_rejected": 6,
+      "known_repairs_accepted": 6,
+      "incomplete_repairs_rejected": 4,
+      "equivalent_helper_import_accepted": true,
+      "reassessments": "Original reports/oracles preserved; v2 source replay saved separately."
+    },
+    "real_goose_protocols": {
+      "openai": "passed",
+      "ollama": "passed",
+      "requests_per_provider": 12,
+      "scope": "Real engine and native/external tools; deterministic HTTP provider, no model weights",
+      "debian12_container": "both passed on final portable binary"
+    },
+    "actual_rust_analyzer": "references, checkpointed rename and independent Cargo check passed",
+    "ssh_and_tmux": "both passed on final portable binary",
+    "browser_semgrep": "actual Chromium interaction and Semgrep defect/correction passed; original zero-scan false pass preserved and fixed",
+    "dependency_auditors": "real pip-audit vulnerable requirements; npm vulnerable/clean lockfile passed",
+    "isolation": "actual hidden-host/network denial and unchanged source in disposable namespace-enabled Debian12 container; direct cloud isolation unavailable",
+    "fault_injection": "ENOSPC and abrupt process exit before/after edit and undo rename boundaries passed",
+    "storage": "migration, consistent backup/restore, malformed archives and retention including oversized-event preservation passed",
+    "multipart_auth_cache": "verified resumable multipart and Hub-origin scoping fixtures passed; actual private credentials unavailable",
+    "container_memory": "Regression plus actual 4K/16K managed re-evaluation passed load preflight; original blocked attempts retained."
+  },
+  "package": {
+    "prior_version": "0.3.0",
+    "test_signature": "ephemeral RSA2048; archive and contents verification passed, tampering rejected",
+    "unexpected_or_linked_payload": "rejected before mutation",
+    "upgrade_rollback": "actual 0.3 to 0.4 to 0.3 to 0.4 and repeated install passed; source/state preserved",
+    "installed_tui": "passed",
+    "unsigned_reproducibility": "passed: two identical-input archives have identical SHA256; signing-disabled rebuild removes stale .sig",
+    "production_signed": false,
+    "published": false,
+    "final_receipt": "dist/release-verification.json, written after final docs/archive to avoid a self-referential archive hash"
+  },
+  "external_acceptance": {
+    "physical_gtx1070": false,
+    "gpu_speed_fit_or_real_oom": false,
+    "credentialed_private_hub": false,
+    "lm_studio": false,
+    "spark_mimo_derivative_inference": true,
+    "remote_github_actions": false,
+    "fresh_task_environment_restore": false,
+    "lm_studio_reason": "Official installer endpoint blocked by environment HTTP proxy (403)"
+  },
+  "cloud_configuration": {
+    "saved": true,
+    "requires_publish": true,
+    "setup": "bash scripts/setup-cloud.sh",
+    "start_instructions": "Final 0.4 instructions saved, 52 tests, writable data path, retained Qwen/Spark, actual Ollama context/client scope; existing repositories/network/credentials preserved."
+  },
+  "live_evaluation": {
+    "status": "complete",
+    "cohorts": [
+      {
+        "evidence": "llama-projects",
+        "attempts": 12,
+        "original_oracle_passed": 3,
+        "binary_sha256": "6fab723961bbc16caa6b6800c866d3ecf3eaf719ceafbe0bedb7eddf8c7eb11e",
+        "oracle_version": 1,
+        "cli_completed": 10,
+        "v2_reassessed_passed": 2
+      },
+      {
+        "evidence": "ollama-projects",
+        "attempts": 12,
+        "original_oracle_passed": 2,
+        "binary_sha256": "6fab723961bbc16caa6b6800c866d3ecf3eaf719ceafbe0bedb7eddf8c7eb11e",
+        "oracle_version": 1,
+        "cli_completed": 9,
+        "v2_reassessed_passed": 2
+      },
+      {
+        "evidence": "context-before-memory-fix",
+        "attempts": 4,
+        "original_oracle_passed": 0,
+        "binary_sha256": "78ec3771989525662397239bd3b47e89194d1c81afdfb968b861598eade7b380",
+        "oracle_version": 1,
+        "cli_completed": 1
+      },
+      {
+        "evidence": "ollama-verification-context",
+        "attempts": 4,
+        "original_oracle_passed": 2,
+        "binary_sha256": "78ec3771989525662397239bd3b47e89194d1c81afdfb968b861598eade7b380",
+        "oracle_version": 1,
+        "cli_completed": 3,
+        "v2_reassessed_passed": 0
+      },
+      {
+        "evidence": "corrected-memory-4k",
+        "attempts": 1,
+        "original_oracle_passed": 1,
+        "binary_sha256": "eca348474df2af13eabcdb902718ce8961cc38ddbdc184fda593478961ff6286",
+        "oracle_version": 2,
+        "cli_completed": 1
+      },
+      {
+        "evidence": "corrected-memory-16k",
+        "attempts": 2,
+        "original_oracle_passed": 1,
+        "binary_sha256": "eca348474df2af13eabcdb902718ce8961cc38ddbdc184fda593478961ff6286",
+        "oracle_version": 2,
+        "cli_completed": 1
+      },
+      {
+        "evidence": "candidate-spark/projects",
+        "attempts": 2,
+        "original_oracle_passed": 1,
+        "binary_sha256": "6f5c730ca07c523042f5b982453d5cb277aa88d224541133fa2ef191bf9b37cc",
+        "oracle_version": 2,
+        "cli_completed": 1
+      },
+      {
+        "evidence": "candidate-mimo/projects",
+        "attempts": 2,
+        "original_oracle_passed": 2,
+        "binary_sha256": "4967e6390509ecc88ba8621717eb9a45e8b807c23a5086dc95ce25b14fb3c96e",
+        "oracle_version": 2,
+        "cli_completed": 0
+      },
+      {
+        "evidence": "corrected-ollama-4096",
+        "attempts": 1,
+        "original_oracle_passed": 1,
+        "binary_sha256": "4967e6390509ecc88ba8621717eb9a45e8b807c23a5086dc95ce25b14fb3c96e",
+        "oracle_version": 2,
+        "cli_completed": 1
+      },
+      {
+        "evidence": "corrected-ollama-16384",
+        "attempts": 1,
+        "original_oracle_passed": 0,
+        "binary_sha256": "4967e6390509ecc88ba8621717eb9a45e8b807c23a5086dc95ce25b14fb3c96e",
+        "oracle_version": 2,
+        "cli_completed": 0
+      }
+    ],
+    "total_retained_cohort_attempts": 41,
+    "preflight_blocked_attempts": 3,
+    "separate_interrupted_development_attempt": 1,
+    "scope": "Do not aggregate success rates across different oracles/models/cases/context/client versions. Three blocked attempts performed no inference; every retry is separate. CPU/shared-host only.",
+    "all_artifacts": "Explicit publisher-labelled uncensored/abliterated GGUFs; SHA256 verified; no fallback",
+    "model_families": [
+      "Qwen3-4B-Instruct-2507 Heretic",
+      "Spark-X2.5-1.7B Abliterated",
+      "MiMo-V2.6-Distill-Qwen-9B Heretic"
+    ],
+    "native_tool_probes": {
+      "ollama_qwen": true,
+      "managed_spark": true,
+      "managed_mimo": true
+    },
+    "actual_ollama_context_and_output_limit": "4096 and 16384 native windows confirmed by /api/ps; 1024 and 2048 output limits captured on real requests",
+    "benchmark_scope": "Three short generation trials each on managed llama.cpp and native Ollama API; no load-time peak/external RSS/GPU measurement",
+    "source_reassessment": "Stronger v2 assertions reduce baseline llama.cpp 3/12 to 2/12 and old Ollama context 2/4 to 0/4; original reports preserved."
+  },
+  "cleanup": {
+    "active_model_engine_or_alt_processes": [],
+    "test_container": "alt-ollama-v4 stopped and auto-removed",
+    "ephemeral_weights_removed": [
+      "MiMo test download",
+      "temporary Spark copy",
+      "Ollama evaluation model store/archive"
+    ],
+    "retained_verified_weights": [
+      "/workspace/.alt-models/Qwen3-4B-Instruct-2507-heretic.Q4_K_M.gguf",
+      "/workspace/.alt-models/Spark-X2.5-1.7B-Abliterated-Q4_K_M.gguf"
+    ],
+    "frozen_sources_binaries_and_state": "Retained in /workspace/.alt-evaluations/v4; temporary weight paths in evaluation profiles may need reacquisition. Raw export excludes weights/binaries.",
+    "note": "Zombie entries under PID 1 have no live process memory and cannot be reaped by this task; no active test service remains."
+  },
+  "evidence": {
+    "protocol_terminal": "final-protocol-terminal.log",
+    "portable_terminal_lsp": "portable-terminal-language.log",
+    "older_system": "debian11.log",
+    "container_protocols": "debian12-goose.log",
+    "signing_install": "signing-upgrade-test.log",
+    "retrieval": "retrieval.json",
+    "browser_scanner": "browser-scanner.json",
+    "auditors": "dependency-auditors.json",
+    "ssh": "ssh-tmux.json",
+    "isolation": "isolation.json",
+    "component_versions": "components.json",
+    "rust": "final-rust.log",
+    "protocol_limits": "final-rust-providers.log",
+    "installed_final": "final-installed-acceptance.log",
+    "lm_studio": "lm-studio-attempt.json",
+    "current_live": "../../LIVE_EVALUATION.md",
+    "actual_native_context": "corrected-ollama-compatibility.json",
+    "revised_oracles": "oracles-v2.json"
+  }
+}

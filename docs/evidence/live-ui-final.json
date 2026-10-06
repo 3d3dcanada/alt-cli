@@ -1,0 +1,146 @@
+{
+  "result": "passed",
+  "elapsed_seconds": 97.02,
+  "real_ui_resume": true,
+  "tool_check_observed": true,
+  "terminal_restored": true,
+  "files_unchanged": true,
+  "permission_requests_answered": 1,
+  "checkpoint": "Qwen3-4B-Instruct-2507-heretic.Q4_K_M.gguf",
+  "sha256": "5d38e532cf33a5b56760bc7803aaabffb240d0604f1e389e4db148830c2bb747",
+  "events": [
+    {
+      "text": "Use the shell tool to execute this command now: python3 calculator.py && printf 'ALT_FRESH_53028e90e13f\\n'. Report its exact output. This is a new check; earlier results do not count. Do not change files.",
+      "type": "user"
+    },
+    {
+      "data": {
+        "sessionId": "20261006_1",
+        "update": {
+          "_meta": {
+            "goose": {
+              "created": 1791249776,
+              "messageId": "chatcmpl-qbXz2q3OHjri4RqRYzr3UA1EKkDe24Yn",
+              "toolCall": {
+                "extensionName": "developer",
+                "toolName": "shell"
+              }
+            }
+          },
+          "rawInput": {
+            "command": "python3 calculator.py && printf 'ALT_FRESH_53028e90e13f'"
+          },
+          "sessionUpdate": "tool_call",
+          "title": "shell · python3 calculator.py && printf 'ALT_FRESH_53028e90e13f'",
+          "toolCallId": "8EYSOdY61du2RZRhCBXNB3goRyinnd9V"
+        }
+      },
+      "type": "update"
+    },
+    {
+      "data": {
+        "options": [
+          {
+            "kind": "allow_always",
+            "name": "allow_always",
+            "optionId": "allow_always"
+          },
+          {
+            "kind": "allow_once",
+            "name": "allow_once",
+            "optionId": "allow_once"
+          },
+          {
+            "kind": "reject_once",
+            "name": "reject_once",
+            "optionId": "reject_once"
+          },
+          {
+            "kind": "reject_always",
+            "name": "reject_always",
+            "optionId": "reject_always"
+          }
+        ],
+        "sessionId": "20261006_1",
+        "toolCall": {
+          "kind": "other",
+          "rawInput": {
+            "command": "python3 calculator.py && printf 'ALT_FRESH_53028e90e13f'"
+          },
+          "status": "pending",
+          "title": "shell · python3 calculator.py && printf 'ALT_FRESH_53028e90e13f'",
+          "toolCallId": "8EYSOdY61du2RZRhCBXNB3goRyinnd9V"
+        }
+      },
+      "id": "6c905352-fcec-4b16-b6ef-f667ad125cdb",
+      "type": "permission_request"
+    },
+    {
+      "allow": true,
+      "id": "6c905352-fcec-4b16-b6ef-f667ad125cdb",
+      "type": "permission_decision"
+    },
+    {
+      "data": {
+        "sessionId": "20261006_1",
+        "update": {
+          "_meta": {
+            "toolNotification": {
+              "params": {
+                "chunks": [
+                  {
+                    "output": "ALT_MANAGED_CHECK_OK\n",
+                    "stream": "stdout"
+                  }
+                ],
+                "sequence": 1,
+                "truncated": false
+              },
+              "type": "live_output"
+            }
+          },
+          "sessionUpdate": "tool_call_update",
+          "status": "in_progress",
+          "toolCallId": "8EYSOdY61du2RZRhCBXNB3goRyinnd9V"
+        }
+      },
+      "type": "update"
+    },
+    {
+      "data": {
+        "sessionId": "20261006_1",
+        "update": {
+          "content": [
+            {
+              "content": {
+                "text": "ALT_MANAGED_CHECK_OK\nALT_FRESH_53028e90e13f",
+                "type": "text"
+              },
+              "type": "content"
+            }
+          ],
+          "rawOutput": {
+            "exit_code": 0,
+            "stderr": "",
+            "stdout": "ALT_MANAGED_CHECK_OK\nALT_FRESH_53028e90e13f"
+          },
+          "sessionUpdate": "tool_call_update",
+          "status": "completed",
+          "toolCallId": "8EYSOdY61du2RZRhCBXNB3goRyinnd9V"
+        }
+      },
+      "type": "update"
+    },
+    {
+      "data": {
+        "stopReason": "end_turn",
+        "usage": {
+          "inputTokens": 2945,
+          "outputTokens": 206,
+          "totalTokens": 3151
+        }
+      },
+      "type": "turn_end"
+    }
+  ]
+}

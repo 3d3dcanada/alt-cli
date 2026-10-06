@@ -1,0 +1,141 @@
+{
+  "oracle_version": 2,
+  "method": "Recreated exact saved sources in disposable folders and ran stronger assertions. Original sources/events/oracles/reports preserved. No new model inference.",
+  "original_passed": 2,
+  "current_passed": 2,
+  "total": 12,
+  "attempts": [
+    {
+      "attempt": "8192-javascript-config-1",
+      "original_report_sha256": "afc7c2878dcbad1b73eb90da953c6820303593ff84cfeb75b8f1d17b49bd0f0e",
+      "original_oracle_passed": false,
+      "current_oracle": {
+        "passed": false,
+        "exit": 1,
+        "stdout": "",
+        "stderr": "file:///tmp/alt-reassessment-jt9055vi/project/labels.js:1\nmodule.exports.label = value => value.trim().toUpperCase();\n^\n\nReferenceError: module is not defined in ES module scope\nThis file is being treated as an ES module because it has a '.js' file extension and '/tmp/alt-reassessment-jt9055vi/project/package.json' contains \"type\": \"module\". To treat it as a CommonJS script, rename it to use the '.cjs' file extension.\n    at file:///tmp/alt-reassessment-jt9055vi/project/labels.js:1:1\n    at ModuleJob.run (node:internal/modules/esm/module_job:439:25)\n    at async node:internal/modules/esm/loader:643:26\n    at async file:///tmp/alt-reassessment-jt9055vi/independent/check.mjs:1:15\n\nNode.js v24.19.0\n"
+      }
+    },
+    {
+      "attempt": "8192-javascript-config-2",
+      "original_report_sha256": "c0de29f73091ca92f6d48d230ce84ed7c8368f583ed1e98c72fdcd92f23b56f8",
+      "original_oracle_passed": false,
+      "current_oracle": {
+        "passed": false,
+        "exit": 1,
+        "stdout": "",
+        "stderr": "file:///tmp/alt-reassessment-kspsee64/project/labels.js:1\nmodule.exports.label = value => value.toUpperCase();\n^\n\nReferenceError: module is not defined in ES module scope\nThis file is being treated as an ES module because it has a '.js' file extension and '/tmp/alt-reassessment-kspsee64/project/package.json' contains \"type\": \"module\". To treat it as a CommonJS script, rename it to use the '.cjs' file extension.\n    at file:///tmp/alt-reassessment-kspsee64/project/labels.js:1:1\n    at ModuleJob.run (node:internal/modules/esm/module_job:439:25)\n    at async node:internal/modules/esm/loader:643:26\n    at async file:///tmp/alt-reassessment-kspsee64/independent/check.mjs:1:15\n\nNode.js v24.19.0\n"
+      }
+    },
+    {
+      "attempt": "8192-python-dependency-1",
+      "original_report_sha256": "b65a6227b44be7c8bfd8cae3b239bf87e0eeb3763d5d86a78f457fb88858a77e",
+      "original_oracle_passed": true,
+      "current_oracle": {
+        "passed": true,
+        "exit": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    {
+      "attempt": "8192-python-dependency-2",
+      "original_report_sha256": "6f26b5050b772d6c9e15c5bd0389adc5813d9ea8150e496aad12453de02f83db",
+      "original_oracle_passed": true,
+      "current_oracle": {
+        "passed": true,
+        "exit": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    {
+      "attempt": "8192-python-feature-1",
+      "original_report_sha256": "5e4df768457a53f7d0c63dee622c127f4d4d0f7731dca94c2a7fa0548a60a406",
+      "original_oracle_passed": false,
+      "current_oracle": {
+        "passed": false,
+        "exit": 1,
+        "stdout": "",
+        "stderr": "Traceback (most recent call last):\n  File \"/tmp/alt-reassessment-_0e3qn44/independent/check.py\", line 4, in <module>\n    assert slug(\" Hello, CEDAR! \")==\"hello-cedar\"\n           ^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/tmp/alt-reassessment-_0e3qn44/project/formatter.py\", line 2, in slug\n    raise NotImplementedError(\"slug\")\nNotImplementedError: slug\n"
+      }
+    },
+    {
+      "attempt": "8192-python-feature-2",
+      "original_report_sha256": "4ee9e1a0759d7dfcadb0fdc68730ce2ff4f8b42c225428733cf6c75ae683af6d",
+      "original_oracle_passed": false,
+      "current_oracle": {
+        "passed": false,
+        "exit": 1,
+        "stdout": "",
+        "stderr": "Traceback (most recent call last):\n  File \"/tmp/alt-reassessment-selpwjwt/independent/check.py\", line 4, in <module>\n    assert slug(\" Hello, CEDAR! \")==\"hello-cedar\"\n           ^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/tmp/alt-reassessment-selpwjwt/project/formatter.py\", line 2, in slug\n    raise NotImplementedError(\"slug\")\nNotImplementedError: slug\n"
+      }
+    },
+    {
+      "attempt": "8192-python-http-security-1",
+      "original_report_sha256": "6b210711e246ccd08045c6176fa7ea04cb370a643c5beaf00875365a12db22ee",
+      "original_oracle_passed": false,
+      "current_oracle": {
+        "passed": false,
+        "exit": 1,
+        "stdout": "",
+        "stderr": "Traceback (most recent call last):\n  File \"/tmp/alt-reassessment-ie0j9419/independent/check.py\", line 12, in <module>\n    assert get('/health')==(200,{'status':'ok'})\n           ^^^^^^^^^^^^^^\n  File \"/tmp/alt-reassessment-ie0j9419/independent/check.py\", line 11, in get\n    with urllib.request.urlopen(f'http://127.0.0.1:{port}'+path,timeout=2) as r:return r.status,json.load(r)\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/urllib/request.py\", line 215, in urlopen\n    return opener.open(url, data, timeout)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/urllib/request.py\", line 521, in open\n    response = meth(req, response)\n               ^^^^^^^^^^^^^^^^^^^\n  File \"/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/urllib/request.py\", line 630, in http_response\n    response = self.parent.error(\n               ^^^^^^^^^^^^^^^^^^\n  File \"/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/urllib/request.py\", line 559, in error\n    return self._call_chain(*args)\n           ^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/urllib/request.py\", line 492, in _call_chain\n    result = func(*args)\n             ^^^^^^^^^^^\n  File \"/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/urllib/request.py\", line 639, in http_error_default\n    raise HTTPError(req.full_url, code, msg, hdrs, fp)\nurllib.error.HTTPError: HTTP Error 503: Service Unavailable\n"
+      }
+    },
+    {
+      "attempt": "8192-python-http-security-2",
+      "original_report_sha256": "fca468e77efc9c20be80617303a269e1942b77ef7b7ed2a17b7f25183f2f8101",
+      "original_oracle_passed": false,
+      "current_oracle": {
+        "passed": false,
+        "exit": 1,
+        "stdout": "",
+        "stderr": "Traceback (most recent call last):\n  File \"/tmp/alt-reassessment-t85ecju7/independent/check.py\", line 12, in <module>\n    assert get('/health')==(200,{'status':'ok'})\n           ^^^^^^^^^^^^^^\n  File \"/tmp/alt-reassessment-t85ecju7/independent/check.py\", line 11, in get\n    with urllib.request.urlopen(f'http://127.0.0.1:{port}'+path,timeout=2) as r:return r.status,json.load(r)\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/urllib/request.py\", line 215, in urlopen\n    return opener.open(url, data, timeout)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/urllib/request.py\", line 521, in open\n    response = meth(req, response)\n               ^^^^^^^^^^^^^^^^^^^\n  File \"/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/urllib/request.py\", line 630, in http_response\n    response = self.parent.error(\n               ^^^^^^^^^^^^^^^^^^\n  File \"/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/urllib/request.py\", line 559, in error\n    return self._call_chain(*args)\n           ^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/urllib/request.py\", line 492, in _call_chain\n    result = func(*args)\n             ^^^^^^^^^^^\n  File \"/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/urllib/request.py\", line 639, in http_error_default\n    raise HTTPError(req.full_url, code, msg, hdrs, fp)\nurllib.error.HTTPError: HTTP Error 503: Service Unavailable\n"
+      }
+    },
+    {
+      "attempt": "8192-python-multifile-1",
+      "original_report_sha256": "615a7d2da374f4236b087bbe38dbb816b7de6b6a762e0197072ea79c1c2c40c4",
+      "original_oracle_passed": false,
+      "current_oracle": {
+        "passed": false,
+        "exit": 1,
+        "stdout": "",
+        "stderr": "Traceback (most recent call last):\n  File \"/tmp/alt-reassessment-m6jo2_2z/independent/check.py\", line 5, in <module>\n    assert discounted(200,10)==180\n           ^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError\n"
+      }
+    },
+    {
+      "attempt": "8192-python-multifile-2",
+      "original_report_sha256": "d1d916104bd3c17b45294c958b1f4d6a47635025392533ebd217e76c6c1c2e74",
+      "original_oracle_passed": false,
+      "current_oracle": {
+        "passed": false,
+        "exit": 1,
+        "stdout": "",
+        "stderr": "Traceback (most recent call last):\n  File \"/tmp/alt-reassessment-phzi_zng/independent/check.py\", line 5, in <module>\n    assert discounted(200,10)==180\n           ^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError\n"
+      }
+    },
+    {
+      "attempt": "8192-rust-feature-1",
+      "original_report_sha256": "bc08515b3d2e36f705b553d3c856a55d46816a64b752bdee10338834d45e87d5",
+      "original_oracle_passed": false,
+      "current_oracle": {
+        "passed": false,
+        "exit": 101,
+        "stdout": "\nrunning 1 test\ntest behavior ... FAILED\n\nfailures:\n\n---- behavior stdout ----\n\nthread 'behavior' (109804) panicked at src/lib.rs:2:23:\nassertion `left == right` failed\n  left: None\n right: Some(-0.5)\nnote: run with `RUST_BACKTRACE=1` environment variable to display a backtrace\n\n\nfailures:\n    behavior\n\ntest result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s\n\n",
+        "stderr": "     Locking 1 package to highest compatible version\n   Compiling fixture_stats v0.1.0 (/tmp/alt-reassessment-c8c3cgc0/project)\n   Compiling independent_oracle v0.1.0 (/tmp/alt-reassessment-c8c3cgc0/independent)\nwarning: unused import: `fixture_stats::median`\n --> src/lib.rs:1:5\n  |\n1 | use fixture_stats::median;\n  |     ^^^^^^^^^^^^^^^^^^^^^\n  |\n  = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default\n\nwarning: `independent_oracle` (lib) generated 1 warning (run `cargo fix --lib -p independent_oracle` to apply 1 suggestion)\n    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.25s\n     Running unittests src/lib.rs (/tmp/alt-reassessment-c8c3cgc0/oracle-target/debug/deps/independent_oracle-ee52bd791c8790a5)\nerror: test failed, to rerun pass `--lib`\n"
+      }
+    },
+    {
+      "attempt": "8192-rust-feature-2",
+      "original_report_sha256": "91fe3a6eb7e57c040bdf69977c8a79fb2bbfd3b335c2a5f687c299ff400eeb91",
+      "original_oracle_passed": false,
+      "current_oracle": {
+        "passed": false,
+        "exit": 101,
+        "stdout": "",
+        "stderr": "     Locking 1 package to highest compatible version\n   Compiling fixture_stats v0.1.0 (/tmp/alt-reassessment-25ms4i0n/project)\nerror: expected item, found keyword `let`\n --> /tmp/alt-reassessment-25ms4i0n/project/src/lib.rs:1:5\n  |\n1 |     let mut values = values.to_vec();\n  |     ^^^ `let` cannot be used for global variables\n  |\n  = help: consider using `static` and a `Mutex` instead of `let mut`\n  = note: for a full list of items that can appear in modules, see <https://doc.rust-lang.org/reference/items.html>\n\nerror: could not compile `fixture_stats` (lib) due to 1 previous error\n"
+      }
+    }
+  ]
+}

@@ -1,0 +1,23 @@
+   Compiling alt-cli v0.4.0 (/workspace/alt-cli)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 9.94s
+     Running unittests src/lib.rs (target/debug/deps/alt_cli-4e43613ce822ffce)
+
+running 1 test
+test tui::app::recovery_tests::turn_end_refresh_does_not_race_itself_or_replace_an_open_form ... FAILED
+
+failures:
+
+---- tui::app::recovery_tests::turn_end_refresh_does_not_race_itself_or_replace_an_open_form stdout ----
+
+thread 'tui::app::recovery_tests::turn_end_refresh_does_not_race_itself_or_replace_an_open_form' (129086) panicked at src/tui/app.rs:1832:13:
+assertion failed: matches!(&app.dialog, Some(Dialog::Input {editor,..}) if
+    editor.text=="Keep my draft")
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    tui::app::recovery_tests::turn_end_refresh_does_not_race_itself_or_replace_an_open_form
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 9 filtered out; finished in 0.05s
+
+error: test failed, to rerun pass `--lib`
