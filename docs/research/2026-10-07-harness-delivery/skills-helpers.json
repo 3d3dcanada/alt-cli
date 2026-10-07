@@ -1,0 +1,196 @@
+{
+  "scope": "Executed tool recipes with real behavior assertions; no LLM, no skill-versus-baseline quality comparison",
+  "browser_executed": true,
+  "rows": [
+    {
+      "skill": "python-repair",
+      "broken_rejected": true,
+      "fixed_passed": true,
+      "actual_helper": {
+        "id": "eb7f869c-0d7a-4ca6-b76f-c6e3471b2698",
+        "pack": "build",
+        "version": 1,
+        "input": {
+          "language": "python"
+        },
+        "status": "passed",
+        "error": null,
+        "evidence": {
+          "command": [
+            "python3",
+            "-m",
+            "unittest",
+            "discover",
+            "-v"
+          ],
+          "terminal": {
+            "cancelled": false,
+            "elapsed_ms": 87,
+            "error": null,
+            "exit_code": 0,
+            "id": "e2a74019-7677-4647-ba08-4366b66a9fc2",
+            "output": "stdout:\n\nstderr:\ntest_sum (test_solution.Behavior.test_sum) ... ok\ntest_zero (test_solution.Behavior.test_zero) ... ok\n\n----------------------------------------------------------------------\nRan 2 tests in 0.003s\n\nOK\n",
+            "output_truncated": false,
+            "tests_run": 2,
+            "timed_out": false,
+            "undoable": false
+          },
+          "tests_run": 2
+        },
+        "findings": []
+      }
+    },
+    {
+      "skill": "rust-diagnostics",
+      "broken_rejected": true,
+      "fixed_passed": true,
+      "actual_helper": {
+        "id": "3b296b15-8f32-461d-90b1-f93adfd5cc9a",
+        "pack": "build",
+        "version": 1,
+        "input": {
+          "language": "rust"
+        },
+        "status": "passed",
+        "error": null,
+        "evidence": {
+          "command": [
+            "cargo",
+            "test",
+            "--locked"
+          ],
+          "terminal": {
+            "cancelled": false,
+            "elapsed_ms": 107,
+            "error": null,
+            "exit_code": 0,
+            "id": "84ea9831-b865-4ce6-884b-8268952be6e1",
+            "output": "stdout:\n\nrunning 1 test\ntest tests::sum ... ok\n\ntest result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s\n\n\nrunning 0 tests\n\ntest result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s\n\n\nstderr:\n   Compiling skill_fixture v0.1.0 (/tmp/alt-skill-checks-slf8_m54/rust)\n    Finished `test` profile [unoptimized] target(s) in 0.07s\n     Running unittests src/lib.rs (target/debug/deps/skill_fixture-6a6f546f25b27e6c)\n   Doc-tests skill_fixture\n",
+            "output_truncated": false,
+            "tests_run": 1,
+            "timed_out": false,
+            "undoable": false
+          },
+          "tests_run": 1
+        },
+        "findings": []
+      }
+    },
+    {
+      "skill": "javascript-setup",
+      "broken_rejected": true,
+      "fixed_passed": true,
+      "actual_helper": {
+        "id": "dd1b797f-9056-494e-a119-c03a0697faea",
+        "pack": "build",
+        "version": 1,
+        "input": {
+          "language": "javascript"
+        },
+        "status": "passed",
+        "error": null,
+        "evidence": {
+          "command": [
+            "npm",
+            "test"
+          ],
+          "terminal": {
+            "cancelled": false,
+            "elapsed_ms": 365,
+            "error": null,
+            "exit_code": 0,
+            "id": "40e272f1-0fe2-407b-9338-f60e8b913685",
+            "output": "stdout:\n\n> skill-fixture@1.0.0 test\n> node --test --test-reporter=tap test.cjs\n\nTAP version 13\n# Subtest: sum\nok 1 - sum\n  ---\n  duration_ms: 1.861791\n  type: 'test'\n  ...\n1..1\n# tests 1\n# suites 0\n# pass 1\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 70.332742\n\nstderr:\nnpm notice\nnpm notice New major version of npm available! 11.9.0 -> 12.2.0\nnpm notice Changelog: https://github.com/npm/cli/releases/tag/v12.2.0\nnpm notice To update run: npm install -g npm@12.2.0\nnpm notice\n",
+            "output_truncated": false,
+            "tests_run": 1,
+            "timed_out": false,
+            "undoable": false
+          },
+          "tests_run": 1
+        },
+        "findings": []
+      }
+    },
+    {
+      "skill": "configuration-data",
+      "broken_rejected": true,
+      "fixed_passed": true,
+      "actual_helper": {
+        "id": "6f1ac26e-7a3b-4e7b-aa0c-2cf95d326fd4",
+        "pack": "build",
+        "version": 1,
+        "input": {
+          "language": "python"
+        },
+        "status": "passed",
+        "error": null,
+        "evidence": {
+          "command": [
+            "python3",
+            "-m",
+            "unittest",
+            "discover",
+            "-v"
+          ],
+          "terminal": {
+            "cancelled": false,
+            "elapsed_ms": 72,
+            "error": null,
+            "exit_code": 0,
+            "id": "3d484c3f-73ed-4e05-be1a-6f2acc911653",
+            "output": "stdout:\n\nstderr:\ntest_defaults (test_solution.Behavior.test_defaults) ... ok\ntest_empty_host (test_solution.Behavior.test_empty_host) ... ok\ntest_types_and_bounds (test_solution.Behavior.test_types_and_bounds) ... ok\n\n----------------------------------------------------------------------\nRan 3 tests in 0.000s\n\nOK\n",
+            "output_truncated": false,
+            "tests_run": 3,
+            "timed_out": false,
+            "undoable": false
+          },
+          "tests_run": 3
+        },
+        "findings": []
+      }
+    },
+    {
+      "skill": "browser-checks",
+      "broken_rejected": true,
+      "fixed_passed": true,
+      "actual_helper": {
+        "id": "66f5b534-d3c6-4742-8e89-f5dd496deddc",
+        "pack": "browser",
+        "version": 1,
+        "input": {
+          "click": "#go",
+          "contains": "Ready",
+          "executable": "/usr/bin/chromium",
+          "screenshot": "/tmp/alt-skill-checks-slf8_m54/state/projects/3508b544939e76e2ca1c5507e4b37f59909ae356f549e386aa6f48283a5b37ab/workflows/66f5b534-d3c6-4742-8e89-f5dd496deddc.png",
+          "selector": "#result",
+          "url": "http://127.0.0.1:33147/"
+        },
+        "status": "passed",
+        "error": null,
+        "evidence": {
+          "command": [
+            "node",
+            "-e",
+            "// Playwright is an optional project dependency. No browser download occurs here.\nconst input = JSON.parse(process.argv[1]);\n(async () => {\n  const { chromium } = require('playwright');\n  const browser = await chromium.launch({ headless: true, executablePath: input.executable || undefined });\n  try {\n    const page = await browser.newPage();\n    const response = await page.goto(input.url, { timeout: 20000, waitUntil: 'domcontentloaded' });\n    if (!response || !response.ok()) throw new Error(`Page returned ${response && response.status()}`);\n    if (input.click) await page.locator(input.click).click({ timeout: 10000 });\n    const locator = page.locator(input.selector || 'body');\n    await locator.waitFor({ state: 'visible', timeout: 10000 });\n    const text = await locator.innerText({ timeout: 10000 });\n    if (input.contains && !text.includes(input.contains)) throw new Error(`Expected text absent: ${input.contains}`);\n    if (input.screenshot) await page.screenshot({ path: input.screenshot, fullPage: false });\n    console.log(JSON.stringify({ passed: true, url: page.url(), status: response.status(), observed: text.slice(0, 4000) }));\n  } finally { await browser.close(); }\n})().catch(error => { console.log(JSON.stringify({ passed: false, error: error.message })); process.exitCode = 1; });\n",
+            "{\"click\":\"#go\",\"contains\":\"Ready\",\"executable\":\"/usr/bin/chromium\",\"screenshot\":\"/tmp/alt-skill-checks-slf8_m54/state/projects/3508b544939e76e2ca1c5507e4b37f59909ae356f549e386aa6f48283a5b37ab/workflows/66f5b534-d3c6-4742-8e89-f5dd496deddc.png\",\"selector\":\"#result\",\"url\":\"http://127.0.0.1:33147/\"}"
+          ],
+          "terminal": {
+            "cancelled": false,
+            "elapsed_ms": 1659,
+            "error": null,
+            "exit_code": 0,
+            "id": "5a107579-c28a-4014-a960-66cca57dda85",
+            "output": "stdout:\n{\"passed\":true,\"url\":\"http://127.0.0.1:33147/\",\"status\":200,\"observed\":\"Ready\"}\n\nstderr:\n",
+            "output_truncated": false,
+            "tests_run": null,
+            "timed_out": false,
+            "undoable": false
+          }
+        },
+        "findings": [],
+        "retained_screenshot": "skills-browser-checks.png",
+        "screenshot_sha256": "9d1d405a2a0cd26009c41dd6c3c37f75bc023958805da5e598b2a86003e71832"
+      }
+    }
+  ]
+}

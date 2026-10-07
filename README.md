@@ -21,6 +21,13 @@ installation and external tools with your normal account permissions.
 0.6 practice workflow after a manual edit and four behavioral checks. Model reliability and hardware support are measured separately from
 application tests. [Read the results and remaining gaps](docs/IMPLEMENTATION.md).
 
+**New on `main`:** explicit inference allocation, host task workflows, bounded
+skills, source handles, serial checked candidates, reviewed instruction trials
+and offline training tools. Build from source to use these additions; the older
+published archive predates them. See [the usage guide](docs/SMALL_MODEL_USAGE.md)
+and [work-order delivery and evidence](docs/SMALL_MODEL_DELIVERY.md). No weights
+have been trained or new quality presets promoted.
+
 ## Try it on your computer
 
 Download [Alt v0.6.0-beta.1](https://github.com/3d3dcanada/alt-cli/releases/tag/v0.6.0-beta.1)
@@ -65,6 +72,8 @@ parallelism.
 | Project memory | Saved goals and decisions, pinned notes, incremental source indexing, retrieved context and a visible Context page |
 | Verification | Tests/build/lint/health/custom contracts, structured reports, independently pinned assertions and stale-result detection |
 | Runtime controls | Context, CPU threads, GPU layers, batch/cache settings, optional reasoning control, generation and restart qualification |
+| Small-model effort | Explicit output/sampling, actual request receipts, host workflow, one active skill, source/import outlines and serial independently checked candidates |
+| Offline improvement | Development-only instruction proposals with review/rollback; pending trajectory capture, SFT resume/export tooling and verified rewards |
 | Recovery | State backup/restore, history retention, preserved imported weights, diagnostics and package rollback |
 
 **Full access** uses normal host permissions. **Guided changes** reviews edits and
@@ -83,8 +92,9 @@ Tool focus is a separate explicit choice; **All** is the default.
 | Managed local inference | A compatible GGUF file or complete split set | The pinned download is CPU first; GPU runtime selection is explicit |
 
 The reference target is **Linux, 16 GB RAM and a GTX 1070 with 8 GB VRAM**. Physical
-GTX 1070 performance has not been measured. Start conservatively with a small
-quantized model and 4K–8K context, then measure your exact configuration. More
+GTX 1070 performance has not been measured. Your selected 7B/9B Q4 model is a
+deployment target to qualify. Start with 4K–8K context and CPU or measured partial
+offload, then test your exact configuration. More
 context needs additional memory; project retrieval cannot enlarge a model's
 native context window. Pascal GPUs need a compatible CUDA 12 runtime, not a
 CUDA 13-only build. CPU mode remains available.
@@ -130,6 +140,7 @@ Keys are referenced by environment-variable name, not saved in model profiles.
 ## Documentation
 
 - [Small-model implementation plan](docs/SMALL_MODEL_IMPLEMENTATION_PLAN.md) · [Training handoff](training/README.md)
+- [Small-model usage](docs/SMALL_MODEL_USAGE.md) · [Delivered work orders and remaining gates](docs/SMALL_MODEL_DELIVERY.md)
 - [Installation and updates](docs/INSTALLATION.md) · [Troubleshooting](docs/TROUBLESHOOTING.md)
 - [Workspace guide](docs/WORKSPACE_GUIDE.md) · [CLI reference](docs/CLI.md)
 - [Verification contracts](docs/VERIFICATION_CONTRACTS.md) · [Runtime qualification](docs/QUALIFICATION.md)

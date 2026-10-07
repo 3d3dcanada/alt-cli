@@ -1,0 +1,339 @@
+{
+  "schema": 1,
+  "scope": "Post-run aggregation with observed engine cancellations counted separately from outer evaluator timeouts/exit124. The original summaries are unchanged. Cancellation causes are not inferred. Run reports and exact source identities are retained.",
+  "aggregation_code_sha256": "9d3200b2fdc2c852f5adae3bb33cb914a6bc0beb064902047b9535c97b922a23",
+  "cohorts": {
+    "spark": {
+      "model-plan": {
+        "recorded": 4,
+        "expected": 4,
+        "complete": true,
+        "passed": 0,
+        "groups": [
+          {
+            "task_group": "heldout-deduplicate",
+            "attempts": 1,
+            "passed": 0,
+            "timeouts": 0,
+            "cancellations": 0,
+            "wall_seconds": 124.11,
+            "requests": 2,
+            "charged_generated_tokens": 1108
+          },
+          {
+            "task_group": "python-config",
+            "attempts": 1,
+            "passed": 0,
+            "timeouts": 0,
+            "cancellations": 0,
+            "wall_seconds": 130.51,
+            "requests": 5,
+            "charged_generated_tokens": 349
+          },
+          {
+            "task_group": "python-feature",
+            "attempts": 1,
+            "passed": 0,
+            "timeouts": 0,
+            "cancellations": 0,
+            "wall_seconds": 129.46,
+            "requests": 2,
+            "charged_generated_tokens": 1141
+          },
+          {
+            "task_group": "python-multifile",
+            "attempts": 1,
+            "passed": 0,
+            "timeouts": 0,
+            "cancellations": 0,
+            "wall_seconds": 107.1,
+            "requests": 1,
+            "charged_generated_tokens": 1024
+          }
+        ],
+        "timeout_scope": "Outer evaluator timeouts or explicit exit 124; observed cancelled engine turns are counted separately, without inferring their cause",
+        "preset_promoted": false
+      },
+      "host-plan": {
+        "recorded": 4,
+        "expected": 4,
+        "complete": true,
+        "passed": 0,
+        "groups": [
+          {
+            "task_group": "heldout-deduplicate",
+            "attempts": 1,
+            "passed": 0,
+            "timeouts": 0,
+            "cancellations": 0,
+            "wall_seconds": 143.17,
+            "requests": 8,
+            "charged_generated_tokens": 566
+          },
+          {
+            "task_group": "python-config",
+            "attempts": 1,
+            "passed": 0,
+            "timeouts": 0,
+            "cancellations": 0,
+            "wall_seconds": 144.38,
+            "requests": 6,
+            "charged_generated_tokens": 647
+          },
+          {
+            "task_group": "python-feature",
+            "attempts": 1,
+            "passed": 0,
+            "timeouts": 0,
+            "cancellations": 0,
+            "wall_seconds": 135.23,
+            "requests": 2,
+            "charged_generated_tokens": 1141
+          },
+          {
+            "task_group": "python-multifile",
+            "attempts": 1,
+            "passed": 0,
+            "timeouts": 0,
+            "cancellations": 1,
+            "wall_seconds": 183.37,
+            "requests": 5,
+            "charged_generated_tokens": 2551
+          }
+        ],
+        "timeout_scope": "Outer evaluator timeouts or explicit exit 124; observed cancelled engine turns are counted separately, without inferring their cause",
+        "preset_promoted": false
+      }
+    },
+    "qwen": {
+      "model-plan": {
+        "recorded": 4,
+        "expected": 4,
+        "complete": true,
+        "passed": 0,
+        "groups": [
+          {
+            "task_group": "heldout-deduplicate",
+            "attempts": 1,
+            "passed": 0,
+            "timeouts": 0,
+            "cancellations": 1,
+            "wall_seconds": 246.2,
+            "requests": 5,
+            "charged_generated_tokens": 1196
+          },
+          {
+            "task_group": "python-config",
+            "attempts": 1,
+            "passed": 0,
+            "timeouts": 0,
+            "cancellations": 1,
+            "wall_seconds": 246.53,
+            "requests": 2,
+            "charged_generated_tokens": 1044
+          },
+          {
+            "task_group": "python-feature",
+            "attempts": 1,
+            "passed": 0,
+            "timeouts": 0,
+            "cancellations": 1,
+            "wall_seconds": 247.11,
+            "requests": 4,
+            "charged_generated_tokens": 1088
+          },
+          {
+            "task_group": "python-multifile",
+            "attempts": 1,
+            "passed": 0,
+            "timeouts": 0,
+            "cancellations": 1,
+            "wall_seconds": 246.14,
+            "requests": 3,
+            "charged_generated_tokens": 1066
+          }
+        ],
+        "timeout_scope": "Outer evaluator timeouts or explicit exit 124; observed cancelled engine turns are counted separately, without inferring their cause",
+        "preset_promoted": false
+      },
+      "host-plan": {
+        "recorded": 4,
+        "expected": 4,
+        "complete": true,
+        "passed": 0,
+        "groups": [
+          {
+            "task_group": "heldout-deduplicate",
+            "attempts": 1,
+            "passed": 0,
+            "timeouts": 0,
+            "cancellations": 1,
+            "wall_seconds": 246.35,
+            "requests": 3,
+            "charged_generated_tokens": 1066
+          },
+          {
+            "task_group": "python-config",
+            "attempts": 1,
+            "passed": 0,
+            "timeouts": 0,
+            "cancellations": 1,
+            "wall_seconds": 246.05,
+            "requests": 3,
+            "charged_generated_tokens": 1066
+          },
+          {
+            "task_group": "python-feature",
+            "attempts": 1,
+            "passed": 0,
+            "timeouts": 0,
+            "cancellations": 1,
+            "wall_seconds": 246.23,
+            "requests": 3,
+            "charged_generated_tokens": 1066
+          },
+          {
+            "task_group": "python-multifile",
+            "attempts": 1,
+            "passed": 0,
+            "timeouts": 0,
+            "cancellations": 1,
+            "wall_seconds": 247.92,
+            "requests": 2,
+            "charged_generated_tokens": 1044
+          }
+        ],
+        "timeout_scope": "Outer evaluator timeouts or explicit exit 124; observed cancelled engine turns are counted separately, without inferring their cause",
+        "preset_promoted": false
+      }
+    },
+    "spark-thinking": {
+      "server-thinking-default": {
+        "recorded": 2,
+        "expected": 2,
+        "complete": true,
+        "passed": 0,
+        "groups": [
+          {
+            "task_group": "python-config",
+            "attempts": 1,
+            "passed": 0,
+            "timeouts": 0,
+            "cancellations": 0,
+            "wall_seconds": 120.28,
+            "requests": 8,
+            "charged_generated_tokens": 538
+          },
+          {
+            "task_group": "python-feature",
+            "attempts": 1,
+            "passed": 0,
+            "timeouts": 0,
+            "cancellations": 0,
+            "wall_seconds": 128.07,
+            "requests": 2,
+            "charged_generated_tokens": 1139
+          }
+        ],
+        "timeout_scope": "Outer evaluator timeouts or explicit exit 124; observed cancelled engine turns are counted separately, without inferring their cause",
+        "preset_promoted": false
+      },
+      "thinking-cap-128": {
+        "recorded": 2,
+        "expected": 2,
+        "complete": true,
+        "passed": 0,
+        "groups": [
+          {
+            "task_group": "python-config",
+            "attempts": 1,
+            "passed": 0,
+            "timeouts": 0,
+            "cancellations": 0,
+            "wall_seconds": 175.24,
+            "requests": 8,
+            "charged_generated_tokens": 1864
+          },
+          {
+            "task_group": "python-feature",
+            "attempts": 1,
+            "passed": 0,
+            "timeouts": 0,
+            "cancellations": 0,
+            "wall_seconds": 148.96,
+            "requests": 7,
+            "charged_generated_tokens": 634
+          }
+        ],
+        "timeout_scope": "Outer evaluator timeouts or explicit exit 124; observed cancelled engine turns are counted separately, without inferring their cause",
+        "preset_promoted": false
+      }
+    },
+    "mimo-skill": {
+      "host-no-skill": {
+        "recorded": 1,
+        "expected": 1,
+        "complete": true,
+        "passed": 0,
+        "groups": [
+          {
+            "task_group": "python-feature",
+            "attempts": 1,
+            "passed": 0,
+            "timeouts": 0,
+            "cancellations": 1,
+            "wall_seconds": 310.56,
+            "requests": 3,
+            "charged_generated_tokens": 1136
+          }
+        ],
+        "timeout_scope": "Outer evaluator timeouts or explicit exit 124; observed cancelled engine turns are counted separately, without inferring their cause",
+        "preset_promoted": false
+      },
+      "host-python-skill": {
+        "recorded": 1,
+        "expected": 1,
+        "complete": true,
+        "passed": 0,
+        "groups": [
+          {
+            "task_group": "python-feature",
+            "attempts": 1,
+            "passed": 0,
+            "timeouts": 0,
+            "cancellations": 1,
+            "wall_seconds": 311.26,
+            "requests": 2,
+            "charged_generated_tokens": 1065
+          }
+        ],
+        "timeout_scope": "Outer evaluator timeouts or explicit exit 124; observed cancelled engine turns are counted separately, without inferring their cause",
+        "preset_promoted": false
+      }
+    }
+  },
+  "reports_sha256": {
+    "pilot/spark/model-plan-1-heldout-deduplicate/8192-heldout-deduplicate-1/report.json": "29e51028f8d270e1e498186a27a7cee6461f388a1acc294a1da1195547eef44d",
+    "pilot/spark/model-plan-1-python-config/8192-python-config-1/report.json": "3265cd95c6d1605925526ec24e139a34eb53ede6db62e867fbde319ca61e749c",
+    "pilot/spark/model-plan-1-python-feature/8192-python-feature-1/report.json": "28a28504c888b67d67e6e44c0ab42dff1186cfbf4215bf323f37470a49908ec9",
+    "pilot/spark/model-plan-1-python-multifile/8192-python-multifile-1/report.json": "0b77b07fce4e32d08cbab22e5f5b118223e10822803912450e8fb14a8824ef1e",
+    "pilot/spark/host-plan-1-heldout-deduplicate/8192-heldout-deduplicate-1/report.json": "a184b9975eed80d3da3272380c7749fdf8fff71c935dd76175f27c0c95ba3738",
+    "pilot/spark/host-plan-1-python-config/8192-python-config-1/report.json": "55fe53bf546ccf4edde21d936b5f53c584c4c12bc866e30b604482977bea5db6",
+    "pilot/spark/host-plan-1-python-feature/8192-python-feature-1/report.json": "8851cfbf82da768891284fe9797cc5cc9041f16cbc6226d77fb52e3b33c51882",
+    "pilot/spark/host-plan-1-python-multifile/8192-python-multifile-1/report.json": "2369b2cd77e06997fdac15ff16271354b56da71959e455137ac7d3241993a613",
+    "pilot/qwen/model-plan-1-heldout-deduplicate/8192-heldout-deduplicate-1/report.json": "8d7e9d9f20a3b098a19266b2e5d196e01209a0fab65e011353794f831a71af16",
+    "pilot/qwen/model-plan-1-python-config/8192-python-config-1/report.json": "38c9a83599ceedd16211ed2ec0d0763203ea58f7159b609e9cd29c88bc7bc63f",
+    "pilot/qwen/model-plan-1-python-feature/8192-python-feature-1/report.json": "c5d07b1dcf70d2a16a09ca79dd02c9fbea5b03cad187836b472bb2b31ecd8291",
+    "pilot/qwen/model-plan-1-python-multifile/8192-python-multifile-1/report.json": "d37819920c152509b57f7ceff01974dacede7704118b6c60e9cf62582c9132b5",
+    "pilot/qwen/host-plan-1-heldout-deduplicate/8192-heldout-deduplicate-1/report.json": "a607b8d69e03af76c32586cd5a7aecfb1fe0543cd60c2429123d5750127a6f4e",
+    "pilot/qwen/host-plan-1-python-config/8192-python-config-1/report.json": "c5daf5f957fcf6e22c554604634f34fee657585deeb7d2f9957184b1be02dc35",
+    "pilot/qwen/host-plan-1-python-feature/8192-python-feature-1/report.json": "59064855e4efa380a7e8c6904813a457b22f15fb6a238a17bf42f75b78e4910a",
+    "pilot/qwen/host-plan-1-python-multifile/8192-python-multifile-1/report.json": "32c0ad688393d97d2f24ca79c7380c4034cd58f9f110d347613da2e4d4923555",
+    "pilot/spark-thinking/server-thinking-default-1-python-config/8192-python-config-1/report.json": "3d8d09e75f67dd9cc0d0987518c82c356f158e53be24f19b4a06278a96dd4531",
+    "pilot/spark-thinking/server-thinking-default-1-python-feature/8192-python-feature-1/report.json": "ab95a2cd3ca95a23ebf25a0914e398b284f9a7a2c27876ac22df356c008211f7",
+    "pilot/spark-thinking/thinking-cap-128-1-python-config/8192-python-config-1/report.json": "bace077f10184bc23b6ec151b1d06adcdda271410b57b4056c351dd8b09ad8aa",
+    "pilot/spark-thinking/thinking-cap-128-1-python-feature/8192-python-feature-1/report.json": "2e581276627824fdbb8e18b2f0601fdae6b2593e76ff3ae8ecf22c5baa9b00c7",
+    "pilot/mimo-skill/host-no-skill-1-python-feature/8192-python-feature-1/report.json": "60d93a94e8ded30f8c89b57b027fc36bb84a5faf285113f849c5ddf35411ecb5",
+    "pilot/mimo-skill/host-python-skill-1-python-feature/8192-python-feature-1/report.json": "0ef4fd3da7caf72b957d8fdc341fd85d43e1ca36d1213b54c73faa6bbedfbf6c"
+  }
+}

@@ -10,11 +10,15 @@
 - [Troubleshooting](TROUBLESHOOTING.md): practical next steps for common failures.
 - [Verification contracts](VERIFICATION_CONTRACTS.md): exactly what check results prove.
 - [Model/runtime qualification](QUALIFICATION.md): measurements and physical test procedures.
+- [Small-model workflows](SMALL_MODEL_USAGE.md): explicit inference controls,
+  host plans, executable skills, reviewed candidates and experimental analysis.
 
 ## Developing and evaluating
 
 - [Small-model implementation plan](SMALL_MODEL_IMPLEMENTATION_PLAN.md): combined
   harness/reasoning work orders and 7B/9B Q4 qualification.
+- [Small-model delivery](SMALL_MODEL_DELIVERY.md): implemented work orders,
+  retained checks and live failures, and outstanding training/quality gates.
 - [Training handoff](../training/README.md): reviewed data, SFT starter and export gates.
 - [Contributing](../CONTRIBUTING.md) and [architecture](ARCHITECTURE.md).
 - [Cloud setup](CLOUD_SETUP.md) for the prepared `/workspace` environment.

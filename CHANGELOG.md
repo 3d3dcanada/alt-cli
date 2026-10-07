@@ -1,5 +1,27 @@
 # Changelog
 
+## Unreleased — small-model harness work orders
+
+- Added a separately versioned v5 behavioral suite, new sealed families and
+  immutable matched campaign schedules without rewriting historical oracles.
+- Added migrated explicit inference settings, actual provider request/response
+  receipts, full owned chat/tokenizer accounting when available and shared
+  generation/request limits with conservative interrupted costs.
+- Added revision-bound range/symbol edits, multi-file failure rollback, explicit
+  host workflows, compact actual diagnostics, structural retrieval and six
+  versioned skills backed by executable helpers.
+- Added streamed native-tool round trips, serial source candidates with shared
+  effort/review/apply/undo, offline instruction drafts with separate validation
+  and reviewed activation/rollback, and labelled TUI choices for these workflows.
+- Added pending-review trace capture, native argument validation, SFT checkpoint
+  resume integrity, exact-parent merge/Q4 export preparation and verified rewards.
+- Added bounded recursive analysis and source-state adapter qualification as
+  explicit experiments. Retained 7B native failures and a MiMo 9B CPU native pass
+  consuming a fresh, unpredictable host result. Retained all 22 failed coding
+  pilot attempts; no quality preset or training trajectory is promoted.
+  GPU training, physical GTX 1070 qualification and repeated quality studies
+  remain unperformed/unpromoted; see `docs/SMALL_MODEL_DELIVERY.md`.
+
 ## 0.6.0 beta
 
 - Added a four-case practice project with independent checks, tracked repair and undo.

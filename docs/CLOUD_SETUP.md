@@ -8,8 +8,9 @@ bash scripts/setup-cloud.sh
 
 It pins Rust 1.99.0 and Goose 1.53.0, verifies the engine artifact, installs the
 Python PTY-test and release-schema dependencies into `/workspace/.alt-tools/python`, and runs
-Rust/build/lint, four terminal walkthroughs, 24 independent project oracles and
-both real-Goose protocol fixtures. It downloads no model weights. Package and
+Rust/build/lint, terminal walkthroughs, both historical and new independent
+project oracles, training/schema/adapter boundaries, executable skill helpers,
+bounded analysis and real-Goose provider/candidate fixtures. It downloads no model weights. Package and
 model-quality tests are separate because they take longer and need specific tools.
 
 For subsequent shells:
@@ -52,6 +53,17 @@ are not setup prerequisites or bundled dependencies. The terminal-host helper
 passes the existing proxy configuration without printing credentials and copies
 public OS trust roots into its temporary build context; it never disables TLS.
 
+For optional advisory tools in this read-only-home cloud, keep their caches in
+the workspace: set `XDG_CACHE_HOME=/workspace/.alt-tools/cache`,
+`PIP_CACHE_DIR=/workspace/.alt-tools/cache/pip` and
+`npm_config_cache=/workspace/.alt-tools/cache/npm`. This does not change `$HOME`
+or certificate verification. `scripts/smoke_auditors.py --skill dependency-review`
+exercises the declared skill path with actual registry/advisory responses.
+Semgrep also needs `SEMGREP_LOG_FILE=/workspace/.alt-tools/cache/semgrep.log`
+and `SEMGREP_SETTINGS_FILE=/workspace/.alt-tools/cache/semgrep-settings.yml`.
+For the optional Docker release gate, use
+`DOCKER_CONFIG=/workspace/.alt-tools/docker` to keep Buildx state writable.
+
 All real model tests require an explicitly selected uncensored/abliterated artifact
 and its exact SHA256. See `LIVE_EVALUATION.md` for commands and actual failures.
 No standard/cloud fallback is authorized. Saved GGUF/runtime files live outside
@@ -60,6 +72,6 @@ validate the reference GTX 1070/8 GiB VRAM/16 GiB RAM machine.
 
 Cloud configuration changes are saved as a reviewable draft. Saving the draft
 does not publish or apply it. Review and save it in environment settings, then
-publish to activate the setup and filesystem snapshot. This work did not push a
-commit or publish an environment/release; fresh-task snapshot restoration remains
+publish to activate the setup and filesystem snapshot. Repository commits and
+local package checks do not publish that environment; fresh-task snapshot restoration remains
 unverified until the user publishes and starts a new task.

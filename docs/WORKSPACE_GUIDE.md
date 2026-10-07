@@ -1,4 +1,7 @@
-# Alt 0.5 workspace guide
+# Alt workspace guide
+
+The current source adds [small-model controls and workflows](SMALL_MODEL_USAGE.md).
+That guide covers the expanded settings menu, skills, native probe and candidates.
 
 > 0.5 adds [check contracts](VERIFICATION_CONTRACTS.md),
 > [qualification and measured guidance](QUALIFICATION.md), and selectable tool focus
@@ -196,7 +199,7 @@ or allowed to apply unreviewed edits automatically.
 For a GTX 1070 with 8 GiB VRAM and 16 GiB RAM, start by measuring a quantized 3B–4B
 model at 4K–8K context. This is a starting configuration, not a promised fit or speed.
 The downloaded CPU runtime works without CUDA. An external runtime or a user-selected
-GPU build can use acceleration. **Settings → Managed runtime settings** exposes
+GPU build can use acceleration. **Settings → Model and runtime settings** exposes
 GPU layers (0 CPU, -1 all), threads (0 automatic), batch size, K/V cache precision
 and flash attention. Quantized V cache requires compatible flash attention.
 Requested GPU operation fails clearly when the runtime discovers no accelerator.

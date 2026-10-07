@@ -1,11 +1,16 @@
 # alt-cli research
 
+**Execution, October 7, 2026:** [work-order delivery](../SMALL_MODEL_DELIVERY.md)
+and [raw evidence](2026-10-07-harness-delivery/README.md) record the implemented
+runtime workflows and training prerequisites, actual CPU probes and failed
+optimizer/repair attempts. Weight training and measured quality gains remain gates.
+
 **Implementation handoff, October 7, 2026:** the
 [unified plan](../SMALL_MODEL_IMPLEMENTATION_PLAN.md) maps both research passes
 into 14 sequenced work orders, including **7B and 9B Q4** deployment. The
 [training handoff](../../training/README.md) supplies corpus validation, native
 assistant-target encoding, explicit checkpoint templates and an optional QLoRA
-starter. Runtime improvements and GPU training remain unperformed.
+starter. This original handoff preceded the execution record above.
 
 **Reasoning follow-up, October 7, 2026:** [Strengthening reasoning in small local
 models](2026-10-07-small-model-reasoning.md), with

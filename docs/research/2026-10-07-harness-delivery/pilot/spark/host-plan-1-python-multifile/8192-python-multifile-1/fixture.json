@@ -1,0 +1,17 @@
+{
+  "oracle_version": 5,
+  "goal": "Repair order totals across pricing.py and orders.py. Discount is a percentage: 10 means ten percent off. Tax is applied once to the discounted subtotal. Preserve the function names and caller interface.",
+  "prompt": "Repair order totals across pricing.py and orders.py. Discount is a percentage: 10 means ten percent off. Tax is applied once to the discounted subtotal. Preserve the function names and caller interface. Inspect relevant files, save a brief plan, use native tools to implement the change, and test it. Report what you actually ran and any remaining uncertainty. Preserve existing public interfaces. Keep your explanation brief.",
+  "original_files": {
+    "pricing.py": "def discounted(price, percent):\n    return price - percent\n",
+    "orders.py": "from pricing import discounted\ndef total(price, discount_percent, tax_rate):\n    subtotal = discounted(price, discount_percent)\n    return subtotal + price * tax_rate\n"
+  },
+  "oracle_command": [
+    "python3",
+    "/workspace/.alt-harness/spark-workflow-pilot/host-plan-1-python-multifile/8192-python-multifile-1/independent/check.py"
+  ],
+  "oracle_sha256_before": {
+    "completion.json": "f6e701f96618c50b049c02ac195395e375b7b9c943f34a2108a92c00caec1f5c",
+    "check.py": "66c3f46ea59221f8d3f94790d099496a640a00f78c3df3b3f05114faed078740"
+  }
+}

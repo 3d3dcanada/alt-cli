@@ -1,0 +1,50 @@
+{
+  "files": 5001,
+  "machine": "CPU cloud, filesystem cache warm after file creation",
+  "measurements": [
+    {
+      "phase": "initial",
+      "seconds": 10.815,
+      "report": {
+        "elapsed_ms": 10805,
+        "indexed": 5001,
+        "method": "Incremental metadata scan; changed content only; inode/ctime/mtime/size detection",
+        "removed": 0,
+        "sampled_process_rss_bytes": 26341376,
+        "skipped": 0,
+        "source_bytes_read": 386748,
+        "updated": 5001
+      }
+    },
+    {
+      "phase": "unchanged",
+      "seconds": 0.079,
+      "report": {
+        "elapsed_ms": 67,
+        "indexed": 5001,
+        "method": "Incremental metadata scan; changed content only; inode/ctime/mtime/size detection",
+        "removed": 0,
+        "sampled_process_rss_bytes": 21909504,
+        "skipped": 0,
+        "source_bytes_read": 0,
+        "updated": 0
+      }
+    },
+    {
+      "phase": "edit_and_delete",
+      "seconds": 0.081,
+      "report": {
+        "elapsed_ms": 71,
+        "indexed": 5000,
+        "method": "Incremental metadata scan; changed content only; inode/ctime/mtime/size detection",
+        "removed": 1,
+        "sampled_process_rss_bytes": 25624576,
+        "skipped": 0,
+        "source_bytes_read": 35,
+        "updated": 1
+      }
+    }
+  ],
+  "rss_scope": "One whole Alt process sample after each indexing phase; not peak RAM or index-only allocation.",
+  "scope": "Index discovery exceeds 4096-file editing/check-snapshot limit; those mutation limits remain explicit."
+}
