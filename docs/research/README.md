@@ -1,5 +1,15 @@
 # alt-cli research
 
+**Latest research, October 7, 2026:** [Making small local models more capable in
+Alt](2026-10-07-small-model-harness.md), with an
+[experiment/work-order proposal](2026-10-07-small-model-experiments.md),
+[pinned source ledger](2026-10-07-small-model-sources.json) and
+[Alt failure diagnostics](2026-10-07-alt-failure-diagnostics.json).
+It prioritizes simpler edits, executable skills, host-managed workflows and
+model-specific budgets. These are researched proposals; no new model gains are claimed.
+
+## Original foundation research
+
 Research date: **October 5, 2026**. Scope: a Rust terminal agent for small local models, including abliterated/uncensored derivatives, with tools for authorized software and security testing.
 
 **Recommendation:** evaluate a CLI-focused custom distribution of **Goose** first, with **Stakpak** as the strongest alternative. Use AIChat as the lightweight comparison. Keep inference in a separate server initially. Select the final base after the same small-model tool tasks run on both finalists.
