@@ -103,7 +103,13 @@ impl App {
                     .transpose()?
                     .flatten(),
             })))
-        })
+        })?;
+        if !announce_verification && let Some(job) = &mut self.job {
+            // A status refresh must yield to the user's next action. Keep an
+            // announced post-turn verification pending until it is delivered.
+            job.replaceable = true;
+        }
+        Ok(())
     }
     pub fn task_action(&mut self, action: &str) -> Result<()> {
         match action {

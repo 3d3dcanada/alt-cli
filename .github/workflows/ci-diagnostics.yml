@@ -3,7 +3,7 @@ on:
   workflow_dispatch:
     inputs:
       run_id:
-        description: Failed run in this repository to inspect
+        description: Run in this repository to inspect (completed or still running)
         type: string
         required: true
       model_evidence:
@@ -30,13 +30,16 @@ jobs:
           [[ "$TARGET_RUN" =~ ^[0-9]+$ ]]
           mkdir diagnostics
           gh run view "$TARGET_RUN" --repo "$GITHUB_REPOSITORY" --json databaseId,headSha,status,conclusion,jobs > diagnostics/run.json
-          gh run view "$TARGET_RUN" --repo "$GITHUB_REPOSITORY" --log-failed > diagnostics/failed-jobs.log
           python3 - <<'PY'
-          import pathlib,re
-          p=pathlib.Path('diagnostics/failed-jobs.log')
+          import json,os,pathlib,re,subprocess
+          root=pathlib.Path('diagnostics')
+          result=subprocess.run(['gh','run','view',os.environ['TARGET_RUN'],'--repo',os.environ['GITHUB_REPOSITORY'],'--log-failed'],capture_output=True,text=True)
           # Logs are already secret-masked by Actions. Also remove signed URL
-          # query strings so transient download credentials are not retained.
-          p.write_text(re.sub(r'(https?://[^\s?"<>]+)\?[^\s"<>]+',r'\1?[query omitted]',p.read_text()))
+          # queries. A running job may not expose logs yet; still recover its
+          # already uploaded artifacts and record the unavailable log status.
+          clean=lambda text:re.sub(r'(https?://[^\s?"<>]+)\?[^\s"<>]+',r'\1?[query omitted]',text)
+          (root/'failed-jobs.log').write_text(clean(result.stdout))
+          (root/'log-retrieval.json').write_text(json.dumps({'exit':result.returncode,'stderr':clean(result.stderr)},indent=2)+'\n')
           PY
       - name: Recover available model evidence without replacing its reported identities
         if: inputs.model_evidence
