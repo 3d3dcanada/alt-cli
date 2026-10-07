@@ -70,6 +70,64 @@ def verified_file(root, relative, digest):
     return resolved
 
 
+def validate_arguments(value, schema, root=None, depth=0):
+    """Validate native arguments before they become assistant training targets.
+
+    Supports the bounded JSON-schema subset used by Alt and common function tools;
+    external references and unimplemented assertion keywords need explicit review.
+    """
+    require(depth < 32 and isinstance(schema, (dict, bool)), "invalid or recursive tool schema")
+    if isinstance(schema, bool):
+        require(schema, "arguments forbidden by schema")
+        return
+    root = schema if root is None else root
+    supported = {"type", "properties", "required", "additionalProperties", "items", "enum", "const", "minimum", "maximum", "exclusiveMinimum", "exclusiveMaximum", "minLength", "maxLength", "pattern", "minItems", "maxItems", "uniqueItems", "anyOf", "oneOf", "allOf", "$ref", "$defs", "definitions", "$schema", "description", "title", "default", "examples", "format", "nullable"}
+    require(not set(schema) - supported, "tool schema has unqualified assertion keywords")
+    if "$ref" in schema:
+        ref = schema["$ref"]
+        require(isinstance(ref, str) and ref.startswith("#/"), "external schema references are not qualified")
+        resolved = root
+        for part in ref[2:].split("/"):
+            require(isinstance(resolved, dict) and part.replace("~1", "/").replace("~0", "~") in resolved, "unresolved tool schema reference")
+            resolved = resolved[part.replace("~1", "/").replace("~0", "~")]
+        validate_arguments(value, resolved, root, depth + 1)
+    for keyword in ("anyOf", "oneOf", "allOf"):
+        if keyword in schema:
+            variants = schema[keyword]
+            require(isinstance(variants, list) and variants, "empty tool schema alternatives")
+            matches = 0
+            for variant in variants:
+                try: validate_arguments(value, variant, root, depth + 1); matches += 1
+                except DataError: pass
+            require(matches >= 1 if keyword == "anyOf" else matches == 1 if keyword == "oneOf" else matches == len(variants), "native arguments violate schema alternatives")
+    kind = schema.get("type")
+    kinds = kind if isinstance(kind, list) else [kind] if kind else []
+    types = {"object": isinstance(value, dict), "array": isinstance(value, list), "string": isinstance(value, str), "integer": type(value) is int, "number": type(value) in (int, float), "boolean": type(value) is bool, "null": value is None}
+    require(not kinds or any(types.get(k, False) for k in kinds) or (value is None and schema.get("nullable") is True), "native argument type mismatch")
+    for keyword in ("enum", "const"):
+        if keyword in schema:
+            allowed = schema[keyword] if keyword == "enum" else [schema[keyword]]
+            require(isinstance(allowed, list) and any(canonical(value) == canonical(item) for item in allowed), "native argument outside declared values")
+    if isinstance(value, dict):
+        props = schema.get("properties", {})
+        require(isinstance(props, dict) and all(k in value for k in schema.get("required", [])), "missing required tool arguments")
+        for key, item in value.items():
+            if key in props: validate_arguments(item, props[key], root, depth + 1)
+            elif "additionalProperties" in schema: validate_arguments(item, schema["additionalProperties"], root, depth + 1)
+    elif isinstance(value, list):
+        require(len(value) >= schema.get("minItems", 0) and len(value) <= schema.get("maxItems", len(value)), "native argument list length mismatch")
+        if schema.get("uniqueItems"): require(len({canonical(item) for item in value}) == len(value), "native argument list has duplicates")
+        for item in value: validate_arguments(item, schema.get("items", True), root, depth + 1)
+    elif isinstance(value, str):
+        require(len(value) >= schema.get("minLength", 0) and len(value) <= schema.get("maxLength", len(value)), "native argument text length mismatch")
+        if "pattern" in schema: require(re.search(schema["pattern"], value) is not None, "native argument violates pattern")
+    elif type(value) in (int, float):
+        import math
+        require(type(value) is int or math.isfinite(value), "nonfinite native argument")
+        for key, predicate in (("minimum", lambda bound: value >= bound), ("maximum", lambda bound: value <= bound), ("exclusiveMinimum", lambda bound: value > bound), ("exclusiveMaximum", lambda bound: value < bound)):
+            if key in schema: require(predicate(schema[key]), f"native argument violates {key}")
+
+
 def validate_messages(messages, tools):
     require(isinstance(tools, list), "tools must be a list")
     names = {}
@@ -116,7 +174,7 @@ def validate_messages(messages, tools):
                 name, arguments = function.get("name"), function.get("arguments")
                 require(isinstance(name, str) and name in names, "call to an undeclared tool")
                 require(isinstance(arguments, dict), "normalize native arguments to an object, not a JSON string")
-                require(all(key in arguments for key in names[name].get("required", [])), "missing required tool arguments")
+                validate_arguments(arguments, names[name])
                 seen.add(call_id)
                 pending[call_id] = name
         else:

@@ -57,6 +57,94 @@ impl App {
         });
     }
     pub fn manager_action(&mut self, action: &str, state: Value) -> Result<()> {
+        if action.starts_with("inference-") {
+            return self.manage_inference(action, state);
+        }
+        if action.starts_with("candidates-") {
+            return self.manage_candidates(action, state);
+        }
+        if action.starts_with("instructions-") {
+            let mut prefs = self.preferences.clone();
+            match action {
+                "instructions-menu" => {
+                    let mut items = vec![(
+                        "Use the standard instructions".into(),
+                        "Clear a reviewed supplement".into(),
+                        "instructions-clear".into(),
+                        json!({}),
+                    )];
+                    for row in crate::instructions::list(&self.root)? {
+                        let id = row["id"].as_str().context("Instruction id")?;
+                        items.push((
+                            format!("Review {}", &id[..12]),
+                            "Inspect its changes and validation before applying".into(),
+                            "instructions-preview".into(),
+                            json!({"id":id}),
+                        ));
+                    }
+                    self.manager_menu("Reviewed instruction improvements","Offline optimization creates drafts. Activation requires recorded development/validation splits, actual behavioral evidence and a completed review.",items);
+                }
+                "instructions-preview" => {
+                    let id = state["id"].as_str().context("Instruction id")?;
+                    let current = prefs
+                        .instruction_version
+                        .as_deref()
+                        .map(|id| crate::instructions::text(&self.root, id))
+                        .transpose()?
+                        .unwrap_or_default();
+                    let proposed = crate::instructions::text(&self.root, id)?;
+                    self.manager_confirm(
+                        "Apply these reviewed instructions?",
+                        format!(
+                            "{}\n\n{}",
+                            similar::TextDiff::from_lines(&current, &proposed)
+                                .unified_diff()
+                                .context_radius(3)
+                                .header("active", "candidate"),
+                            serde_json::to_string_pretty(&crate::instructions::metadata(
+                                &self.root, id
+                            )?)?
+                        ),
+                        "instructions-use",
+                        state,
+                    );
+                }
+                "instructions-use" | "instructions-clear" => {
+                    ensure!(
+                        !self.busy && !self.connecting,
+                        "Stop the current task first"
+                    );
+                    let id = if action == "instructions-use" {
+                        state["id"].as_str()
+                    } else {
+                        None
+                    };
+                    crate::instructions::activate(&self.root, &mut prefs, id)?;
+                    self.preferences = prefs;
+                    self.workspace = None;
+                    self.connected = false;
+                    self.notify("Instruction choice saved for the next connection. Version history is retained for rollback.");
+                }
+                _ => anyhow::bail!("Unknown instruction action"),
+            }
+            return Ok(());
+        }
+        if action == "workflow-settings" {
+            self.manager_menu("Task workflow","Access and model selection remain separate settings. Host workflow supplies inspect/patch/check/recover steps instead of requiring a model-written plan.",vec![("Model writes a plan".into(),"Existing behavior".into(),"workflow-save".into(),json!({"mode":"model-plan"})),("Host guides each step".into(),"Uses current source revisions and actual check results".into(),"workflow-save".into(),json!({"mode":"host"}))]);
+            return Ok(());
+        }
+        if action == "workflow-save" {
+            ensure!(
+                !self.busy && !self.connecting,
+                "Stop the current task first"
+            );
+            self.preferences.workflow = serde_json::from_value(state["mode"].clone())?;
+            self.preferences.save(&self.root)?;
+            self.workspace = None;
+            self.connected = false;
+            self.notify("Task workflow saved for your next connection.");
+            return Ok(());
+        }
         if action.starts_with("check-") {
             return self.manage_verification(action, state);
         }
@@ -75,6 +163,61 @@ impl App {
             self.workspace = None;
             self.connected = false;
             self.notify("Tool focus saved. Your next message connects with the selected tools.");
+            return Ok(());
+        }
+        if action == "skills-settings" {
+            let mut items: Vec<_> = crate::skills::catalog()
+                .into_iter()
+                .map(|skill| {
+                    (
+                        skill.id.into(),
+                        format!("{} · {}", skill.description, skill.prerequisites),
+                        "skills-select".into(),
+                        json!({"id":skill.id}),
+                    )
+                })
+                .collect();
+            items.insert(
+                0,
+                (
+                    "No active procedure".into(),
+                    "Host may suggest relevant metadata".into(),
+                    "skills-select".into(),
+                    json!({"id":null}),
+                ),
+            );
+            self.manager_menu("Choose a task skill","One bounded procedure enters the next prompt. Helpers use your existing execution access; their native skill tool returns actual evidence.",items);
+            return Ok(());
+        }
+        if action == "skills-select" {
+            ensure!(
+                !self.busy && !self.connecting,
+                "Stop the current task first"
+            );
+            self.preferences.active_skill = state["id"].as_str().map(str::to_owned);
+            self.preferences.save(&self.root)?;
+            self.workspace = None;
+            self.connected = false;
+            self.notify("Skill choice saved for the next connection.");
+            return Ok(());
+        }
+        if action == "native-probe" {
+            let profile = self.current_profile().context("Choose a model")?.1.clone();
+            let root = self.root.clone();
+            let prefs = self.preferences.clone();
+            let mut previous_workspace = self.workspace.take();
+            self.connected = false;
+            self.launch_job("Testing native model tools", move |cancel, _| async move {
+                if let Some(workspace) = previous_workspace.as_mut() {
+                    workspace.stop().await;
+                }
+                let report =
+                    crate::native::probe(&root, &prefs, &profile, 180, false, cancel).await?;
+                Ok(JobResult::Notice(
+                    "Native model tools".into(),
+                    serde_json::to_string_pretty(&report)?,
+                ))
+            })?;
             return Ok(());
         }
         if action == "qualify-history" {
@@ -275,12 +418,249 @@ impl App {
         }
         Ok(())
     }
+    fn manage_candidates(&mut self, action: &str, state: Value) -> Result<()> {
+        match action {
+            "candidates-start"=>self.manager_input("Explore independently checked candidates","Describe the change. Configure required independent Tests checks in Task first.","candidates-effort",json!({}),""),
+            "candidates-effort"=> {
+                let goal=state["value"].as_str().context("Goal missing")?;ensure!(!goal.trim().is_empty(),"Describe the requested change");
+                self.manager_menu("Choose effort","Choose the number of serial source candidates. The next screen sets one shared allowance. A verified candidate stops further work.",[("Quick","quick","One source candidate"),("Careful","careful","Up to two serial source candidates"),("Thorough","thorough","Up to three serial source candidates")].into_iter().map(|(label,effort,description)|(label.into(),description.into(),"candidates-budget".into(),json!({"goal":goal,"effort":effort}))).collect());
+            },
+            "candidates-budget"=> {
+                let mut items=vec![];
+                for (label,seconds,tokens,requests) in [("Standard",600,8192,12),("Modest",300,4096,8),("Extended",1200,16384,24)] {
+                    let mut selected=state.clone();selected["seconds"]=json!(seconds);selected["generated_tokens"]=json!(tokens);selected["requests"]=json!(requests);
+                    items.push((label.into(),format!("{} minutes · {} generated tokens · {} model requests shared",seconds/60,tokens,requests),"candidates-run".into(),selected));
+                }
+                items.push(("Set your own allowance".into(),"Time, generated tokens and request count".into(),"candidates-custom".into(),state));
+                self.manager_menu("Shared candidate allowance","The selected model, context, tool focus and access stay separate. All candidates divide this one allowance; model loading and checks use its time.",items);
+            },
+            "candidates-custom"=>self.manager_input("Shared time in seconds","30 to 3600 seconds, including model loading and checks","candidates-custom-tokens",state,"600"),
+            "candidates-custom-tokens"=> {
+                let mut next=state.clone();next["seconds"]=json!(state["value"].as_str().context("Time")?.parse::<u64>()?);
+                self.manager_input("Shared generated tokens","At least 128; thinking, drafts and final replies use the same allowance","candidates-custom-requests",next,"8192");
+            },
+            "candidates-custom-requests"=> {
+                let mut next=state.clone();next["generated_tokens"]=json!(state["value"].as_str().context("Tokens")?.parse::<u32>()?);
+                self.manager_input("Shared model request count","At least one per candidate; every inference request counts","candidates-custom-run",next,"12");
+            },
+            "candidates-custom-run"=> {
+                let mut next=state.clone();next["requests"]=json!(state["value"].as_str().context("Requests")?.parse::<u32>()?);
+                self.manage_candidates("candidates-run",next)?;
+            },
+            "candidates-run"=> {
+                ensure!(!self.busy&&!self.connecting,"Stop the current task first");let seconds=state["seconds"].as_u64().context("Time allowance")?;let tokens=u32::try_from(state["generated_tokens"].as_u64().context("Token allowance")?)?;let requests=u32::try_from(state["requests"].as_u64().context("Request allowance")?)?;let goal=state["goal"].as_str().context("Goal")?.to_owned();let effort=serde_json::from_value(state["effort"].clone())?;let profile=self.current_profile().context("Choose a model")?.1.clone();let prefs=self.preferences.clone();let data=self.root.clone();let cwd=prefs.project.clone(); let mut previous_workspace=self.workspace.take();self.connected=false;let engine=crate::runtime::find_engine(&data,std::path::Path::new("goose"),&prefs).context("Install the engine first")?;
+                self.launch_job("Exploring verified candidates",move|cancel,_|async move {if let Some(workspace)=previous_workspace.as_mut(){workspace.stop().await;} let result=crate::candidates::run(&data,&cwd,&engine,&profile,&prefs,&goal,effort,seconds,tokens,requests,None,cancel).await?;Ok(JobResult::Manager("candidates-review".into(),serde_json::to_value(result)?))})?;
+            },
+            "candidates-review"=> {
+                let id=state["id"].as_str().context("Candidate run id")?;let mut items=vec![("Inspect run evidence".into(),format!("{} · {} generated tokens charged",state["status"],state["spent_generated_tokens"]),"candidates-inspect".into(),state.clone())];
+                for row in state["rows"].as_array().into_iter().flatten().filter(|r|r["eligible"]==true){items.push((format!("Review candidate {}",row["index"]),"Independent required checks passed on its current revision".into(),"candidates-preview".into(),json!({"id":id,"index":row["index"],"diffs":row["diffs"]})));}
+                self.manager_menu("Candidate results","Your original project is unchanged by source-copy edits. Full access terminal actions retain normal host side effects. Apply only after reviewing its diff.",items);
+            },
+            "candidates-inspect"=>self.dialog=Some(Dialog::Notice{title:"Candidate evidence".into(),body:serde_json::to_string_pretty(&state)?,scroll:0}),
+            "candidates-preview"=>self.manager_confirm("Apply this reviewed candidate?",format!("{}\n\nChecks will need to run again on the original project after applying. Source conflicts are rejected.",serde_json::to_string_pretty(&state["diffs"])?),"candidates-apply",state),
+            "candidates-apply"=> {
+                let id=state["id"].as_str().context("Candidate id")?.to_owned();let index=state["index"].as_u64().context("Candidate index")? as usize;let root=self.root.clone();let cwd=self.preferences.project.clone();let policy=self.preferences.access_policy;
+                self.launch_io("Applying verified candidate",move||{let report=crate::candidates::promote(&root,&cwd,&id,index,policy)?;Ok(JobResult::Notice("Candidate applied with checkpoints".into(),serde_json::to_string_pretty(&report)?))})?;
+            },_=>anyhow::bail!("Unknown candidate action"),
+        }
+        Ok(())
+    }
+    fn manage_inference(&mut self, action: &str, state: Value) -> Result<()> {
+        let (name, profile) = self
+            .current_profile()
+            .context("Choose a connection first")?;
+        let name = name.to_owned();
+        let profile = profile.clone();
+        let settings = profile.effective_inference();
+        match action {
+            "inference-settings" => {
+                let fields = [
+                    (
+                        "output_tokens",
+                        "Total output tokens",
+                        settings.output_tokens.to_string(),
+                        "Per response, including thinking and tool arguments",
+                    ),
+                    (
+                        "action_headroom",
+                        "Action headroom",
+                        settings.action_headroom.to_string(),
+                        "Thinking budget must leave this many output tokens",
+                    ),
+                    (
+                        "reasoning_tokens",
+                        "Thinking token budget",
+                        settings
+                            .reasoning_tokens
+                            .map(|v| v.to_string())
+                            .unwrap_or_default(),
+                        "Blank uses server default. Requires a supported thinking parser",
+                    ),
+                    (
+                        "temperature",
+                        "Temperature",
+                        settings
+                            .temperature
+                            .map(|v| v.to_string())
+                            .unwrap_or_default(),
+                        "Blank uses selected server's default",
+                    ),
+                    (
+                        "top_p",
+                        "Top-p",
+                        settings.top_p.map(|v| v.to_string()).unwrap_or_default(),
+                        "Blank uses selected server's default",
+                    ),
+                    (
+                        "top_k",
+                        "Top-k",
+                        settings.top_k.map(|v| v.to_string()).unwrap_or_default(),
+                        "Requires owned llama.cpp or an explicitly qualified external server",
+                    ),
+                    (
+                        "min_p",
+                        "Min-p",
+                        settings.min_p.map(|v| v.to_string()).unwrap_or_default(),
+                        "Requires owned llama.cpp or an explicitly qualified external server",
+                    ),
+                ];
+                let mut items: Vec<_> = fields
+                    .into_iter()
+                    .map(|(field, label, current, hint)| {
+                        (
+                            label.into(),
+                            format!(
+                                "{} · {hint}",
+                                if current.is_empty() {
+                                    "server default"
+                                } else {
+                                    &current
+                                }
+                            ),
+                            "inference-field".into(),
+                            json!({"profile":name,"field":field,"label":label,"current":current,"hint":hint}),
+                        )
+                    })
+                    .collect();
+                items.push((
+                    "Output parameter compatibility".into(),
+                    format!("Current: {:?}; select the field required by this endpoint",settings.output_parameter),
+                    "inference-parameter".into(),json!({"profile":name}),
+                ));
+                items.push((
+                    "External llama.cpp extensions".into(),
+                    "Explicit declaration for external thinking, top-k and min-p controls".into(),
+                    "inference-extensions".into(),json!({"profile":name}),
+                ));
+                items.push((
+                    "Inspect effective allocation".into(),
+                    "Actual request overrides and accounting limits".into(),
+                    "inference-inspect".into(),
+                    json!({}),
+                ));
+                self.manager_menu(
+                    "Model output and sampling",
+                    &format!(
+                        "{} · {} input reserve + {} total output · no checkpoint substitution",
+                        profile.model,
+                        profile.context_tokens - settings.output_tokens,
+                        settings.output_tokens
+                    ),
+                    items,
+                );
+            }
+            "inference-inspect" => {
+                self.dialog = Some(Dialog::Notice {
+                    title: "Effective model allocation".into(),
+                    body: serde_json::to_string_pretty(&settings.accounting(&profile))?,
+                    scroll: 0,
+                })
+            }
+            "inference-field" => self.manager_input(
+                &format!("Set {}", state["label"].as_str().unwrap_or("allocation")),
+                state["hint"].as_str().unwrap_or(""),
+                "inference-save",
+                state.clone(),
+                state["current"].as_str().unwrap_or(""),
+            ),
+            "inference-parameter"=>self.manager_menu("Output parameter compatibility","Choose the documented field for the selected endpoint. This does not change the model.",vec![("max_tokens".into(),"llama.cpp and most compatible servers".into(),"inference-save".into(),json!({"profile":name,"field":"output_parameter","value":"max_tokens"})),("max_completion_tokens".into(),"Endpoints requiring the newer OpenAI output field".into(),"inference-save".into(),json!({"profile":name,"field":"output_parameter","value":"max_completion_tokens"}))]),
+            "inference-extensions"=>self.manager_menu("External llama.cpp controls","Owned llama.cpp supports these controls. For external endpoints, only declare support after checking that server's actual API.",vec![("Standard compatible API".into(),"Leave llama.cpp-only overrides unsupported".into(),"inference-save".into(),json!({"profile":name,"field":"llama_extensions","value":"false"})),("Server supports llama.cpp extensions".into(),"Allow explicit reasoning budget, top-k and min-p fields".into(),"inference-save".into(),json!({"profile":name,"field":"llama_extensions","value":"true"}))]),
+            "inference-save" => {
+                ensure!(
+                    !self.busy && !self.connecting,
+                    "Stop the current task before changing model allocation"
+                );
+                ensure!(
+                    state["profile"].as_str() == Some(&name),
+                    "Connection changed while this form was open; reopen its settings"
+                );
+                let value = state["value"].as_str().unwrap_or("").trim();
+                let mut next = settings;
+                match state["field"].as_str().unwrap_or("") {
+                    "output_parameter"=>next.output_parameter=match value {"max_tokens"=>crate::inference::OutputParameter::MaxTokens,"max_completion_tokens"=>crate::inference::OutputParameter::MaxCompletionTokens,_=>anyhow::bail!("Choose a supported output parameter")},
+                    "llama_extensions"=>next.llama_extensions=value.parse()?,
+                    "output_tokens" => next.output_tokens = value.parse()?,
+                    "action_headroom" => next.action_headroom = value.parse()?,
+                    "reasoning_tokens" => {
+                        next.reasoning_tokens = if value.is_empty() {
+                            None
+                        } else {
+                            Some(value.parse()?)
+                        }
+                    }
+                    "temperature" => {
+                        next.temperature = if value.is_empty() {
+                            None
+                        } else {
+                            Some(value.parse()?)
+                        }
+                    }
+                    "top_p" => {
+                        next.top_p = if value.is_empty() {
+                            None
+                        } else {
+                            Some(value.parse()?)
+                        }
+                    }
+                    "top_k" => {
+                        next.top_k = if value.is_empty() {
+                            None
+                        } else {
+                            Some(value.parse()?)
+                        }
+                    }
+                    "min_p" => {
+                        next.min_p = if value.is_empty() {
+                            None
+                        } else {
+                            Some(value.parse()?)
+                        }
+                    }
+                    _ => anyhow::bail!("Unknown model allocation"),
+                }
+                next.validate(&profile)?;
+                let mut config = self.config.clone();
+                config
+                    .profiles
+                    .get_mut(&name)
+                    .context("Connection missing")?
+                    .inference = Some(next);
+                config.save(&self.root)?;
+                self.config = config;
+                self.workspace = None;
+                self.connected = false;
+                self.notify("Model allocation saved. Next connection sends these settings in actual requests.");
+            }
+            _ => anyhow::bail!("Unknown inference action"),
+        }
+        Ok(())
+    }
     fn manage_runtime(&mut self, action: &str, state: Value) -> Result<()> {
         let value = state["value"].as_str().unwrap_or("").to_owned();
         match action {
             "runtime-settings" => {
                 let settings = &self.preferences.runtime;
-                self.manager_menu("Managed runtime settings",&format!("GPU layers {} · threads {} (0 auto) · batch {} · K/V {} / {}",settings.gpu_layers,settings.threads,settings.batch,settings.cache_k,settings.cache_v),vec![("GPU layers".into(),"0 CPU; -1 all layers. Requires compatible runtime/GPU.".into(),"runtime-field".into(),json!({"field":"gpu_layers","current":settings.gpu_layers.to_string()})),("CPU threads".into(),"0 uses automatic conservative choice.".into(),"runtime-field".into(),json!({"field":"threads","current":settings.threads.to_string()})),("Batch size".into(),"Lower reduces working memory; 128 is the default.".into(),"runtime-field".into(),json!({"field":"batch","current":settings.batch.to_string()})),("K cache".into(),"f16, q8_0 or q4_0; test exact runtime support.".into(),"runtime-field".into(),json!({"field":"cache_k","current":settings.cache_k})),("V cache".into(),"Quantization requires compatible flash attention.".into(),"runtime-field".into(),json!({"field":"cache_v","current":settings.cache_v})),("Flash attention".into(),"true or false; hardware support varies.".into(),"runtime-field".into(),json!({"field":"flash_attention","current":settings.flash_attention.to_string()})),("Reasoning mode".into(),format!("Current: {}. Only applies to templates with enable_thinking.",settings.thinking.map(|v|if v{"on"}else{"off"}).unwrap_or("model default")),"runtime-thinking".into(),json!({}))]);
+                self.manager_menu("Model and runtime settings",&format!("GPU layers {} · threads {} (0 auto) · batch {} · K/V {} / {}",settings.gpu_layers,settings.threads,settings.batch,settings.cache_k,settings.cache_v),vec![("Reviewed instructions".into(),"Inspect, activate or roll back offline improvements".into(),"instructions-menu".into(),json!({})),("Explore verified candidates".into(),"Quick / Careful / Thorough under one shared allowance".into(),"candidates-start".into(),json!({})),("Test native model tools".into(),"Stream a real call and consume its host result".into(),"native-probe".into(),json!({})),("Task skills".into(),"Select a short procedure with executable helpers".into(),"skills-settings".into(),json!({})),("Task workflow".into(),"Model plan or host inspect/patch/check/recover".into(),"workflow-settings".into(),json!({})),("Model output and sampling".into(),"Set explicit output, thinking headroom and sampling".into(),"inference-settings".into(),json!({})),("GPU layers".into(),"0 CPU; -1 all layers. Requires compatible runtime/GPU.".into(),"runtime-field".into(),json!({"field":"gpu_layers","current":settings.gpu_layers.to_string()})),("CPU threads".into(),"0 uses automatic conservative choice.".into(),"runtime-field".into(),json!({"field":"threads","current":settings.threads.to_string()})),("Batch size".into(),"Lower reduces working memory; 128 is the default.".into(),"runtime-field".into(),json!({"field":"batch","current":settings.batch.to_string()})),("K cache".into(),"f16, q8_0 or q4_0; test exact runtime support.".into(),"runtime-field".into(),json!({"field":"cache_k","current":settings.cache_k})),("V cache".into(),"Quantization requires compatible flash attention.".into(),"runtime-field".into(),json!({"field":"cache_v","current":settings.cache_v})),("Flash attention".into(),"true or false; hardware support varies.".into(),"runtime-field".into(),json!({"field":"flash_attention","current":settings.flash_attention.to_string()})),("Reasoning mode".into(),format!("Current: {}. Only applies to templates with enable_thinking.",settings.thinking.map(|v|if v{"on"}else{"off"}).unwrap_or("model default")),"runtime-thinking".into(),json!({}))]);
             }
             "runtime-thinking" => self.manager_menu("Choose the model's reasoning mode","Only templates that use enable_thinking honor this setting. Off may reduce long reasoning output; compare independent task results before relying on it.",vec![("Model default".into(),"No override".into(),"runtime-thinking-save".into(),json!({"thinking":null})),("Reasoning on".into(),"May use more output tokens and time".into(),"runtime-thinking-save".into(),json!({"thinking":true})),("Reasoning off".into(),"Test task accuracy with shorter reasoning output".into(),"runtime-thinking-save".into(),json!({"thinking":false}))]),
             "runtime-thinking-save" => {

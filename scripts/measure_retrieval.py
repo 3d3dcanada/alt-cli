@@ -11,6 +11,7 @@ with tempfile.TemporaryDirectory(prefix='alt-retrieval-')as t:
   start=time.monotonic();r=subprocess.run(base+['index'],cwd=project,capture_output=True,text=True,check=True);v=json.loads(r.stdout);measurements.append({'phase':label,'seconds':round(time.monotonic()-start,3),'report':v});return v
  assert index('initial')['indexed']==count;assert index('unchanged')['updated']==0
  (project/'module_0.py').write_text('def replacement_symbol(): return 1\n');(project/'module_1.py').unlink();v=index('edit_and_delete');assert v['updated']==1 and v['removed']==1
- report={'files':count,'machine':'CPU cloud, filesystem cache warm after file creation','measurements':measurements,'scope':'Index discovery exceeds 4096-file editing/check-snapshot limit; those mutation limits remain explicit.'}
+ report={'files':count,'machine':'CPU cloud, filesystem cache warm after file creation','measurements':measurements,'rss_scope':'One whole Alt process sample after each indexing phase; not peak RAM or index-only allocation.',
+ 'scope':'Index discovery exceeds 4096-file editing/check-snapshot limit; those mutation limits remain explicit.'}
  if a.output:a.output.parent.mkdir(parents=True,exist_ok=True);a.output.write_text(json.dumps(report,indent=2)+'\n')
  print(json.dumps(report,indent=2))

@@ -372,7 +372,7 @@ impl LocalRuntime {
                 .unwrap_or(2)
                 .min(8)
         };
-        let mut command = Command::new(binary);
+        let mut command = Command::new(&binary);
         command
             .args(["--model"])
             .arg(&artifact.path)
@@ -416,6 +416,23 @@ impl LocalRuntime {
                 "--chat-template-kwargs",
                 &serde_json::json!({"enable_thinking":enabled}).to_string(),
             ]);
+        }
+        if let Some(tokens) = profile.effective_inference().reasoning_tokens {
+            // Fail visibly on older runtimes rather than claiming an unsupported allocation.
+            let help = tokio::time::timeout(
+                Duration::from_secs(5),
+                Command::new(&binary)
+                    .arg("--help")
+                    .kill_on_drop(true)
+                    .output(),
+            )
+            .await
+            .context("Runtime capability probe timed out")??;
+            ensure!(
+                String::from_utf8_lossy(&help.stdout).contains("--reasoning-budget"),
+                "Selected runtime does not support --reasoning-budget; upgrade or clear this setting"
+            );
+            command.arg("--reasoning-budget").arg(tokens.to_string());
         }
         crate::process::configure(&mut command);
         let child = command

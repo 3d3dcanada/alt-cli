@@ -35,7 +35,7 @@ pub enum Command {
 
 #[derive(Debug)]
 pub enum Update {
-    Ready(Session),
+    Ready(Box<Session>),
     Event(Event),
     Done(Value),
     Error(String),
@@ -177,7 +177,9 @@ async fn worker(
     if store.get(&session.id).is_err() {
         store.create(&session)?;
     }
-    updates.send(Update::Ready(session.clone())).await?;
+    updates
+        .send(Update::Ready(Box::new(session.clone())))
+        .await?;
     let mut response: Option<Response> = None;
     let mut deadline = tokio::time::Instant::now() + Duration::from_secs(1200);
     let mut cancelling = false;

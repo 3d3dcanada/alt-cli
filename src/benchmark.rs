@@ -143,7 +143,7 @@ pub async fn run(
                 tokens.is_some_and(|t| t > 0),
                 "Runtime did not report generated token usage"
             );
-            trials.push(json!({"trial":n+1,"seconds_including_prompt_processing":seconds,"generated_tokens":tokens,"tokens_per_wall_second":tokens.unwrap() as f64/seconds,"runtime_timings":value.get("timings"),"ollama_eval_duration_ns":value.get("eval_duration"),"response":value}));
+            trials.push(json!({"trial":n+1,"actual_request":body,"seconds_including_prompt_processing":seconds,"generated_tokens":tokens,"tokens_per_wall_second":tokens.unwrap() as f64/seconds,"runtime_timings":value.get("timings"),"ollama_eval_duration_ns":value.get("eval_duration"),"response":value}));
             report["trials"] = json!(trials);
         }
         Ok(())

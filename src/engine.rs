@@ -41,6 +41,8 @@ pub struct Engine {
     task: String,
     context_tokens: u32,
     local_tokenizer: Option<Profile>,
+    relay: Option<crate::inference::Relay>,
+    instruction_draft: Option<String>,
 }
 
 /// Read one newline-delimited frame without allowing unbounded allocation.
@@ -111,6 +113,7 @@ impl Engine {
     ) -> Result<Self> {
         profile.validate()?;
         let bridge = crate::toolbox::Bridge::start(root, cwd, policy)?;
+        let relay = crate::inference::Relay::start(root, profile).await?;
         let goose_root = root.join("engine-v3");
         crate::config::private_dir(&goose_root)?;
         let goose_root = goose_root.canonicalize()?;
@@ -127,11 +130,14 @@ impl Engine {
             .env("GOOSE_MAX_TURNS", profile.max_turns.to_string())
             .env(
                 "GOOSE_MAX_TOKENS",
-                (profile.context_tokens / 4).min(2048).to_string(),
+                profile.effective_inference().output_tokens.to_string(),
             )
             .env("GOOSE_DISABLE_SESSION_NAMING", "true")
             .env("GOOSE_CONTEXT_LIMIT", profile.context_tokens.to_string())
-            .env_remove("GOOSE_INPUT_LIMIT")
+            .env(
+                "GOOSE_INPUT_LIMIT",
+                (profile.context_tokens - profile.effective_inference().output_tokens).to_string(),
+            )
             .env("GOOSE_TOOLSHIM", "false")
             .env_remove("GOOSE_MOIM_MESSAGE_TEXT")
             .env_remove("GOOSE_MOIM_MESSAGE_FILE")
@@ -150,10 +156,7 @@ impl Engine {
             Provider::Openai => {
                 command
                     .env("GOOSE_PROVIDER", "openai")
-                    .env("OPENAI_BASE_URL", &profile.endpoint);
-                if let Some(key) = profile.key()? {
-                    command.env("OPENAI_API_KEY", key);
-                }
+                    .env("OPENAI_BASE_URL", &relay.endpoint);
             }
             Provider::Ollama => {
                 // Goose 1.53's Ollama provider sends options.num_predict to /v1,
@@ -161,10 +164,9 @@ impl Engine {
                 // Use the standard compatible client for chat, retaining native
                 // Ollama inventory/evaluation elsewhere and the exact selected tag.
                 // Native context remains a server/tag setting, unlike Alt's budget.
-                command.env("GOOSE_PROVIDER", "openai").env(
-                    "OPENAI_BASE_URL",
-                    format!("{}/v1", profile.endpoint.trim_end_matches('/')),
-                );
+                command
+                    .env("GOOSE_PROVIDER", "openai")
+                    .env("OPENAI_BASE_URL", &relay.endpoint);
                 ensure!(
                     profile.api_key_env.is_none(),
                     "Ollama authentication is not implemented in this slice"
@@ -175,6 +177,7 @@ impl Engine {
         engine.bridge = Some(bridge);
         engine.context_tokens = profile.context_tokens;
         engine.local_tokenizer = profile.local_model.as_ref().map(|_| profile.clone());
+        engine.relay = Some(relay);
         Ok(engine)
     }
 
@@ -280,6 +283,8 @@ impl Engine {
             task: String::new(),
             context_tokens: 8192,
             local_tokenizer: None,
+            relay: None,
+            instruction_draft: None,
         })
     }
 
@@ -290,6 +295,14 @@ impl Engine {
         tokio::time::timeout(Duration::from_secs(5), self.stdin.write_all(&bytes))
             .await
             .context("Engine stdin stalled")??;
+        Ok(())
+    }
+    pub fn set_instruction_draft(&mut self, body: String) -> Result<()> {
+        ensure!(
+            !body.trim().is_empty() && body.len() <= 5000,
+            "Instruction trial must be nonempty and at most 5000 UTF-8 bytes"
+        );
+        self.instruction_draft = Some(body);
         Ok(())
     }
 
@@ -453,13 +466,20 @@ impl Engine {
             cancel.store(false, std::sync::atomic::Ordering::Relaxed);
             let focus = bridge.tool_profile;
             let policy = bridge.policy;
+            let workflow = crate::config::Preferences::load(&data)?.workflow;
+            let active_skill = crate::config::Preferences::load(&data)?.active_skill;
             available_actions =
                 crate::project_worker::run(data.clone(), cwd.clone(), cancel.clone(), move |p| {
                     Ok(crate::toolbox::guidance(focus, policy, &p.checks()?))
                 })
                 .await?;
+            available_actions.push_str(&format!(
+                "\n{}",
+                crate::skills::prompt(active_skill.as_deref(), text)?
+            ));
             memory = crate::project_worker::run(data.clone(), cwd.clone(), cancel.clone(), move |project| {
                 project.start_task(&task_copy, &request)?;
+                crate::workflow::begin(project,&task_copy,workflow)?;
                 let mut memory = project.memory(&task_copy, &request, (context as usize).min(16000))?;
                 if let Some(check) = project.latest_check(&task_copy)? {
                     memory.push_str(&format!("\nLast check observation (may be stale; use list for current verification): {} exit={:?}, error={:?}, tests={:?}.\n", check.name, check.exit_code, check.error, check.tests_run));
@@ -518,6 +538,15 @@ impl Engine {
                 .context(&task, session);
         }
         let mut prompt = vec![json!({"type":"text","text":include_str!("../prompts/operator.md")})];
+        if let Some(body) = &self.instruction_draft {
+            let id = crate::project::digest(body.as_bytes());
+            prompt.push(json!({"type":"text","text":format!("Experimental operator supplement {id} (this invocation only; unpromoted):\n{body}")}));
+        } else if let Some(bridge) = &self.bridge
+            && let Some(id) = crate::config::Preferences::load(&bridge.data)?.instruction_version
+        {
+            crate::instructions::validation(&bridge.data, &id)?;
+            prompt.push(json!({"type":"text","text":format!("Reviewed operator supplement {id}:\n{}",crate::instructions::text(&bridge.data,&id)?)}));
+        }
         if !brief.trim().is_empty() {
             ensure!(brief.len() <= 16000, "The project brief is too large");
             prompt.push(
@@ -571,6 +600,7 @@ impl Engine {
     }
 
     pub async fn shutdown(&mut self) {
+        self.relay = None;
         if let Some(bridge) = &self.bridge {
             bridge.cancel();
         }

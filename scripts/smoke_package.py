@@ -87,6 +87,10 @@ with tempfile.TemporaryDirectory(prefix='alt-installed-') as temp:
     assert json.loads((pc_report/'summary.json').read_text())['passed']
     invoke('--version')
     assert (prefix/'share/doc/alt/DEPENDENCIES.md').is_file()
+    if (package/'training').is_dir():
+        assert (prefix/'share/doc/alt/training/capture.py').is_file()
+        assert (prefix/'share/doc/alt/training/README.md').is_file()
+        assert len(list((prefix/'share/doc/alt/skills').glob('*/SKILL.md')))==6
     assert len(list((prefix/'share/doc/alt/licenses').iterdir())) > 100
     invoke('runtime', '--gpu-layers', '0', '--threads', '2')
     invoke('task', 'configure-check', 'package-check', '--', 'python3', 'check.py')

@@ -46,6 +46,8 @@ with tempfile.TemporaryDirectory(prefix="alt-package-") as temp:
         shutil.copy2(repo / doc, package / doc)
     shutil.copytree(repo / "docs", package / "docs")
     shutil.copytree(repo / "prompts", package / "prompts")
+    shutil.copytree(repo / "skills", package / "skills")
+    shutil.copytree(repo / "training", package / "training",ignore=shutil.ignore_patterns('__pycache__','*.pyc'))
     shutil.copy2(repo / "scripts/install-package.sh", package / "install.sh")
     shutil.copy2(repo / "scripts/test-my-pc.py", package / "test-my-pc.py")
     (package / "install.sh").chmod(0o755)

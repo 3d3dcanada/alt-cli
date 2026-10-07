@@ -17,7 +17,7 @@ with tempfile.TemporaryDirectory(prefix='alt-contract-tui-') as d:
   result=json.loads(subprocess.check_output(base+['task','verify'],cwd=project,text=True));assert result['behavioral_acceptance'] and result['complete'],result
   t.send(b'e');t.wait('Check evidence');t.send(b'\r')
   t.send(b'\x1b6');t.wait('Preferences');t.send(b'\x1b[B'*15+b'\r');t.wait('Which tools fit this task?');t.send(b'\x1b[B'*2+b'\r');t.wait('Tool focus saved')
-  t.send(b'\x1b[A'*2+b'\r');t.wait('Managed runtime settings');t.send(b'\x1b[B'*6+b'\r');t.wait("Choose the model's reasoning mode");t.send(b'\x1b[B'*2+b'\r');t.wait('Reasoning choice saved')
+  t.send(b'\x1b[A'*2+b'\r');t.wait('Model and runtime settings');t.send(b'\x1b[B'*12+b'\r');t.wait("Choose the model's reasoning mode");t.send(b'\x1b[B'*2+b'\r');t.wait('Reasoning choice saved')
   assert tomllib.loads((state/'preferences.toml').read_text())['runtime']['thinking'] is False
   print('PASS: labelled contract wizard, external assertion pinning, structured evidence, behavioral badge, tool-focus and reasoning-mode selection')
  finally:t.close()

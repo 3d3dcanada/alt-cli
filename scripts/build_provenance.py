@@ -4,7 +4,7 @@ from pathlib import Path
 
 def source_inputs(repo):
     paths=[]
-    for name in ['Cargo.toml','Cargo.lock','rust-toolchain.toml','build.rs','src','assets','prompts','.cargo/config.toml']:
+    for name in ['Cargo.toml','Cargo.lock','rust-toolchain.toml','build.rs','src','assets','prompts','skills','.cargo/config.toml']:
         path=repo/name
         paths.extend(path.rglob('*') if path.is_dir() else [path])
     return {p.relative_to(repo).as_posix():hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted(paths) if p.is_file()}

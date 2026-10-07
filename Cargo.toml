@@ -11,6 +11,11 @@ readme = "README.md"
 keywords = ["terminal", "tui", "local-llm", "ai", "developer-tools"]
 categories = ["command-line-utilities", "development-tools"]
 
+# Integrity scans must stay usable for multi-gigabyte models in development builds.
+# This preserves SHA-256 verification; it does not cache or skip file integrity.
+[profile.dev.package.sha2]
+opt-level = 3
+
 [[bin]]
 name = "alt"
 path = "src/main.rs"

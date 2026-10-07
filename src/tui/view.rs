@@ -1212,8 +1212,8 @@ fn settings(frame: &mut Frame, app: &mut App, area: Rect) {
             "Private Hub access, verified relocation and removing managed weights.".into(),
         ),
         (
-            "Managed runtime settings".into(),
-            "CPU/GPU layers, threads, batch and KV cache; model remains your choice.".into(),
+            "Model and runtime settings".into(),
+            "Output allocation, skills, workflow, effort and CPU/GPU settings.".into(),
         ),
         (
             "Benchmark selected model".into(),
@@ -1664,7 +1664,12 @@ fn modal(frame: &mut Frame, app: &mut App, area: Rect) {
                     .scroll((scroll, 0)),
                 rows[0],
             );
-            buttons(frame, app, rows[1], &[("Back", "modal-submit")]);
+            buttons(
+                frame,
+                app,
+                rows[1],
+                &[("Back · PgUp/PgDn to scroll", "modal-submit")],
+            );
         }
         Dialog::ToolDetails { tool, scroll } => {
             frame.render_widget(
@@ -2218,6 +2223,7 @@ mod tests {
                     uncensored: false,
                     api_key_env: None,
                     local_model: None,
+                    inference: None,
                 },
             )
             .unwrap();

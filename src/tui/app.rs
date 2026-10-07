@@ -821,6 +821,7 @@ impl App {
     pub fn workspace_update(&mut self, update: workspace::Update) -> Result<()> {
         match update {
             workspace::Update::Ready(session) => {
+                let session = *session;
                 self.session = Some(session);
                 self.connecting = false;
                 self.connected = true;
@@ -1499,6 +1500,7 @@ impl App {
                     uncensored: model.uncensored_claim,
                     api_key_env: None,
                     local_model: Some(model.id),
+                    inference: None,
                 };
                 self.config.upsert(name.clone(), profile)?;
                 self.config.default_profile = name;
@@ -2309,6 +2311,7 @@ mod recovery_tests {
                 uncensored: false,
                 api_key_env: None,
                 local_model: None,
+                inference: None,
             },
         };
         app.launch_job("Loading", move |_, _| async move {

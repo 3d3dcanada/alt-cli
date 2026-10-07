@@ -19,6 +19,7 @@ fn profile() -> Profile {
         uncensored: false,
         api_key_env: None,
         local_model: None,
+        inference: None,
     }
 }
 

@@ -4,12 +4,27 @@ Every attempt, timeout, independent oracle and source diff is retained.
 """
 import argparse,hashlib,json,os,signal,sqlite3,subprocess,time,urllib.request,shutil,sys
 from pathlib import Path
+if sys.flags.optimize:raise RuntimeError('Run without Python optimization; evidence assertions must remain enabled')
 from acceptance_projects import CASES,setup,check,ORACLE_VERSION,DEVELOPMENT,HELD_OUT,oracle_inputs,assertion_script
 p=argparse.ArgumentParser(description=__doc__)
+p.add_argument("--suite",choices=["v4","v5"],default="v4")
+p.add_argument("--output-tokens",type=int)
+p.add_argument("--reasoning-tokens",type=int)
+p.add_argument("--temperature",type=float)
+p.add_argument("--top-p",type=float)
+p.add_argument("--workflow",choices=["model-plan","host"],default="model-plan")
+p.add_argument("--skill")
 p.add_argument('--thinking',choices=['default','on','off'],default='default');p.add_argument('--stop-after',type=int,help='Retain a bounded pilot and leave remaining matrix cells explicitly unmeasured');p.add_argument('--resume',action='store_true');p.add_argument('--tool-profile',choices=['all','inspect','coding','terminal'],default='all');p.add_argument('--partition',choices=['development','held-out','all'],default='development');p.add_argument('--threads',type=int,default=2)
 p.add_argument('--verification-plan',action='store_true');p.add_argument('--history-notes',type=int,default=0)
 p.add_argument('--binary',type=Path,default=Path('target/debug/alt'));p.add_argument('--engine',type=Path,required=True);p.add_argument('--model',type=Path,required=True);p.add_argument('--sha256',required=True);p.add_argument('--uncensored',action='store_true',required=True);p.add_argument('--runtime',type=Path);p.add_argument('--provider',choices=['openai','ollama'],default='openai');p.add_argument('--endpoint');p.add_argument('--model-id');p.add_argument('--contexts',default='8192');p.add_argument('--repeats',type=int,default=5);p.add_argument('--cases');p.add_argument('--timeout',type=int,default=240);p.add_argument('--output',type=Path,required=True)
-a=p.parse_args();a.cases=a.cases or ','.join(DEVELOPMENT if a.partition=='development' else HELD_OUT if a.partition=='held-out' else CASES);assert a.runtime or (a.endpoint and a.model_id),'Choose managed runtime or explicit endpoint/model';assert a.repeats>=1
+p.add_argument('--generated-tokens',type=int);p.add_argument('--requests',type=int)
+p.add_argument('--instruction-draft',type=Path,help='Trial this bounded offline supplement for this campaign only')
+a=p.parse_args()
+if a.suite=='v5':
+ from acceptance_v5 import CASES,setup,check,ORACLE_VERSION,DEVELOPMENT,HELD_OUT,oracle_inputs,assertion_script
+assert a.timeout>0 and a.threads>0
+assert a.cases is None or all(n in CASES for n in a.cases.split(',')), 'Unknown fixture'
+a.cases=a.cases or ','.join(DEVELOPMENT if a.partition=='development' else HELD_OUT if a.partition=='held-out' else CASES);assert a.runtime or (a.endpoint and a.model_id),'Choose managed runtime or explicit endpoint/model';assert a.repeats>=1
 assert a.runtime or a.thinking=='default','Configure reasoning on the external server; this switch controls only an owned runtime'
 binary=a.binary.resolve();artifact=a.model.resolve();h=hashlib.sha256()
 with artifact.open('rb') as f:
@@ -19,12 +34,18 @@ root=a.output.resolve();root.mkdir(parents=True,exist_ok=a.resume)
 frozen=root/'alt-under-test'
 if frozen.exists():assert a.resume and hashlib.sha256(binary.read_bytes()).hexdigest()==hashlib.sha256(frozen.read_bytes()).hexdigest(),'Resume needs identical binary'
 else:shutil.copy2(binary,frozen)
-for source in ['live_acceptance.py','acceptance_projects.py','acceptance_extra.py']:
+for source in ['live_acceptance.py','acceptance_projects.py','acceptance_extra.py','acceptance_v5.py']:
  target=root/source
  if not target.exists():shutil.copy2(Path(__file__).parent/source,target)
+ else:assert hashlib.sha256(target.read_bytes()).hexdigest()==hashlib.sha256((Path(__file__).parent/source).read_bytes()).hexdigest(), "Resume evaluator source changed"
 binary=frozen
 config={'oracle_version':ORACLE_VERSION,'context_scope':'Managed runtime native window and engine budget' if a.runtime else 'Engine budget; external native window is configured on server/tag and inspected separately','model_file':artifact.name,'sha256':a.sha256,'bytes':artifact.stat().st_size,'uncensored':'Explicit user-selected publisher-labelled uncensored/abliterated artifact; no fallback','provider':a.provider,'endpoint':a.endpoint,'model_id':a.model_id,'runtime':str(a.runtime) if a.runtime else 'external','contexts':[int(x)for x in a.contexts.split(',')],'repeats':a.repeats,'timeout_seconds':a.timeout,'binary_sha256':hashlib.sha256(binary.read_bytes()).hexdigest(),'physical_gpu_tested':False,'verification_plan':a.verification_plan,'history_notes':a.history_notes}
 config.update({'cases':a.cases.split(','),'partition':a.partition,'tool_profile':a.tool_profile,'threads':a.threads,'engine_sha256':hashlib.sha256(a.engine.read_bytes()).hexdigest(),'runtime_sha256':hashlib.sha256(a.runtime.read_bytes()).hexdigest() if a.runtime else None,'fixture_sha256':hashlib.sha256(json.dumps({name:CASES[name] for name in a.cases.split(',')},sort_keys=True).encode()).hexdigest()})
+config['suite']=a.suite
+config['instruction_sha256']=hashlib.sha256(a.instruction_draft.read_bytes()).hexdigest() if a.instruction_draft else None
+if a.instruction_draft:assert 0<len(a.instruction_draft.read_bytes())<=5000,'Use a bounded nonempty instruction draft'
+config['inference']={'output_tokens':a.output_tokens,'reasoning_tokens':a.reasoning_tokens,'temperature':a.temperature,'top_p':a.top_p,'workflow':a.workflow,'skill':a.skill,'generated_tokens':a.generated_tokens,'requests':a.requests}
+config['oracle_code_sha256']={name:hashlib.sha256((root/name).read_bytes()).hexdigest() for name in ['acceptance_projects.py','acceptance_extra.py','acceptance_v5.py']}
 if a.thinking!='default':config['thinking']=a.thinking
 if (root/'configuration.json').exists():assert json.loads((root/'configuration.json').read_text())==config,'Resume configuration or fixtures changed'
 else:(root/'configuration.json').write_text(json.dumps(config,indent=2)+'\n')
@@ -62,6 +83,12 @@ for context in config['contexts']:
    base=[str(binary),'--data-dir',str(state),'--engine',str(a.engine.resolve()),'--access','trusted']
    arguments=['models','import',str(artifact),'--uncensored','--use']if a.runtime else ['init','--model',a.model_id,'--provider',a.provider,'--endpoint',a.endpoint,'--context',str(context),'--max-turns','12','--uncensored']
    init=subprocess.run(base+arguments,cwd=project,capture_output=True,text=True,timeout=180);(run_dir/'setup.stdout').write_text(init.stdout);(run_dir/'setup.stderr').write_text(init.stderr);assert init.returncode==0,init.stderr
+   allocation=[]
+   for field in ['output_tokens','reasoning_tokens','temperature','top_p','generated_tokens','requests']:
+    if getattr(a,field) is not None:allocation+=['--'+field.replace('_','-'),str(getattr(a,field))]
+   if allocation:subprocess.run(base+['inference',*allocation],cwd=project,check=True,capture_output=True)
+   subprocess.run(base+['workflow',a.workflow],cwd=project,check=True,capture_output=True)
+   if a.skill:subprocess.run(base+['skills','use',a.skill],cwd=project,check=True,capture_output=True)
    before=check(project,oracle);assert not before['passed'],(name,'broken seed unexpectedly passed')
    if a.verification_plan:
     # A pinned wrapper invokes the actual oracle, emits structured evidence and
@@ -79,7 +106,7 @@ for context in config['contexts']:
    (run_dir/'fixture.json').write_text(json.dumps({'oracle_version':ORACLE_VERSION,'goal':CASES[name]['goal'],'prompt':prompt,'original_files':CASES[name]['files'],'oracle_command':oracle,'oracle_sha256_before':oracle_hash},indent=2)+'\n')
    started=time.monotonic();peak=0;timed_out=False
    with (run_dir/'turn.jsonl').open('w')as out,(run_dir/'turn.stderr').open('w')as err:
-    proc=subprocess.Popen(base+['run',prompt,'--allow-tools','--json','--timeout',str(a.timeout)],cwd=project,stdout=out,stderr=err,start_new_session=True)
+    proc=subprocess.Popen(base+['run',prompt,'--allow-tools','--json','--timeout',str(a.timeout)]+(['--instruction-draft',str(a.instruction_draft.resolve())] if a.instruction_draft else []),cwd=project,stdout=out,stderr=err,start_new_session=True)
     try:
      while proc.poll()is None:
       peak=max(peak,memory_tree(proc.pid))
@@ -102,6 +129,11 @@ for context in config['contexts']:
     with sqlite3.connect(database) as db:
      context_views.extend(json.loads(row[0]) for row in db.execute('SELECT payload FROM context_views'))
    result['context_views']=context_views
+   receipts=[json.loads(f.read_text()) for f in state.glob('inference/*/*-receipt.json')]
+   result['inference_cost']={'requests':len(receipts),'charged_generated_tokens':sum(r.get('charged_generated_tokens',0) for r in receipts),'known_generated_tokens':sum(r['generated_tokens'] for r in receipts) if all(r.get('generated_tokens') is not None for r in receipts) else None}
+   result['task_group']=CASES[name].get('task_group',name)
+   result['source_sha256']=hashlib.sha256(json.dumps(source,sort_keys=True,ensure_ascii=False).encode()).hexdigest()
+   result['inference_requests']=len(list(state.glob('inference/*/*-request.json')))
    if a.endpoint and a.provider=='ollama':
     try:
      with urllib.request.urlopen(a.endpoint.rstrip('/')+'/api/ps',timeout=10) as response:running=json.load(response)
@@ -116,6 +148,7 @@ for context in config['contexts']:
    retained=['report.json','fixture.json','turn.jsonl','turn.stderr','setup.stdout','setup.stderr']
    if (run_dir/'assertion.py').exists():retained.append('assertion.py')
    retained += ['independent/'+name for name in oracle_hash]
+   retained += [str(f.relative_to(run_dir)) for f in state.glob('inference/**/*') if f.is_file()]
    (run_dir/'evidence-sha256.json').write_text(json.dumps({f:hashlib.sha256((run_dir/f).read_bytes()).hexdigest() for f in retained},sort_keys=True,indent=2)+'\n');results.append(result)
    summary={'configuration':config,'attempts':[{k:v for k,v in r.items()if k not in ['tool_calls','before','after','resulting_source','final_prose','context_views','independent_alt_verification']}for r in results],'passed':sum(r['passed']for r in results),'total':len(results),'scope':'Seeded small projects; every attempt retained. These measurements do not establish arbitrary task reliability or GPU performance.'};(root/'summary.json').write_text(json.dumps(summary,indent=2)+'\n');print(label,'PASS'if result['passed']else'FAIL',result['wall_seconds'],'seconds',flush=True)
 print(json.dumps({'passed':sum(r['passed']for r in results),'total':len(results)},indent=2))

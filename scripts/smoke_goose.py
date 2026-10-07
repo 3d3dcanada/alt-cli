@@ -183,7 +183,7 @@ def main():
             assert all("options" not in body for _, body in REQUESTS), "Native-only fields leaked into compatible chat requests"
             assert any("native tool calls" in json.dumps(body["messages"]) for _, body in REQUESTS), "Operator instructions missing"
             tools = sorted({tool["function"]["name"] for _, body in REQUESTS for tool in body.get("tools", [])})
-            assert sorted(name.split("__")[-1] for name in tools) == ["counter", "edit", "list", "read", "remember", "run_check", "search", "terminal"], tools
+            assert sorted(name.split("__")[-1] for name in tools) == ["counter", "edit", "evidence", "list", "read", "remember", "run_check", "search", "skill", "terminal"], tools
             print(f"Tool inventory ({len(tools)}): {', '.join(tools)}")
             print(f"PASS: real Goose / {args.provider}: inventory, ACP, denial, approval, shell evidence, export, resume, stalled-provider kill fallback, instructions ({len(REQUESTS)} fixture inference requests).")
     finally:

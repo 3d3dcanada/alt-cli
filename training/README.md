@@ -8,6 +8,10 @@ Tokenizers can be exercised without weights; the
 [tokenizer fixture receipt](status/tokenizer-qualification.json) is separate
 from a training or inference result. [Validation status](status/validation.json)
 records the executed checks and remaining gates.
+Those original hardware/tokenizer receipts remain unchanged. The
+[current boundary-check record](status/harness-delivery-validation.json) covers
+the 46 preparation, capture, schema, encoding, resume, export and reward tests
+run during harness delivery. It is separate from useful training or inference.
 
 This handoff covers the training portions of both research passes: SM-11 and
 RE-06–07, sequenced as H10–12 in the
@@ -20,13 +24,21 @@ weights; prompt/tool improvements do not train the model.
 ## What is supplied
 
 - `prepare.py`: standard-library corpus validation and train/validation export.
+- `capture.py`: successful v5 native trajectories with immutable raw inference,
+  oracle and current-source evidence; every capture starts pending review.
 - `features.py`: native-template assistant targets with masked prompt/observation
   tokens, serialization probes, exact prefix checks and no silent truncation.
 - `preflight.py`: hardware/library probe; no package installation or weight loading.
 - `qualify_tokenizer.py`: opt-in native-template fixture using no weights; its
   repository/revision are explicit, and local files can be hashed for provenance.
 - `train_sft.py`: optional, single-CUDA-GPU NF4 QLoRA starter using Transformers
-  and PEFT. Its data/encoding functions are tested; **GPU execution is unperformed**.
+  and PEFT, including exact dataset/config/checkpoint resume verification.
+  Its data/encoding functions are tested; **GPU execution is unperformed**.
+- `export.py`: validates an exact-parent export plan without Torch; opt-in
+  high-precision parent/adapter merge and pinned F16/Q4_K_M conversion preserve
+  receipts, failures and hashes. No adapter/export has been produced here.
+- `rewards.py`: offline independently verified correctness scoring; invalid gold,
+  stale source, changed tests, no-op repairs and unsupported claims are excluded.
 - `configs/sft-7b.json` and `sft-9b.json`: explicit checkpoint placeholders and
   starter hyperparameters. Both reject execution until model identity and rights
   are supplied. These are deployment-size templates, not architecture certifications.
@@ -40,7 +52,9 @@ The driver consumes reviewed data. It does not generate teacher answers, upload
 anything, call an external judge or publish weights. All model actors in live
 data collection and evaluation must be explicitly selected uncensored/abliterated
 checkpoints. Human-reviewed examples are also supported. Training helpers are
-separate from Alt's runtime; the beta executable has not gained these features.
+separate from Alt's runtime. The current source executable has the harness
+workflows in the [usage guide](../docs/SMALL_MODEL_USAGE.md); it does not train
+weights during an ordinary conversation.
 
 ## 1. Choose the exact training checkpoint
 
@@ -122,7 +136,10 @@ contracts and outputs from the captured run. Normalize an API's JSON-string
 arguments to objects for HF templates, while retaining the original raw trace.
 Every call needs its real result; no orphan results, unfinished exchanges or
 invented “passed” outputs. `prepare.py` checks structural exchanges and required
-arguments, not full JSON Schema semantics or whether code is truly correct.
+arguments and the supported native JSON Schema subset, including types,
+required/additional properties, enums, bounds, arrays and local references.
+Unknown keywords and external references require separate qualification rather
+than silent acceptance. Schema validity does not establish that code is correct.
 
 Use `examples/trajectory.template.json` to create a JSONL record. Its `source`
 points to the raw trace, normalized transcript and exact tested source snapshot
@@ -167,9 +184,11 @@ build. A repository containing several GGUF variants is not an exact actor ident
 by itself. Preserve sampling, context/reasoning limits and actual requests beside
 the raw trace. No unknown actor or hidden teacher is an accepted substitute.
 
-Automatic capture/export from Alt's database is H10 work still to implement.
-This preparer takes explicitly normalized/reviewed records; it does not pretend
-historical ACP logs are already HF-ready examples.
+`capture.py` exports complete, independently successful v5 attempts into pending
+records, as described below. It uses actual provider exchanges and source/oracle
+receipts; arbitrary database conversations and compacted historical ACP logs
+are not automatically converted into HF-ready demonstrations. `prepare.py` still
+requires explicitly reviewed records.
 
 ## 4. Prepare and validate data
 
@@ -290,10 +309,12 @@ Keep concise and mixed-length arms matched by a declared update/token budget.
 The driver writes package/model/template/dataset identities, run status, adapter
 hashes and CUDA memory peaks. It retains failed runs and refuses an existing output.
 Validation loss can select a pilot checkpoint; the resulting status deliberately
-remains `training_finished_unqualified` until behavioral evaluation. No automatic
-resume exists in this starter. For recovery, preserve its Trainer checkpoints and
-use a qualified Trainer resume workflow with identical model/data/config; H11 will
-add validated resume and architecture-specific trainers. Do not overwrite failures.
+remains `training_finished_unqualified` until behavioral evaluation. For recovery,
+preserve Trainer checkpoints and the prior receipt. Supply `--resume-from
+/path/to/checkpoint-N --resume-receipt /path/to/prior/run-receipt.json`, keeping
+the exact model, dataset and config and selecting a new output directory. The
+driver verifies every recorded checkpoint file before loading weights and again
+before resuming. New architectures still need separately qualified trainers.
 
 ## 8. Evaluate, merge and export Q4 separately
 
@@ -321,6 +342,20 @@ then measure quantization as a separate factor. Finally import the selected GGUF
 into Alt and qualify load, parser/tool behavior, 4K/8K context, cache/offload and
 actual RAM/VRAM on the GTX 1070. There is no promoted trained artifact today.
 
+The export helper validates this plan without loading weights by default:
+
+```bash
+python3 training/export.py --config .alt-training/sft.json \
+  --run .alt-training/sft-run --converter /path/to/llama.cpp/convert_hf_to_gguf.py \
+  --quantizer /path/to/llama-quantize --output .alt-training/export-new
+```
+
+Only append `--execute --device cuda:0` after the exact architecture, merge RAM,
+converter commit and output rights are qualified. CPU merge is explicit too and
+can require much more than 16 GB RAM. The helper reloads the high-precision
+matching parent and never merges into the NF4 training copy. The resulting
+`exported_unqualified` receipt is not a deployment or quality promotion.
+
 ## 9. Follow-on reasoning training
 
 After useful SFT, compare SOD/OPD and verified-reward RL with the same student,
@@ -335,6 +370,32 @@ success cannot pass. Correctness precedes formatting/length efficiency rewards.
 Keep rollout/teacher/training costs and sampling coverage separate from pass@1.
 All teacher/router/judge model identities remain explicit and uncensored. A teacher
 is a training dependency; the exported local student should not need it at runtime.
+
+`python3 training/rewards.py --help` describes the offline scoring input. Keep
+gold and candidate independent-check receipts, actual current source, unchanged
+oracle inputs, raw outputs, rights review and recorded cost. Excluded rows have
+`reward: null` and a reason. Valid wrong answers receive zero; known efficiency
+adds a bounded bonus only after correct behavior. This scorer does not run an RL
+optimizer. SOD/OPD/RL remains gated on a useful SFT baseline and qualified hardware.
+
+## Capture current harness trajectories
+
+Run the v5 live evaluator on development families. A passing external oracle alone
+does not approve training: inspect actual actions, source correctness, source/output
+rights, privacy and family splits first. Capture a candidate with:
+
+```bash
+python3 training/capture.py --attempt /path/to/v5/attempt \
+  --actor .alt-training/actor.json --source .alt-training/source.json \
+  --family python-feature --split train --output .alt-training/pending-new
+```
+
+Actor metadata must identify the evaluated uncensored artifact hash; source
+metadata declares repository, revision and applicable license. The helper rejects
+sealed or renamed families, changed source/oracle/evidence, interrupted provider
+streams and omitted native exchanges after context compaction. It retains raw
+ACP/provider exchanges and writes `trajectory.pending.jsonl` with every review
+flag false. Review it before using `prepare.py`; do not train the pending file.
 
 ## Validation boundary
 

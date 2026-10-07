@@ -40,6 +40,7 @@ fn main() {
         "src",
         "assets",
         "prompts",
+        "skills",
         ".cargo/config.toml",
     ] {
         collect(&root, &root.join(name), &mut inputs);

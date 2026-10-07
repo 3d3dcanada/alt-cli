@@ -55,7 +55,7 @@ impl ToolProfile {
     fn includes(self, name: &str) -> bool {
         match self {
             Self::All => true,
-            Self::Inspect => matches!(name, "list" | "read" | "search" | "remember"),
+            Self::Inspect => matches!(name, "list" | "read" | "search" | "remember" | "evidence"),
             Self::Coding => name != "terminal",
             Self::Terminal => matches!(name, "list" | "read" | "remember" | "terminal"),
         }
@@ -257,10 +257,12 @@ async fn serve_connection(stream: UnixStream, s: &Service) -> Result<()> {
             // newlines out of a tool result. Structured evidence remains in SQLite.
             let text = match request.name.as_str() {
                 "read" => format!(
-                    "File: {} · read version: {} · {} lines\n{}",
+                    "File: {} · read version: {} · {} lines\nRange handle: {}\nSymbols: {}\n{}",
                     v["path"].as_str().unwrap_or(""),
                     v["sha256"].as_str().unwrap_or(""),
                     v["total_lines"],
+                    v["range_handle"].as_str().unwrap_or("none"),
+                    v["symbols"],
                     v["text"].as_str().unwrap_or("")
                 ),
                 "run_check" | "terminal" => format!(
@@ -270,8 +272,17 @@ async fn serve_connection(stream: UnixStream, s: &Service) -> Result<()> {
                     v["timed_out"],
                     v["cancelled"],
                     v["error"].as_str().unwrap_or(""),
-                    v["output"].as_str().unwrap_or(""),
-                    v["next_action"].as_str().unwrap_or("")
+                    if request.name == "run_check" {
+                        v["workflow"]["facts"]["diagnostic"]["output_preview"]
+                            .as_str()
+                            .unwrap_or("")
+                    } else {
+                        v["output"].as_str().unwrap_or("")
+                    },
+                    v["workflow"]["next_decision"]
+                        .as_str()
+                        .or_else(|| v["next_action"].as_str())
+                        .unwrap_or("")
                 ),
                 _ => serde_json::to_string(&v)?,
             };
@@ -374,6 +385,8 @@ struct SearchArgs {
 struct EditArgs {
     path: String,
     #[serde(default)]
+    handle: Option<String>,
+    #[serde(default)]
     expected_sha256: Option<String>,
     #[serde(default)]
     old_text: String,
@@ -444,10 +457,72 @@ async fn execute(
             let a: SearchArgs = serde_json::from_value(r.arguments.clone())?;
             Ok(json!(Project::open(&s.data, &s.cwd)?.search(&a.query)?))
         }
+        "skill" => {
+            let action = r.arguments["action"].as_str().unwrap_or("list");
+            match action {
+                "list" => Ok(json!(crate::skills::shortlist(
+                    r.arguments["query"].as_str().unwrap_or("")
+                ))),
+                "read" => {
+                    let skill = crate::skills::get(
+                        r.arguments["id"].as_str().context("Skill id is required")?,
+                    )?;
+                    Ok(
+                        json!({"metadata":skill,"procedure":skill.procedure,"permissions":"Does not grant execution access"}),
+                    )
+                }
+                "helper" => {
+                    let id_skill = r.arguments["id"].as_str().context("Skill id is required")?;
+                    let helper = r.arguments["helper"]
+                        .as_str()
+                        .context("Helper is required")?;
+                    let input = r.arguments.get("input").cloned().unwrap_or(json!({}));
+                    approve(
+                        s,
+                        c,
+                        id,
+                        &format!("Run {id_skill} helper {helper}"),
+                        &r.arguments,
+                        "Runs an explicitly selected executable tool pack with retained evidence.",
+                    )
+                    .await?;
+                    Ok(serde_json::to_value(
+                        crate::skills::run(
+                            &s.data,
+                            &s.cwd,
+                            id_skill,
+                            helper,
+                            input,
+                            s.policy,
+                            s.cancel.clone(),
+                        )
+                        .await?,
+                    )?)
+                }
+                _ => bail!("Skill action must be list/read/helper"),
+            }
+        }
+        "evidence" => {
+            let p = Project::open(&s.data, &s.cwd)?;
+            let id = r.arguments["id"]
+                .as_str()
+                .context("Evidence id is required")?;
+            let text: String =
+                p.db.query_row("SELECT payload FROM checks WHERE id=?1", [id], |row| {
+                    row.get(0)
+                })
+                .context("No check with that evidence id")?;
+            let value: Value = serde_json::from_str(&text)?;
+            let offset = r.arguments["offset"].as_u64().unwrap_or(0) as usize;
+            let output = value["output"].as_str().unwrap_or("");
+            Ok(
+                json!({"id":id,"offset":offset,"captured_characters":output.chars().count(),"output":output.chars().skip(offset).take(6000).collect::<String>(),"capture_truncated":value["output_truncated"],"source_revision":value["snapshot"]}),
+            )
+        }
         "remember" => {
             let a: NoteArgs = serde_json::from_value(r.arguments.clone())?;
             ensure!(
-                matches!(a.kind.as_str(), "plan" | "decision" | "next"),
+                matches!(a.kind.as_str(), "plan" | "decision" | "next" | "hypothesis"),
                 "Model memory supports plan, decision, next; verification comes from actual tool results"
             );
             Project::open(&s.data, &s.cwd)?.note(
@@ -469,15 +544,28 @@ async fn execute(
                 "new_text is required for create/replace. Send old_text and new_text as separate native tool arguments, not a JSON example inside a string."
             );
             let change = {
-                Project::open(&s.data, &s.cwd)?.prepare_edit(
-                    &c.task,
-                    &a.path,
-                    a.expected_sha256.as_deref(),
-                    &a.old_text,
-                    &a.new_text,
-                    &a.operation,
-                    &a.reason,
-                )?
+                let project = Project::open(&s.data, &s.cwd)?;
+                if a.operation == "handle" {
+                    project.prepare_handle_edit(
+                        &c.task,
+                        &a.path,
+                        a.handle
+                            .as_deref()
+                            .context("handle is required for operation=handle")?,
+                        &a.new_text,
+                        &a.reason,
+                    )?
+                } else {
+                    project.prepare_edit(
+                        &c.task,
+                        &a.path,
+                        a.expected_sha256.as_deref(),
+                        &a.old_text,
+                        &a.new_text,
+                        &a.operation,
+                        &a.reason,
+                    )?
+                }
             };
             let detail = format!(
                 "{}\n{}\n{}\nCheckpoint: {}\n{}",
@@ -538,6 +626,7 @@ async fn execute(
             )
             .await?;
             let mut value = serde_json::to_value(&result)?;
+            value["workflow"] = crate::workflow::packet(&Project::open(&s.data, &s.cwd)?, &c.task)?;
             if result.exit_code != Some(0) || result.error.is_some() {
                 let changes = Project::open(&s.data, &s.cwd)?.task(&c.task)?.changes;
                 value["next_action"] = json!(if changes == 0 {
@@ -576,13 +665,15 @@ async fn execute(
     }
 }
 pub fn tool_list() -> Value {
-    let tool = |name: &str, description: &str, props: Value, required: Vec<&str>| json!({"name":name,"description":description,"inputSchema":{"type":"object","properties":props,"required":required,"additionalProperties":false},"annotations":{"readOnlyHint":true,"openWorldHint":false}});
+    let tool = |name: &str, description: &str, props: Value, required: Vec<&str>| json!({"name":name,"description":description,"inputSchema":{"type":"object","properties":props,"required":required,"additionalProperties":false},"annotations":{"readOnlyHint":matches!(name,"list"|"read"|"search"|"evidence"),"openWorldHint":matches!(name,"terminal"|"run_check"|"skill")}});
     json!({"tools":[
         tool("list","List project files, configured checks, and active access mode. Excludes generated folders, secrets and links.",json!({}),vec![]),
-        tool("read","Read a current file; Alt remembers its content hash. Required before edit; use exact old_text without line-number prefixes.",json!({"path":{"type":"string"},"start_line":{"type":"integer","minimum":1},"lines":{"type":"integer","minimum":1,"maximum":300}}),vec!["path"]),
+        tool("read","Read a current file and revision-bound range/symbol handles. Required before edit. Handles avoid copying original text.",json!({"path":{"type":"string"},"start_line":{"type":"integer","minimum":1},"lines":{"type":"integer","minimum":1,"maximum":300}}),vec!["path"]),
         tool("search","Search current project text and symbols with lexical retrieval. Excerpts are not an edit authorization.",json!({"query":{"type":"string"}}),vec!["query"]),
-        tool("remember","Persist a short plan before editing, a decision, or next step. Notes never certify success.",json!({"kind":{"type":"string","enum":["plan","decision","next"]},"text":{"type":"string"}}),vec!["kind","text"]),
-        tool("edit","Review and apply one focused change with an undo checkpoint. Read existing files first. Alt asks the user before applying; never bypass a rejection.",json!({"path":{"type":"string"},"old_text":{"type":"string","description":"Exact unique substring of the current file. Prefer a short single-line substring without line numbers."},"new_text":{"type":"string","description":"Replacement text. Must be a separate argument from old_text."},"operation":{"type":"string","enum":["replace","create","delete"]},"reason":{"type":"string"}}),vec!["path","operation","reason","old_text","new_text"]),
+        tool("skill","Search skill metadata, read one procedure, or run its declared executable helper with existing access/approval.",json!({"action":{"type":"string","enum":["list","read","helper"]},"query":{"type":"string"},"id":{"type":"string"},"helper":{"type":"string"},"input":{"type":"object"}}),vec!["action"]),
+        tool("evidence","Read another bounded page of actual captured check output by evidence id. Does not rerun or verify anything.",json!({"id":{"type":"string"},"offset":{"type":"integer","minimum":0}}),vec!["id"]),
+        tool("remember","Persist a plan, decision, next step or explicitly unverified hypothesis. Notes never certify success.",json!({"kind":{"type":"string","enum":["plan","decision","next","hypothesis"]},"text":{"type":"string"}}),vec!["kind","text"]),
+        tool("edit","Apply a focused change with checkpoint/undo. Prefer operation=handle with a range or symbol handle from read and new_text. Exact unique old_text replacement remains available. Approval follows selected access mode.",json!({"path":{"type":"string"},"handle":{"type":"string","description":"Exact revision-bound handle returned by read; required for handle operation."},"old_text":{"type":"string","description":"Exact unique substring for replace only; no line numbers."},"new_text":{"type":"string","description":"Replacement text for handle/replace/create."},"operation":{"type":"string","enum":["handle","replace","create","delete"]},"reason":{"type":"string"}}),vec!["path","operation","reason"]),
         tool("run_check","Run a user-configured named check after approval. list shows names; argv cannot be set by this tool.",json!({"name":{"type":"string"}}),vec!["name"]),
         tool("terminal","Arbitrary shell command in the real project, including networking, installs and external tools. Only available in user-selected Full access mode. External side effects are not undoable.",json!({"command":{"type":"string"},"timeout_secs":{"type":"integer","minimum":1,"maximum":600}}),vec!["command"])
     ]})

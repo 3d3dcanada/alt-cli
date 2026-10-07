@@ -17,6 +17,7 @@ fn profile(endpoint: String) -> Profile {
         uncensored: true,
         api_key_env: None,
         local_model: None,
+        inference: None,
     }
 }
 #[tokio::test]

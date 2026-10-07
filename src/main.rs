@@ -67,10 +67,84 @@ enum Action {
         #[arg(long, default_value_t = 1)]
         repeats: usize,
     },
+    /// Exercise streamed native calls and actual host observations with this exact model.
+    QualifyTools {
+        #[arg(long, default_value_t = 180)]
+        timeout: u64,
+        #[arg(long)]
+        force_tool: bool,
+    },
     /// Choose the native schemas shown to the selected model; access mode is unchanged.
     Tools {
         #[arg(value_enum)]
         focus: alt_cli::toolbox::ToolProfile,
+    },
+    /// Inspect or set the actual selected model's output and sampling allocation.
+    Inference {
+        #[arg(long)]
+        output_tokens: Option<u32>,
+        #[arg(long)]
+        action_headroom: Option<u32>,
+        #[arg(long)]
+        reasoning_tokens: Option<u32>,
+        #[arg(long)]
+        temperature: Option<f64>,
+        #[arg(long)]
+        top_p: Option<f64>,
+        #[arg(long)]
+        top_k: Option<i32>,
+        #[arg(long)]
+        min_p: Option<f64>,
+        #[arg(long)]
+        llama_extensions: Option<bool>,
+        /// Clear explicit overrides, preserving the legacy output allowance.
+        #[arg(long)]
+        reset: bool,
+        #[arg(long, value_enum)]
+        output_parameter: Option<alt_cli::inference::OutputParameter>,
+        /// Shared generated-token allowance per connection; reset clears it.
+        #[arg(long)]
+        generated_tokens: Option<u32>,
+        /// Shared inference request limit per connection; reset clears it.
+        #[arg(long)]
+        requests: Option<u32>,
+    },
+    /// Select whether a model must write a plan or the host supplies the workflow.
+    Workflow {
+        #[arg(value_enum)]
+        mode: alt_cli::workflow::Mode,
+    },
+    /// Select a bounded skill procedure or execute one of its declared helpers.
+    Skills {
+        #[command(subcommand)]
+        command: SkillAction,
+    },
+    /// Run, review and explicitly apply independently checked serial source candidates.
+    Candidates {
+        #[command(subcommand)]
+        command: CandidateAction,
+    },
+    /// Register, review, diff, promote or roll back offline instruction candidates.
+    Instructions {
+        #[command(subcommand)]
+        command: InstructionAction,
+    },
+    /// Bounded serial long-input research experiment; summaries remain unverified.
+    Analyze {
+        file: PathBuf,
+        question: String,
+        #[arg(long, required = true)]
+        experimental: bool,
+        #[arg(long, default_value_t = 4)]
+        calls: u32,
+        #[arg(long, default_value_t = 2)]
+        depth: u32,
+        #[arg(long, default_value_t = 180)]
+        seconds: u64,
+        #[arg(long, default_value_t = 4096)]
+        generated_tokens: u32,
+        #[arg(long)]
+        gap_evidence: Option<PathBuf>,
     },
     /// Configure managed inference without changing the selected model.
     Runtime {
@@ -194,6 +268,9 @@ enum Action {
         json: bool,
         #[arg(long, default_value_t = 600)]
         timeout: u64,
+        /// Trial a bounded offline instruction draft for this invocation; no activation.
+        #[arg(long)]
+        instruction_draft: Option<PathBuf>,
     },
 }
 
@@ -363,6 +440,53 @@ enum PackAction {
         evidence: String,
     },
 }
+#[derive(Subcommand)]
+enum SkillAction {
+    List,
+    Use {
+        id: String,
+    },
+    Clear,
+    Run {
+        id: String,
+        helper: String,
+        #[arg(long, default_value = "{}")]
+        input: String,
+    },
+}
+#[derive(Subcommand)]
+enum CandidateAction {
+    Run {
+        goal: String,
+        #[arg(long, value_enum, default_value = "quick")]
+        effort: alt_cli::candidates::Effort,
+        #[arg(long, default_value_t = 600)]
+        seconds: u64,
+        #[arg(long, default_value_t = 8192)]
+        generated_tokens: u32,
+        #[arg(long, default_value_t = 12)]
+        requests: u32,
+        #[arg(long)]
+        resume: Option<String>,
+    },
+    List,
+    Show {
+        id: String,
+    },
+    Apply {
+        id: String,
+        index: usize,
+    },
+}
+#[derive(Subcommand)]
+enum InstructionAction {
+    List,
+    Import { body: PathBuf, metadata: PathBuf },
+    Review { id: String, receipt: PathBuf },
+    Diff { id: String },
+    Use { id: String },
+    Clear,
+}
 
 #[derive(Subcommand)]
 enum ModelAction {
@@ -489,6 +613,97 @@ async fn run() -> Result<()> {
             }
             return Ok(());
         }
+        Action::Workflow { mode } => {
+            let mut p = Preferences::load(&root)?;
+            p.workflow = mode;
+            p.save(&root)?;
+            println!(
+                "{}",
+                serde_json::to_string_pretty(
+                    &json!({"workflow":mode,"plan_origin":"Host workflow is explicitly distinct from a model-authored plan","access":p.access_policy})
+                )?
+            );
+            return Ok(());
+        }
+        Action::Inference {
+            output_tokens,
+            action_headroom,
+            reasoning_tokens,
+            temperature,
+            top_p,
+            top_k,
+            min_p,
+            llama_extensions,
+            reset,
+            output_parameter,
+            generated_tokens,
+            requests,
+        } => {
+            let mut config = Config::read(&root)?;
+            let name = config.profile(args.profile.as_deref())?.0.to_owned();
+            let profile = config
+                .profiles
+                .get_mut(&name)
+                .context("Selected profile disappeared")?;
+            let mut settings = if reset {
+                alt_cli::inference::Settings::legacy(profile.context_tokens)
+            } else {
+                profile.effective_inference()
+            };
+            let changed = output_parameter.is_some()
+                || generated_tokens.is_some()
+                || requests.is_some()
+                || reset
+                || output_tokens.is_some()
+                || action_headroom.is_some()
+                || reasoning_tokens.is_some()
+                || temperature.is_some()
+                || top_p.is_some()
+                || top_k.is_some()
+                || min_p.is_some()
+                || llama_extensions.is_some();
+            if let Some(v) = output_tokens {
+                settings.output_tokens = v;
+            }
+            if let Some(v) = action_headroom {
+                settings.action_headroom = v;
+            }
+            if let Some(v) = reasoning_tokens {
+                settings.reasoning_tokens = Some(v);
+            }
+            if let Some(v) = temperature {
+                settings.temperature = Some(v);
+            }
+            if let Some(v) = top_p {
+                settings.top_p = Some(v);
+            }
+            if let Some(v) = top_k {
+                settings.top_k = Some(v);
+            }
+            if let Some(v) = min_p {
+                settings.min_p = Some(v);
+            }
+            if let Some(v) = llama_extensions {
+                settings.llama_extensions = v;
+            }
+            if let Some(v) = output_parameter {
+                settings.output_parameter = v;
+            }
+            if let Some(v) = generated_tokens {
+                settings.total_generated_tokens = Some(v);
+            }
+            if let Some(v) = requests {
+                settings.max_requests = Some(v);
+            }
+            settings.validate(profile)?;
+            profile.inference = Some(settings);
+            let report = profile.effective_inference().accounting(profile);
+            if changed {
+                config.save(&root)?;
+            }
+            println!("{}", serde_json::to_string_pretty(&report)?);
+            return Ok(());
+        }
         Action::Runtime {
             gpu_layers,
             threads,
@@ -568,6 +783,23 @@ async fn run() -> Result<()> {
             );
             return Ok(());
         }
+        Action::QualifyTools {
+            timeout,
+            force_tool,
+        } => {
+            let config = Config::read(&root)?;
+            let profile = config.profile(args.profile.as_deref())?.1;
+            let prefs = Preferences::load(&root)?;
+            let (cancel, _) = transfer_status();
+            let report =
+                alt_cli::native::probe(&root, &prefs, profile, timeout, force_tool, cancel).await?;
+            println!("{}", serde_json::to_string_pretty(&report)?);
+            ensure!(
+                report["status"] == "passed",
+                "Native probe did not pass; raw evidence was retained"
+            );
+            return Ok(());
+        }
         Action::Benchmark => {
             let config = Config::read(&root)?;
             let (_, profile) = config.profile(args.profile.as_deref())?;
@@ -579,6 +811,166 @@ async fn run() -> Result<()> {
                 r["error"].is_null(),
                 "Benchmark did not finish; report was saved"
             );
+            return Ok(());
+        }
+        Action::Analyze {
+            file,
+            question,
+            experimental: _,
+            calls,
+            depth,
+            seconds,
+            generated_tokens,
+            gap_evidence,
+        } => {
+            let config = Config::read(&root)?;
+            let profile = config.profile(args.profile.as_deref())?.1;
+            let prefs = Preferences::load(&root)?;
+            let (cancel, _) = transfer_status();
+            let report = alt_cli::analysis::run(
+                &root,
+                &prefs,
+                profile,
+                &file,
+                &question,
+                calls,
+                depth,
+                seconds,
+                generated_tokens,
+                gap_evidence.as_deref(),
+                cancel,
+            )
+            .await?;
+            println!("{}", serde_json::to_string_pretty(&report)?);
+            ensure!(
+                report["status"] == "analysis-completed-unverified",
+                "Analysis did not complete; evidence retained"
+            );
+            return Ok(());
+        }
+        Action::Instructions { command } => {
+            let mut prefs = Preferences::load(&root)?;
+            let report = match command {
+                InstructionAction::List => json!(alt_cli::instructions::list(&root)?),
+                InstructionAction::Import { body, metadata } => alt_cli::instructions::register(
+                    &root,
+                    &std::fs::read_to_string(body)?,
+                    &serde_json::from_slice(&std::fs::read(metadata)?)?,
+                )?,
+                InstructionAction::Review { id, receipt } => alt_cli::instructions::review(
+                    &root,
+                    &id,
+                    &serde_json::from_slice(&std::fs::read(receipt)?)?,
+                )?,
+                InstructionAction::Diff { id } => {
+                    let current = prefs
+                        .instruction_version
+                        .as_deref()
+                        .map(|id| alt_cli::instructions::text(&root, id))
+                        .transpose()?
+                        .unwrap_or_default();
+                    let proposed = alt_cli::instructions::text(&root, &id)?;
+                    json!({"diff":similar::TextDiff::from_lines(&current,&proposed).unified_diff().context_radius(3).header("active","candidate").to_string()})
+                }
+                InstructionAction::Use { id } => {
+                    alt_cli::instructions::activate(&root, &mut prefs, Some(&id))?
+                }
+                InstructionAction::Clear => {
+                    alt_cli::instructions::activate(&root, &mut prefs, None)?
+                }
+            };
+            println!("{}", serde_json::to_string_pretty(&report)?);
+            return Ok(());
+        }
+        Action::Candidates { command } => {
+            let cwd = std::env::current_dir()?;
+            let prefs = Preferences::load(&root)?;
+            let report = match command {
+                CandidateAction::List => json!(alt_cli::candidates::history(&root)?),
+                CandidateAction::Show { id } => {
+                    serde_json::to_value(alt_cli::candidates::load(&root, &id)?)?
+                }
+                CandidateAction::Apply { id, index } => alt_cli::candidates::promote(
+                    &root,
+                    &cwd,
+                    &id,
+                    index,
+                    args.access.unwrap_or(prefs.access_policy),
+                )?,
+                CandidateAction::Run {
+                    goal,
+                    effort,
+                    seconds,
+                    generated_tokens,
+                    requests,
+                    resume,
+                } => {
+                    let config = Config::read(&root)?;
+                    let profile = config.profile(args.profile.as_deref())?.1;
+                    let mut prefs = prefs;
+                    prefs.access_policy = args.access.unwrap_or(prefs.access_policy);
+                    let engine = runtime::find_engine(&root, &args.engine, &prefs)
+                        .context("Install or select the engine first")?;
+                    let (cancel, _) = transfer_status();
+                    serde_json::to_value(
+                        alt_cli::candidates::run(
+                            &root,
+                            &cwd,
+                            &engine,
+                            profile,
+                            &prefs,
+                            &goal,
+                            effort,
+                            seconds,
+                            generated_tokens,
+                            requests,
+                            resume.as_deref(),
+                            cancel,
+                        )
+                        .await?,
+                    )?
+                }
+            };
+            println!("{}", serde_json::to_string_pretty(&report)?);
+            return Ok(());
+        }
+        Action::Skills { command } => {
+            let mut preferences = Preferences::load(&root)?;
+            match command {
+                SkillAction::List => println!(
+                    "{}",
+                    serde_json::to_string_pretty(&alt_cli::skills::catalog())?
+                ),
+                SkillAction::Use { id } => {
+                    let skill = alt_cli::skills::get(&id)?;
+                    preferences.active_skill = Some(id);
+                    preferences.save(&root)?;
+                    println!("{}", serde_json::to_string_pretty(&skill)?);
+                }
+                SkillAction::Clear => {
+                    preferences.active_skill = None;
+                    preferences.save(&root)?;
+                    println!("Active skill cleared");
+                }
+                SkillAction::Run { id, helper, input } => {
+                    let cancel = std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false));
+                    let report = alt_cli::skills::run(
+                        &root,
+                        &std::env::current_dir()?,
+                        &id,
+                        &helper,
+                        serde_json::from_str(&input)?,
+                        args.access.unwrap_or(preferences.access_policy),
+                        cancel,
+                    )
+                    .await?;
+                    println!("{}", serde_json::to_string_pretty(&report)?);
+                    ensure!(
+                        report.status == "passed",
+                        "Skill helper did not pass; retained evidence is in the report"
+                    );
+                }
+            }
             return Ok(());
         }
         Action::Packs { command } => {
@@ -728,6 +1120,7 @@ async fn run() -> Result<()> {
                     uncensored,
                     api_key_env,
                     local_model: None,
+                    inference: None,
                 },
             )?;
             println!("Created {}", root.join("config.toml").display());
@@ -869,6 +1262,29 @@ async fn run() -> Result<()> {
         (name, profile, cwd)
     };
     ensure!(chosen_cwd.is_dir(), "Session workspace no longer exists");
+    let instruction_draft = if let Action::Run {
+        instruction_draft: Some(path),
+        resume,
+        ..
+    } = &command
+    {
+        ensure!(
+            resume.is_none(),
+            "Instruction trials use a fresh session; preserve prior session behavior"
+        );
+        ensure!(
+            chosen_profile.uncensored,
+            "Live instruction trials require an explicit uncensored/abliterated model"
+        );
+        let bytes = std::fs::read(path)?;
+        ensure!(
+            bytes.len() <= 5000,
+            "Instruction draft exceeds 5000 UTF-8 bytes"
+        );
+        Some(String::from_utf8(bytes)?)
+    } else {
+        None
+    };
     let mut effective = chosen_profile.clone();
     let mut local_runtime = if effective.local_model.is_some() {
         let local = runtime::LocalRuntime::start(
@@ -892,6 +1308,9 @@ async fn run() -> Result<()> {
         args.access.unwrap_or(preferences.access_policy),
     )
     .await?;
+    if let Some(body) = instruction_draft {
+        engine.set_instruction_draft(body)?;
+    }
     let info = engine.initialize().await?;
     let session = if let Some(saved) = saved {
         ensure!(
@@ -1102,6 +1521,7 @@ async fn model_action(root: &std::path::Path, command: ModelAction) -> Result<()
                 uncensored: artifact.uncensored_claim,
                 api_key_env: None,
                 local_model: Some(artifact.id.clone()),
+                inference: None,
             },
         )?;
         config.default_profile = name;
@@ -1361,7 +1781,9 @@ async fn task_action(
         TaskAction::Context => p.context_view(&task)?,
         TaskAction::Map => p.repository_map()?,
         TaskAction::Index => json!(p.index_incremental(None)?),
-        TaskAction::Status => json!({"task":p.task(&task)?,"verification":p.verification()?}),
+        TaskAction::Status => {
+            json!({"task":p.task(&task)?,"verification":p.verification()?,"workflow":alt_cli::workflow::packet(&p,&task)?})
+        }
         TaskAction::Changes => json!(p.changes(None)?),
         TaskAction::Diff { id } => {
             println!("{}", display_text(&p.change(&id)?.diff()));

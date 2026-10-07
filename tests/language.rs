@@ -50,3 +50,55 @@ fn utf16_rename_preview_applies_checkpoints_and_rejects_outside_overlap_stalenes
     let outside = json!({"changes":{"file:///etc/passwd":[{"range":{"start":{"line":0,"character":0},"end":{"line":0,"character":1}},"newText":"x"}]}});
     assert!(language::prepare_workspace_edit(data.path(), cwd.path(), "rename", &outside).is_err());
 }
+
+#[test]
+fn failed_batch_restores_earlier_files_through_the_journal() {
+    let data = tempfile::tempdir().unwrap();
+    let cwd = tempfile::tempdir().unwrap();
+    for name in ["a.py", "b.py"] {
+        std::fs::write(cwd.path().join(name), "value = 1\n").unwrap();
+    }
+    let p = Project::open(data.path(), cwd.path()).unwrap();
+    p.start_task("batch", "rename").unwrap();
+    p.note("batch", "plan", "Inspect rename check", "fixture")
+        .unwrap();
+    for name in ["a.py", "b.py"] {
+        p.read("batch", name, 1, 20).unwrap();
+    }
+    let a = p
+        .prepare_edit("batch", "a.py", None, "value", "count", "replace", "rename")
+        .unwrap();
+    let b = p
+        .prepare_edit("batch", "b.py", None, "value", "count", "replace", "rename")
+        .unwrap();
+    // Both proposals are initially valid. The third conflicts after the first write.
+    let conflict = p
+        .prepare_edit(
+            "batch",
+            "a.py",
+            None,
+            "value",
+            "other",
+            "replace",
+            "overlapping batch",
+        )
+        .unwrap();
+    drop(p);
+    let err = language::apply(
+        data.path(),
+        cwd.path(),
+        &[a.id.clone(), b.id.clone(), conflict.id],
+        Policy::Trusted,
+    )
+    .unwrap_err();
+    assert!(err.to_string().contains("rollback"), "{err:#}");
+    for name in ["a.py", "b.py"] {
+        assert_eq!(
+            std::fs::read_to_string(cwd.path().join(name)).unwrap(),
+            "value = 1\n"
+        );
+    }
+    let p = Project::open(data.path(), cwd.path()).unwrap();
+    assert_eq!(p.change(&a.id).unwrap().status, "undone");
+    assert_eq!(p.change(&b.id).unwrap().status, "undone");
+}
