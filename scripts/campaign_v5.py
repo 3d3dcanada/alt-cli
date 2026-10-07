@@ -40,8 +40,8 @@ def metrics(rows, expected):
     for r in rows:groups.setdefault(r['case'],[]).append(r)
     summaries=[]
     for name,rs in sorted(groups.items()):
-        summaries.append({'task_group':name,'attempts':len(rs),'passed':sum(bool(r['passed']) for r in rs),'timeouts':sum(bool(r['outer_timeout']) or r['cli_exit']==124 for r in rs),'wall_seconds':sum(r['wall_seconds'] for r in rs),'requests':sum(r.get('inference_cost',{}).get('requests',0) for r in rs),'charged_generated_tokens':sum(r.get('inference_cost',{}).get('charged_generated_tokens',0) for r in rs)})
-    return {'recorded':len(rows),'expected':expected,'complete':len(rows)==expected,'passed':sum(bool(r['passed']) for r in rows),'groups':summaries,'preset_promoted':False}
+        summaries.append({'task_group':name,'attempts':len(rs),'passed':sum(bool(r['passed']) for r in rs),'timeouts':sum(bool(r['outer_timeout']) or r['cli_exit']==124 for r in rs),'cancellations':sum(r.get('scores',{}).get('stop_reason')=='cancelled' for r in rs),'wall_seconds':sum(r['wall_seconds'] for r in rs),'requests':sum(r.get('inference_cost',{}).get('requests',0) for r in rs),'charged_generated_tokens':sum(r.get('inference_cost',{}).get('charged_generated_tokens',0) for r in rs)})
+    return {'recorded':len(rows),'expected':expected,'complete':len(rows)==expected,'passed':sum(bool(r['passed']) for r in rows),'groups':summaries,'timeout_scope':'Outer evaluator timeouts or explicit exit 124; observed cancelled engine turns are counted separately, without inferring their cause','preset_promoted':False}
 
 def main():
     p=argparse.ArgumentParser(description=__doc__)
