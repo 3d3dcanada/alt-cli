@@ -34,9 +34,14 @@ impl Drop for TerminalLink {
 impl App {
     pub fn workbench_action(&mut self, action: &str) -> Result<()> {
         match action {
-            "files-refresh" => self.launch_project("Reading project files", |p, _| {
-                Ok(JobResult::ProjectFiles(p.browse()?))
-            })?,
+            "files-refresh" => {
+                self.launch_project("Reading project files", |p, _| {
+                    Ok(JobResult::ProjectFiles(p.browse()?))
+                })?;
+                if let Some(job) = &mut self.job {
+                    job.replaceable = true;
+                }
+            }
             "files-search" => {
                 self.dialog = Some(Dialog::Input {
                     title: "Filter project files".into(),

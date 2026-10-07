@@ -735,11 +735,18 @@ fn selectable_list(
     selected: usize,
 ) {
     let count = rows.len();
+    let row_height = if area.height <= 3 { 1 } else { 2 };
     let mut state = ListState::default()
         .with_selected((count > 0).then_some(selected.min(count.saturating_sub(1))));
     let items = rows
         .into_iter()
-        .map(|(title, hint)| ListItem::new(vec![line(title, TEXT), line(hint, MUTED)]))
+        .map(|(title, hint)| {
+            let mut lines = vec![line(title, TEXT)];
+            if row_height > 1 {
+                lines.push(line(hint, MUTED));
+            }
+            ListItem::new(lines)
+        })
         .collect::<Vec<_>>();
     frame.render_stateful_widget(
         List::new(items)
@@ -752,12 +759,12 @@ fn selectable_list(
     let inner = inset(area, 1, 1);
     let offset = state.offset();
     for i in offset..count {
-        let y = inner.y + (i - offset) as u16 * 2;
+        let y = inner.y + (i - offset) as u16 * row_height;
         if y >= inner.bottom() {
             break;
         }
         app.hits.push((
-            Rect::new(inner.x, y, inner.width, 2.min(inner.bottom() - y)),
+            Rect::new(inner.x, y, inner.width, row_height.min(inner.bottom() - y)),
             Hit::Row(i),
         ));
     }

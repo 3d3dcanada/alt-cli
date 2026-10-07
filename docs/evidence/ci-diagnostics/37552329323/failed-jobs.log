@@ -1,0 +1,1124 @@
+build	Prepare and validate the candidate	﻿2026-10-07T00:30:35.7688632Z ##[group]Run sudo mkdir -p /workspace
+build	Prepare and validate the candidate	2026-10-07T00:30:35.7689628Z ^[[36;1msudo mkdir -p /workspace^[[0m
+build	Prepare and validate the candidate	2026-10-07T00:30:35.7690398Z ^[[36;1msudo chown "$USER" /workspace^[[0m
+build	Prepare and validate the candidate	2026-10-07T00:30:35.7691438Z ^[[36;1mln -s "$GITHUB_WORKSPACE" /workspace/alt-cli^[[0m
+build	Prepare and validate the candidate	2026-10-07T00:30:35.7692353Z ^[[36;1mbash scripts/setup-cloud.sh^[[0m
+build	Prepare and validate the candidate	2026-10-07T00:30:35.7693134Z ^[[36;1mbash scripts/build-portable.sh^[[0m
+build	Prepare and validate the candidate	2026-10-07T00:30:35.7693883Z ^[[36;1mmkdir candidate^[[0m
+build	Prepare and validate the candidate	2026-10-07T00:30:35.7694804Z ^[[36;1mcp target/portable-glibc231/release/alt candidate/alt^[[0m
+build	Prepare and validate the candidate	2026-10-07T00:30:35.8073519Z shell: /usr/bin/bash -e {0}
+build	Prepare and validate the candidate	2026-10-07T00:30:35.8074520Z env:
+build	Prepare and validate the candidate	2026-10-07T00:30:35.8075040Z   MATRIX_MODEL: spark
+build	Prepare and validate the candidate	2026-10-07T00:30:35.8075609Z ##[endgroup]
+build	Prepare and validate the candidate	2026-10-07T00:30:36.5031839Z info: profile set to minimal
+build	Prepare and validate the candidate	2026-10-07T00:30:36.5033318Z info: default host tuple is x86_64-unknown-linux-gnu
+build	Prepare and validate the candidate	2026-10-07T00:30:36.5036219Z info: syncing channel updates for 1.99.0-x86_64-unknown-linux-gnu
+build	Prepare and validate the candidate	2026-10-07T00:30:36.7232629Z info: latest update on 2026-10-01 for version 1.99.0 (b940084d7 2026-09-28)
+build	Prepare and validate the candidate	2026-10-07T00:30:43.9347330Z info: downloading 5 components
+build	Prepare and validate the candidate	2026-10-07T00:30:43.9347784Z info: default toolchain set to 1.99.0-x86_64-unknown-linux-gnu
+build	Prepare and validate the candidate	2026-10-07T00:30:43.9347964Z 
+build	Prepare and validate the candidate	2026-10-07T00:30:43.9402630Z   1.99.0-x86_64-unknown-linux-gnu installed - rustc 1.99.0 (b940084d7 2026-09-28)
+build	Prepare and validate the candidate	2026-10-07T00:30:43.9403034Z 
+build	Prepare and validate the candidate	2026-10-07T00:30:43.9403832Z 
+build	Prepare and validate the candidate	2026-10-07T00:30:43.9404107Z Rust is installed now. Great!
+build	Prepare and validate the candidate	2026-10-07T00:30:43.9404321Z 
+build	Prepare and validate the candidate	2026-10-07T00:30:43.9404552Z To get started you need Cargo's bin directory (/workspace/.cargo/bin) in your 
+build	Prepare and validate the candidate	2026-10-07T00:30:43.9404996Z PATH
+build	Prepare and validate the candidate	2026-10-07T00:30:43.9405288Z environment variable. This has not been done automatically.
+build	Prepare and validate the candidate	2026-10-07T00:30:43.9405534Z 
+build	Prepare and validate the candidate	2026-10-07T00:30:43.9405677Z To configure your current shell, you need to source
+build	Prepare and validate the candidate	2026-10-07T00:30:43.9406057Z the corresponding env file under /workspace/.cargo.
+build	Prepare and validate the candidate	2026-10-07T00:30:43.9406305Z 
+build	Prepare and validate the candidate	2026-10-07T00:30:43.9406835Z Consider running the right command for your shell (note the leading DOT):
+build	Prepare and validate the candidate	2026-10-07T00:30:43.9407495Z . "/workspace/.cargo/env"     # For sh/ash/dash/pdksh/bash
+build	Prepare and validate the candidate	2026-10-07T00:30:43.9408039Z . "/workspace/.cargo/env.ps1" # For pwsh
+build	Prepare and validate the candidate	2026-10-07T00:30:43.9408559Z cargo:rerun-if-env-changed=CC_x86_64-unknown-linux-gnu
+build	Prepare and validate the candidate	2026-10-07T00:30:43.9408930Z CC_x86_64-unknown-linux-gnu = None
+build	Prepare and validate the candidate	2026-10-07T00:30:43.9409291Z cargo:rerun-if-env-changed=CC_x86_64_unknown_linux_gnu
+build	Prepare and validate the candidate	2026-10-07T00:30:43.9409604Z CC_x86_64_unknown_linux_gnu = None
+build	Prepare and validate the candidate	2026-10-07T00:30:43.9409870Z cargo:rerun-if-env-changed=HOST_CC
+build	Prepare and validate the candidate	2026-10-07T00:30:43.9410123Z HOST_CC = None
+build	Prepare and validate the candidate	2026-10-07T00:30:43.9410322Z cargo:rerun-if-env-changed=CC
+build	Prepare and validate the candidate	2026-10-07T00:30:43.9410483Z CC = None
+build	Prepare and validate the candidate	2026-10-07T00:30:43.9410722Z cargo:rerun-if-env-changed=CC_ENABLE_DEBUG_OUTPUT
+build	Prepare and validate the candidate	2026-10-07T00:30:43.9692503Z cargo:rerun-if-env-changed=CRATE_CC_NO_DEFAULTS
+build	Prepare and validate the candidate	2026-10-07T00:30:43.9693224Z CRATE_CC_NO_DEFAULTS = None
+build	Prepare and validate the candidate	2026-10-07T00:30:43.9693597Z cargo:rerun-if-env-changed=CFLAGS
+build	Prepare and validate the candidate	2026-10-07T00:30:43.9693821Z CFLAGS = None
+build	Prepare and validate the candidate	2026-10-07T00:30:43.9694057Z cargo:rerun-if-env-changed=HOST_CFLAGS
+build	Prepare and validate the candidate	2026-10-07T00:30:43.9694278Z HOST_CFLAGS = None
+build	Prepare and validate the candidate	2026-10-07T00:30:43.9694504Z cargo:rerun-if-env-changed=CFLAGS_x86_64_unknown_linux_gnu
+build	Prepare and validate the candidate	2026-10-07T00:30:43.9694838Z CFLAGS_x86_64_unknown_linux_gnu = None
+build	Prepare and validate the candidate	2026-10-07T00:30:43.9695117Z cargo:rerun-if-env-changed=CFLAGS_x86_64-unknown-linux-gnu
+build	Prepare and validate the candidate	2026-10-07T00:30:43.9695331Z CFLAGS_x86_64-unknown-linux-gnu = None
+build	Prepare and validate the candidate	2026-10-07T00:30:43.9998750Z info: syncing channel updates for 1.99.0-x86_64-unknown-linux-gnu
+build	Prepare and validate the candidate	2026-10-07T00:30:44.1407144Z info: latest update on 2026-10-01 for version 1.99.0 (b940084d7 2026-09-28)
+build	Prepare and validate the candidate	2026-10-07T00:30:44.1484987Z info: component clippy is up to date
+build	Prepare and validate the candidate	2026-10-07T00:30:44.1485220Z info: component rustfmt is up to date
+build	Prepare and validate the candidate	2026-10-07T00:30:44.1494433Z 
+build	Prepare and validate the candidate	2026-10-07T00:30:44.1548566Z   1.99.0-x86_64-unknown-linux-gnu unchanged - rustc 1.99.0 (b940084d7 2026-09-28)
+build	Prepare and validate the candidate	2026-10-07T00:30:44.1548920Z 
+build	Prepare and validate the candidate	2026-10-07T00:30:46.3678965Z Collecting pyte==0.8.2 (from -r requirements-dev.txt (line 2))
+build	Prepare and validate the candidate	2026-10-07T00:30:46.4636781Z   Downloading pyte-0.8.2-py3-none-any.whl.metadata (3.0 kB)
+build	Prepare and validate the candidate	2026-10-07T00:30:46.4999794Z Collecting wcwidth==0.2.13 (from -r requirements-dev.txt (line 3))
+build	Prepare and validate the candidate	2026-10-07T00:30:46.5160049Z   Downloading wcwidth-0.2.13-py2.py3-none-any.whl.metadata (14 kB)
+build	Prepare and validate the candidate	2026-10-07T00:30:46.5488873Z Collecting jsonschema==4.26.0 (from -r requirements-dev.txt (line 5))
+build	Prepare and validate the candidate	2026-10-07T00:30:46.5641544Z   Downloading jsonschema-4.26.0-py3-none-any.whl.metadata (7.6 kB)
+build	Prepare and validate the candidate	2026-10-07T00:30:46.5857879Z Collecting attrs==26.1.0 (from -r requirements-dev.txt (line 6))
+build	Prepare and validate the candidate	2026-10-07T00:30:46.6012899Z   Downloading attrs-26.1.0-py3-none-any.whl.metadata (8.8 kB)
+build	Prepare and validate the candidate	2026-10-07T00:30:46.6213916Z Collecting jsonschema-specifications==2025.9.1 (from -r requirements-dev.txt (line 7))
+build	Prepare and validate the candidate	2026-10-07T00:30:46.6371249Z   Downloading jsonschema_specifications-2025.9.1-py3-none-any.whl.metadata (2.9 kB)
+build	Prepare and validate the candidate	2026-10-07T00:30:46.6736876Z Collecting referencing==0.37.0 (from -r requirements-dev.txt (line 8))
+build	Prepare and validate the candidate	2026-10-07T00:30:46.6892841Z   Downloading referencing-0.37.0-py3-none-any.whl.metadata (2.8 kB)
+build	Prepare and validate the candidate	2026-10-07T00:30:46.8946204Z Collecting rpds-py==2026.6.3 (from -r requirements-dev.txt (line 9))
+build	Prepare and validate the candidate	2026-10-07T00:30:46.9118380Z   Downloading rpds_py-2026.6.3-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (4.1 kB)
+build	Prepare and validate the candidate	2026-10-07T00:30:46.9362366Z Collecting typing-extensions==4.16.0 (from -r requirements-dev.txt (line 10))
+build	Prepare and validate the candidate	2026-10-07T00:30:46.9532681Z   Downloading typing_extensions-4.16.0-py3-none-any.whl.metadata (3.3 kB)
+build	Prepare and validate the candidate	2026-10-07T00:30:46.9987193Z Downloading pyte-0.8.2-py3-none-any.whl (31 kB)
+build	Prepare and validate the candidate	2026-10-07T00:30:47.0222043Z Downloading wcwidth-0.2.13-py2.py3-none-any.whl (34 kB)
+build	Prepare and validate the candidate	2026-10-07T00:30:47.0417368Z Downloading jsonschema-4.26.0-py3-none-any.whl (90 kB)
+build	Prepare and validate the candidate	2026-10-07T00:30:47.0588517Z    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 90.6/90.6 kB 5.3 MB/s eta 0:00:00
+build	Prepare and validate the candidate	2026-10-07T00:30:47.0746765Z Downloading attrs-26.1.0-py3-none-any.whl (67 kB)
+build	Prepare and validate the candidate	2026-10-07T00:30:47.0794697Z    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 67.5/67.5 kB 16.6 MB/s eta 0:00:00
+build	Prepare and validate the candidate	2026-10-07T00:30:47.0948492Z Downloading jsonschema_specifications-2025.9.1-py3-none-any.whl (18 kB)
+build	Prepare and validate the candidate	2026-10-07T00:30:47.1189776Z Downloading referencing-0.37.0-py3-none-any.whl (26 kB)
+build	Prepare and validate the candidate	2026-10-07T00:30:47.1380337Z Downloading rpds_py-2026.6.3-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (366 kB)
+build	Prepare and validate the candidate	2026-10-07T00:30:47.1695137Z    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 366.2/366.2 kB 11.8 MB/s eta 0:00:00
+build	Prepare and validate the candidate	2026-10-07T00:30:47.1851189Z Downloading typing_extensions-4.16.0-py3-none-any.whl (45 kB)
+build	Prepare and validate the candidate	2026-10-07T00:30:47.1879197Z    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 45.6/45.6 kB 21.7 MB/s eta 0:00:00
+build	Prepare and validate the candidate	2026-10-07T00:30:47.3651612Z Installing collected packages: wcwidth, typing-extensions, rpds-py, pyte, attrs, referencing, jsonschema-specifications, jsonschema
+build	Prepare and validate the candidate	2026-10-07T00:30:47.5061461Z Successfully installed attrs-26.1.0 jsonschema-4.26.0 jsonschema-specifications-2025.9.1 pyte-0.8.2 referencing-0.37.0 rpds-py-2026.6.3 typing-extensions-4.16.0 wcwidth-0.2.13
+build	Prepare and validate the candidate	2026-10-07T00:30:47.6251750Z     Updating crates.io index
+build	Prepare and validate the candidate	2026-10-07T00:30:48.8897483Z  Downloading crates ...
+build	Prepare and validate the candidate	2026-10-07T00:30:49.0179923Z   Downloaded quote v1.0.47
+build	Prepare and validate the candidate	2026-10-07T00:30:49.0262531Z   Downloaded adler2 v2.0.1
+build	Prepare and validate the candidate	2026-10-07T00:30:49.0390124Z   Downloaded rustc_version v0.4.1
+build	Prepare and validate the candidate	2026-10-07T00:30:49.0401026Z   Downloaded foldhash v0.1.5
+build	Prepare and validate the candidate	2026-10-07T00:30:49.0410125Z   Downloaded fnv v1.0.7
+build	Prepare and validate the candidate	2026-10-07T00:30:49.0491063Z   Downloaded rand_pcg v0.10.2
+build	Prepare and validate the candidate	2026-10-07T00:30:49.0546815Z   Downloaded fixedbitset v0.4.2
+build	Prepare and validate the candidate	2026-10-07T00:30:49.0557214Z   Downloaded ratatui-termina v0.1.0
+build	Prepare and validate the candidate	2026-10-07T00:30:49.0564518Z   Downloaded futures-io v0.3.34
+build	Prepare and validate the candidate	2026-10-07T00:30:49.0570214Z   Downloaded rustc-hash v2.1.3
+build	Prepare and validate the candidate	2026-10-07T00:30:49.0594323Z   Downloaded typenum v1.20.1
+build	Prepare and validate the candidate	2026-10-07T00:30:49.0644851Z   Downloaded flate2 v1.1.10
+build	Prepare and validate the candidate	2026-10-07T00:30:49.0681174Z   Downloaded serde_urlencoded v0.7.1
+build	Prepare and validate the candidate	2026-10-07T00:30:49.0692658Z   Downloaded foldhash v0.2.0
+build	Prepare and validate the candidate	2026-10-07T00:30:49.0700734Z   Downloaded ratatui-termwiz v0.1.2
+build	Prepare and validate the candidate	2026-10-07T00:30:49.0707880Z   Downloaded rand_core v0.6.4
+build	Prepare and validate the candidate	2026-10-07T00:30:49.0719994Z   Downloaded nom v7.1.3
+build	Prepare and validate the candidate	2026-10-07T00:30:49.0758085Z   Downloaded quinn-udp v0.5.16
+build	Prepare and validate the candidate	2026-10-07T00:30:49.0770789Z   Downloaded time-core v0.1.9
+build	Prepare and validate the candidate	2026-10-07T00:30:49.0777903Z   Downloaded scopeguard v1.2.0
+build	Prepare and validate the candidate	2026-10-07T00:30:49.0786910Z   Downloaded serde_spanned v1.1.1
+build	Prepare and validate the candidate	2026-10-07T00:30:49.0794356Z   Downloaded strsim v0.11.1
+build	Prepare and validate the candidate	2026-10-07T00:30:49.0804031Z   Downloaded strum v0.28.0
+build	Prepare and validate the candidate	2026-10-07T00:30:49.0809552Z   Downloaded tokio-macros v2.7.2
+build	Prepare and validate the candidate	2026-10-07T00:30:49.0816347Z   Downloaded subtle v2.6.1
+build	Prepare and validate the candidate	2026-10-07T00:30:49.0824264Z   Downloaded try-lock v0.2.5
+build	Prepare and validate the candidate	2026-10-07T00:30:49.0829970Z   Downloaded num-traits v0.2.19
+build	Prepare and validate the candidate	2026-10-07T00:30:49.0847904Z   Downloaded parking_lot_core v0.9.12
+build	Prepare and validate the candidate	2026-10-07T00:30:49.0864898Z   Downloaded http-body v1.1.0
+build	Prepare and validate the candidate	2026-10-07T00:30:49.0873101Z   Downloaded memoffset v0.9.1
+build	Prepare and validate the candidate	2026-10-07T00:30:49.0882818Z   Downloaded num-conv v0.2.2
+build	Prepare and validate the candidate	2026-10-07T00:30:49.0890354Z   Downloaded num_threads v0.1.7
+build	Prepare and validate the candidate	2026-10-07T00:30:49.0897498Z   Downloaded phf_macros v0.11.3
+build	Prepare and validate the candidate	2026-10-07T00:30:49.0904741Z   Downloaded fs-set-times v0.20.3
+build	Prepare and validate the candidate	2026-10-07T00:30:49.0915994Z   Downloaded hex v0.4.3
+build	Prepare and validate the candidate	2026-10-07T00:30:49.0928411Z   Downloaded shell-words v1.1.1
+build	Prepare and validate the candidate	2026-10-07T00:30:49.0938246Z   Downloaded tower-service v0.3.3
+build	Prepare and validate the candidate	2026-10-07T00:30:49.0944989Z   Downloaded tree-sitter-language v0.1.8
+build	Prepare and validate the candidate	2026-10-07T00:30:49.0960264Z   Downloaded miniz_oxide v0.9.1
+build	Prepare and validate the candidate	2026-10-07T00:30:49.0981829Z   Downloaded num-derive v0.4.2
+build	Prepare and validate the candidate	2026-10-07T00:30:49.0996293Z   Downloaded siphasher v1.0.4
+build	Prepare and validate the candidate	2026-10-07T00:30:49.1007879Z   Downloaded stable_deref_trait v1.2.1
+build	Prepare and validate the candidate	2026-10-07T00:30:49.1013733Z   Downloaded futures-macro v0.3.34
+build	Prepare and validate the candidate	2026-10-07T00:30:49.1021892Z   Downloaded futures-sink v0.3.34
+build	Prepare and validate the candidate	2026-10-07T00:30:49.1028972Z   Downloaded lock_api v0.4.14
+build	Prepare and validate the candidate	2026-10-07T00:30:49.1038497Z   Downloaded filedescriptor v0.8.3
+build	Prepare and validate the candidate	2026-10-07T00:30:49.1044789Z   Downloaded form_urlencoded v1.2.2
+build	Prepare and validate the candidate	2026-10-07T00:30:49.1049908Z   Downloaded lab v0.11.0
+build	Prepare and validate the candidate	2026-10-07T00:30:49.1060838Z   Downloaded rustix-linux-procfs v0.1.1
+build	Prepare and validate the candidate	2026-10-07T00:30:49.1073093Z   Downloaded rustls-native-certs v0.8.4
+build	Prepare and validate the candidate	2026-10-07T00:30:49.1082811Z   Downloaded httparse v1.10.1
+build	Prepare and validate the candidate	2026-10-07T00:30:49.1106679Z   Downloaded percent-encoding v2.3.2
+build	Prepare and validate the candidate	2026-10-07T00:30:49.1113794Z   Downloaded rustversion v1.0.23
+build	Prepare and validate the candidate	2026-10-07T00:30:49.1136355Z   Downloaded sync_wrapper v1.0.2
+build	Prepare and validate the candidate	2026-10-07T00:30:49.1142520Z   Downloaded tower-layer v0.3.3
+build	Prepare and validate the candidate	2026-10-07T00:30:49.1151996Z   Downloaded http-body-util v0.1.5
+build	Prepare and validate the candidate	2026-10-07T00:30:49.1172076Z   Downloaded indoc v2.0.7
+build	Prepare and validate the candidate	2026-10-07T00:30:49.1214804Z   Downloaded fs2 v0.4.3
+build	Prepare and validate the candidate	2026-10-07T00:30:49.1323330Z   Downloaded futures-task v0.3.34
+build	Prepare and validate the candidate	2026-10-07T00:30:49.1323671Z   Downloaded is_terminal_polyfill v1.70.2
+build	Prepare and validate the candidate	2026-10-07T00:30:49.1323932Z   Downloaded phf_codegen v0.11.3
+build	Prepare and validate the candidate	2026-10-07T00:30:49.1324173Z   Downloaded phf_generator v0.11.3
+build	Prepare and validate the candidate	2026-10-07T00:30:49.1324426Z   Downloaded rand_core v0.10.1
+build	Prepare and validate the candidate	2026-10-07T00:30:49.1324655Z   Downloaded itoa v1.0.18
+build	Prepare and validate the candidate	2026-10-07T00:30:49.1324885Z   Downloaded maybe-owned v0.3.4
+build	Prepare and validate the candidate	2026-10-07T00:30:49.1325172Z   Downloaded signal-hook-mio v0.2.5
+build	Prepare and validate the candidate	2026-10-07T00:30:49.1325432Z   Downloaded simd-adler32 v0.3.10
+build	Prepare and validate the candidate	2026-10-07T00:30:49.1325670Z   Downloaded tinystr v0.8.4
+build	Prepare and validate the candidate	2026-10-07T00:30:49.1341236Z   Downloaded toml_writer v1.1.2+spec-1.1.0
+build	Prepare and validate the candidate	2026-10-07T00:30:49.1352008Z   Downloaded utf8parse v0.2.2
+build	Prepare and validate the candidate	2026-10-07T00:30:49.1360752Z   Downloaded bit-set v0.5.3
+build	Prepare and validate the candidate	2026-10-07T00:30:49.1369184Z   Downloaded heck v0.5.0
+build	Prepare and validate the candidate	2026-10-07T00:30:49.1380489Z   Downloaded instability v0.3.14
+build	Prepare and validate the candidate	2026-10-07T00:30:49.1390706Z   Downloaded sha2 v0.10.9
+build	Prepare and validate the candidate	2026-10-07T00:30:49.1411627Z   Downloaded slab v0.4.12
+build	Prepare and validate the candidate	2026-10-07T00:30:49.1422579Z   Downloaded streaming-iterator v0.1.9
+build	Prepare and validate the candidate	2026-10-07T00:30:49.1433714Z   Downloaded thiserror v2.0.21
+build	Prepare and validate the candidate	2026-10-07T00:30:49.1483312Z   Downloaded shlex v2.0.1
+build	Prepare and validate the candidate	2026-10-07T00:30:49.1492487Z   Downloaded strum_macros v0.28.0
+build	Prepare and validate the candidate	2026-10-07T00:30:49.1511867Z   Downloaded lru-slab v0.1.3
+build	Prepare and validate the candidate	2026-10-07T00:30:49.1518822Z   Downloaded thiserror-impl v2.0.21
+build	Prepare and validate the candidate	2026-10-07T00:30:49.1530242Z   Downloaded either v1.18.0
+build	Prepare and validate the candidate	2026-10-07T00:30:49.1545869Z   Downloaded fallible-iterator v0.3.0
+build	Prepare and validate the candidate	2026-10-07T00:30:49.1553036Z   Downloaded rustls-pki-types v1.15.1
+build	Prepare and validate the candidate	2026-10-07T00:30:49.1570540Z   Downloaded generic-array v0.14.7
+build	Prepare and validate the candidate	2026-10-07T00:30:49.1579747Z   Downloaded ident_case v1.0.1
+build	Prepare and validate the candidate	2026-10-07T00:30:49.1585265Z   Downloaded mac_address v1.2.0
+build	Prepare and validate the candidate	2026-10-07T00:30:49.1600209Z   Downloaded palette_math v0.7.7
+build	Prepare and validate the candidate	2026-10-07T00:30:49.1613868Z   Downloaded idna_adapter v1.2.2
+build	Prepare and validate the candidate	2026-10-07T00:30:49.1622390Z   Downloaded lazy_static v1.5.1
+build	Prepare and validate the candidate	2026-10-07T00:30:49.1634626Z   Downloaded openssl-probe v0.2.1
+build	Prepare and validate the candidate	2026-10-07T00:30:49.1642866Z   Downloaded serde_core v1.0.229
+build	Prepare and validate the candidate	2026-10-07T00:30:49.1661434Z   Downloaded static_assertions v1.1.0
+build	Prepare and validate the candidate	2026-10-07T00:30:49.1671209Z   Downloaded toml_datetime v0.7.5+spec-1.1.0
+build	Prepare and validate the candidate	2026-10-07T00:30:49.1683998Z   Downloaded io-lifetimes v2.0.4
+build	Prepare and validate the candidate	2026-10-07T00:30:49.1701496Z   Downloaded potential_utf v0.1.6
+build	Prepare and validate the candidate	2026-10-07T00:30:49.1708799Z   Downloaded ratatui-crossterm v0.1.2
+build	Prepare and validate the candidate	2026-10-07T00:30:49.1715944Z   Downloaded roxmltree v0.21.1
+build	Prepare and validate the candidate	2026-10-07T00:30:49.1808266Z   Downloaded semver v1.0.28
+build	Prepare and validate the candidate	2026-10-07T00:30:49.1823435Z   Downloaded serial2 v0.2.38
+build	Prepare and validate the candidate	2026-10-07T00:30:49.1844198Z   Downloaded signal-hook-registry v1.4.8
+build	Prepare and validate the candidate	2026-10-07T00:30:49.1852109Z   Downloaded smallvec v1.16.2
+build	Prepare and validate the candidate	2026-10-07T00:30:49.1860954Z   Downloaded synstructure v0.14.0
+build	Prepare and validate the candidate	2026-10-07T00:30:49.1867495Z   Downloaded terminfo v0.9.0
+build	Prepare and validate the candidate	2026-10-07T00:30:49.1885325Z   Downloaded termios v0.3.3
+build	Prepare and validate the candidate	2026-10-07T00:30:49.1896710Z   Downloaded thiserror v1.0.69
+build	Prepare and validate the candidate	2026-10-07T00:30:49.1934277Z   Downloaded thiserror-impl v1.0.69
+build	Prepare and validate the candidate	2026-10-07T00:30:49.1942913Z   Downloaded tokio-rustls v0.26.6
+build	Prepare and validate the candidate	2026-10-07T00:30:49.1953363Z   Downloaded toml_parser v1.1.3+spec-1.1.0
+build	Prepare and validate the candidate	2026-10-07T00:30:49.1968488Z   Downloaded ryu v1.0.23
+build	Prepare and validate the candidate	2026-10-07T00:30:49.1989965Z   Downloaded ratatui v0.30.2
+build	Prepare and validate the candidate	2026-10-07T00:30:49.2015562Z   Downloaded memmem v0.1.1
+build	Prepare and validate the candidate	2026-10-07T00:30:49.2022149Z   Downloaded wezterm-dynamic v0.2.1
+build	Prepare and validate the candidate	2026-10-07T00:30:49.2030736Z   Downloaded zerofrom v0.1.8
+build	Prepare and validate the candidate	2026-10-07T00:30:49.2036978Z   Downloaded downcast-rs v1.2.1
+build	Prepare and validate the candidate	2026-10-07T00:30:49.2045684Z   Downloaded futures-core v0.3.34
+build	Prepare and validate the candidate	2026-10-07T00:30:49.2054204Z   Downloaded kasuari v0.4.12
+build	Prepare and validate the candidate	2026-10-07T00:30:49.2069123Z   Downloaded lru v0.18.5
+build	Prepare and validate the candidate	2026-10-07T00:30:49.2076970Z   Downloaded pest_derive v2.9.2
+build	Prepare and validate the candidate	2026-10-07T00:30:49.2090434Z   Downloaded hashlink v0.10.0
+build	Prepare and validate the candidate	2026-10-07T00:30:49.2102125Z   Downloaded io-lifetimes v3.0.1
+build	Prepare and validate the candidate	2026-10-07T00:30:49.2112851Z   Downloaded line-clipping v0.3.8
+build	Prepare and validate the candidate	2026-10-07T00:30:49.2123327Z   Downloaded phf v0.11.3
+build	Prepare and validate the candidate	2026-10-07T00:30:49.2131365Z   Downloaded filetime v0.2.29
+build	Prepare and validate the candidate	2026-10-07T00:30:49.2141931Z   Downloaded pest_generator v2.9.2
+build	Prepare and validate the candidate	2026-10-07T00:30:49.2150708Z   Downloaded quinn v0.11.12
+build	Prepare and validate the candidate	2026-10-07T00:30:49.2172528Z   Downloaded tempfile v3.27.0
+build	Prepare and validate the candidate	2026-10-07T00:30:49.2189190Z   Downloaded ipnet v2.12.2
+build	Prepare and validate the candidate	2026-10-07T00:30:49.2200030Z   Downloaded crypto-common v0.1.7
+build	Prepare and validate the candidate	2026-10-07T00:30:49.2205959Z   Downloaded toml v0.9.12+spec-1.1.0
+build	Prepare and validate the candidate	2026-10-07T00:30:49.2232518Z   Downloaded serde_derive v1.0.229
+build	Prepare and validate the candidate	2026-10-07T00:30:49.2252289Z   Downloaded signal-hook v0.3.18
+build	Prepare and validate the candidate	2026-10-07T00:30:49.2271754Z   Downloaded similar v2.7.0
+build	Prepare and validate the candidate	2026-10-07T00:30:49.2306482Z   Downloaded socket2 v0.6.5
+build	Prepare and validate the candidate	2026-10-07T00:30:49.2318288Z   Downloaded tar v0.4.46
+build	Prepare and validate the candidate	2026-10-07T00:30:49.2336970Z   Downloaded tinyvec v1.13.3
+build	Prepare and validate the candidate	2026-10-07T00:30:49.2359751Z   Downloaded tracing-core v0.1.36
+build	Prepare and validate the candidate	2026-10-07T00:30:49.2377109Z   Downloaded approx v0.5.1
+build	Prepare and validate the candidate	2026-10-07T00:30:49.2388370Z   Downloaded io-extras v0.19.0
+build	Prepare and validate the candidate	2026-10-07T00:30:49.2402407Z   Downloaded rand v0.8.8
+build	Prepare and validate the candidate	2026-10-07T00:30:49.2423999Z   Downloaded rand v0.10.3
+build	Prepare and validate the candidate	2026-10-07T00:30:49.2448354Z   Downloaded serde v1.0.229
+build	Prepare and validate the candidate	2026-10-07T00:30:49.2470815Z   Downloaded yoke-derive v0.8.4
+build	Prepare and validate the candidate	2026-10-07T00:30:49.2478142Z   Downloaded termina v0.3.3
+build	Prepare and validate the candidate	2026-10-07T00:30:49.2502247Z   Downloaded tower v0.5.3
+build	Prepare and validate the candidate	2026-10-07T00:30:49.2568876Z   Downloaded litemap v0.8.3
+build	Prepare and validate the candidate	2026-10-07T00:30:49.2584193Z   Downloaded document-features v0.2.12
+build	Prepare and validate the candidate	2026-10-07T00:30:49.2592388Z   Downloaded getrandom v0.2.17
+build	Prepare and validate the candidate	2026-10-07T00:30:49.2611057Z   Downloaded palette_derive v0.7.7
+build	Prepare and validate the candidate	2026-10-07T00:30:49.2622683Z   Downloaded pin-project-lite v0.2.17
+build	Prepare and validate the candidate	2026-10-07T00:30:49.2661149Z   Downloaded litrs v1.0.0
+build	Prepare and validate the candidate	2026-10-07T00:30:49.2680166Z   Downloaded once_cell v1.21.4
+build	Prepare and validate the candidate	2026-10-07T00:30:49.2696305Z   Downloaded ordered-float v4.6.0
+build	Prepare and validate the candidate	2026-10-07T00:30:49.2705841Z   Downloaded parking_lot v0.12.5
+build	Prepare and validate the candidate	2026-10-07T00:30:49.2721871Z   Downloaded want v0.3.2
+build	Prepare and validate the candidate	2026-10-07T00:30:49.2728153Z   Downloaded hyper-rustls v0.27.10
+build	Prepare and validate the candidate	2026-10-07T00:30:49.2737367Z   Downloaded icu_provider v2.3.1
+build	Prepare and validate the candidate	2026-10-07T00:30:49.2754492Z   Downloaded rustls-webpki v0.103.15
+build	Prepare and validate the candidate	2026-10-07T00:30:49.2774649Z   Downloaded block-buffer v0.10.4
+build	Prepare and validate the candidate	2026-10-07T00:30:49.2781436Z   Downloaded by_address v1.2.1
+build	Prepare and validate the candidate	2026-10-07T00:30:49.2786575Z   Downloaded csscolorparser v0.6.2
+build	Prepare and validate the candidate	2026-10-07T00:30:49.2794105Z   Downloaded getrandom v0.3.4
+build	Prepare and validate the candidate	2026-10-07T00:30:49.2816638Z   Downloaded futures-channel v0.3.34
+build	Prepare and validate the candidate	2026-10-07T00:30:49.2828667Z   Downloaded vt100 v0.15.2
+build	Prepare and validate the candidate	2026-10-07T00:30:49.2838481Z   Downloaded zmij v1.0.23
+build	Prepare and validate the candidate	2026-10-07T00:30:49.2849708Z   Downloaded allocator-api2 v0.2.21
+build	Prepare and validate the candidate	2026-10-07T00:30:49.2866244Z   Downloaded anyhow v1.0.104
+build	Prepare and validate the candidate	2026-10-07T00:30:49.2892046Z   Downloaded bytemuck v1.25.2
+build	Prepare and validate the candidate	2026-10-07T00:30:49.2912501Z   Downloaded bytes v1.12.1
+build	Prepare and validate the candidate	2026-10-07T00:30:49.2935554Z   Downloaded clap v4.6.7
+build	Prepare and validate the candidate	2026-10-07T00:30:49.2999383Z   Downloaded regex v1.13.1
+build	Prepare and validate the candidate	2026-10-07T00:30:49.3034562Z   Downloaded tree-sitter-javascript v0.25.0
+build	Prepare and validate the candidate	2026-10-07T00:30:49.3074216Z   Downloaded vte_generate_state_changes v0.1.2
+build	Prepare and validate the candidate	2026-10-07T00:30:49.3078554Z   Downloaded pest_meta v2.9.2
+build	Prepare and validate the candidate	2026-10-07T00:30:49.3091967Z   Downloaded reqwest v0.12.28
+build	Prepare and validate the candidate	2026-10-07T00:30:49.3127458Z   Downloaded tower-http v0.6.11
+build	Prepare and validate the candidate	2026-10-07T00:30:49.3189207Z   Downloaded unicode-ident v1.0.26
+build	Prepare and validate the candidate	2026-10-07T00:30:49.3207283Z   Downloaded anstream v1.0.0
+build	Prepare and validate the candidate	2026-10-07T00:30:49.3220272Z   Downloaded digest v0.10.7
+build	Prepare and validate the candidate	2026-10-07T00:30:49.3232102Z   Downloaded displaydoc v0.2.7
+build	Prepare and validate the candidate	2026-10-07T00:30:49.3245032Z   Downloaded getrandom v0.4.3
+build	Prepare and validate the candidate	2026-10-07T00:30:49.3269699Z   Downloaded autocfg v1.5.1
+build	Prepare and validate the candidate	2026-10-07T00:30:49.3281852Z   Downloaded clap_lex v1.1.1
+build	Prepare and validate the candidate	2026-10-07T00:30:49.3288732Z   Downloaded colorchoice v1.0.5
+build	Prepare and validate the candidate	2026-10-07T00:30:49.3294834Z   Downloaded icu_normalizer_data v2.3.0
+build	Prepare and validate the candidate	2026-10-07T00:30:49.3308719Z   Downloaded cfg_aliases v0.2.2
+build	Prepare and validate the candidate	2026-10-07T00:30:49.3314764Z   Downloaded icu_locale_core v2.3.0
+build	Prepare and validate the candidate	2026-10-07T00:30:49.3360928Z   Downloaded log v0.4.34
+build	Prepare and validate the candidate	2026-10-07T00:30:49.3377068Z   Downloaded mio v1.2.4
+build	Prepare and validate the candidate	2026-10-07T00:30:49.3417365Z   Downloaded uuid v1.27.0
+build	Prepare and validate the candidate	2026-10-07T00:30:49.3437008Z   Downloaded minimal-lexical v0.2.1
+build	Prepare and validate the candidate	2026-10-07T00:30:49.3467514Z   Downloaded tokio-util v0.7.19
+build	Prepare and validate the candidate	2026-10-07T00:30:49.3519244Z   Downloaded icu_collections v2.3.0
+build	Prepare and validate the candidate	2026-10-07T00:30:49.3560779Z   Downloaded fallible-streaming-iterator v0.1.9
+build	Prepare and validate the candidate	2026-10-07T00:30:49.3566931Z   Downloaded serde_json v1.0.151
+build	Prepare and validate the candidate	2026-10-07T00:30:49.3615230Z   Downloaded powerfmt v0.2.1
+build	Prepare and validate the candidate	2026-10-07T00:30:49.3623611Z   Downloaded ratatui-core v0.1.2
+build	Prepare and validate the candidate	2026-10-07T00:30:49.3672999Z   Downloaded rusqlite v0.37.0
+build	Prepare and validate the candidate	2026-10-07T00:30:49.3731203Z   Downloaded tree-sitter v0.25.10
+build	Prepare and validate the candidate	2026-10-07T00:30:49.3780965Z   Downloaded tree-sitter-python v0.25.0
+build	Prepare and validate the candidate	2026-10-07T00:30:49.3825447Z   Downloaded vte v0.11.1
+build	Prepare and validate the candidate	2026-10-07T00:30:49.3838136Z   Downloaded xattr v1.6.1
+build	Prepare and validate the candidate	2026-10-07T00:30:49.3850455Z   Downloaded anstyle-parse v1.0.0
+build	Prepare and validate the candidate	2026-10-07T00:30:49.3862399Z   Downloaded chacha20 v0.10.2
+build	Prepare and validate the candidate	2026-10-07T00:30:49.3878058Z   Downloaded clap_builder v4.6.7
+build	Prepare and validate the candidate	2026-10-07T00:30:49.3921098Z   Downloaded clap_derive v4.6.7
+build	Prepare and validate the candidate	2026-10-07T00:30:49.3936045Z   Downloaded equivalent v1.0.2
+build	Prepare and validate the candidate	2026-10-07T00:30:49.3942578Z   Downloaded errno v0.3.14
+build	Prepare and validate the candidate	2026-10-07T00:30:49.3952163Z   Downloaded portable-pty v0.9.0
+build	Prepare and validate the candidate	2026-10-07T00:30:49.3963982Z   Downloaded ratatui-widgets v0.3.2
+build	Prepare and validate the candidate	2026-10-07T00:30:49.4017484Z   Downloaded ucd-trie v0.1.7
+build	Prepare and validate the candidate	2026-10-07T00:30:49.4026873Z   Downloaded untrusted v0.9.0
+build	Prepare and validate the candidate	2026-10-07T00:30:49.4038712Z   Downloaded winnow v1.0.4
+build	Prepare and validate the candidate	2026-10-07T00:30:49.4102999Z   Downloaded ambient-authority v0.0.2
+build	Prepare and validate the candidate	2026-10-07T00:30:49.4111148Z   Downloaded bit-vec v0.6.3
+build	Prepare and validate the candidate	2026-10-07T00:30:49.4118946Z   Downloaded cpufeatures v0.2.17
+build	Prepare and validate the candidate	2026-10-07T00:30:49.4128005Z   Downloaded deranged v0.5.8
+build	Prepare and validate the candidate	2026-10-07T00:30:49.4138011Z   Downloaded find-msvc-tools v0.1.14
+build	Prepare and validate the candidate	2026-10-07T00:30:49.4148751Z   Downloaded http v1.5.0
+build	Prepare and validate the candidate	2026-10-07T00:30:49.4172585Z   Downloaded indexmap v2.14.2
+build	Prepare and validate the candidate	2026-10-07T00:30:49.4200287Z   Downloaded quinn-proto v0.11.19
+build	Prepare and validate the candidate	2026-10-07T00:30:49.4245675Z   Downloaded syn v1.0.109
+build	Prepare and validate the candidate	2026-10-07T00:30:49.4307967Z   Downloaded syn v2.0.119
+build	Prepare and validate the candidate	2026-10-07T00:30:49.4379275Z   Downloaded syn v3.0.6
+build	Prepare and validate the candidate	2026-10-07T00:30:49.4451623Z   Downloaded time v0.3.55
+build	Prepare and validate the candidate	2026-10-07T00:30:49.4550325Z   Downloaded unicode-width v0.2.0
+build	Prepare and validate the candidate	2026-10-07T00:30:49.4588054Z   Downloaded zerofrom-derive v0.1.8
+build	Prepare and validate the candidate	2026-10-07T00:30:49.4594617Z   Downloaded memchr v2.8.3
+build	Prepare and validate the candidate	2026-10-07T00:30:49.4631467Z   Downloaded wezterm-blob-leases v0.1.1
+build	Prepare and validate the candidate	2026-10-07T00:30:49.4638697Z   Downloaded icu_properties v2.3.0
+build	Prepare and validate the candidate	2026-10-07T00:30:49.4659725Z   Downloaded url v2.5.8
+build	Prepare and validate the candidate	2026-10-07T00:30:49.4677015Z   Downloaded zeroize v1.9.0
+build	Prepare and validate the candidate	2026-10-07T00:30:49.4687128Z   Downloaded base64 v0.22.1
+build	Prepare and validate the candidate	2026-10-07T00:30:49.4712401Z   Downloaded bitflags v1.3.2
+build	Prepare and validate the candidate	2026-10-07T00:30:49.4733910Z   Downloaded crc32fast v1.5.2
+build	Prepare and validate the candidate	2026-10-07T00:30:49.4747526Z   Downloaded derive_more-impl v2.1.1
+build	Prepare and validate the candidate	2026-10-07T00:30:49.4782691Z   Downloaded hashbrown v0.15.5
+build	Prepare and validate the candidate	2026-10-07T00:30:49.4815485Z   Downloaded hyper-util v0.1.21
+build	Prepare and validate the candidate	2026-10-07T00:30:49.4858671Z   Downloaded unicode-segmentation v1.13.3
+build	Prepare and validate the candidate	2026-10-07T00:30:49.4878562Z   Downloaded wezterm-bidi v0.2.3
+build	Prepare and validate the candidate	2026-10-07T00:30:49.4891950Z   Downloaded base64 v0.23.1
+build	Prepare and validate the candidate	2026-10-07T00:30:49.4918445Z   Downloaded cpufeatures v0.3.1
+build	Prepare and validate the candidate	2026-10-07T00:30:49.4928294Z   Downloaded hashbrown v0.16.1
+build	Prepare and validate the candidate	2026-10-07T00:30:49.4962649Z   Downloaded icu_properties_data v2.3.0
+build	Prepare and validate the candidate	2026-10-07T00:30:49.5034927Z   Downloaded itertools v0.14.0
+build	Prepare and validate the candidate	2026-10-07T00:30:49.5081477Z   Downloaded libm v0.2.16
+build	Prepare and validate the candidate	2026-10-07T00:30:49.5155256Z   Downloaded pest v2.9.2
+build	Prepare and validate the candidate	2026-10-07T00:30:49.5186762Z   Downloaded pkg-config v0.3.34
+build	Prepare and validate the candidate	2026-10-07T00:30:49.5196681Z   Downloaded writeable v0.6.4
+build	Prepare and validate the candidate	2026-10-07T00:30:49.5209933Z   Downloaded zerovec v0.11.8
+build	Prepare and validate the candidate	2026-10-07T00:30:49.5249668Z   Downloaded bitflags v2.13.2
+build	Prepare and validate the candidate	2026-10-07T00:30:49.5279249Z   Downloaded convert_case v0.10.0
+build	Prepare and validate the candidate	2026-10-07T00:30:49.5290198Z   Downloaded hashbrown v0.17.1
+build	Prepare and validate the candidate	2026-10-07T00:30:49.5325361Z   Downloaded phf_shared v0.11.3
+build	Prepare and validate the candidate	2026-10-07T00:30:49.5331563Z   Downloaded regex-syntax v0.8.11
+build	Prepare and validate the candidate	2026-10-07T00:30:49.5376981Z   Downloaded euclid v0.22.14
+build	Prepare and validate the candidate	2026-10-07T00:30:49.5398488Z   Downloaded idna v1.1.0
+build	Prepare and validate the candidate	2026-10-07T00:30:49.5422037Z   Downloaded rustls v0.23.45
+build	Prepare and validate the candidate	2026-10-07T00:30:49.5501195Z   Downloaded portable-atomic v1.15.0
+build	Prepare and validate the candidate	2026-10-07T00:30:49.5551176Z   Downloaded tree-sitter-rust v0.24.2
+build	Prepare and validate the candidate	2026-10-07T00:30:49.5624212Z   Downloaded rustix v1.1.5
+build	Prepare and validate the candidate	2026-10-07T00:30:49.5804166Z   Downloaded termwiz v0.23.3
+build	Prepare and validate the candidate	2026-10-07T00:30:49.5890191Z   Downloaded zerotrie v0.2.5
+build	Prepare and validate the candidate	2026-10-07T00:30:49.5916657Z   Downloaded futures-util v0.3.34
+build	Prepare and validate the candidate	2026-10-07T00:30:49.6005056Z   Downloaded tracing v0.1.44
+build	Prepare and validate the candidate	2026-10-07T00:30:49.6110398Z   Downloaded unicode-width v0.1.14
+build	Prepare and validate the candidate	2026-10-07T00:30:49.6148389Z   Downloaded fancy-regex v0.11.0
+build	Prepare and validate the candidate	2026-10-07T00:30:49.6171615Z   Downloaded regex-automata v0.4.18
+build	Prepare and validate the candidate	2026-10-07T00:30:49.6267353Z   Downloaded cc v1.6.0
+build	Prepare and validate the candidate	2026-10-07T00:30:49.6290509Z   Downloaded cfg-if v1.0.5
+build	Prepare and validate the candidate	2026-10-07T00:30:49.6298940Z   Downloaded crossterm v0.29.0
+build	Prepare and validate the candidate	2026-10-07T00:30:49.6344103Z   Downloaded unicode-truncate v2.0.1
+build	Prepare and validate the candidate	2026-10-07T00:30:49.6354662Z   Downloaded wezterm-dynamic-derive v0.1.1
+build	Prepare and validate the candidate	2026-10-07T00:30:49.6360690Z   Downloaded fastrand v2.5.0
+build	Prepare and validate the candidate	2026-10-07T00:30:49.6369585Z   Downloaded tokio v1.53.2
+build	Prepare and validate the candidate	2026-10-07T00:30:49.6673612Z   Downloaded derive_more v2.1.1
+build	Prepare and validate the candidate	2026-10-07T00:30:49.6759313Z   Downloaded darling_macro v0.24.1
+build	Prepare and validate the candidate	2026-10-07T00:30:49.6763902Z   Downloaded hyper v1.11.1
+build	Prepare and validate the candidate	2026-10-07T00:30:49.6810030Z   Downloaded utf8_iter v1.0.4
+build	Prepare and validate the candidate	2026-10-07T00:30:49.6817072Z   Downloaded aho-corasick v1.1.5
+build	Prepare and validate the candidate	2026-10-07T00:30:49.6852109Z   Downloaded anstyle v1.0.14
+build	Prepare and validate the candidate	2026-10-07T00:30:49.6861525Z   Downloaded cfg_aliases v0.1.1
+build	Prepare and validate the candidate	2026-10-07T00:30:49.6867256Z   Downloaded nix v0.28.0
+build	Prepare and validate the candidate	2026-10-07T00:30:49.6940456Z   Downloaded winnow v0.7.15
+build	Prepare and validate the candidate	2026-10-07T00:30:49.7004782Z   Downloaded compact_str v0.9.1
+build	Prepare and validate the candidate	2026-10-07T00:30:49.7027533Z   Downloaded palette v0.7.7
+build	Prepare and validate the candidate	2026-10-07T00:30:49.7110554Z   Downloaded proc-macro2 v1.0.107
+build	Prepare and validate the candidate	2026-10-07T00:30:49.7129201Z   Downloaded nix v0.29.0
+build	Prepare and validate the candidate	2026-10-07T00:30:49.7203438Z   Downloaded nix v0.30.1
+build	Prepare and validate the candidate	2026-10-07T00:30:49.7280596Z   Downloaded version_check v0.9.5
+build	Prepare and validate the candidate	2026-10-07T00:30:49.7289135Z   Downloaded yoke v0.8.3
+build	Prepare and validate the candidate	2026-10-07T00:30:49.7300787Z   Downloaded icu_normalizer v2.3.0
+build	Prepare and validate the candidate	2026-10-07T00:30:49.7367303Z   Downloaded atomic v0.6.1
+build	Prepare and validate the candidate	2026-10-07T00:30:49.7376640Z   Downloaded wezterm-color-types v0.3.0
+build	Prepare and validate the candidate	2026-10-07T00:30:49.7382332Z   Downloaded arrayvec v0.7.8
+build	Prepare and validate the candidate	2026-10-07T00:30:49.7395639Z   Downloaded critical-section v1.2.0
+build	Prepare and validate the candidate	2026-10-07T00:30:49.7406221Z   Downloaded ring v0.17.14
+build	Prepare and validate the candidate	2026-10-07T00:30:49.7688809Z   Downloaded wezterm-input-types v0.1.0
+build	Prepare and validate the candidate	2026-10-07T00:30:49.7694293Z   Downloaded anstyle-query v1.1.5
+build	Prepare and validate the candidate	2026-10-07T00:30:49.7701668Z   Downloaded darling_core v0.24.1
+build	Prepare and validate the candidate	2026-10-07T00:30:49.7741672Z   Downloaded zlib-rs v0.6.8
+build	Prepare and validate the candidate	2026-10-07T00:30:49.7778302Z   Downloaded darling v0.24.1
+build	Prepare and validate the candidate	2026-10-07T00:30:49.7823102Z   Downloaded vcpkg v0.2.15
+build	Prepare and validate the candidate	2026-10-07T00:30:49.8193373Z   Downloaded cap-primitives v4.0.3
+build	Prepare and validate the candidate	2026-10-07T00:30:49.8266779Z   Downloaded castaway v0.2.4
+build	Prepare and validate the candidate	2026-10-07T00:30:49.8276482Z   Downloaded finl_unicode v1.5.0
+build	Prepare and validate the candidate	2026-10-07T00:30:49.8303039Z   Downloaded deltae v0.3.2
+build	Prepare and validate the candidate	2026-10-07T00:30:49.8434543Z   Downloaded zerovec-derive v0.11.6
+build	Prepare and validate the candidate	2026-10-07T00:30:49.8446355Z   Downloaded atomic-waker v1.1.2
+build	Prepare and validate the candidate	2026-10-07T00:30:49.8454534Z   Downloaded vtparse v0.6.2
+build	Prepare and validate the candidate	2026-10-07T00:30:49.8460044Z   Downloaded cap-std v4.0.3
+build	Prepare and validate the candidate	2026-10-07T00:30:49.8479411Z   Downloaded libc v0.2.190
+build	Prepare and validate the candidate	2026-10-07T00:30:49.8803215Z   Downloaded linux-raw-sys v0.12.1
+build	Prepare and validate the candidate	2026-10-07T00:30:49.9243533Z   Downloaded libsqlite3-sys v0.35.0
+build	Prepare and validate the candidate	2026-10-07T00:30:50.3024288Z    Compiling proc-macro2 v1.0.107
+build	Prepare and validate the candidate	2026-10-07T00:30:50.3024853Z    Compiling unicode-ident v1.0.26
+build	Prepare and validate the candidate	2026-10-07T00:30:50.3025311Z    Compiling quote v1.0.47
+build	Prepare and validate the candidate	2026-10-07T00:30:50.3025751Z    Compiling libc v0.2.190
+build	Prepare and validate the candidate	2026-10-07T00:30:50.3492228Z    Compiling cfg-if v1.0.5
+build	Prepare and validate the candidate	2026-10-07T00:30:50.3742219Z    Compiling find-msvc-tools v0.1.14
+build	Prepare and validate the candidate	2026-10-07T00:30:50.4583174Z    Compiling shlex v2.0.1
+build	Prepare and validate the candidate	2026-10-07T00:30:50.4731824Z    Compiling itoa v1.0.18
+build	Prepare and validate the candidate	2026-10-07T00:30:50.5302807Z    Compiling cc v1.6.0
+build	Prepare and validate the candidate	2026-10-07T00:30:50.5482750Z    Compiling bitflags v2.13.2
+build	Prepare and validate the candidate	2026-10-07T00:30:50.6552707Z    Compiling smallvec v1.16.2
+build	Prepare and validate the candidate	2026-10-07T00:30:50.8867289Z    Compiling syn v3.0.6
+build	Prepare and validate the candidate	2026-10-07T00:30:50.9052321Z    Compiling log v0.4.34
+build	Prepare and validate the candidate	2026-10-07T00:30:50.9952216Z    Compiling parking_lot_core v0.9.12
+build	Prepare and validate the candidate	2026-10-07T00:30:51.0752393Z    Compiling equivalent v1.0.2
+build	Prepare and validate the candidate	2026-10-07T00:30:51.1002648Z    Compiling stable_deref_trait v1.2.1
+build	Prepare and validate the candidate	2026-10-07T00:30:51.1458214Z    Compiling futures-core v0.3.34
+build	Prepare and validate the candidate	2026-10-07T00:30:51.2052448Z    Compiling scopeguard v1.2.0
+build	Prepare and validate the candidate	2026-10-07T00:30:51.2425844Z    Compiling lock_api v0.4.14
+build	Prepare and validate the candidate	2026-10-07T00:30:51.3696809Z    Compiling syn v2.0.119
+build	Prepare and validate the candidate	2026-10-07T00:30:51.4662835Z    Compiling errno v0.3.14
+build	Prepare and validate the candidate	2026-10-07T00:30:51.5162923Z    Compiling signal-hook-registry v1.4.8
+build	Prepare and validate the candidate	2026-10-07T00:30:51.5630008Z    Compiling mio v1.2.4
+build	Prepare and validate the candidate	2026-10-07T00:30:51.7472395Z    Compiling parking_lot v0.12.5
+build	Prepare and validate the candidate	2026-10-07T00:30:51.8055133Z    Compiling memchr v2.8.3
+build	Prepare and validate the candidate	2026-10-07T00:30:51.9202448Z    Compiling bytes v1.12.1
+build	Prepare and validate the candidate	2026-10-07T00:30:52.1672458Z    Compiling rustix v1.1.5
+build	Prepare and validate the candidate	2026-10-07T00:30:52.2662444Z    Compiling pin-project-lite v0.2.17
+build	Prepare and validate the candidate	2026-10-07T00:30:52.3022406Z    Compiling tree-sitter-language v0.1.8
+build	Prepare and validate the candidate	2026-10-07T00:30:52.3413001Z    Compiling linux-raw-sys v0.12.1
+build	Prepare and validate the candidate	2026-10-07T00:30:52.3692915Z    Compiling once_cell v1.21.4
+build	Prepare and validate the candidate	2026-10-07T00:30:52.4849647Z    Compiling zmij v1.0.23
+build	Prepare and validate the candidate	2026-10-07T00:30:52.5982744Z    Compiling socket2 v0.6.5
+build	Prepare and validate the candidate	2026-10-07T00:30:52.8112309Z    Compiling writeable v0.6.4
+build	Prepare and validate the candidate	2026-10-07T00:30:52.8569655Z    Compiling litemap v0.8.3
+build	Prepare and validate the candidate	2026-10-07T00:30:52.9228243Z    Compiling unicode-segmentation v1.13.3
+build	Prepare and validate the candidate	2026-10-07T00:30:52.9552515Z    Compiling serde_core v1.0.229
+build	Prepare and validate the candidate	2026-10-07T00:30:53.0742754Z    Compiling synstructure v0.14.0
+build	Prepare and validate the candidate	2026-10-07T00:30:53.1367025Z    Compiling version_check v0.9.5
+build	Prepare and validate the candidate	2026-10-07T00:30:53.2660001Z    Compiling strsim v0.11.1
+build	Prepare and validate the candidate	2026-10-07T00:30:53.3952874Z    Compiling generic-array v0.14.7
+build	Prepare and validate the candidate	2026-10-07T00:30:53.4582449Z    Compiling ring v0.17.14
+build	Prepare and validate the candidate	2026-10-07T00:30:53.6142506Z    Compiling icu_properties_data v2.3.0
+build	Prepare and validate the candidate	2026-10-07T00:30:53.6632392Z    Compiling heck v0.5.0
+build	Prepare and validate the candidate	2026-10-07T00:30:53.7408853Z    Compiling foldhash v0.2.0
+build	Prepare and validate the candidate	2026-10-07T00:30:53.7862461Z    Compiling icu_normalizer_data v2.3.0
+build	Prepare and validate the candidate	2026-10-07T00:30:53.8032332Z    Compiling utf8_iter v1.0.4
+build	Prepare and validate the candidate	2026-10-07T00:30:53.8490436Z    Compiling rustversion v1.0.23
+build	Prepare and validate the candidate	2026-10-07T00:30:53.8602432Z    Compiling allocator-api2 v0.2.21
+build	Prepare and validate the candidate	2026-10-07T00:30:54.0730319Z    Compiling zerofrom-derive v0.1.8
+build	Prepare and validate the candidate	2026-10-07T00:30:54.0822854Z    Compiling yoke-derive v0.8.4
+build	Prepare and validate the candidate	2026-10-07T00:30:54.5902433Z    Compiling zerovec-derive v0.11.6
+build	Prepare and validate the candidate	2026-10-07T00:30:54.6162405Z    Compiling displaydoc v0.2.7
+build	Prepare and validate the candidate	2026-10-07T00:30:54.7002948Z    Compiling zerofrom v0.1.8
+build	Prepare and validate the candidate	2026-10-07T00:30:54.7552407Z    Compiling yoke v0.8.3
+build	Prepare and validate the candidate	2026-10-07T00:30:54.8487722Z    Compiling tokio-macros v2.7.2
+build	Prepare and validate the candidate	2026-10-07T00:30:54.9708512Z    Compiling zerotrie v0.2.5
+build	Prepare and validate the candidate	2026-10-07T00:30:55.1155418Z    Compiling zerovec v0.11.8
+build	Prepare and validate the candidate	2026-10-07T00:30:55.1502803Z    Compiling tokio v1.53.2
+build	Prepare and validate the candidate	2026-10-07T00:30:55.4182966Z    Compiling tinystr v0.8.4
+build	Prepare and validate the candidate	2026-10-07T00:30:55.4992228Z    Compiling icu_locale_core v2.3.0
+build	Prepare and validate the candidate	2026-10-07T00:30:56.2706317Z    Compiling potential_utf v0.1.6
+build	Prepare and validate the candidate	2026-10-07T00:30:56.3280431Z    Compiling icu_collections v2.3.0
+build	Prepare and validate the candidate	2026-10-07T00:30:56.5318698Z    Compiling icu_provider v2.3.1
+build	Prepare and validate the candidate	2026-10-07T00:30:56.5964902Z    Compiling http v1.5.0
+build	Prepare and validate the candidate	2026-10-07T00:30:56.6676754Z    Compiling percent-encoding v2.3.2
+build	Prepare and validate the candidate	2026-10-07T00:30:56.7235869Z    Compiling hashbrown v0.17.1
+build	Prepare and validate the candidate	2026-10-07T00:30:56.9902647Z    Compiling typenum v1.20.1
+build	Prepare and validate the candidate	2026-10-07T00:30:57.1661257Z    Compiling ryu v1.0.23
+build	Prepare and validate the candidate	2026-10-07T00:30:57.2367869Z    Compiling serde_json v1.0.151
+build	Prepare and validate the candidate	2026-10-07T00:30:57.2929608Z    Compiling ident_case v1.0.1
+build	Prepare and validate the candidate	2026-10-07T00:30:57.3291659Z    Compiling zeroize v1.9.0
+build	Prepare and validate the candidate	2026-10-07T00:30:57.3445716Z    Compiling thiserror v2.0.21
+build	Prepare and validate the candidate	2026-10-07T00:30:57.3947878Z    Compiling rustls-pki-types v1.15.1
+build	Prepare and validate the candidate	2026-10-07T00:30:57.6133040Z    Compiling darling_core v0.24.1
+build	Prepare and validate the candidate	2026-10-07T00:30:57.7827186Z    Compiling http-body v1.1.0
+build	Prepare and validate the candidate	2026-10-07T00:30:57.8319914Z    Compiling indexmap v2.14.2
+build	Prepare and validate the candidate	2026-10-07T00:30:58.1717573Z    Compiling thiserror-impl v2.0.21
+build	Prepare and validate the candidate	2026-10-07T00:30:58.5444937Z    Compiling futures-macro v0.3.34
+build	Prepare and validate the candidate	2026-10-07T00:30:59.0993888Z    Compiling getrandom v0.2.17
+build	Prepare and validate the candidate	2026-10-07T00:30:59.1760432Z    Compiling utf8parse v0.2.2
+build	Prepare and validate the candidate	2026-10-07T00:30:59.2099402Z    Compiling futures-task v0.3.34
+build	Prepare and validate the candidate	2026-10-07T00:30:59.2619242Z    Compiling slab v0.4.12
+build	Prepare and validate the candidate	2026-10-07T00:30:59.3157081Z    Compiling signal-hook v0.3.18
+build	Prepare and validate the candidate	2026-10-07T00:30:59.3207481Z    Compiling httparse v1.10.1
+build	Prepare and validate the candidate	2026-10-07T00:30:59.3602275Z    Compiling untrusted v0.9.0
+build	Prepare and validate the candidate	2026-10-07T00:30:59.3926348Z    Compiling either v1.18.0
+build	Prepare and validate the candidate	2026-10-07T00:30:59.4602698Z    Compiling darling_macro v0.24.1
+build	Prepare and validate the candidate	2026-10-07T00:30:59.4725563Z    Compiling itertools v0.14.0
+build	Prepare and validate the candidate	2026-10-07T00:30:59.5831181Z    Compiling futures-util v0.3.34
+build	Prepare and validate the candidate	2026-10-07T00:31:00.2072611Z    Compiling castaway v0.2.4
+build	Prepare and validate the candidate	2026-10-07T00:31:00.2462940Z    Compiling icu_normalizer v2.3.0
+build	Prepare and validate the candidate	2026-10-07T00:31:00.5213614Z    Compiling icu_properties v2.3.0
+build	Prepare and validate the candidate	2026-10-07T00:31:00.5727057Z    Compiling hashbrown v0.16.1
+build	Prepare and validate the candidate	2026-10-07T00:31:00.8858708Z    Compiling strum_macros v0.28.0
+build	Prepare and validate the candidate	2026-10-07T00:31:00.9092290Z    Compiling convert_case v0.10.0
+build	Prepare and validate the candidate	2026-10-07T00:31:00.9970314Z    Compiling ipnet v2.12.2
+build	Prepare and validate the candidate	2026-10-07T00:31:01.1754191Z    Compiling io-lifetimes v2.0.4
+build	Prepare and validate the candidate	2026-10-07T00:31:01.2036260Z    Compiling io-lifetimes v3.0.1
+build	Prepare and validate the candidate	2026-10-07T00:31:01.2574263Z    Compiling try-lock v0.2.5
+build	Prepare and validate the candidate	2026-10-07T00:31:01.2795348Z    Compiling rustls v0.23.45
+build	Prepare and validate the candidate	2026-10-07T00:31:01.2912597Z    Compiling unicode-width v0.2.0
+build	Prepare and validate the candidate	2026-10-07T00:31:01.3278154Z    Compiling tower-service v0.3.3
+build	Prepare and validate the candidate	2026-10-07T00:31:01.3517498Z    Compiling static_assertions v1.1.0
+build	Prepare and validate the candidate	2026-10-07T00:31:01.3717238Z    Compiling compact_str v0.9.1
+build	Prepare and validate the candidate	2026-10-07T00:31:01.3972538Z    Compiling unicode-truncate v2.0.1
+build	Prepare and validate the candidate	2026-10-07T00:31:01.4491977Z    Compiling want v0.3.2
+build	Prepare and validate the candidate	2026-10-07T00:31:01.5159039Z    Compiling idna_adapter v1.2.2
+build	Prepare and validate the candidate	2026-10-07T00:31:01.5559989Z    Compiling derive_more-impl v2.1.1
+build	Prepare and validate the candidate	2026-10-07T00:31:01.6450106Z    Compiling lru v0.18.5
+build	Prepare and validate the candidate	2026-10-07T00:31:01.7213405Z    Compiling kasuari v0.4.12
+build	Prepare and validate the candidate	2026-10-07T00:31:01.8329993Z    Compiling darling v0.24.1
+build	Prepare and validate the candidate	2026-10-07T00:31:01.8829149Z    Compiling strum v0.28.0
+build	Prepare and validate the candidate	2026-10-07T00:31:01.9443166Z    Compiling block-buffer v0.10.4
+build	Prepare and validate the candidate	2026-10-07T00:31:01.9817067Z    Compiling crypto-common v0.1.7
+build	Prepare and validate the candidate	2026-10-07T00:31:01.9859147Z    Compiling form_urlencoded v1.2.2
+build	Prepare and validate the candidate	2026-10-07T00:31:02.0374172Z    Compiling tracing-core v0.1.36
+build	Prepare and validate the candidate	2026-10-07T00:31:02.0432504Z    Compiling futures-channel v0.3.34
+build	Prepare and validate the candidate	2026-10-07T00:31:02.0543206Z    Compiling pkg-config v0.3.34
+build	Prepare and validate the candidate	2026-10-07T00:31:02.1477216Z    Compiling litrs v1.0.0
+build	Prepare and validate the candidate	2026-10-07T00:31:02.2852470Z    Compiling thiserror v1.0.69
+build	Prepare and validate the candidate	2026-10-07T00:31:02.2928145Z    Compiling vcpkg v0.2.15
+build	Prepare and validate the candidate	2026-10-07T00:31:02.3762926Z    Compiling subtle v2.6.1
+build	Prepare and validate the candidate	2026-10-07T00:31:02.4252956Z    Compiling serde v1.0.229
+build	Prepare and validate the candidate	2026-10-07T00:31:02.4532251Z    Compiling critical-section v1.2.0
+build	Prepare and validate the candidate	2026-10-07T00:31:02.4992474Z    Compiling cfg_aliases v0.1.1
+build	Prepare and validate the candidate	2026-10-07T00:31:02.5200226Z    Compiling atomic-waker v1.1.2
+build	Prepare and validate the candidate	2026-10-07T00:31:02.5372572Z    Compiling getrandom v0.4.3
+build	Prepare and validate the candidate	2026-10-07T00:31:02.5786779Z    Compiling indoc v2.0.7
+build	Prepare and validate the candidate	2026-10-07T00:31:02.6152426Z    Compiling io-extras v0.19.0
+build	Prepare and validate the candidate	2026-10-07T00:31:02.6752876Z    Compiling libsqlite3-sys v0.35.0
+build	Prepare and validate the candidate	2026-10-07T00:31:02.7412259Z    Compiling instability v0.3.14
+build	Prepare and validate the candidate	2026-10-07T00:31:02.7563751Z    Compiling hyper v1.11.1
+build	Prepare and validate the candidate	2026-10-07T00:31:02.8330111Z    Compiling nix v0.28.0
+build	Prepare and validate the candidate	2026-10-07T00:31:02.9842365Z    Compiling ratatui-core v0.1.2
+build	Prepare and validate the candidate	2026-10-07T00:31:03.0052388Z    Compiling document-features v0.2.12
+build	Prepare and validate the candidate	2026-10-07T00:31:03.2832404Z    Compiling tracing v0.1.44
+build	Prepare and validate the candidate	2026-10-07T00:31:03.3995186Z    Compiling digest v0.10.7
+build	Prepare and validate the candidate	2026-10-07T00:31:03.4442764Z    Compiling rustls-webpki v0.103.15
+build	Prepare and validate the candidate	2026-10-07T00:31:03.4988146Z    Compiling signal-hook-mio v0.2.5
+build	Prepare and validate the candidate	2026-10-07T00:31:03.5502932Z    Compiling derive_more v2.1.1
+build	Prepare and validate the candidate	2026-10-07T00:31:03.5872426Z    Compiling idna v1.1.0
+build	Prepare and validate the candidate	2026-10-07T00:31:03.9884349Z    Compiling tree-sitter v0.25.10
+build	Prepare and validate the candidate	2026-10-07T00:31:04.0253446Z    Compiling anstyle-parse v1.0.0
+build	Prepare and validate the candidate	2026-10-07T00:31:04.0292899Z    Compiling serde_derive v1.0.229
+build	Prepare and validate the candidate	2026-10-07T00:31:04.0962233Z    Compiling thiserror-impl v1.0.69
+build	Prepare and validate the candidate	2026-10-07T00:31:04.1072434Z    Compiling aho-corasick v1.1.5
+build	Prepare and validate the candidate	2026-10-07T00:31:04.7233235Z    Compiling sync_wrapper v1.0.2
+build	Prepare and validate the candidate	2026-10-07T00:31:04.7581102Z    Compiling cpufeatures v0.2.17
+build	Prepare and validate the candidate	2026-10-07T00:31:04.8582993Z    Compiling anstyle v1.0.14
+build	Prepare and validate the candidate	2026-10-07T00:31:04.9553069Z    Compiling openssl-probe v0.2.1
+build	Prepare and validate the candidate	2026-10-07T00:31:05.0203133Z    Compiling regex-syntax v0.8.11
+build	Prepare and validate the candidate	2026-10-07T00:31:05.1902320Z    Compiling cap-primitives v4.0.3
+build	Prepare and validate the candidate	2026-10-07T00:31:05.2811802Z    Compiling tower-layer v0.3.3
+build	Prepare and validate the candidate	2026-10-07T00:31:05.3592862Z    Compiling anstyle-query v1.1.5
+build	Prepare and validate the candidate	2026-10-07T00:31:05.3972316Z    Compiling cfg_aliases v0.2.2
+build	Prepare and validate the candidate	2026-10-07T00:31:05.4282161Z    Compiling foldhash v0.1.5
+build	Prepare and validate the candidate	2026-10-07T00:31:05.4992995Z    Compiling base64 v0.23.1
+build	Prepare and validate the candidate	2026-10-07T00:31:05.7242273Z    Compiling crc32fast v1.5.2
+build	Prepare and validate the candidate	2026-10-07T00:31:05.8056212Z    Compiling is_terminal_polyfill v1.70.2
+build	Prepare and validate the candidate	2026-10-07T00:31:05.8561172Z    Compiling anyhow v1.0.104
+build	Prepare and validate the candidate	2026-10-07T00:31:05.8683378Z    Compiling colorchoice v1.0.5
+build	Prepare and validate the candidate	2026-10-07T00:31:05.9036414Z    Compiling anstream v1.0.0
+build	Prepare and validate the candidate	2026-10-07T00:31:06.0032375Z    Compiling tokio-rustls v0.26.6
+build	Prepare and validate the candidate	2026-10-07T00:31:06.1352991Z    Compiling regex-automata v0.4.18
+build	Prepare and validate the candidate	2026-10-07T00:31:06.3672172Z    Compiling hyper-util v0.1.21
+build	Prepare and validate the candidate	2026-10-07T00:31:06.6292467Z    Compiling hashbrown v0.15.5
+build	Prepare and validate the candidate	2026-10-07T00:31:06.9632442Z    Compiling nix v0.30.1
+build	Prepare and validate the candidate	2026-10-07T00:31:07.1112175Z    Compiling tower v0.5.3
+build	Prepare and validate the candidate	2026-10-07T00:31:07.1472818Z    Compiling rustls-native-certs v0.8.4
+build	Prepare and validate the candidate	2026-10-07T00:31:07.2072414Z    Compiling sha2 v0.10.9
+build	Prepare and validate the candidate	2026-10-07T00:31:07.4322877Z    Compiling fs-set-times v0.20.3
+build	Prepare and validate the candidate	2026-10-07T00:31:07.4703475Z    Compiling url v2.5.8
+build	Prepare and validate the candidate	2026-10-07T00:31:07.4866763Z    Compiling crossterm v0.29.0
+build	Prepare and validate the candidate	2026-10-07T00:31:08.2202406Z    Compiling rustix-linux-procfs v0.1.1
+build	Prepare and validate the candidate	2026-10-07T00:31:08.2253482Z    Compiling tree-sitter-javascript v0.25.0
+build	Prepare and validate the candidate	2026-10-07T00:31:08.2293697Z    Compiling tree-sitter-python v0.25.0
+build	Prepare and validate the candidate	2026-10-07T00:31:08.3047984Z    Compiling tree-sitter-rust v0.24.2
+build	Prepare and validate the candidate	2026-10-07T00:31:08.3122595Z    Compiling vte_generate_state_changes v0.1.2
+build	Prepare and validate the candidate	2026-10-07T00:31:08.3302671Z    Compiling line-clipping v0.3.8
+build	Prepare and validate the candidate	2026-10-07T00:31:08.3842500Z    Compiling cap-std v4.0.3
+build	Prepare and validate the candidate	2026-10-07T00:31:08.4172793Z    Compiling simd-adler32 v0.3.10
+build	Prepare and validate the candidate	2026-10-07T00:31:08.4322319Z    Compiling futures-sink v0.3.34
+build	Prepare and validate the candidate	2026-10-07T00:31:08.4752352Z    Compiling clap_lex v1.1.1
+build	Prepare and validate the candidate	2026-10-07T00:31:08.4932418Z    Compiling arrayvec v0.7.8
+build	Prepare and validate the candidate	2026-10-07T00:31:08.5042819Z    Compiling maybe-owned v0.3.4
+build	Prepare and validate the candidate	2026-10-07T00:31:08.5702927Z    Compiling winnow v1.0.4
+build	Prepare and validate the candidate	2026-10-07T00:31:08.5852852Z    Compiling ambient-authority v0.0.2
+build	Prepare and validate the candidate	2026-10-07T00:31:08.5882931Z    Compiling adler2 v2.0.1
+build	Prepare and validate the candidate	2026-10-07T00:31:08.6352853Z    Compiling miniz_oxide v0.9.1
+build	Prepare and validate the candidate	2026-10-07T00:31:08.7662460Z    Compiling toml_parser v1.1.3+spec-1.1.0
+build	Prepare and validate the candidate	2026-10-07T00:31:08.9862341Z    Compiling vte v0.11.1
+build	Prepare and validate the candidate	2026-10-07T00:31:09.0122474Z    Compiling clap_builder v4.6.7
+build	Prepare and validate the candidate	2026-10-07T00:31:09.1642382Z    Compiling tokio-util v0.7.19
+build	Prepare and validate the candidate	2026-10-07T00:31:09.3131121Z    Compiling ratatui-widgets v0.3.2
+build	Prepare and validate the candidate	2026-10-07T00:31:10.8212458Z    Compiling ratatui-crossterm v0.1.2
+build	Prepare and validate the candidate	2026-10-07T00:31:11.4532485Z    Compiling tower-http v0.6.11
+build	Prepare and validate the candidate	2026-10-07T00:31:11.5609689Z    Compiling regex v1.13.1
+build	Prepare and validate the candidate	2026-10-07T00:31:11.6596788Z    Compiling alt-cli v0.6.0 (/home/runner/work/alt-cli/alt-cli)
+build	Prepare and validate the candidate	2026-10-07T00:31:11.6865604Z    Compiling filedescriptor v0.8.3
+build	Prepare and validate the candidate	2026-10-07T00:31:11.7608805Z    Compiling hyper-rustls v0.27.10
+build	Prepare and validate the candidate	2026-10-07T00:31:11.8792838Z    Compiling hashlink v0.10.0
+build	Prepare and validate the candidate	2026-10-07T00:31:11.9782578Z    Compiling serde_urlencoded v0.7.1
+build	Prepare and validate the candidate	2026-10-07T00:31:12.0982601Z    Compiling http-body-util v0.1.5
+build	Prepare and validate the candidate	2026-10-07T00:31:12.2172371Z    Compiling toml_datetime v0.7.5+spec-1.1.0
+build	Prepare and validate the candidate	2026-10-07T00:31:12.2409611Z    Compiling serde_spanned v1.1.1
+build	Prepare and validate the candidate	2026-10-07T00:31:12.2992962Z    Compiling xattr v1.6.1
+build	Prepare and validate the candidate	2026-10-07T00:31:12.3577100Z    Compiling clap_derive v4.6.7
+build	Prepare and validate the candidate	2026-10-07T00:31:12.4357945Z    Compiling filetime v0.2.29
+build	Prepare and validate the candidate	2026-10-07T00:31:12.4488739Z    Compiling serial2 v0.2.38
+build	Prepare and validate the candidate	2026-10-07T00:31:12.5252678Z    Compiling winnow v0.7.15
+build	Prepare and validate the candidate	2026-10-07T00:31:12.6332511Z    Compiling fallible-streaming-iterator v0.1.9
+build	Prepare and validate the candidate	2026-10-07T00:31:12.7042401Z    Compiling shell-words v1.1.1
+build	Prepare and validate the candidate	2026-10-07T00:31:12.7626545Z    Compiling streaming-iterator v0.1.9
+build	Prepare and validate the candidate	2026-10-07T00:31:12.9210987Z    Compiling base64 v0.22.1
+build	Prepare and validate the candidate	2026-10-07T00:31:13.0910980Z    Compiling fastrand v2.5.0
+build	Prepare and validate the candidate	2026-10-07T00:31:13.2002210Z    Compiling unicode-width v0.1.14
+build	Prepare and validate the candidate	2026-10-07T00:31:13.3070760Z    Compiling toml_writer v1.1.2+spec-1.1.0
+build	Prepare and validate the candidate	2026-10-07T00:31:13.3162366Z    Compiling fallible-iterator v0.3.0
+build	Prepare and validate the candidate	2026-10-07T00:31:13.4022689Z    Compiling downcast-rs v1.2.1
+build	Prepare and validate the candidate	2026-10-07T00:31:13.4219619Z    Compiling clap v4.6.7
+build	Prepare and validate the candidate	2026-10-07T00:31:13.4422672Z    Compiling portable-pty v0.9.0
+build	Prepare and validate the candidate	2026-10-07T00:31:13.4512364Z    Compiling vt100 v0.15.2
+build	Prepare and validate the candidate	2026-10-07T00:31:13.5134735Z    Compiling toml v0.9.12+spec-1.1.0
+build	Prepare and validate the candidate	2026-10-07T00:31:13.5252871Z    Compiling rusqlite v0.37.0
+build	Prepare and validate the candidate	2026-10-07T00:31:13.8282484Z    Compiling tempfile v3.27.0
+build	Prepare and validate the candidate	2026-10-07T00:31:13.8412918Z    Compiling reqwest v0.12.28
+build	Prepare and validate the candidate	2026-10-07T00:31:14.2503461Z    Compiling tar v0.4.46
+build	Prepare and validate the candidate	2026-10-07T00:31:14.3579756Z    Compiling flate2 v1.1.10
+build	Prepare and validate the candidate	2026-10-07T00:31:14.7672412Z    Compiling ratatui v0.30.2
+build	Prepare and validate the candidate	2026-10-07T00:31:14.8142815Z    Compiling uuid v1.27.0
+build	Prepare and validate the candidate	2026-10-07T00:31:14.8572924Z    Compiling roxmltree v0.21.1
+build	Prepare and validate the candidate	2026-10-07T00:31:14.9552215Z    Compiling fs2 v0.4.3
+build	Prepare and validate the candidate	2026-10-07T00:31:15.0122487Z    Compiling similar v2.7.0
+build	Prepare and validate the candidate	2026-10-07T00:31:22.5811072Z     Finished `dev` profile [unoptimized] target(s) in 34.97s
+build	Prepare and validate the candidate	2026-10-07T00:31:22.7876042Z    Compiling alt-cli v0.6.0 (/home/runner/work/alt-cli/alt-cli)
+build	Prepare and validate the candidate	2026-10-07T00:31:35.1270662Z     Finished `test` profile [unoptimized] target(s) in 12.44s
+build	Prepare and validate the candidate	2026-10-07T00:31:35.1452499Z      Running unittests src/lib.rs (target/debug/deps/alt_cli-47c0238de87e205a)
+build	Prepare and validate the candidate	2026-10-07T00:31:35.1473191Z 
+build	Prepare and validate the candidate	2026-10-07T00:31:35.1474021Z running 17 tests
+build	Prepare and validate the candidate	2026-10-07T00:31:35.1492716Z test engine::frame_fuzz_tests::only_the_pinned_goose_synthetic_network_error_shape_marks_a_failed_turn ... ok
+build	Prepare and validate the candidate	2026-10-07T00:31:35.1494595Z test runtime::memory_tests::container_cache_does_not_hide_available_ram_or_free_anonymous_memory ... ok
+build	Prepare and validate the candidate	2026-10-07T00:31:35.1495467Z test toolbox::evidence_tests::invalid_evidence_is_a_tool_failure_even_when_command_exits_zero ... ok
+build	Prepare and validate the candidate	2026-10-07T00:31:35.1507721Z test extensions::sse_tests::framing_survives_every_chunk_boundary_and_requires_event_termination ... ok
+build	Prepare and validate the candidate	2026-10-07T00:31:35.1558528Z test engine::frame_fuzz_tests::fragmented_and_mutated_acp_frames_obey_size_and_termination_bounds ... ok
+build	Prepare and validate the candidate	2026-10-07T00:31:35.1629432Z test tui::app::recovery_tests::damaged_runtime_is_preserved_without_resetting_project_preferences ... ok
+build	Prepare and validate the candidate	2026-10-07T00:31:35.1660767Z test tui::app::recovery_tests::cancelled_conversation_loading_never_opens_an_agent ... ok
+build	Prepare and validate the candidate	2026-10-07T00:31:35.1710631Z test extensions::sse_tests::bounded_seeded_mutation_corpus_never_panics_or_grows_without_limit ... ok
+build	Prepare and validate the candidate	2026-10-07T00:31:35.1711797Z test tui::input::tests::pasted_source_preserves_tabs_and_accepts_the_documented_editor_limit ... ok
+build	Prepare and validate the candidate	2026-10-07T00:31:35.1712659Z test tui::input::tests::unicode_editing_and_paste_preserve_boundaries ... ok
+build	Prepare and validate the candidate	2026-10-07T00:31:35.1764676Z test tui::app::recovery_tests::old_project_results_and_failed_background_forms_do_not_replace_newer_work ... ok
+build	Prepare and validate the candidate	2026-10-07T00:31:35.1847022Z test tui::view::tests::corrupt_settings_are_preserved_and_setup_still_opens ... ok
+build	Prepare and validate the candidate	2026-10-07T00:31:35.1921735Z test tui::view::tests::first_run_is_usable_without_config_and_errors_preserve_forms ... ok
+build	Prepare and validate the candidate	2026-10-07T00:31:35.2146424Z test tui::view::tests::settings_persist_and_permission_typing_cannot_accidentally_allow ... ok
+build	Prepare and validate the candidate	2026-10-07T00:31:35.2156846Z test tui::app::recovery_tests::conversation_database_contention_keeps_drafts_responsive_and_saves_after_release ... ok
+build	Prepare and validate the candidate	2026-10-07T00:31:35.3333633Z test tui::app::recovery_tests::turn_end_refresh_does_not_race_itself_or_replace_an_open_form ... ok
+build	Prepare and validate the candidate	2026-10-07T00:31:35.3519523Z test tui::view::tests::every_page_and_dialog_renders_at_supported_sizes ... ok
+build	Prepare and validate the candidate	2026-10-07T00:31:35.3519728Z 
+build	Prepare and validate the candidate	2026-10-07T00:31:35.3519892Z test result: ok. 17 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.20s
+build	Prepare and validate the candidate	2026-10-07T00:31:35.3520088Z 
+build	Prepare and validate the candidate	2026-10-07T00:31:35.3530536Z      Running unittests src/main.rs (target/debug/deps/alt-b5f9dda7b4465950)
+build	Prepare and validate the candidate	2026-10-07T00:31:35.3541052Z 
+build	Prepare and validate the candidate	2026-10-07T00:31:35.3541130Z running 0 tests
+build	Prepare and validate the candidate	2026-10-07T00:31:35.3541521Z 
+build	Prepare and validate the candidate	2026-10-07T00:31:35.3541838Z test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+build	Prepare and validate the candidate	2026-10-07T00:31:35.3542184Z 
+build	Prepare and validate the candidate	2026-10-07T00:31:35.3543769Z      Running tests/benchmark.rs (target/debug/deps/benchmark-b7e7b2fa8586be3b)
+build	Prepare and validate the candidate	2026-10-07T00:31:35.3556734Z 
+build	Prepare and validate the candidate	2026-10-07T00:31:35.3557281Z running 3 tests
+build	Prepare and validate the candidate	2026-10-07T00:31:35.4036430Z test requested_gpu_and_allocation_failure_explain_recovery_without_substituting_models ... ok
+build	Prepare and validate the candidate	2026-10-07T00:31:35.4475841Z test qualification_cli_returns_without_opening_an_agent_and_keeps_external_scope_explicit ... ok
+build	Prepare and validate the candidate	2026-10-07T00:31:35.4605460Z test cancellation_interrupts_a_stalled_backend_and_preserves_a_failed_report ... ok
+build	Prepare and validate the candidate	2026-10-07T00:31:35.4605810Z 
+build	Prepare and validate the candidate	2026-10-07T00:31:35.4606024Z test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.10s
+build	Prepare and validate the candidate	2026-10-07T00:31:35.4606316Z 
+build	Prepare and validate the candidate	2026-10-07T00:31:35.4611475Z      Running tests/download_recovery.rs (target/debug/deps/download_recovery-f164e943558d3c6f)
+build	Prepare and validate the candidate	2026-10-07T00:31:35.4623345Z 
+build	Prepare and validate the candidate	2026-10-07T00:31:35.4623434Z running 1 test
+build	Prepare and validate the candidate	2026-10-07T00:31:35.9513003Z test repeated_network_loss_preserves_offsets_and_only_promotes_the_complete_hash ... ok
+build	Prepare and validate the candidate	2026-10-07T00:31:35.9513467Z 
+build	Prepare and validate the candidate	2026-10-07T00:31:35.9513697Z test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.49s
+build	Prepare and validate the candidate	2026-10-07T00:31:35.9513999Z 
+build	Prepare and validate the candidate	2026-10-07T00:31:35.9517742Z      Running tests/extensions.rs (target/debug/deps/extensions-9510221af8995f46)
+build	Prepare and validate the candidate	2026-10-07T00:31:35.9535478Z 
+build	Prepare and validate the candidate	2026-10-07T00:31:35.9535571Z running 4 tests
+build	Prepare and validate the candidate	2026-10-07T00:31:36.0606414Z test external_calls_require_actual_alt_approval_and_respect_access ... ok
+build	Prepare and validate the candidate	2026-10-07T00:31:36.0666535Z test remote_auth_session_and_sse ... ok
+build	Prepare and validate the candidate	2026-10-07T00:31:36.0691642Z test remote_sse_accepts_multiline_data_and_optional_space ... ok
+build	Prepare and validate the candidate	2026-10-07T00:31:36.0888718Z test selected_stdio_tools_keep_state_and_reconnect_without_replay ... ok
+build	Prepare and validate the candidate	2026-10-07T00:31:36.0889005Z 
+build	Prepare and validate the candidate	2026-10-07T00:31:36.0889851Z test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.14s
+build	Prepare and validate the candidate	2026-10-07T00:31:36.0890409Z 
+build	Prepare and validate the candidate	2026-10-07T00:31:36.0896608Z      Running tests/faults.rs (target/debug/deps/faults-9bb30824ff237f57)
+build	Prepare and validate the candidate	2026-10-07T00:31:36.0907830Z 
+build	Prepare and validate the candidate	2026-10-07T00:31:36.0907903Z running 2 tests
+build	Prepare and validate the candidate	2026-10-07T00:31:36.0909911Z test fault_worker ... ok
+build	Prepare and validate the candidate	2026-10-07T00:31:36.2278489Z test disk_full_and_abrupt_apply_undo_recover_without_replay_or_partial_source ... ok
+build	Prepare and validate the candidate	2026-10-07T00:31:36.2278939Z 
+build	Prepare and validate the candidate	2026-10-07T00:31:36.2279172Z test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.14s
+build	Prepare and validate the candidate	2026-10-07T00:31:36.2279503Z 
+build	Prepare and validate the candidate	2026-10-07T00:31:36.2281682Z      Running tests/first_task.rs (target/debug/deps/first_task-ea7efac357d4cae3)
+build	Prepare and validate the candidate	2026-10-07T00:31:36.2295485Z 
+build	Prepare and validate the candidate	2026-10-07T00:31:36.2295744Z running 7 tests
+build	Prepare and validate the candidate	2026-10-07T00:31:36.2491920Z test retrieval_finds_named_files_and_important_terms_after_conversational_filler ... ok
+build	Prepare and validate the candidate	2026-10-07T00:31:36.2597806Z test retrieved_code_keeps_identifiers_and_original_brackets ... ok
+build	Prepare and validate the candidate	2026-10-07T00:31:36.2606127Z test suggestions_follow_declared_runners_and_do_not_invent_tests ... ok
+build	Prepare and validate the candidate	2026-10-07T00:31:36.2752956Z test tool_guidance_matches_focus_and_does_not_offer_unavailable_execution ... ok
+build	Prepare and validate the candidate	2026-10-07T00:31:36.2769399Z test missing_practice_interpreter_keeps_actionable_error_and_failed_evidence ... ok
+build	Prepare and validate the candidate	2026-10-07T00:31:36.3006777Z test bounded_memory_keeps_current_evidence_and_whole_excerpts_after_restart ... ok
+build	Prepare and validate the candidate	2026-10-07T00:31:36.3704308Z test practice_repair_verification_restart_undo_and_new_lesson ... ok
+build	Prepare and validate the candidate	2026-10-07T00:31:36.3704594Z 
+build	Prepare and validate the candidate	2026-10-07T00:31:36.3704740Z test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.14s
+build	Prepare and validate the candidate	2026-10-07T00:31:36.3704938Z 
+build	Prepare and validate the candidate	2026-10-07T00:31:36.3709628Z      Running tests/integration.rs (target/debug/deps/integration-600ef0b4a028a614)
+build	Prepare and validate the candidate	2026-10-07T00:31:36.3723733Z 
+build	Prepare and validate the candidate	2026-10-07T00:31:36.3723820Z running 4 tests
+build	Prepare and validate the candidate	2026-10-07T00:31:36.5592073Z test session_recovery_and_profile_validation ... ok
+build	Prepare and validate the candidate	2026-10-07T00:31:37.1963159Z test streaming_permissions_and_large_session_replay ... ok
+build	Prepare and validate the candidate	2026-10-07T00:31:38.8508878Z test cancellation_and_broken_peers_do_not_hang ... ok
+build	Prepare and validate the candidate	2026-10-07T00:31:44.7212256Z test cli_streams_exports_resumes_and_denies_by_default ... ok
+build	Prepare and validate the candidate	2026-10-07T00:31:44.7212509Z 
+build	Prepare and validate the candidate	2026-10-07T00:31:44.7212651Z test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 8.35s
+build	Prepare and validate the candidate	2026-10-07T00:31:44.7212844Z 
+build	Prepare and validate the candidate	2026-10-07T00:31:44.7217286Z      Running tests/jobs.rs (target/debug/deps/jobs-2e3752c5a1563cbb)
+build	Prepare and validate the candidate	2026-10-07T00:31:44.7230151Z 
+build	Prepare and validate the candidate	2026-10-07T00:31:44.7230236Z running 5 tests
+build	Prepare and validate the candidate	2026-10-07T00:31:44.7232531Z test control_keys_are_bytes_not_numeric_strings ... ok
+build	Prepare and validate the candidate	2026-10-07T00:31:44.8719451Z test disconnected_control_client_does_not_terminate_persistent_job ... ok
+build	Prepare and validate the candidate	2026-10-07T00:31:44.8953446Z test persistent_pty_accepts_input_resize_and_reconnect_then_stops ... ok
+build	Prepare and validate the candidate	2026-10-07T00:31:45.7983447Z test timeout_and_exit_are_saved_and_pid_reuse_cannot_signal_another_process ... ok
+build	Prepare and validate the candidate	2026-10-07T00:31:46.4727295Z test exiting_owner_stops_only_owned_jobs_and_large_output_is_bounded ... ok
+build	Prepare and validate the candidate	2026-10-07T00:31:46.4740345Z 
+build	Prepare and validate the candidate	2026-10-07T00:31:46.4740601Z test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.75s
+build	Prepare and validate the candidate	2026-10-07T00:31:46.4740912Z 
+build	Prepare and validate the candidate	2026-10-07T00:31:46.4741115Z      Running tests/language.rs (target/debug/deps/language-c48857eb01ba355b)
+build	Prepare and validate the candidate	2026-10-07T00:31:46.4743281Z 
+build	Prepare and validate the candidate	2026-10-07T00:31:46.4743364Z running 1 test
+build	Prepare and validate the candidate	2026-10-07T00:31:46.4979496Z test utf16_rename_preview_applies_checkpoints_and_rejects_outside_overlap_staleness ... ok
+build	Prepare and validate the candidate	2026-10-07T00:31:46.4980110Z 
+build	Prepare and validate the candidate	2026-10-07T00:31:46.4980337Z test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+build	Prepare and validate the candidate	2026-10-07T00:31:46.4980631Z 
+build	Prepare and validate the candidate	2026-10-07T00:31:46.4983481Z      Running tests/model_downloads.rs (target/debug/deps/model_downloads-09c61f83f9df7da4)
+build	Prepare and validate the candidate	2026-10-07T00:31:46.4998699Z 
+build	Prepare and validate the candidate	2026-10-07T00:31:46.4998801Z running 9 tests
+build	Prepare and validate the candidate	2026-10-07T00:31:46.5006282Z test hub_token_scope_worker ... ok
+build	Prepare and validate the candidate	2026-10-07T00:31:46.5031888Z test import_preserves_original_and_rejects_wrong_format ... ok
+build	Prepare and validate the candidate	2026-10-07T00:31:46.5137240Z test interrupted_cache_relocation_preserves_originals_and_resumes_same_destination ... ok
+build	Prepare and validate the candidate	2026-10-07T00:31:46.5402266Z test interrupted_download_resumes_and_promotes_only_verified_bytes ... ok
+build	Prepare and validate the candidate	2026-10-07T00:31:46.5535116Z test checksum_failure_and_bad_range_never_create_ready_model ... ok
+build	Prepare and validate the candidate	2026-10-07T00:31:46.5902314Z test server_ignoring_range_restarts_instead_of_concatenating ... ok
+build	Prepare and validate the candidate	2026-10-07T00:31:46.6050954Z test multipart_promotes_only_complete_set_and_relocates_without_import_loss ... ok
+build	Prepare and validate the candidate	2026-10-07T00:31:46.6646065Z test hub_authentication_is_scoped_without_mutating_the_test_process_environment ... ok
+build	Prepare and validate the candidate	2026-10-07T00:31:46.6665934Z test pause_interrupts_a_stalled_body_and_keeps_partial_file ... ok
+build	Prepare and validate the candidate	2026-10-07T00:31:46.6666245Z 
+build	Prepare and validate the candidate	2026-10-07T00:31:46.6666471Z test result: ok. 9 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.17s
+build	Prepare and validate the candidate	2026-10-07T00:31:46.6666775Z 
+build	Prepare and validate the candidate	2026-10-07T00:31:46.6676283Z      Running tests/packs.rs (target/debug/deps/packs-6a6e8fae1089bd48)
+build	Prepare and validate the candidate	2026-10-07T00:31:46.6692166Z 
+build	Prepare and validate the candidate	2026-10-07T00:31:46.6692369Z running 3 tests
+build	Prepare and validate the candidate	2026-10-07T00:31:46.6705367Z test parsers_reject_incomplete_and_malformed_scans_and_preserve_evidence ... ok
+build	Prepare and validate the candidate	2026-10-07T00:31:46.7230598Z test git_commit_contains_selected_paths_and_preserves_unrelated_staging ... ok
+build	Prepare and validate the candidate	2026-10-07T00:31:46.7747768Z test http_failure_retest_and_exports_link_to_real_records ... ok
+build	Prepare and validate the candidate	2026-10-07T00:31:46.7748066Z 
+build	Prepare and validate the candidate	2026-10-07T00:31:46.7748279Z test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.11s
+build	Prepare and validate the candidate	2026-10-07T00:31:46.7748603Z 
+build	Prepare and validate the candidate	2026-10-07T00:31:46.7754482Z      Running tests/parser_properties.rs (target/debug/deps/parser_properties-ee5b42ad24031152)
+build	Prepare and validate the candidate	2026-10-07T00:31:46.7767260Z 
+build	Prepare and validate the candidate	2026-10-07T00:31:46.7767346Z running 2 tests
+build	Prepare and validate the candidate	2026-10-07T00:31:46.7774330Z test explicit_tool_focus_retains_full_access_terminal_option ... ok
+build	Prepare and validate the candidate	2026-10-07T00:31:47.1082174Z test bounded_mutations_of_reports_paths_and_utf16_positions_never_panic ... ok
+build	Prepare and validate the candidate	2026-10-07T00:31:47.1082642Z 
+build	Prepare and validate the candidate	2026-10-07T00:31:47.1082924Z test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.33s
+build	Prepare and validate the candidate	2026-10-07T00:31:47.1083343Z 
+build	Prepare and validate the candidate	2026-10-07T00:31:47.1089448Z      Running tests/project_services.rs (target/debug/deps/project_services-cb118a54c18064fa)
+build	Prepare and validate the candidate	2026-10-07T00:31:47.1102251Z 
+build	Prepare and validate the candidate	2026-10-07T00:31:47.1102338Z running 8 tests
+build	Prepare and validate the candidate	2026-10-07T00:31:47.1295730Z test migrations_preserve_legacy_data_and_reject_newer_schema ... ok
+build	Prepare and validate the candidate	2026-10-07T00:31:47.1325338Z test incremental_index_reuses_unchanged_rows_and_detects_edits_deletions_cancellation ... ok
+build	Prepare and validate the candidate	2026-10-07T00:31:47.1331408Z test pinned_requirements_and_actual_context_survive_restart ... ok
+build	Prepare and validate the candidate	2026-10-07T00:31:47.2202582Z test syntax_and_old_decision_retrieval_keep_current_evidence_at_all_budgets ... ok
+build	Prepare and validate the candidate	2026-10-07T00:31:47.2222210Z test zero_tests_are_distinguished_from_unknown_output_and_mixed_rust_targets ... ok
+build	Prepare and validate the candidate	2026-10-07T00:31:47.2429334Z test verification_requires_every_check_and_current_source_command_environment ... ok
+build	Prepare and validate the candidate	2026-10-07T00:31:47.3547606Z test zero_tests_after_large_output_cannot_verify_a_requirement ... ok
+build	Prepare and validate the candidate	2026-10-07T00:31:49.1913057Z test discovery_enforces_file_limit_in_a_flat_directory_without_partial_index_commit ... ok
+build	Prepare and validate the candidate	2026-10-07T00:31:49.1913542Z 
+build	Prepare and validate the candidate	2026-10-07T00:31:49.1913852Z test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.08s
+build	Prepare and validate the candidate	2026-10-07T00:31:49.1914147Z 
+build	Prepare and validate the candidate	2026-10-07T00:31:49.1921055Z      Running tests/project_worker.rs (target/debug/deps/project_worker-b6a8e82a774d8b50)
+build	Prepare and validate the candidate	2026-10-07T00:31:49.1934756Z 
+build	Prepare and validate the candidate	2026-10-07T00:31:49.1934837Z running 2 tests
+build	Prepare and validate the candidate	2026-10-07T00:31:49.2289417Z test busy_project_wait_is_cancellable_without_blocking_async_input ... ok
+build	Prepare and validate the candidate	2026-10-07T00:31:49.2316801Z test cancellation_during_walk_preserves_existing_index_and_worker_retries_lock ... ok
+build	Prepare and validate the candidate	2026-10-07T00:31:49.2317120Z 
+build	Prepare and validate the candidate	2026-10-07T00:31:49.2317357Z test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.04s
+build	Prepare and validate the candidate	2026-10-07T00:31:49.2317648Z 
+build	Prepare and validate the candidate	2026-10-07T00:31:49.2321959Z      Running tests/project_workflow.rs (target/debug/deps/project_workflow-e9409c40119520b8)
+build	Prepare and validate the candidate	2026-10-07T00:31:49.2338615Z 
+build	Prepare and validate the candidate	2026-10-07T00:31:49.2338707Z running 7 tests
+build	Prepare and validate the candidate	2026-10-07T00:31:49.2577841Z test enforced_reads_paths_checkpoints_undo_and_conflicts ... ok
+build	Prepare and validate the candidate	2026-10-07T00:31:49.2601874Z test memory_invalidation_failure_budget_and_crash_recovery ... ok
+build	Prepare and validate the candidate	2026-10-07T00:31:49.2841990Z test no_silent_isolation_fallback_and_terminal_is_explicit ... ok
+build	Prepare and validate the candidate	2026-10-07T00:31:49.3096937Z test deterministic_checks_bind_evidence_to_source_and_preserve_original ... ok
+build	Prepare and validate the candidate	2026-10-07T00:31:49.3134394Z test native_tool_bridge_cannot_bypass_approval_or_stale_checks ... ok
+build	Prepare and validate the candidate	2026-10-07T00:31:49.3160475Z test stale_edits_symlinks_creation_deletion_and_atomic_task_undo ... ok
+build	Prepare and validate the candidate	2026-10-07T00:31:50.3015896Z test check_timeout_cancellation_and_early_exit_kill_background_children ... ok
+build	Prepare and validate the candidate	2026-10-07T00:31:50.3016169Z 
+build	Prepare and validate the candidate	2026-10-07T00:31:50.3016318Z test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.07s
+build	Prepare and validate the candidate	2026-10-07T00:31:50.3016513Z 
+build	Prepare and validate the candidate	2026-10-07T00:31:50.3022687Z      Running tests/recovery.rs (target/debug/deps/recovery-e79263658272ceec)
+build	Prepare and validate the candidate	2026-10-07T00:31:50.3035725Z 
+build	Prepare and validate the candidate	2026-10-07T00:31:50.3035817Z running 3 tests
+build	Prepare and validate the candidate	2026-10-07T00:31:50.3037934Z test recovery_worker ... ok
+build	Prepare and validate the candidate	2026-10-07T00:31:50.3189969Z test session_metadata_and_events_commit_together_and_inline_preferences_ignore_legacy_file ... ok
+build	Prepare and validate the candidate	2026-10-07T00:31:50.4473763Z test settings_backup_restore_survive_disk_full_and_abrupt_atomic_writes ... ok
+build	Prepare and validate the candidate	2026-10-07T00:31:50.4474184Z 
+build	Prepare and validate the candidate	2026-10-07T00:31:50.4474404Z test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.14s
+build	Prepare and validate the candidate	2026-10-07T00:31:50.4474746Z 
+build	Prepare and validate the candidate	2026-10-07T00:31:50.4477558Z      Running tests/storage.rs (target/debug/deps/storage-f95addfbe758d3d8)
+build	Prepare and validate the candidate	2026-10-07T00:31:50.4489975Z 
+build	Prepare and validate the candidate	2026-10-07T00:31:50.4490054Z running 6 tests
+build	Prepare and validate the candidate	2026-10-07T00:31:50.4498464Z test diagnostics_excludes_environment_values_prompts_endpoints_and_source ... ok
+build	Prepare and validate the candidate	2026-10-07T00:31:50.4502823Z test malformed_archive_never_creates_destination ... ok
+build	Prepare and validate the candidate	2026-10-07T00:31:50.4616274Z test backup_restores_consistent_sqlite_and_never_overwrites_existing_state ... ok
+build	Prepare and validate the candidate	2026-10-07T00:31:50.4684039Z test history_retention_archives_first_and_restores_without_overwriting ... ok
+build	Prepare and validate the candidate	2026-10-07T00:31:50.5169972Z test mutated_archive_corpus_preserves_atomic_restore_boundary ... ok
+build	Prepare and validate the candidate	2026-10-07T00:31:50.9185638Z test retention_never_deletes_a_conversation_that_exceeds_restore_limits ... ok
+build	Prepare and validate the candidate	2026-10-07T00:31:50.9186209Z 
+build	Prepare and validate the candidate	2026-10-07T00:31:50.9186564Z test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.47s
+build	Prepare and validate the candidate	2026-10-07T00:31:50.9186872Z 
+build	Prepare and validate the candidate	2026-10-07T00:31:50.9191104Z      Running tests/verification.rs (target/debug/deps/verification-d2e11904ed8253e2)
+build	Prepare and validate the candidate	2026-10-07T00:31:50.9206966Z 
+build	Prepare and validate the candidate	2026-10-07T00:31:50.9207057Z running 5 tests
+build	Prepare and validate the candidate	2026-10-07T00:31:50.9222788Z test dependency_symlinks_track_target_changes_without_following_cycles_forever ... ok
+build	Prepare and validate the candidate	2026-10-07T00:31:50.9278999Z test structured_reports_reject_missing_incomplete_contradictory_and_fabricated_totals ... ok
+build	Prepare and validate the candidate	2026-10-07T00:31:50.9406571Z test newer_state_is_rejected_before_any_schema_or_journal_mutation ... ok
+build	Prepare and validate the candidate	2026-10-07T00:31:50.9431728Z test cli_can_convert_an_existing_script_command_into_a_pinned_contract ... ok
+build	Prepare and validate the candidate	2026-10-07T00:31:51.0464121Z test independent_check_contract_rejects_fake_output_and_stales_on_assertion_or_dependency_changes ... ok
+build	Prepare and validate the candidate	2026-10-07T00:31:51.0464600Z 
+build	Prepare and validate the candidate	2026-10-07T00:31:51.0464819Z test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.13s
+build	Prepare and validate the candidate	2026-10-07T00:31:51.0465383Z 
+build	Prepare and validate the candidate	2026-10-07T00:31:51.0468096Z    Doc-tests alt_cli
+build	Prepare and validate the candidate	2026-10-07T00:31:51.5041738Z 
+build	Prepare and validate the candidate	2026-10-07T00:31:51.5042261Z running 0 tests
+build	Prepare and validate the candidate	2026-10-07T00:31:51.5042427Z 
+build	Prepare and validate the candidate	2026-10-07T00:31:51.5042683Z test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+build	Prepare and validate the candidate	2026-10-07T00:31:51.5042989Z 
+build	Prepare and validate the candidate	2026-10-07T00:31:51.9088458Z     Checking cfg-if v1.0.5
+build	Prepare and validate the candidate	2026-10-07T00:31:51.9088950Z     Checking libc v0.2.190
+build	Prepare and validate the candidate	2026-10-07T00:31:51.9121739Z     Checking bitflags v2.13.2
+build	Prepare and validate the candidate	2026-10-07T00:31:51.9154187Z     Checking smallvec v1.16.2
+build	Prepare and validate the candidate	2026-10-07T00:31:51.9317972Z     Checking itoa v1.0.18
+build	Prepare and validate the candidate	2026-10-07T00:31:51.9707011Z     Checking log v0.4.34
+build	Prepare and validate the candidate	2026-10-07T00:31:51.9902652Z     Checking zerofrom v0.1.8
+build	Prepare and validate the candidate	2026-10-07T00:31:52.0079074Z     Checking stable_deref_trait v1.2.1
+build	Prepare and validate the candidate	2026-10-07T00:31:52.0317787Z     Checking futures-core v0.3.34
+build	Prepare and validate the candidate	2026-10-07T00:31:52.0382649Z     Checking scopeguard v1.2.0
+build	Prepare and validate the candidate	2026-10-07T00:31:52.0383351Z     Checking yoke v0.8.3
+build	Prepare and validate the candidate	2026-10-07T00:31:52.0622492Z     Checking lock_api v0.4.14
+build	Prepare and validate the candidate	2026-10-07T00:31:52.0712958Z     Checking bytes v1.12.1
+build	Prepare and validate the candidate	2026-10-07T00:31:52.1170220Z     Checking zerovec v0.11.8
+build	Prepare and validate the candidate	2026-10-07T00:31:52.1712436Z     Checking pin-project-lite v0.2.17
+build	Prepare and validate the candidate	2026-10-07T00:31:52.1986402Z     Checking linux-raw-sys v0.12.1
+build	Prepare and validate the candidate	2026-10-07T00:31:52.3507873Z     Checking once_cell v1.21.4
+build	Prepare and validate the candidate	2026-10-07T00:31:52.4252355Z     Checking rustix v1.1.5
+build	Prepare and validate the candidate	2026-10-07T00:31:52.4372242Z     Checking litemap v0.8.3
+build	Prepare and validate the candidate	2026-10-07T00:31:52.4502303Z     Checking tinystr v0.8.4
+build	Prepare and validate the candidate	2026-10-07T00:31:52.5422576Z     Checking writeable v0.6.4
+build	Prepare and validate the candidate	2026-10-07T00:31:52.5502657Z     Checking potential_utf v0.1.6
+build	Prepare and validate the candidate	2026-10-07T00:31:52.5913797Z     Checking zerotrie v0.2.5
+build	Prepare and validate the candidate	2026-10-07T00:31:52.6474509Z     Checking icu_locale_core v2.3.0
+build	Prepare and validate the candidate	2026-10-07T00:31:52.7385901Z     Checking equivalent v1.0.2
+build	Prepare and validate the candidate	2026-10-07T00:31:52.7712195Z     Checking utf8_iter v1.0.4
+build	Prepare and validate the candidate	2026-10-07T00:31:52.8192450Z     Checking allocator-api2 v0.2.21
+build	Prepare and validate the candidate	2026-10-07T00:31:52.9484190Z     Checking errno v0.3.14
+build	Prepare and validate the candidate	2026-10-07T00:31:52.9880801Z     Checking mio v1.2.4
+build	Prepare and validate the candidate	2026-10-07T00:31:52.9912094Z     Checking signal-hook-registry v1.4.8
+build	Prepare and validate the candidate	2026-10-07T00:31:53.0594334Z     Checking parking_lot_core v0.9.12
+build	Prepare and validate the candidate	2026-10-07T00:31:53.1262193Z     Checking socket2 v0.6.5
+build	Prepare and validate the candidate	2026-10-07T00:31:53.1412407Z     Checking foldhash v0.2.0
+build	Prepare and validate the candidate	2026-10-07T00:31:53.1427933Z     Checking parking_lot v0.12.5
+build	Prepare and validate the candidate	2026-10-07T00:31:53.1898931Z     Checking icu_provider v2.3.1
+build	Prepare and validate the candidate	2026-10-07T00:31:53.2352467Z     Checking icu_collections v2.3.0
+build	Prepare and validate the candidate	2026-10-07T00:31:53.2772363Z     Checking tokio v1.53.2
+build	Prepare and validate the candidate	2026-10-07T00:31:53.3182396Z     Checking serde_core v1.0.229
+build	Prepare and validate the candidate	2026-10-07T00:31:53.4109473Z     Checking http v1.5.0
+build	Prepare and validate the candidate	2026-10-07T00:31:53.7922574Z     Checking zeroize v1.9.0
+build	Prepare and validate the candidate	2026-10-07T00:31:53.8502563Z     Checking ryu v1.0.23
+build	Prepare and validate the candidate	2026-10-07T00:31:53.9042488Z     Checking percent-encoding v2.3.2
+build	Prepare and validate the candidate	2026-10-07T00:31:53.9502198Z     Checking memchr v2.8.3
+build	Prepare and validate the candidate	2026-10-07T00:31:54.2022821Z     Checking rustls-pki-types v1.15.1
+build	Prepare and validate the candidate	2026-10-07T00:31:54.2092570Z     Checking http-body v1.1.0
+build	Prepare and validate the candidate	2026-10-07T00:31:54.2486854Z     Checking icu_properties_data v2.3.0
+build	Prepare and validate the candidate	2026-10-07T00:31:54.3112428Z     Checking icu_normalizer_data v2.3.0
+build	Prepare and validate the candidate	2026-10-07T00:31:54.3412451Z     Checking getrandom v0.2.17
+build	Prepare and validate the candidate	2026-10-07T00:31:54.3641968Z     Checking futures-task v0.3.34
+build	Prepare and validate the candidate	2026-10-07T00:31:54.4012242Z     Checking untrusted v0.9.0
+build	Prepare and validate the candidate	2026-10-07T00:31:54.4185312Z     Checking either v1.18.0
+build	Prepare and validate the candidate	2026-10-07T00:31:54.4372457Z     Checking slab v0.4.12
+build	Prepare and validate the candidate	2026-10-07T00:31:54.5084207Z     Checking utf8parse v0.2.2
+build	Prepare and validate the candidate	2026-10-07T00:31:54.5108503Z     Checking futures-util v0.3.34
+build	Prepare and validate the candidate	2026-10-07T00:31:54.5182300Z     Checking itertools v0.14.0
+build	Prepare and validate the candidate	2026-10-07T00:31:54.5342136Z     Checking ring v0.17.14
+build	Prepare and validate the candidate	2026-10-07T00:31:55.2749596Z     Checking thiserror v2.0.21
+build	Prepare and validate the candidate	2026-10-07T00:31:55.3092542Z     Checking castaway v0.2.4
+build	Prepare and validate the candidate	2026-10-07T00:31:55.3135794Z     Checking icu_normalizer v2.3.0
+build	Prepare and validate the candidate	2026-10-07T00:31:55.3492514Z     Checking icu_properties v2.3.0
+build	Prepare and validate the candidate	2026-10-07T00:31:55.4832334Z     Checking hashbrown v0.16.1
+build	Prepare and validate the candidate	2026-10-07T00:31:55.5732945Z     Checking hashbrown v0.17.1
+build	Prepare and validate the candidate	2026-10-07T00:31:55.8092770Z     Checking try-lock v0.2.5
+build	Prepare and validate the candidate	2026-10-07T00:31:55.8322813Z     Checking ipnet v2.12.2
+build	Prepare and validate the candidate	2026-10-07T00:31:55.8407917Z     Checking unicode-width v0.2.0
+build	Prepare and validate the candidate	2026-10-07T00:31:55.9022368Z     Checking typenum v1.20.1
+build	Prepare and validate the candidate	2026-10-07T00:31:55.9417399Z     Checking tower-service v0.3.3
+build	Prepare and validate the candidate	2026-10-07T00:31:55.9451943Z     Checking static_assertions v1.1.0
+build	Prepare and validate the candidate	2026-10-07T00:31:55.9614284Z     Checking unicode-segmentation v1.13.3
+build	Prepare and validate the candidate	2026-10-07T00:31:55.9692353Z     Checking compact_str v0.9.1
+build	Prepare and validate the candidate	2026-10-07T00:31:55.9982394Z     Checking idna_adapter v1.2.2
+build	Prepare and validate the candidate	2026-10-07T00:31:56.0352898Z     Checking lru v0.18.5
+build	Prepare and validate the candidate	2026-10-07T00:31:56.1042543Z     Checking want v0.3.2
+build	Prepare and validate the candidate	2026-10-07T00:31:56.1402273Z     Checking kasuari v0.4.12
+build	Prepare and validate the candidate	2026-10-07T00:31:56.1486846Z     Checking unicode-truncate v2.0.1
+build	Prepare and validate the candidate	2026-10-07T00:31:56.1862937Z     Checking strum v0.28.0
+build	Prepare and validate the candidate	2026-10-07T00:31:56.2082985Z     Checking signal-hook v0.3.18
+build	Prepare and validate the candidate	2026-10-07T00:31:56.2188643Z     Checking httparse v1.10.1
+build	Prepare and validate the candidate	2026-10-07T00:31:56.2512493Z     Checking rustls-webpki v0.103.15
+build	Prepare and validate the candidate	2026-10-07T00:31:56.3012446Z     Checking form_urlencoded v1.2.2
+build	Prepare and validate the candidate	2026-10-07T00:31:56.3180019Z     Checking tracing-core v0.1.36
+build	Prepare and validate the candidate	2026-10-07T00:31:56.3425518Z     Checking tree-sitter-language v0.1.8
+build	Prepare and validate the candidate	2026-10-07T00:31:56.3702588Z     Checking futures-channel v0.3.34
+build	Prepare and validate the candidate	2026-10-07T00:31:56.3762356Z     Checking generic-array v0.14.7
+build	Prepare and validate the candidate	2026-10-07T00:31:56.4512279Z     Checking atomic-waker v1.1.2
+build	Prepare and validate the candidate	2026-10-07T00:31:56.4792241Z     Checking critical-section v1.2.0
+build	Prepare and validate the candidate	2026-10-07T00:31:56.5011091Z     Checking subtle v2.6.1
+build	Prepare and validate the candidate	2026-10-07T00:31:56.5089870Z     Checking tracing v0.1.44
+build	Prepare and validate the candidate	2026-10-07T00:31:56.5152070Z     Checking ratatui-core v0.1.2
+build	Prepare and validate the candidate	2026-10-07T00:31:56.5542354Z     Checking rustls v0.23.45
+build	Prepare and validate the candidate	2026-10-07T00:31:56.5922450Z     Checking hyper v1.11.1
+build	Prepare and validate the candidate	2026-10-07T00:31:56.6632345Z     Checking signal-hook-mio v0.2.5
+build	Prepare and validate the candidate	2026-10-07T00:31:56.6962300Z     Checking derive_more v2.1.1
+build	Prepare and validate the candidate	2026-10-07T00:31:56.7182272Z     Checking io-lifetimes v2.0.4
+build	Prepare and validate the candidate	2026-10-07T00:31:56.7562298Z     Checking io-lifetimes v3.0.1
+build	Prepare and validate the candidate	2026-10-07T00:31:56.7952342Z     Checking idna v1.1.0
+build	Prepare and validate the candidate	2026-10-07T00:31:56.9152396Z     Checking anstyle-parse v1.0.0
+build	Prepare and validate the candidate	2026-10-07T00:31:56.9602270Z     Checking aho-corasick v1.1.5
+build	Prepare and validate the candidate	2026-10-07T00:31:56.9692568Z     Checking sync_wrapper v1.0.2
+build	Prepare and validate the candidate	2026-10-07T00:31:56.9942503Z     Checking is_terminal_polyfill v1.70.2
+build	Prepare and validate the candidate	2026-10-07T00:31:57.0212512Z     Checking tower-layer v0.3.3
+build	Prepare and validate the candidate	2026-10-07T00:31:57.0452385Z     Checking colorchoice v1.0.5
+build	Prepare and validate the candidate	2026-10-07T00:31:57.0787281Z     Checking base64 v0.23.1
+build	Prepare and validate the candidate	2026-10-07T00:31:57.0933005Z     Checking regex-syntax v0.8.11
+build	Prepare and validate the candidate	2026-10-07T00:31:57.2382790Z     Checking anstyle v1.0.14
+build	Prepare and validate the candidate	2026-10-07T00:31:57.3112491Z     Checking foldhash v0.1.5
+build	Prepare and validate the candidate	2026-10-07T00:31:57.3622839Z     Checking openssl-probe v0.2.1
+build	Prepare and validate the candidate	2026-10-07T00:31:57.3952420Z     Checking anstyle-query v1.1.5
+build	Prepare and validate the candidate	2026-10-07T00:31:57.4222320Z     Checking anstream v1.0.0
+build	Prepare and validate the candidate	2026-10-07T00:31:57.4368211Z     Checking rustls-native-certs v0.8.4
+build	Prepare and validate the candidate	2026-10-07T00:31:57.4843295Z     Checking hashbrown v0.15.5
+build	Prepare and validate the candidate	2026-10-07T00:31:57.5122438Z     Checking hyper-util v0.1.21
+build	Prepare and validate the candidate	2026-10-07T00:31:57.7922231Z     Checking tower v0.5.3
+build	Prepare and validate the candidate	2026-10-07T00:31:58.0306102Z     Checking serde v1.0.229
+build	Prepare and validate the candidate	2026-10-07T00:31:58.0307827Z     Checking regex-automata v0.4.18
+build	Prepare and validate the candidate	2026-10-07T00:31:58.1192340Z     Checking thiserror v1.0.69
+build	Prepare and validate the candidate	2026-10-07T00:31:58.1523062Z     Checking url v2.5.8
+build	Prepare and validate the candidate	2026-10-07T00:31:58.3052822Z     Checking tokio-rustls v0.26.6
+build	Prepare and validate the candidate	2026-10-07T00:31:58.3194435Z     Checking io-extras v0.19.0
+build	Prepare and validate the candidate	2026-10-07T00:31:58.3703075Z     Checking fs-set-times v0.20.3
+build	Prepare and validate the candidate	2026-10-07T00:31:58.4072278Z     Checking crossterm v0.29.0
+build	Prepare and validate the candidate	2026-10-07T00:31:58.4102213Z     Checking block-buffer v0.10.4
+build	Prepare and validate the candidate	2026-10-07T00:31:58.4172544Z     Checking crypto-common v0.1.7
+build	Prepare and validate the candidate	2026-10-07T00:31:58.4527693Z     Checking getrandom v0.4.3
+build	Prepare and validate the candidate	2026-10-07T00:31:58.4529671Z     Checking rustix-linux-procfs v0.1.1
+build	Prepare and validate the candidate	2026-10-07T00:31:58.5075087Z     Checking zmij v1.0.23
+build	Prepare and validate the candidate	2026-10-07T00:31:58.5153063Z     Checking line-clipping v0.3.8
+build	Prepare and validate the candidate	2026-10-07T00:31:58.5772242Z     Checking arrayvec v0.7.8
+build	Prepare and validate the candidate	2026-10-07T00:31:58.6477030Z     Checking strsim v0.11.1
+build	Prepare and validate the candidate	2026-10-07T00:31:58.6669619Z     Checking futures-sink v0.3.34
+build	Prepare and validate the candidate	2026-10-07T00:31:58.7042533Z     Checking simd-adler32 v0.3.10
+build	Prepare and validate the candidate	2026-10-07T00:31:58.7187040Z     Checking maybe-owned v0.3.4
+build	Prepare and validate the candidate	2026-10-07T00:31:58.7733002Z     Checking clap_lex v1.1.1
+build	Prepare and validate the candidate	2026-10-07T00:31:58.7912824Z     Checking ambient-authority v0.0.2
+build	Prepare and validate the candidate	2026-10-07T00:31:58.8074968Z     Checking winnow v1.0.4
+build	Prepare and validate the candidate	2026-10-07T00:31:58.8172487Z     Checking adler2 v2.0.1
+build	Prepare and validate the candidate	2026-10-07T00:31:58.8367306Z     Checking clap_builder v4.6.7
+build	Prepare and validate the candidate	2026-10-07T00:31:58.8572584Z     Checking miniz_oxide v0.9.1
+build	Prepare and validate the candidate	2026-10-07T00:31:58.9922692Z     Checking toml_parser v1.1.3+spec-1.1.0
+build	Prepare and validate the candidate	2026-10-07T00:31:59.0849513Z     Checking cap-primitives v4.0.3
+build	Prepare and validate the candidate	2026-10-07T00:31:59.1942362Z     Checking ratatui-crossterm v0.1.2
+build	Prepare and validate the candidate	2026-10-07T00:31:59.2033154Z     Checking regex v1.13.1
+build	Prepare and validate the candidate	2026-10-07T00:31:59.2702993Z     Checking tokio-util v0.7.19
+build	Prepare and validate the candidate	2026-10-07T00:31:59.3142397Z     Checking vte v0.11.1
+build	Prepare and validate the candidate	2026-10-07T00:31:59.3604769Z     Checking serde_json v1.0.151
+build	Prepare and validate the candidate	2026-10-07T00:31:59.4632673Z     Checking ratatui-widgets v0.3.2
+build	Prepare and validate the candidate	2026-10-07T00:31:59.7072417Z     Checking digest v0.10.7
+build	Prepare and validate the candidate	2026-10-07T00:31:59.7892055Z     Checking hyper-rustls v0.27.10
+build	Prepare and validate the candidate	2026-10-07T00:31:59.8049332Z     Checking libsqlite3-sys v0.35.0
+build	Prepare and validate the candidate	2026-10-07T00:31:59.8317652Z     Checking nix v0.28.0
+build	Prepare and validate the candidate	2026-10-07T00:31:59.8696526Z     Checking tower-http v0.6.11
+build	Prepare and validate the candidate	2026-10-07T00:31:59.9179358Z     Checking serde_urlencoded v0.7.1
+build	Prepare and validate the candidate	2026-10-07T00:32:00.0202291Z     Checking filedescriptor v0.8.3
+build	Prepare and validate the candidate	2026-10-07T00:32:00.0302894Z     Checking crc32fast v1.5.2
+build	Prepare and validate the candidate	2026-10-07T00:32:00.0702934Z     Checking hashlink v0.10.0
+build	Prepare and validate the candidate	2026-10-07T00:32:00.0802611Z    Compiling alt-cli v0.6.0 (/home/runner/work/alt-cli/alt-cli)
+build	Prepare and validate the candidate	2026-10-07T00:32:00.0912413Z     Checking anyhow v1.0.104
+build	Prepare and validate the candidate	2026-10-07T00:32:00.1972520Z     Checking toml_datetime v0.7.5+spec-1.1.0
+build	Prepare and validate the candidate	2026-10-07T00:32:00.2206381Z     Checking serde_spanned v1.1.1
+build	Prepare and validate the candidate	2026-10-07T00:32:00.2683311Z     Checking http-body-util v0.1.5
+build	Prepare and validate the candidate	2026-10-07T00:32:00.2892300Z     Checking xattr v1.6.1
+build	Prepare and validate the candidate	2026-10-07T00:32:00.2922033Z     Checking serial2 v0.2.38
+build	Prepare and validate the candidate	2026-10-07T00:32:00.3432590Z     Checking filetime v0.2.29
+build	Prepare and validate the candidate	2026-10-07T00:32:00.3832627Z     Checking base64 v0.22.1
+build	Prepare and validate the candidate	2026-10-07T00:32:00.3953377Z     Checking fallible-streaming-iterator v0.1.9
+build	Prepare and validate the candidate	2026-10-07T00:32:00.4142541Z     Checking downcast-rs v1.2.1
+build	Prepare and validate the candidate	2026-10-07T00:32:00.4417556Z     Checking winnow v0.7.15
+build	Prepare and validate the candidate	2026-10-07T00:32:00.4522885Z     Checking unicode-width v0.1.14
+build	Prepare and validate the candidate	2026-10-07T00:32:00.5112632Z     Checking streaming-iterator v0.1.9
+build	Prepare and validate the candidate	2026-10-07T00:32:00.5539419Z     Checking shell-words v1.1.1
+build	Prepare and validate the candidate	2026-10-07T00:32:00.5898746Z     Checking fastrand v2.5.0
+build	Prepare and validate the candidate	2026-10-07T00:32:00.6202155Z     Checking fallible-iterator v0.3.0
+build	Prepare and validate the candidate	2026-10-07T00:32:00.6532529Z     Checking cpufeatures v0.2.17
+build	Prepare and validate the candidate	2026-10-07T00:32:00.6742259Z     Checking toml_writer v1.1.2+spec-1.1.0
+build	Prepare and validate the candidate	2026-10-07T00:32:00.6802307Z     Checking tempfile v3.27.0
+build	Prepare and validate the candidate	2026-10-07T00:32:00.7532332Z     Checking sha2 v0.10.9
+build	Prepare and validate the candidate	2026-10-07T00:32:00.7742434Z     Checking tree-sitter v0.25.10
+build	Prepare and validate the candidate	2026-10-07T00:32:00.8002296Z     Checking rusqlite v0.37.0
+build	Prepare and validate the candidate	2026-10-07T00:32:00.8833079Z     Checking portable-pty v0.9.0
+build	Prepare and validate the candidate	2026-10-07T00:32:01.0003428Z     Checking vt100 v0.15.2
+build	Prepare and validate the candidate	2026-10-07T00:32:01.0052643Z     Checking reqwest v0.12.28
+build	Prepare and validate the candidate	2026-10-07T00:32:01.1810827Z     Checking tar v0.4.46
+build	Prepare and validate the candidate	2026-10-07T00:32:01.2632464Z     Checking clap v4.6.7
+build	Prepare and validate the candidate	2026-10-07T00:32:01.3432433Z     Checking nix v0.30.1
+build	Prepare and validate the candidate	2026-10-07T00:32:01.3753871Z     Checking toml v0.9.12+spec-1.1.0
+build	Prepare and validate the candidate	2026-10-07T00:32:01.4392739Z     Checking flate2 v1.1.10
+build	Prepare and validate the candidate	2026-10-07T00:32:01.5102524Z     Checking ratatui v0.30.2
+build	Prepare and validate the candidate	2026-10-07T00:32:01.5652303Z     Checking tree-sitter-python v0.25.0
+build	Prepare and validate the candidate	2026-10-07T00:32:01.5912314Z     Checking tree-sitter-rust v0.24.2
+build	Prepare and validate the candidate	2026-10-07T00:32:01.6152401Z     Checking tree-sitter-javascript v0.25.0
+build	Prepare and validate the candidate	2026-10-07T00:32:01.6212169Z     Checking cap-std v4.0.3
+build	Prepare and validate the candidate	2026-10-07T00:32:01.6412443Z     Checking uuid v1.27.0
+build	Prepare and validate the candidate	2026-10-07T00:32:01.7222355Z     Checking roxmltree v0.21.1
+build	Prepare and validate the candidate	2026-10-07T00:32:01.7313455Z     Checking fs2 v0.4.3
+build	Prepare and validate the candidate	2026-10-07T00:32:01.7752387Z     Checking similar v2.7.0
+build	Prepare and validate the candidate	2026-10-07T00:32:05.7403751Z     Finished `dev` profile [unoptimized] target(s) in 13.96s
+build	Prepare and validate the candidate	2026-10-07T00:32:10.7939016Z PASS: first-run wizard, model selection, project picker, Unicode/multiline paste, brief delivery, tool rejection, cancellation, search/rename/export/resume, connection repair, GGUF import, navigation, resize, terminal restoration, SIGTERM cleanup, Linux parent-death cleanup.
+build	Prepare and validate the candidate	2026-10-07T00:32:13.1388844Z PASS: Task page, configure/rerun checks without a model, isolation failure reporting, explicit Full access, raw evidence, durable decisions, memory retrieval, export, terminal restoration.
+build	Prepare and validate the candidate	2026-10-07T00:32:26.7588928Z Traceback (most recent call last):
+build	Prepare and validate the candidate	2026-10-07T00:32:26.7591069Z   File "/home/runner/work/alt-cli/alt-cli/scripts/smoke_workbench_tui.py", line 45, in <module>
+build	Prepare and validate the candidate	2026-10-07T00:32:26.7593267Z     term.wait('Connect your first model');term.send(b'\x1b9');term.wait('Project files');term.send(b'n');term.wait('Create a file');term.paste('notes.txt');term.send(b'\r');term.wait('Edit notes.txt');term.paste('Cedar project notes\nPreserve the public API.\n');term.send(b'\x13');term.wait('Save notes.txt?');assert not (project/'notes.txt').exists();term.capture('file-preview');term.send(b'\t\r');term.wait('File saved with an undo checkpoint');assert (project/'notes.txt').read_text().startswith('Cedar')
+build	Prepare and validate the candidate	2026-10-07T00:32:26.7595286Z                                                                                                                                                                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+build	Prepare and validate the candidate	2026-10-07T00:32:26.7595962Z   File "/home/runner/work/alt-cli/alt-cli/scripts/smoke_workbench_tui.py", line 22, in wait
+build	Prepare and validate the candidate	2026-10-07T00:32:26.7596682Z     raise AssertionError(f'Missing {text!r}; exit {self.proc.poll()}\n'+'\n'.join(self.screen.display))
+build	Prepare and validate the candidate	2026-10-07T00:32:26.7597145Z AssertionError: Missing 'Edit notes.txt'; exit None
+build	Prepare and validate the candidate	2026-10-07T00:32:26.7597596Z   ALT  /  LOCAL WORKSPACE                                                                Choose a model to get started  
+build	Prepare and validate the candidate	2026-10-07T00:32:26.7598444Z   Project files                                                                     Local-first · you choose the model  
+build	Prepare and validate the candidate	2026-10-07T00:32:26.7598863Z                                                                                                                         
+build	Prepare and validate the candidate	2026-10-07T00:32:26.7599465Z   1  Home           │ /tmp/alt-workbench-tui-skxqh3qr/project · filter:                                                 
+build	Prepare and validate the candidate	2026-10-07T00:32:26.7600135Z                     │ Enter views · S finds text · G opens a line · E edits · N creates · D diffs                       
+build	Prepare and validate the candidate	2026-10-07T00:32:26.7600725Z   2  Workspace      │                                                                                                   
+build	Prepare and validate the candidate	2026-10-07T00:32:26.7601467Z                     │ ╭ Project files ────────────────────────────────────────────────────────────────────────────────╮ 
+build	Prepare and validate the candidate	2026-10-07T00:32:26.7601993Z   3  Models         │ │                                                                                               │ 
+build	Prepare and validate the candidate	2026-10-07T00:32:26.7602352Z                   ╭ Let's get this working ──────────────────────────────────────────────────────────╮                │ 
+build	Prepare and validate the candidate	2026-10-07T00:32:26.7602763Z   4  Connections  │ Another background operation is still running. Wait, or pause it first           │                │ 
+build	Prepare and validate the candidate	2026-10-07T00:32:26.7603133Z                   │                                                                                  │                │ 
+build	Prepare and validate the candidate	2026-10-07T00:32:26.7603708Z   5  Conversations│ Next step: Review the details, close this message to return to your form, and    │                │ 
+build	Prepare and validate the candidate	2026-10-07T00:32:26.7604189Z                   │ try again. Task progress provides actual check evidence and undo.                │                │ 
+build	Prepare and validate the candidate	2026-10-07T00:32:26.7604549Z   6  Settings     │                                                                                  │                │ 
+build	Prepare and validate the candidate	2026-10-07T00:32:26.7604847Z                   │                                                                                  │                │ 
+build	Prepare and validate the candidate	2026-10-07T00:32:26.7605450Z   7  Help         │                                                                                  │                │ 
+build	Prepare and validate the candidate	2026-10-07T00:32:26.7605742Z                   │                                                                                  │                │ 
+build	Prepare and validate the candidate	2026-10-07T00:32:26.7606049Z   8  Task progress│                                                                                  │                │ 
+build	Prepare and validate the candidate	2026-10-07T00:32:26.7606356Z                   │                                                                                  │                │ 
+build	Prepare and validate the candidate	2026-10-07T00:32:26.7606796Z   9  Project files│                                                                                  │                │ 
+build	Prepare and validate the candidate	2026-10-07T00:32:26.7607097Z                   │                                                                                  │                │ 
+build	Prepare and validate the candidate	2026-10-07T00:32:26.7607401Z   0  Terminal jobs│                                                                                  │                │ 
+build	Prepare and validate the candidate	2026-10-07T00:32:26.7607707Z                   │                                                                                  │                │ 
+build	Prepare and validate the candidate	2026-10-07T00:32:26.7608014Z   ·  Context & mem│                                                                                  │                │ 
+build	Prepare and validate the candidate	2026-10-07T00:32:26.7608320Z                   │                                                                                  │                │ 
+build	Prepare and validate the candidate	2026-10-07T00:32:26.7608603Z                   │                                                                                  │                │ 
+build	Prepare and validate the candidate	2026-10-07T00:32:26.7608896Z                   │                                                                                  │                │ 
+build	Prepare and validate the candidate	2026-10-07T00:32:26.7609176Z                   │                                                                                  │                │ 
+build	Prepare and validate the candidate	2026-10-07T00:32:26.7609457Z                   │                                                                                  │                │ 
+build	Prepare and validate the candidate	2026-10-07T00:32:26.7609744Z                   │                                                                                  │                │ 
+build	Prepare and validate the candidate	2026-10-07T00:32:26.7610038Z                   │  Back                                                                            │                │ 
+build	Prepare and validate the candidate	2026-10-07T00:32:26.7610372Z                   ╰──────────────────────────────────────────────────────────────────────────────────╯                │ 
+build	Prepare and validate the candidate	2026-10-07T00:32:26.7610703Z  ON THIS COMPUTER   │ │                                                                                               │ 
+build	Prepare and validate the candidate	2026-10-07T00:32:26.7611031Z  15.6 GiB RAM       │ │                                                                                               │ 
+build	Prepare and validate the candidate	2026-10-07T00:32:26.7611597Z  4 CPU threads      │ ╰───────────────────────────────────────────────────────────────────────────────────────────────╯ 
+build	Prepare and validate the candidate	2026-10-07T00:32:26.7612098Z  Ctrl+P  Actions    │  View   Edit   New file   Filter   Find   Line   All diffs   Refresh                              
+build	Prepare and validate the candidate	2026-10-07T00:32:26.7612463Z  F1      Help       │                                                                                                   
+build	Prepare and validate the candidate	2026-10-07T00:32:26.7612813Z   Another background operation is still running. Wait, or pause it firstNext step: Review the details, close this       
+build	Prepare and validate the candidate	2026-10-07T00:32:26.7613246Z   ↑↓ Select  Enter View  E Edit  S Find  G Line  / Filter                                                               
+build	Prepare and validate the candidate	2026-10-07T00:32:26.7613629Z                                                                                                                         
+build	Prepare and validate the candidate	2026-10-07T00:32:26.7789577Z ##[error]Process completed with exit code 1.
+report	Check every matrix cell and summarize	﻿2026-10-07T00:32:34.7766655Z ##[group]Run python3 scripts/summarize_matrix.py collected --output matrix-summary.json --model "$MATRIX_MODEL"
+report	Check every matrix cell and summarize	2026-10-07T00:32:34.7770215Z ^[[36;1mpython3 scripts/summarize_matrix.py collected --output matrix-summary.json --model "$MATRIX_MODEL"^[[0m
+report	Check every matrix cell and summarize	2026-10-07T00:32:34.8034433Z shell: /usr/bin/bash -e {0}
+report	Check every matrix cell and summarize	2026-10-07T00:32:34.8035670Z env:
+report	Check every matrix cell and summarize	2026-10-07T00:32:34.8036632Z   MATRIX_MODEL: spark
+report	Check every matrix cell and summarize	2026-10-07T00:32:34.8037712Z ##[endgroup]
+report	Check every matrix cell and summarize	2026-10-07T00:32:34.8559738Z Matrix recorded 0/120 attempts; behavioral successes 0. Complete: False. No preset promotion.
+report	Check every matrix cell and summarize	2026-10-07T00:32:34.8562449Z 
+report	Check every matrix cell and summarize	2026-10-07T00:32:34.8635659Z ##[error]Process completed with exit code 2.
+report	Preserve the measured evidence in a dedicated results branch	﻿2026-10-07T00:32:35.7086200Z ##[group]Run test -f matrix-summary.json
+report	Preserve the measured evidence in a dedicated results branch	2026-10-07T00:32:35.7087597Z ^[[36;1mtest -f matrix-summary.json^[[0m
+report	Preserve the measured evidence in a dedicated results branch	2026-10-07T00:32:35.7089095Z ^[[36;1mmkdir -p docs/evidence/v6/remote-matrix/"$MATRIX_MODEL"^[[0m
+report	Preserve the measured evidence in a dedicated results branch	2026-10-07T00:32:35.7090991Z ^[[36;1mcp -R collected/. docs/evidence/v6/remote-matrix/"$MATRIX_MODEL"/^[[0m
+report	Preserve the measured evidence in a dedicated results branch	2026-10-07T00:32:35.7093536Z ^[[36;1mcp matrix-summary.json docs/evidence/v6/remote-matrix/"$MATRIX_MODEL"/summary.json^[[0m
+report	Preserve the measured evidence in a dedicated results branch	2026-10-07T00:32:35.7095680Z ^[[36;1mgit switch -c "evidence/model-matrix-$GITHUB_RUN_ID"^[[0m
+report	Preserve the measured evidence in a dedicated results branch	2026-10-07T00:32:35.7097250Z ^[[36;1mgit config user.name 'github-actions[bot]'^[[0m
+report	Preserve the measured evidence in a dedicated results branch	2026-10-07T00:32:35.7099104Z ^[[36;1mgit config user.email '41898282+github-actions[bot]@users.noreply.github.com'^[[0m
+report	Preserve the measured evidence in a dedicated results branch	2026-10-07T00:32:35.7101179Z ^[[36;1mgit add docs/evidence/v6/remote-matrix^[[0m
+report	Preserve the measured evidence in a dedicated results branch	2026-10-07T00:32:35.7102930Z ^[[36;1mgit commit -m "Record complete uncensored model matrix $GITHUB_RUN_ID"^[[0m
+report	Preserve the measured evidence in a dedicated results branch	2026-10-07T00:32:35.7104875Z ^[[36;1mgit push origin HEAD^[[0m
+report	Preserve the measured evidence in a dedicated results branch	2026-10-07T00:32:35.7174903Z shell: /usr/bin/bash -e {0}
+report	Preserve the measured evidence in a dedicated results branch	2026-10-07T00:32:35.7176009Z env:
+report	Preserve the measured evidence in a dedicated results branch	2026-10-07T00:32:35.7176862Z   MATRIX_MODEL: spark
+report	Preserve the measured evidence in a dedicated results branch	2026-10-07T00:32:35.7177822Z ##[endgroup]
+report	Preserve the measured evidence in a dedicated results branch	2026-10-07T00:32:35.7302270Z cp: cannot stat 'collected/.': No such file or directory
+report	Preserve the measured evidence in a dedicated results branch	2026-10-07T00:32:35.7309322Z ##[error]Process completed with exit code 1.

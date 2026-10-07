@@ -277,6 +277,8 @@ pub struct Job {
     pub task: tokio::task::JoinHandle<()>,
     pub started: Instant,
     pub recovery: Option<Dialog>,
+    /// Only disposable view refreshes may yield to an explicit user operation.
+    pub replaceable: bool,
 }
 
 pub struct App {
@@ -921,6 +923,13 @@ impl App {
         F: FnOnce(Cancel, mpsc::Sender<JobEvent>) -> Fut + Send + 'static,
         Fut: std::future::Future<Output = Result<JobResult>> + Send + 'static,
     {
+        if self.job.as_ref().is_some_and(|job| job.replaceable) {
+            let previous = self.job.take().expect("Replaceable job");
+            previous.cancel.store(true, Ordering::Relaxed);
+            // Let its blocking worker observe cancellation and release the
+            // project lock. Its eventual event is ignored by the scoped ID.
+            // Requested saves/checks/downloads are never marked replaceable.
+        }
         ensure!(
             self.job.is_none(),
             "Another background operation is still running. Wait, or pause it first"
@@ -961,6 +970,7 @@ impl App {
             task,
             started: Instant::now(),
             recovery: None,
+            replaceable: false,
         });
         Ok(())
     }
@@ -1717,13 +1727,13 @@ impl App {
 
     pub fn submit_input(&mut self, action: InputAction, text: String) -> Result<()> {
         let form = self.dialog.take();
-        let had_job = self.job.is_some();
+        let prior_job = self.job.as_ref().map(|job| job.id);
         let result = self.submit_input_inner(action, text);
         if result.is_err() && self.dialog.is_none() {
             self.dialog = form;
         } else if result.is_ok()
-            && !had_job
             && let Some(job) = &mut self.job
+            && Some(job.id) != prior_job
         {
             job.recovery = form;
         }
@@ -2103,6 +2113,80 @@ pub async fn run(
 
 #[cfg(test)]
 mod recovery_tests {
+    #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+    async fn new_file_can_replace_a_locked_listing_and_failed_forms_keep_their_text() {
+        use super::*;
+        let data = tempfile::tempdir().unwrap();
+        let cwd = tempfile::tempdir().unwrap();
+        let mut app = App::load(data.path().into(), "goose".into(), None).unwrap();
+        app.preferences.project = cwd.path().into();
+        app.composer = Editor::new("Keep my unsent request");
+        for already_exists in [false, true] {
+            if already_exists {
+                std::fs::write(cwd.path().join("notes.txt"), "Original contents").unwrap();
+            }
+            app.dialog = None;
+            let locked = crate::project::Project::open(data.path(), cwd.path()).unwrap();
+            app.set_page(Page::Files);
+            let listing_cancel = app.job.as_ref().unwrap().cancel.clone();
+            app.workbench_action("file-new").unwrap();
+            if let Some(Dialog::Input { editor, .. }) = &mut app.dialog {
+                editor.replace("notes.txt");
+            }
+            app.submit_input(InputAction::NewFile, "notes.txt".into())
+                .expect("Opening the editor should supersede a disposable file listing");
+            assert!(listing_cancel.load(Ordering::Relaxed));
+            drop(locked);
+            while app.job.is_some() {
+                let event = tokio::time::timeout(Duration::from_secs(5), app.job_rx.recv())
+                    .await
+                    .unwrap()
+                    .unwrap();
+                app.job_event(event).unwrap();
+            }
+            if already_exists {
+                assert!(
+                    matches!(&app.dialog, Some(Dialog::Input { editor, action: InputAction::NewFile, .. }) if editor.text == "notes.txt")
+                );
+                assert!(app.status.contains("already exists"));
+                assert_eq!(
+                    std::fs::read_to_string(cwd.path().join("notes.txt")).unwrap(),
+                    "Original contents"
+                );
+            } else {
+                assert!(
+                    matches!(&app.dialog, Some(Dialog::Input { title, action: InputAction::EditFile { new: true, .. }, .. }) if title == "Edit notes.txt")
+                );
+                assert!(!cwd.path().join("notes.txt").exists());
+            }
+            assert_eq!(app.composer.text, "Keep my unsent request");
+        }
+    }
+
+    #[tokio::test]
+    async fn explicit_operations_never_replace_a_requested_save() {
+        use super::*;
+        let data = tempfile::tempdir().unwrap();
+        let mut app = App::load(data.path().into(), "goose".into(), None).unwrap();
+        let (tx, rx) = tokio::sync::oneshot::channel();
+        app.launch_job("Saving user work", move |_, _| async move {
+            rx.await?;
+            Ok(JobResult::Saved("User work saved".into()))
+        })
+        .unwrap();
+        let original = app.job.as_ref().unwrap().id;
+        assert!(
+            app.launch_io("New operation", || Ok(JobResult::Saved("wrong".into())))
+                .is_err()
+        );
+        assert_eq!(app.job.as_ref().unwrap().id, original);
+        assert!(!app.job.as_ref().unwrap().cancel.load(Ordering::Relaxed));
+        tx.send(()).unwrap();
+        let event = app.job_rx.recv().await.unwrap();
+        app.job_event(event).unwrap();
+        assert!(app.status.contains("User work saved"));
+    }
+
     #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
     async fn conversation_database_contention_keeps_drafts_responsive_and_saves_after_release() {
         use super::*;
