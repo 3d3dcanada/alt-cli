@@ -2114,6 +2114,37 @@ pub async fn run(
 #[cfg(test)]
 mod recovery_tests {
     #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+    async fn task_check_choices_replace_a_locked_status_refresh() {
+        use super::*;
+        let data = tempfile::tempdir().unwrap();
+        let cwd = tempfile::tempdir().unwrap();
+        let mut app = App::load(data.path().into(), "goose".into(), None).unwrap();
+        app.preferences.project = cwd.path().into();
+        app.composer = Editor::new("Keep this unsent request");
+        for action in ["task-configure", "task-check"] {
+            app.dialog = None;
+            let locked = crate::project::Project::open(data.path(), cwd.path()).unwrap();
+            app.set_page(Page::Task);
+            let refresh_cancel = app.job.as_ref().unwrap().cancel.clone();
+            app.task_action(action)
+                .expect("A requested check choice should supersede a disposable status refresh");
+            assert!(refresh_cancel.load(Ordering::Relaxed));
+            drop(locked);
+            while app.job.is_some() {
+                let event = tokio::time::timeout(Duration::from_secs(5), app.job_rx.recv())
+                    .await
+                    .unwrap()
+                    .unwrap();
+                app.job_event(event).unwrap();
+            }
+            assert!(
+                matches!(&app.dialog, Some(Dialog::Menu { title, .. }) if title == "Choose what should prove the change works")
+            );
+            assert_eq!(app.composer.text, "Keep this unsent request");
+        }
+    }
+
+    #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
     async fn new_file_can_replace_a_locked_listing_and_failed_forms_keep_their_text() {
         use super::*;
         let data = tempfile::tempdir().unwrap();
