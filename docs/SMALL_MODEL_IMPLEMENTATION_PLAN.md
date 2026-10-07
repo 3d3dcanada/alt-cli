@@ -1,9 +1,12 @@
 # Small-model implementation and training plan
 
 October 7, 2026. This combines both completed research passes into one delivery
-plan. **The runtime work below is planned, not implemented.** The accompanying
-[training handoff](../training/README.md) implements preparation/validation tools
-and an optional SFT starter; no weights have been trained or promoted.
+plan. Cloud-side interfaces and offline training prerequisites have now been
+implemented. The [delivery record](SMALL_MODEL_DELIVERY.md) distinguishes executed
+tests, live CPU probes and outstanding quality/GPU/data gates; the original work
+orders and acceptance criteria below remain the research plan. The accompanying
+[training handoff](../training/README.md) includes capture, preparation, SFT resume,
+export and reward tooling; no weights have been trained or promoted.
 
 Inputs: [harness research](research/2026-10-07-small-model-harness.md),
 [SM-01–12](research/2026-10-07-small-model-experiments.md),
@@ -267,9 +270,9 @@ performance remain unqualified. No 7B/9B preset is promoted by this planning wor
    gates. Explain “checks passed for these behaviors” rather than “everything is
    correct.” Drafts, failed attempts and remaining work stay accessible.
 
-## Immediate implementation sequence
+## Original implementation sequence
 
-First PR: H01 oracle/campaign boundary. Second: H02 profile migration, request
+The planned sequence was H01 oracle/campaign boundary, then H02 profile migration, request
 accounting and token reservations. Third: H03 editor handles. Next: H04 controller
 and diagnostics, then individually measured H05/H06/H07. Capture reviewed traces
 with H10 while evaluating those stable interfaces. H08/H09 can follow independently;
@@ -278,7 +281,8 @@ explicit evidence/resource gates. Each PR includes behavior, relevant regression
 evidence, migration/rollback and an implementation-status entry.
 
 The training handoff can be used now to collect/review data and qualify the exact
-7B/9B checkpoint. This cloud checked 32 GiB cgroup RAM and four CPU cores of quota,
+7B/9B checkpoint. See the delivery record for current implementation and probe
+results. This cloud checked 32 GiB cgroup RAM and four CPU cores of quota,
 with no CUDA device or training libraries. No meaningful model-training run was
 performed; the [training status](../training/status/cloud-capability.json) and
 handoff state exactly what was checked and what remains to run.

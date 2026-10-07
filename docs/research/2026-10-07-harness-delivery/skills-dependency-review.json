@@ -1,0 +1,38 @@
+{
+  "scope": "Real registry/advisory responses; manifests only, no dependency code executed",
+  "skill": "dependency-review",
+  "records": [
+    {
+      "id": "096a996a-7255-48b9-b3e1-69274af85586",
+      "pack": "pip-audit",
+      "version": 1,
+      "input": {},
+      "status": "failed",
+      "error": "Tool output is not valid JSON; no clean result can be inferred: EOF while parsing a value at line 1 column 0",
+      "evidence": {
+        "command": [
+          "python3",
+          "-m",
+          "pip_audit",
+          "--format",
+          "json",
+          "--requirement",
+          "requirements.txt"
+        ],
+        "terminal": {
+          "cancelled": false,
+          "elapsed_ms": 813,
+          "error": null,
+          "exit_code": 1,
+          "id": "59942d97-d085-441e-9ee0-be31cc77c396",
+          "output": "stdout:\n\nstderr:\nTraceback (most recent call last):\n  File \"<frozen runpy>\", line 198, in _run_module_as_main\n  File \"<frozen runpy>\", line 88, in _run_code\n  File \"/workspace/.alt-tools/security-venv/lib/python3.12/site-packages/pip_audit/__main__.py\", line 8, in <module>\n    audit()\n  File \"/workspace/.alt-tools/security-venv/lib/python3.12/site-packages/pip_audit/_cli.py\", line 441, in audit\n    service = args.vulnerability_service.to_service(args.timeout, args.cache_dir)\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/workspace/.alt-tools/security-venv/lib/python3.12/site-packages/pip_audit/_cli.py\", line 107, in to_service\n    return PyPIService(cache_dir, timeout)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/workspace/.alt-tools/security-venv/lib/python3.12/site-packages/pip_audit/_service/pypi.py\", line 46, in __init__\n    self.session = caching_session(cache_dir)\n                   ^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/workspace/.alt-tools/security-venv/lib/python3.12/site-packages/pip_audit/_cache.py\", line 177, in caching_session\n    cache=_SafeFileCache(_get_cache_dir(cache_dir, use_pip=use_pip)),\n                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/workspace/.alt-tools/security-venv/lib/python3.12/site-packages/pip_audit/_cache.py\", line 66, in _get_cache_dir\n    pip_audit_cache_dir = user_cache_path(\"pip-audit\", appauthor=False, ensure_exists=True)\n                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/workspace/.alt-tools/security-venv/lib/python3.12/site-packages/platformdirs/__init__.py\", line 690, in user_cache_path\n    ).user_cache_path\n      ^^^^^^^^^^^^^^^\n  File \"/workspace/.alt-tools/security-venv/lib/python3.12/site-packages/platformdirs/api.py\", line 354, in user_cache_path\n    return Path(self.user_cache_dir)\n                ^^^^^^^^^^^^^^^^^^^\n  File \"/workspace/.alt-tools/security-venv/lib/python3.12/site-packages/platformdirs/unix.py\", line 241, in user_cache_dir\n    return self.site_cache_dir if self._use_site else super().user_cache_dir\n                                                      ^^^^^^^^^^^^^^^^^^^^^^\n  File \"/workspace/.alt-tools/security-venv/lib/python3.12/site-packages/platformdirs/_xdg.py\", line 58, in user_cache_dir\n    return super().user_cache_dir\n           ^^^^^^^^^^^^^^^^^^^^^^\n  File \"/workspace/.alt-tools/security-venv/lib/python3.12/site-packages/platformdirs/unix.py\", line 60, in user_cache_dir\n    return self._append_app_name_and_version(_expand_user(\"~/.cache\"), private=True)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/workspace/.alt-tools/security-venv/lib/python3.12/site-packages/platformdirs/api.py\", line 136, in _append_app_name_and_version\n    self._optionally_create_directory(path, private=private)\n  File \"/workspace/.alt-tools/security-venv/lib/python3.12/site-packages/platformdirs/api.py\", line 152, in _optionally_create_directory\n    _make_private_directories(Path(path))\n  File \"/workspace/.alt-tools/security-venv/lib/python3.12/site-packages/platformdirs/api.py\", line 711, in _make_private_directories\n    path.mkdir(mode=0o700, exist_ok=True)\n  File \"/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/pathlib.py\", line 1311, in mkdir\n    os.mkdir(self, mode)\nOSError: [Errno 30] Read-only file system: '/home/agent/.cache/pip-audit'\n",
+          "output_truncated": false,
+          "tests_run": null,
+          "timed_out": false,
+          "undoable": false
+        }
+      },
+      "findings": []
+    }
+  ]
+}

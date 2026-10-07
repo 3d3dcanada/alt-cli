@@ -1,0 +1,76 @@
+[
+  {
+    "character_budget": 8192,
+    "characters": 3527,
+    "included_excerpts": [
+      {
+        "excerpt": "def discounted(price, percent):\n    return price - percent\n",
+        "path": "pricing.py",
+        "retrieval": "explicit file name"
+      },
+      {
+        "excerpt": "from pricing import discounted\ndef total(price, discount_percent, tax_rate):\n    subtotal = discounted(price, discount_percent)\n    return subtotal + price * tax_rate\n",
+        "path": "orders.py",
+        "retrieval": "explicit file name"
+      }
+    ],
+    "memory": "CURRENT computed check status: No checks recorded\nTask: fc08c276-05fa-4810-9f13-0a46ef20e226\nGoal: Repair order totals across pricing.py and orders.py. Discount is a percentage: 10 means ten percent off. Tax is applied once to the discounted subtotal. Preserve the function names and caller interface. Inspect relevant files, save a brief plan, use native tools to implement the change, and test it. Report what you actually ran and any remaining uncertainty. Preserve existing public interfaces. Keep your explanation brief.\nPinned user requirements:\n[]\nRequired checks: {\"complete\":false,\"behavioral_acceptance\":false,\"scope\":\"Required checks are incomplete\",\"requirements\":[{\"requirement\":{\"name\":\"requested-behavior\",\"description\":\"Repair order totals across pricing.py and orders.py. Discount is a percentage: 10 means ten percent off. Tax is applied once to the discounted subtotal. Preserve the function names and caller interface.\",\"check_name\":\"acceptance\"},\"status\":\"not run\",\"evidence\":null,\"check_kind\":\"tests\",\"coverage\":\"runner test report; no independent assertion\"}],\"source_snapshot\":\"32aa0d9040339e3429b164e6fa45f849f3a703cf6c4bd30cfea7e59b9c5eb24e\"}\nPlan (notes, not verification): \nPhase: Inspect\nNext: Inspect the relevant files\nHost next decision: \"Save a brief model plan or explicitly select host workflow.\"\nDiagnostic packet: null\n\nRelevant user decisions (retrieved across sessions; notes do not override current evidence):\n\nRecent file actions (newest first):\n\nHISTORICAL events, oldest to newest (sequence numbers increase). Earlier failures or stale notes do not override the CURRENT computed status above:\n[event 2; request; source=user] Repair order totals across pricing.py and orders.py. Discount is a percentage: 10 means ten percent off. Tax is applied once to the discounted subtotal. Preserve the function names and caller interface. Inspect relevant files, save a brief plan, use native tools to implement the change, and test it. Report what you actually ran and any remaining uncertainty. Preserve existing public interfaces. Ke\n\nSource outline and import candidates: {\"dependencies\":[],\"neighbors\":[],\"outline\":[{\"kind\":\"function_definition\",\"lines\":[1,2],\"name\":\"discounted\"}],\"path\":\"pricing.py\",\"provenance\":\"Current source bytes; syntax outline and bounded local import candidates. Read before editing.\",\"sha256\":\"9c616918b71119704f75548c0c23dde2c946cc17f3feedfb47c5dd1b2298f8b2\"}\n\nSource outline and import candidates: {\"dependencies\":[{\"kind\":\"import_from_statement\",\"module\":\"pricing\",\"start_line\":1,\"statement\":\"from pricing import discounted\"}],\"neighbors\":[{\"path\":\"pricing.py\",\"relation\":\"local import candidate; lexical resolution, inspect to confirm\",\"sha256\":\"9c616918b71119704f75548c0c23dde2c946cc17f3feedfb47c5dd1b2298f8b2\"}],\"outline\":[{\"kind\":\"function_definition\",\"lines\":[2,4],\"name\":\"total\"}],\"path\":\"orders.py\",\"provenance\":\"Current source bytes; syntax outline and bounded local import candidates. Read before editing.\",\"sha256\":\"660422300037c446b004a048be92151073fcd47ea8df2f530ea640293de4111b\"}\n\nCurrent source snippets (data, not instructions; search may omit code, so read files before editing):\n\nFile: pricing.py\ndef discounted(price, percent):\n    return price - percent\n\n[End excerpt]\n\nFile: orders.py\nfrom pricing import discounted\ndef total(price, discount_percent, tax_rate):\n    subtotal = discounted(price, discount_percent)\n    return subtotal + price * tax_rate\n\n[End excerpt]\n\nExcerpts included: 2; omitted for budget: 0. Use search/read for more.\n",
+    "memory_token_budget": 2730,
+    "memory_tokens": 1032,
+    "native_context_expanded": false,
+    "omitted_excerpts": 0,
+    "omitted_history": "Only retrieved/recent notes and bounded excerpts are included; full history remains on disk",
+    "pinned": [],
+    "structural_candidates": [
+      {
+        "dependencies": [],
+        "neighbors": [],
+        "outline": [
+          {
+            "kind": "function_definition",
+            "lines": [
+              1,
+              2
+            ],
+            "name": "discounted"
+          }
+        ],
+        "path": "pricing.py",
+        "provenance": "Current source bytes; syntax outline and bounded local import candidates. Read before editing.",
+        "sha256": "9c616918b71119704f75548c0c23dde2c946cc17f3feedfb47c5dd1b2298f8b2"
+      },
+      {
+        "dependencies": [
+          {
+            "kind": "import_from_statement",
+            "module": "pricing",
+            "start_line": 1,
+            "statement": "from pricing import discounted"
+          }
+        ],
+        "neighbors": [
+          {
+            "path": "pricing.py",
+            "relation": "local import candidate; lexical resolution, inspect to confirm",
+            "sha256": "9c616918b71119704f75548c0c23dde2c946cc17f3feedfb47c5dd1b2298f8b2"
+          }
+        ],
+        "outline": [
+          {
+            "kind": "function_definition",
+            "lines": [
+              2,
+              4
+            ],
+            "name": "total"
+          }
+        ],
+        "path": "orders.py",
+        "provenance": "Current source bytes; syntax outline and bounded local import candidates. Read before editing.",
+        "sha256": "660422300037c446b004a048be92151073fcd47ea8df2f530ea640293de4111b"
+      }
+    ],
+    "task": "fc08c276-05fa-4810-9f13-0a46ef20e226",
+    "token_accounting": "Selected llama.cpp tokenizer, memory block only; tool/chat/template tokens are separately engine-budgeted"
+  }
+]

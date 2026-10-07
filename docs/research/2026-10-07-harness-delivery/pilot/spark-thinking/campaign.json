@@ -1,0 +1,67 @@
+{
+  "schema": 1,
+  "oracle_version": 5,
+  "artifacts": {
+    "binary": "7eb38a181ddb74718459330db0613ba810c2dc053cacbe72f68faf3cc8de9cff",
+    "engine": "59655719cd9b098dab59b6e2c50f1e565a935992fae2e539f52018a960e0512a",
+    "runtime": "5faf410bbbc00a1b94b09ee01623699f255365628dfa73b1ee552d9e52a2231d",
+    "model": "1e4d920aaff1248b68751e49b16dae6104c5f4d3924a86a290e24b31db08113c"
+  },
+  "arms": [
+    {
+      "name": "server-thinking-default",
+      "output_tokens": 1024,
+      "temperature": 0,
+      "workflow": "host"
+    },
+    {
+      "name": "thinking-cap-128",
+      "output_tokens": 1024,
+      "reasoning_tokens": 128,
+      "temperature": 0,
+      "workflow": "host"
+    }
+  ],
+  "cases": [
+    "python-config",
+    "python-feature"
+  ],
+  "partition": "development",
+  "repeats": 1,
+  "context": 8192,
+  "timeout": 180,
+  "threads": 2,
+  "seed": 42,
+  "generated_tokens": 8192,
+  "requests": 8,
+  "uncensored": true,
+  "oracle_code": {
+    "acceptance_v5.py": "0f669daa7bbe060b131d79e2294ec026e419467be38d969c77f5dfefb897dea7",
+    "acceptance_projects.py": "453f27af5b3cc558a2190620cee195a392e0a0a45889f43569b96e85765cd32a",
+    "acceptance_extra.py": "2a724e6da5673cb581b3b2c54d338a62bbc917f1753b7edf2774f9e2e005148d",
+    "live_acceptance.py": "26550d28e1d9ed2ff735fc477d2f35b8dc276ab1250b5acee2a983086c23c430",
+    "campaign_v5.py": "484d2018e2f08ec368f6bc4572c7861e59864e31c550ee91365d6964dfac0ba6"
+  },
+  "schedule": [
+    {
+      "case": "python-feature",
+      "repeat": 1,
+      "arm": "thinking-cap-128"
+    },
+    {
+      "case": "python-feature",
+      "repeat": 1,
+      "arm": "server-thinking-default"
+    },
+    {
+      "case": "python-config",
+      "repeat": 1,
+      "arm": "server-thinking-default"
+    },
+    {
+      "case": "python-config",
+      "repeat": 1,
+      "arm": "thinking-cap-128"
+    }
+  ]
+}

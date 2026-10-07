@@ -5,6 +5,10 @@ Run `alt --help` or `alt COMMAND --help` for the exact options in your build.
 folder, or select the project in Settings. `--data-dir`, `--profile` and `--engine`
 select saved state, a named model profile and an engine executable.
 
+The current source also provides [small-model inference, skills, candidates and
+experimental workflows](SMALL_MODEL_USAGE.md). Use that guide for the new commands;
+older published executables can have fewer subcommands.
+
 ## Connect and inspect
 
 ```bash

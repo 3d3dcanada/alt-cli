@@ -1,0 +1,185 @@
+{
+  "configuration": {
+    "schema": 1,
+    "oracle_version": 5,
+    "artifacts": {
+      "binary": "7a21f94856aaed217e9ea0430c6ad140ee95dc36e33dd7d879e2954203ba427e",
+      "engine": "59655719cd9b098dab59b6e2c50f1e565a935992fae2e539f52018a960e0512a",
+      "runtime": "5faf410bbbc00a1b94b09ee01623699f255365628dfa73b1ee552d9e52a2231d",
+      "model": "1e4d920aaff1248b68751e49b16dae6104c5f4d3924a86a290e24b31db08113c"
+    },
+    "arms": [
+      {
+        "name": "model-plan",
+        "output_tokens": 1024,
+        "temperature": 0,
+        "workflow": "model-plan"
+      },
+      {
+        "name": "host-plan",
+        "output_tokens": 1024,
+        "temperature": 0,
+        "workflow": "host"
+      }
+    ],
+    "cases": [
+      "python-feature",
+      "python-multifile",
+      "python-config",
+      "heldout-deduplicate"
+    ],
+    "partition": "development",
+    "repeats": 1,
+    "context": 8192,
+    "timeout": 180,
+    "threads": 2,
+    "seed": 42,
+    "generated_tokens": 8192,
+    "requests": 8,
+    "uncensored": true,
+    "oracle_code": {
+      "acceptance_v5.py": "da3d1a0f190c02bc2407f45c86d56df71dc44e613ec19ebb814ac3456e7f97e4",
+      "acceptance_projects.py": "453f27af5b3cc558a2190620cee195a392e0a0a45889f43569b96e85765cd32a",
+      "acceptance_extra.py": "2a724e6da5673cb581b3b2c54d338a62bbc917f1753b7edf2774f9e2e005148d",
+      "live_acceptance.py": "5f863f750d5083715726989ddaea3a4e9fe4f3b7bcfc774e2e8f7c576ea2a30c"
+    },
+    "schedule": [
+      {
+        "case": "python-config",
+        "repeat": 1,
+        "arm": "host-plan"
+      },
+      {
+        "case": "python-config",
+        "repeat": 1,
+        "arm": "model-plan"
+      },
+      {
+        "case": "python-multifile",
+        "repeat": 1,
+        "arm": "host-plan"
+      },
+      {
+        "case": "python-multifile",
+        "repeat": 1,
+        "arm": "model-plan"
+      },
+      {
+        "case": "heldout-deduplicate",
+        "repeat": 1,
+        "arm": "host-plan"
+      },
+      {
+        "case": "heldout-deduplicate",
+        "repeat": 1,
+        "arm": "model-plan"
+      },
+      {
+        "case": "python-feature",
+        "repeat": 1,
+        "arm": "host-plan"
+      },
+      {
+        "case": "python-feature",
+        "repeat": 1,
+        "arm": "model-plan"
+      }
+    ]
+  },
+  "arms": {
+    "model-plan": {
+      "recorded": 4,
+      "expected": 4,
+      "complete": true,
+      "passed": 0,
+      "groups": [
+        {
+          "task_group": "heldout-deduplicate",
+          "attempts": 1,
+          "passed": 0,
+          "timeouts": 0,
+          "wall_seconds": 124.11,
+          "requests": 2,
+          "charged_generated_tokens": 1108
+        },
+        {
+          "task_group": "python-config",
+          "attempts": 1,
+          "passed": 0,
+          "timeouts": 0,
+          "wall_seconds": 130.51,
+          "requests": 5,
+          "charged_generated_tokens": 349
+        },
+        {
+          "task_group": "python-feature",
+          "attempts": 1,
+          "passed": 0,
+          "timeouts": 0,
+          "wall_seconds": 129.46,
+          "requests": 2,
+          "charged_generated_tokens": 1141
+        },
+        {
+          "task_group": "python-multifile",
+          "attempts": 1,
+          "passed": 0,
+          "timeouts": 0,
+          "wall_seconds": 107.1,
+          "requests": 1,
+          "charged_generated_tokens": 1024
+        }
+      ],
+      "preset_promoted": false
+    },
+    "host-plan": {
+      "recorded": 4,
+      "expected": 4,
+      "complete": true,
+      "passed": 0,
+      "groups": [
+        {
+          "task_group": "heldout-deduplicate",
+          "attempts": 1,
+          "passed": 0,
+          "timeouts": 0,
+          "wall_seconds": 143.17,
+          "requests": 8,
+          "charged_generated_tokens": 566
+        },
+        {
+          "task_group": "python-config",
+          "attempts": 1,
+          "passed": 0,
+          "timeouts": 0,
+          "wall_seconds": 144.38,
+          "requests": 6,
+          "charged_generated_tokens": 647
+        },
+        {
+          "task_group": "python-feature",
+          "attempts": 1,
+          "passed": 0,
+          "timeouts": 0,
+          "wall_seconds": 135.23,
+          "requests": 2,
+          "charged_generated_tokens": 1141
+        },
+        {
+          "task_group": "python-multifile",
+          "attempts": 1,
+          "passed": 0,
+          "timeouts": 0,
+          "wall_seconds": 183.37,
+          "requests": 5,
+          "charged_generated_tokens": 2551
+        }
+      ],
+      "preset_promoted": false
+    }
+  },
+  "attempts": 8,
+  "expected": 8,
+  "complete": true,
+  "scope": "Serial CPU campaign; independent behavior only. No GPU qualification or confidence claim from a pilot."
+}

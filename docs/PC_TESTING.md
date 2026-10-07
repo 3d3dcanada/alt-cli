@@ -5,6 +5,20 @@ the exact model you choose; Alt does not need to switch providers to run them.
 
 ## Install and check the application
 
+The new small-model work orders are in the current `main` source. Older published
+0.6 packages predate them. To test these additions, build the current checkout:
+
+```bash
+git clone https://github.com/3d3dcanada/alt-cli.git
+cd alt-cli
+cargo build --locked --release
+python3 scripts/test-my-pc.py --alt target/release/alt
+```
+
+Rust is required for this source build. The [small-model guide](SMALL_MODEL_USAGE.md)
+explains the new labelled settings and workflows; use that build in the commands
+below by substituting `target/release/alt` for the installed executable.
+
 Download the Linux x86_64 package from the project's GitHub Releases page,
 verify it as described in [Installation](INSTALLATION.md), extract it, and run
 `bash install.sh`. No Rust compiler is needed for a packaged release. Python 3
@@ -55,6 +69,22 @@ The live run measures load/generation and cancellation/restart where Alt owns th
 runtime, then probes native tool use. External runtime lifecycle is explicitly
 unmeasured. A failed connection or inadequate memory remains a failed attempt.
 These commands can take several minutes per context on an older CPU.
+
+Keep your normal 7B/9B Q4 checkpoint. In **Settings → Model and runtime settings**,
+record the output allowance, reasoning budget, temperature, context and runtime
+threads/layers. A blank sampling control means the server default. Run
+`alt inference` to retain the effective settings; actual request receipts live in
+the selected state folder under `inference`. The recorder also runs the strict
+native tool round trip. A prose or XML call, repeated calls ending at the output
+limit, or missing final result is a failure rather than an executable command.
+
+Compare **Model-written plan** and **Host workflow** on copies of the same task,
+using the same model, checks and total time/token/request allowance. Try one
+short skill with its declared helper, then **Review candidates** with a modest
+shared allowance. Keep the original unchanged until reviewing and applying a
+candidate; confirm a cancelled run retains its costs and can resume. Record
+failures too. MiMo 9B's single CPU native pass in the cloud does not establish
+its repair quality, fit or speed on your GTX 1070.
 
 Afterward, try a real task in a copy of one of your projects. Choose **Prepare
 project checks** on Home, select the actual test command, and configure its

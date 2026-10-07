@@ -1,0 +1,356 @@
+{
+  "scope": "Real registry/advisory responses; manifests only, no dependency code executed",
+  "skill": "dependency-review",
+  "records": [
+    {
+      "id": "631f17a8-922c-4ae5-b477-37a557c824c2",
+      "pack": "pip-audit",
+      "version": 1,
+      "input": {},
+      "status": "findings",
+      "error": null,
+      "evidence": {
+        "command": [
+          "python3",
+          "-m",
+          "pip_audit",
+          "--format",
+          "json",
+          "--requirement",
+          "requirements.txt"
+        ],
+        "terminal": {
+          "cancelled": false,
+          "elapsed_ms": 11380,
+          "error": null,
+          "exit_code": 1,
+          "id": "acd08acd-5b2a-4d80-8c46-0001d8d0019a",
+          "output": "stdout:\n{\"dependencies\": [{\"name\": \"requests\", \"version\": \"2.19.1\", \"vulns\": [{\"id\": \"PYSEC-2018-28\", \"fix_versions\": [\"2.20.0\"], \"aliases\": [\"CVE-2018-18074\", \"GHSA-x84v-xcm2-53pg\"], \"description\": \"The Requests package before 2.20.0 for Python sends an HTTP Authorization header to an http URI upon receiving a same-hostname https-to-http redirect, which makes it easier for remote attackers to discover credentials by sniffing the network.\"}, {\"id\": \"PYSEC-2023-74\", \"fix_versions\": [\"2.31.0\"], \"aliases\": [\"GHSA-j8r2-6x86-q33q\", \"CVE-2023-32681\"], \"description\": \"Requests is a HTTP library. Since Requests 2.3.0, Requests has been leaking Proxy-Authorization headers to destination servers when redirected to an HTTPS endpoint. This is a product of how we use `rebuild_proxies` to reattach the `Proxy-Authorization` header to requests. For HTTP connections sent through the tunnel, the proxy will identify the header in the request itself and remove it prior to forwarding to the destination server. However when sent over HTTPS, the `Proxy-Authorization` header must be sent in the CONNECT request as the proxy has no visibility into the tunneled request. This results in Requests forwarding proxy credentials to the destination server unintentionally, allowing a malicious actor to potentially exfiltrate sensitive information. This issue has been patched in version 2.31.0.  \"}, {\"id\": \"PYSEC-2026-1873\", \"fix_versions\": [\"2.32.0\"], \"aliases\": [\"CVE-2024-35195\", \"GHSA-9wx4-h78v-vm56\"], \"description\": \"When using a `requests.Session`, if the first request to a given origin is made with `verify=False`, TLS certificate verification may remain disabled for all subsequent requests to that origin, even if `verify=True` is explicitly specified later.  This occurs because the underlying connection is reused from the session's connection pool, causing the initial TLS verification setting to persist for the lifetime of the pooled connection. As a result, applications may unintentionally send requests without certificate verification, leading to potential man-in-the-middle attacks and compromised confidentiality or integrity.  This behavior affects versions of `requests` prior to 2.32.0.\"}, {\"id\": \"PYSEC-2026-1872\", \"fix_versions\": [\"2.32.4\"], \"aliases\": [\"GHSA-9hjg-9r4m-mvj7\", \"CVE-2024-47081\"], \"description\": \"### Impact  Due to a URL parsing issue, Requests releases prior to 2.32.4 may leak .netrc credentials to third parties for specific maliciously-crafted URLs.  ### Workarounds For older versions of Requests, use of the .netrc file can be disabled with `trust_env=False` on your Requests Session ([docs](https://requests.readthedocs.io/en/latest/api/#requests.Session.trust_env)).  ### References https://github.com/psf/requests/pull/6965 https://seclists.org/fulldisclosure/2025/Jun/2\"}, {\"id\": \"PYSEC-2026-2275\", \"fix_versions\": [\"2.33.0\"], \"aliases\": [\"CVE-2026-25645\", \"GHSA-gc5v-m9x4-r6x2\"], \"description\": \"Requests is a HTTP library. Prior to version 2.33.0, the `requests.utils.extract_zipped_paths()` utility function uses a predictable filename when extracting files from zip archives into the system temporary directory. If the target file already exists, it is reused without validation. A local attacker with write access to the temp directory could pre-create a malicious file that would be loaded in place of the legitimate one. Standard usage of the Requests library is not affected by this vulnerability. Only applications that call `extract_zipped_paths()` directly are impacted. Starting in version 2.33.0, the library extracts files to a non-deterministic location. If developers are unable to upgrade, they can set `TMPDIR` in their environment to a directory with restricted write access.\"}]}, {\"name\": \"chardet\", \"version\": \"3.0.4\", \"vulns\": []}, {\"name\": \"idna\", \"version\": \"2.7\", \"vulns\": [{\"id\": \"PYSEC-2024-60\", \"fix_versions\": [\"3.7\"], \"aliases\": [\"GHSA-jjg7-2v4v-x38h\", \"CVE-2024-3651\"], \"description\": \"A vulnerability was identified in the kjd/idna library, specifically within the `idna.encode()` function, affecting version 3.6. The issue arises from the function's handling of crafted input strings, which can lead to quadratic complexity and consequently, a denial of service condition. This vulnerability is triggered by a crafted input that causes the `idna.encode()` function to process the input with considerable computational load, significantly increasing the processing time in a quadratic manner relative to the input size.\"}, {\"id\": \"PYSEC-2026-215\", \"fix_versions\": [\"3.15\"], \"aliases\": [\"CVE-2026-45409\", \"GHSA-65pc-fj4g-8rjx\"], \"description\": \"Internationalized Domain Names in Applications (IDNA) for Python provides support for Internationalized Domain Names in Applications (IDNA) and Unicode IDNA Compatibility Processing. In versions prior to 3.15, payloads such as `\\\"\\\\u0660\\\" * N` or `\\\"\\\\u30fb\\\" * N + \\\"\\\\u6f22\\\"` utilize the `valid_contexto` function prior to length rejection, and for high values of `N` will take a long time to process. This is the same issue as CVE-2024-3651, however the original remediation in 2024 was not a complete fix. A specially crafted argument to the `idna.encode()` function could consume significant resources. This may lead to a denial-of-service. Starting in version 3.14, the function rejects long inputs as soon as practicable prior to any further processing to minimize resource consumption. In version 3.15, this approach was extended to lesser used alternate functions (i.e. per-label conversions and codec support). A workaround is available. Domain names cannot exceed 253 characters in length. If this length limit is enforced prior to passing the domain to the `idna.encode()` function, it should no longer consume significant resources. This is triggered by arbitrarily large inputs that would not occur in normal usage, but may be passed to the library assuming there is no preliminary input validation by the higher-level application.\"}]}, {\"name\": \"urllib3\", \"version\": \"1.23\", \"vulns\": [{\"id\": \"PYSEC-2019-133\", \"fix_versions\": [\"1.24.2\"], \"aliases\": [\"CVE-2019-11324\", \"GHSA-mh33-7rrq-662w\"], \"description\": \"The urllib3 library before 1.24.2 for Python mishandles certain cases where the desired set of CA certificates is different from the OS store of CA certificates, which results in SSL connections succeeding in situations where a verification failure is the correct outcome. This is related to use of the ssl_context, ca_certs, or ca_certs_dir argument.\"}, {\"id\": \"PYSEC-2019-132\", \"fix_versions\": [\"1.24.3\"], \"aliases\": [\"GHSA-r64q-w8jr-g9qp\", \"CVE-2019-11236\"], \"description\": \"In the urllib3 library through 1.24.1 for Python, CRLF injection is possible if the attacker controls the request parameter.\"}, {\"id\": \"PYSEC-2020-148\", \"fix_versions\": [\"1.25.9\"], \"aliases\": [\"GHSA-wqvq-5m8c-6g24\", \"CVE-2020-26137\"], \"description\": \"urllib3 before 1.25.9 allows CRLF injection if the attacker controls the HTTP request method, as demonstrated by inserting CR and LF control characters in the first argument of putrequest(). NOTE: this is similar to CVE-2020-26116.\"}, {\"id\": \"PYSEC-2023-192\", \"fix_versions\": [\"1.26.17\", \"2.0.6\"], \"aliases\": [\"CVE-2023-43804\", \"GHSA-v845-jxx5-vc9f\"], \"description\": \"urllib3 is a user-friendly HTTP client library for Python. urllib3 doesn't treat the `Cookie` HTTP header special or provide any helpers for managing cookies over HTTP, that is the responsibility of the user. However, it is possible for a user to specify a `Cookie` header and unknowingly leak information via HTTP redirects to a different origin if that user doesn't disable redirects explicitly. This issue has been patched in urllib3 version 1.26.17 or 2.0.5.\"}, {\"id\": \"PYSEC-2023-207\", \"fix_versions\": [\"1.24.2\"], \"aliases\": [\"CVE-2018-25091\", \"GHSA-gwvm-45gx-3cf8\"], \"description\": \"urllib3 before 1.24.2 does not remove the authorization HTTP header when following a cross-origin redirect (i.e., a redirect that differs in host, port, or scheme). This can allow for credentials in the authorization header to be exposed to unintended hosts or transmitted in cleartext. NOTE: this issue exists because of an incomplete fix for CVE-2018-20060 (which was case-sensitive).\"}, {\"id\": \"PYSEC-2023-212\", \"fix_versions\": [\"1.26.18\", \"2.0.7\"], \"aliases\": [\"GHSA-g4mx-q9vg-27p4\", \"CVE-2023-45803\"], \"description\": \"urllib3 is a user-friendly HTTP client library for Python. urllib3 previously wouldn't remove the HTTP request body when an HTTP redirect response using status 301, 302, or 303 after the request had its method changed from one that could accept a request body (like `POST`) to `GET` as is required by HTTP RFCs. Although this behavior is not specified in the section for redirects, it can be inferred by piecing together information from different sections and we have observed the behavior in other major HTTP client implementations like curl and web browsers. Because the vulnerability requires a previously trusted service to become compromised in order to have an impact on confidentiality we believe the exploitability of this vulnerability is low. Additionally, many users aren't putting sensitive data in HTTP request bodies, if this is the case then this vulnerability isn't exploitable. Both of the following conditions must be true to be affected by this vulnerability: 1. Using urllib3 and submitting sensitive information in the HTTP request body (such as form data or JSON) and 2. The origin service is compromised and starts redirecting using 301, 302, or 303 to a malicious peer or the redirected-to service becomes compromised. This issue has been addressed in versions 1.26.18 and 2.0.7 and users are advised to update to resolve this issue. Users unable to update should disable redirects for services that aren't expecting to respond with redirects with `redirects=False` and disable automatic redirects with `redirects=False` and handle 301, 302, and 303 redirects manually by stripping the HTTP request body. \"}, {\"id\": \"PYSEC-2026-141\", \"fix_versions\": [\"2.7.0\"], \"aliases\": [\"CVE-2026-44431\", \"GHSA-qccp-gfcp-xxvc\"], \"description\": \"urllib3 is an HTTP client library for Python. From 1.23 to before 2.7.0, cross-origin redirects followed from the low-level API via ProxyManager.connection_from_url().urlopen(..., assert_same_host=False) still forward these sensitive headers. This vulnerability is fixed in 2.7.0.\"}, {\"id\": \"PYSEC-2026-1999\", \"fix_versions\": [\"2.5.0\"], \"aliases\": [\"CVE-2025-50181\", \"GHSA-pq67-6m6q-mj2v\"], \"description\": \"urllib3 handles redirects and retries using the same mechanism, which is controlled by the `Retry` object. The most common way to disable redirects is at the request level, as follows:  ```python resp = urllib3.request(\\\"GET\\\", \\\"https://httpbin.org/redirect/1\\\", redirect=False) print(resp.status) # 302 ```  However, it is also possible to disable redirects, for all requests, by instantiating a `PoolManager` and specifying `retries` in a way that disable redirects:  ```python import urllib3  http = urllib3.PoolManager(retries=0)  # should raise MaxRetryError on redirect http = urllib3.PoolManager(retries=urllib3.Retry(redirect=0))  # equivalent to the above http = urllib3.PoolManager(retries=False)  # should return the first response  resp = http.request(\\\"GET\\\", \\\"https://httpbin.org/redirect/1\\\") ```  However, the `retries` parameter is currently ignored, which means all the above examples don't disable redirects.  ## Affected usages  Passing `retries` on `PoolManager` instantiation to disable redirects or restrict their number.  By default, requests and botocore users are not affected.  ## Impact  Redirects are often used to exploit SSRF vulnerabilities. An application attempting to mitigate SSRF or open redirect vulnerabilities by disabling redirects at the PoolManager level will remain vulnerable.  ## Remediation  You can remediate this vulnerability with the following steps:   * Upgrade to a patched version of urllib3. If your organization would benefit from the continued support of urllib3 1.x, please contact [sethmichaellarson@gmail.com](mailto:sethmichaellarson@gmail.com) to discuss sponsorship or contribution opportunities.  * Disable redirects at the `request()` level instead of the `PoolManager()` level.\"}, {\"id\": \"PYSEC-2026-1995\", \"fix_versions\": [\"1.26.19\", \"2.2.2\"], \"aliases\": [\"CVE-2024-37891\", \"GHSA-34jh-p97f-mpxf\"], \"description\": \"When using urllib3's proxy support with `ProxyManager`, the `Proxy-Authorization` header is only sent to the configured proxy, as expected.  However, when sending HTTP requests *without* using urllib3's proxy support, it's possible to accidentally configure the `Proxy-Authorization` header even though it won't have any effect as the request is not using a forwarding proxy or a tunneling proxy. In those cases, urllib3 doesn't treat the `Proxy-Authorization` HTTP header as one carrying authentication material and thus doesn't strip the header on cross-origin redirects.  Because this is a highly unlikely scenario, we believe the severity of this vulnerability is low for almost all users. Out of an abundance of caution urllib3 will automatically strip the `Proxy-Authorization` header during cross-origin redirects to avoid the small chance that users are doing this on accident.  Users should use urllib3's proxy support or disable automatic redirects to achieve safe processing of the `Proxy-Authorization` header, but we still decided to strip the header by default in order to further protect users who aren't using the correct approach.  ## Affected usages  We believe the number of usages affected by this advisory is low. It requires all of the following to be true to be exploited:  * Setting the `Proxy-Authorization` header without using urllib3's built-in proxy support. * Not disabling HTTP redirects. * Either not using an HTTPS origin server or for the proxy or target origin to redirect to a malicious origin.  ## Remediation  * Using the `Proxy-Authorization` header with urllib3's `ProxyManager`. * Disabling HTTP redirects using `redirects=False` when sending requests. * Not using the `Proxy-Authorization` header.\"}, {\"id\": \"PYSEC-2026-1994\", \"fix_versions\": [\"2.6.0\"], \"aliases\": [\"GHSA-2xpw-w6gg-jr37\", \"CVE-2025-66471\"], \"description\": \"### Impact  urllib3's [streaming API](https://urllib3.readthedocs.io/en/2.5.0/advanced-usage.html#streaming-and-i-o) is designed for the efficient handling of large HTTP responses by reading the content in chunks, rather than loading the entire response body into memory at once.  When streaming a compressed response, urllib3 can perform decoding or decompression based on the HTTP `Content-Encoding` header (e.g., `gzip`, `deflate`, `br`, or `zstd`). The library must read compressed data from the network and decompress it until the requested chunk size is met. Any resulting decompressed data that exceeds the requested amount is held in an internal buffer for the next read operation.  The decompression logic could cause urllib3 to fully decode a small amount of highly compressed data in a single operation. This can result in excessive resource consumption (high CPU usage and massive memory allocation for the decompressed data; CWE-409) on the client side, even if the application only requested a small chunk of data.   ### Affected usages  Applications and libraries using urllib3 version 2.5.0 and earlier to stream large compressed responses or content from untrusted sources.  `stream()`, `read(amt=256)`, `read1(amt=256)`, `read_chunked(amt=256)`, `readinto(b)` are examples of `urllib3.HTTPResponse` method calls using the affected logic unless decoding is disabled explicitly.   ### Remediation  Upgrade to at least urllib3 v2.6.0 in which the library avoids decompressing data that exceeds the requested amount.  If your environment contains a package facilitating the Brotli encoding, upgrade to at least Brotli 1.2.0 or brotlicffi 1.2.0.0 too. These versions are enforced by the `urllib3[brotli]` extra in the patched versions of urllib3.   ### Credits  The issue was reported by @Cycloctane. Supplemental information was provided by @stamparm during a security audit performed by [7ASecurity](https://7asecurity.com/) and facilitated by [OSTIF](https://ostif.org/).\"}, {\"id\": \"PYSEC-2026-1996\", \"fix_versions\": [\"2.6.3\"], \"aliases\": [\"CVE-2026-21441\", \"GHSA-38jv-5279-wg99\"], \"description\": \"### Impact  urllib3's [streaming API](https://urllib3.readthedocs.io/en/2.6.2/advanced-usage.html#streaming-and-i-o) is designed for the efficient handling of large HTTP responses by reading the content in chunks, rather than loading the entire response body into memory at once.  urllib3 can perform decoding or decompression based on the HTTP `Content-Encoding` header (e.g., `gzip`, `deflate`, `br`, or `zstd`). When using the streaming API, the library decompresses only the necessary bytes, enabling partial content consumption.  However, for HTTP redirect responses, the library would read the entire response body to drain the connection and decompress the content unnecessarily. This decompression occurred even before any read methods were called, and configured read limits did not restrict the amount of decompressed data. As a result, there was no safeguard against decompression bombs. A malicious server could exploit this to trigger excessive resource consumption on the client (high CPU usage and large memory allocations for decompressed data; CWE-409).  ### Affected usages  Applications and libraries using urllib3 version 2.6.2 and earlier to stream content from untrusted sources by setting `preload_content=False` when they do not disable redirects.   ### Remediation  Upgrade to at least urllib3 v2.6.3 in which the library does not decode content of redirect responses when `preload_content=False`.  If upgrading is not immediately possible, disable [redirects](https://urllib3.readthedocs.io/en/2.6.2/user-guide.html#retrying-requests) by setting `redirect=False` for requests to untrusted source.\"}, {\"id\": \"PYSEC-2026-4177\", \"fix_versions\": [\"2.8.0\"], \"aliases\": [\"GHSA-vxq7-64xx-v4gw\", \"CVE-2026-97689\"], \"description\": \"## Impact  urllib3's [streaming API](https://urllib3.readthedocs.io/en/2.7.0/advanced-usage.html#streaming-and-i-o) is designed for efficiently handling large HTTP responses by reading the content in chunks, rather than loading the entire response body into memory at once. When decoding a [chunked-transfer-encoded response](https://httpwg.org/specs/rfc9112.html#chunked.encoding), this API reads each chunk's size field by buffering until it sees `\\\\n` or EOF.  A malicious HTTP server can return `Transfer-Encoding: chunked` and then send a very long run of bytes without any newline, causing the streaming client to buffer that entire run before urllib3 can reject the chunk size as invalid and allocate more memory than intended.  To fix the issue, we'll reject chunk-size fields larger than 65536 bytes, as already done in the non-streaming case, which is currently handled by the Python standard library. Note that this only applies to reading the chunk-size field, not the chunk data, which is already handled correctly. Thus, there shouldn't be any impact for non-malicious servers.  ## Affected usages  Applications and libraries using urllib3 versions earlier than 2.8.0 may be affected when streaming a chunked response from untrusted sources. Specifically, this affects the [read_chunked()](https://urllib3.readthedocs.io/en/stable/reference/urllib3.response.html#urllib3.response.BaseHTTPResponse.read_chunked) and [stream()](https://urllib3.readthedocs.io/en/stable/reference/urllib3.response.html#urllib3.response.BaseHTTPResponse.stream) methods of the HTTPResponse object.  This also affects requests streaming API, which uses urllib3 under the hood.  ## Remediation  Upgrade to urllib3 version 2.8.0 or later, where chunk-size fields larger than 65536 will be rejected. If upgrading is not immediately possible, consider reading the response at once using the [read()](https://urllib3.readthedocs.io/en/stable/reference/urllib3.response.html#urllib3.response.BaseHTTPResponse.read) method.\"}]}, {\"name\": \"certifi\", \"version\": \"2026.7.22\", \"vulns\": []}], \"fixes\": []}\n\nstderr:\nFound 19 known vulnerabilities in 3 packages\n",
+          "output_truncated": false,
+          "tests_run": null,
+          "timed_out": false,
+          "undoable": false
+        }
+      },
+      "findings": [
+        {
+          "id": "71ce3bd0-fa80-4756-a391-1d3ea9f94bf2",
+          "rule": "PYSEC-2018-28",
+          "title": "\"requests\" \"2.19.1\": The Requests package before 2.20.0 for Python sends an HTTP Authorization header to an http URI upon receiving a same-hostname https-to-http redirect, which makes it easier for remote attackers to discover credentials by sniffing the network.",
+          "severity": "unknown",
+          "confidence": "review required",
+          "path": "requirements.txt",
+          "line": null,
+          "evidence": "631f17a8-922c-4ae5-b477-37a557c824c2",
+          "reproduction": {},
+          "proposed_fix": "Review compatible fixed versions: [\"2.20.0\"]",
+          "retests": []
+        },
+        {
+          "id": "c40b0080-9c99-451c-ac46-af8a084d9958",
+          "rule": "PYSEC-2023-74",
+          "title": "\"requests\" \"2.19.1\": Requests is a HTTP library. Since Requests 2.3.0, Requests has been leaking Proxy-Authorization headers to destination servers when redirected to an HTTPS endpoint. This is a product of how we use `rebuild_proxies` to reattach the `Proxy-Authorization` header to requests. For HTTP connections sent through the tunnel, the proxy will identify the header in the request itself and remove it prior to forwarding to the destination server. However when sent over HTTPS, the `Proxy-Authorization` header must be sent in the CONNECT request as the proxy has no visibility into the tunneled request. This results in Requests forwarding proxy credentials to the destination server unintentionally, allowing a malicious actor to potentially exfiltrate sensitive information. This issue has been patched in version 2.31.0.  ",
+          "severity": "unknown",
+          "confidence": "review required",
+          "path": "requirements.txt",
+          "line": null,
+          "evidence": "631f17a8-922c-4ae5-b477-37a557c824c2",
+          "reproduction": {},
+          "proposed_fix": "Review compatible fixed versions: [\"2.31.0\"]",
+          "retests": []
+        },
+        {
+          "id": "913abf70-959f-4b01-b7c8-49c579486bca",
+          "rule": "PYSEC-2026-1873",
+          "title": "\"requests\" \"2.19.1\": When using a `requests.Session`, if the first request to a given origin is made with `verify=False`, TLS certificate verification may remain disabled for all subsequent requests to that origin, even if `verify=True` is explicitly specified later.  This occurs because the underlying connection is reused from the session's connection pool, causing the initial TLS verification setting to persist for the lifetime of the pooled connection. As a result, applications may unintentionally send requests without certificate verification, leading to potential man-in-the-middle attacks and compromised confidentiality or integrity.  This behavior affects versions of `requests` prior to 2.32.0.",
+          "severity": "unknown",
+          "confidence": "review required",
+          "path": "requirements.txt",
+          "line": null,
+          "evidence": "631f17a8-922c-4ae5-b477-37a557c824c2",
+          "reproduction": {},
+          "proposed_fix": "Review compatible fixed versions: [\"2.32.0\"]",
+          "retests": []
+        },
+        {
+          "id": "9e19a8e0-cbae-48b3-9256-c8647b75a864",
+          "rule": "PYSEC-2026-1872",
+          "title": "\"requests\" \"2.19.1\": ### Impact  Due to a URL parsing issue, Requests releases prior to 2.32.4 may leak .netrc credentials to third parties for specific maliciously-crafted URLs.  ### Workarounds For older versions of Requests, use of the .netrc file can be disabled with `trust_env=False` on your Requests Session ([docs](https://requests.readthedocs.io/en/latest/api/#requests.Session.trust_env)).  ### References https://github.com/psf/requests/pull/6965 https://seclists.org/fulldisclosure/2025/Jun/2",
+          "severity": "unknown",
+          "confidence": "review required",
+          "path": "requirements.txt",
+          "line": null,
+          "evidence": "631f17a8-922c-4ae5-b477-37a557c824c2",
+          "reproduction": {},
+          "proposed_fix": "Review compatible fixed versions: [\"2.32.4\"]",
+          "retests": []
+        },
+        {
+          "id": "56aab11a-abad-47cd-8878-4fe7c1775efa",
+          "rule": "PYSEC-2026-2275",
+          "title": "\"requests\" \"2.19.1\": Requests is a HTTP library. Prior to version 2.33.0, the `requests.utils.extract_zipped_paths()` utility function uses a predictable filename when extracting files from zip archives into the system temporary directory. If the target file already exists, it is reused without validation. A local attacker with write access to the temp directory could pre-create a malicious file that would be loaded in place of the legitimate one. Standard usage of the Requests library is not affected by this vulnerability. Only applications that call `extract_zipped_paths()` directly are impacted. Starting in version 2.33.0, the library extracts files to a non-deterministic location. If developers are unable to upgrade, they can set `TMPDIR` in their environment to a directory with restricted write access.",
+          "severity": "unknown",
+          "confidence": "review required",
+          "path": "requirements.txt",
+          "line": null,
+          "evidence": "631f17a8-922c-4ae5-b477-37a557c824c2",
+          "reproduction": {},
+          "proposed_fix": "Review compatible fixed versions: [\"2.33.0\"]",
+          "retests": []
+        },
+        {
+          "id": "561c81d0-9bba-465b-85e0-59e305775f2c",
+          "rule": "PYSEC-2024-60",
+          "title": "\"idna\" \"2.7\": A vulnerability was identified in the kjd/idna library, specifically within the `idna.encode()` function, affecting version 3.6. The issue arises from the function's handling of crafted input strings, which can lead to quadratic complexity and consequently, a denial of service condition. This vulnerability is triggered by a crafted input that causes the `idna.encode()` function to process the input with considerable computational load, significantly increasing the processing time in a quadratic manner relative to the input size.",
+          "severity": "unknown",
+          "confidence": "review required",
+          "path": "requirements.txt",
+          "line": null,
+          "evidence": "631f17a8-922c-4ae5-b477-37a557c824c2",
+          "reproduction": {},
+          "proposed_fix": "Review compatible fixed versions: [\"3.7\"]",
+          "retests": []
+        },
+        {
+          "id": "989a211c-3310-4618-aae6-6884fc3791c0",
+          "rule": "PYSEC-2026-215",
+          "title": "\"idna\" \"2.7\": Internationalized Domain Names in Applications (IDNA) for Python provides support for Internationalized Domain Names in Applications (IDNA) and Unicode IDNA Compatibility Processing. In versions prior to 3.15, payloads such as `\"\\u0660\" * N` or `\"\\u30fb\" * N + \"\\u6f22\"` utilize the `valid_contexto` function prior to length rejection, and for high values of `N` will take a long time to process. This is the same issue as CVE-2024-3651, however the original remediation in 2024 was not a complete fix. A specially crafted argument to the `idna.encode()` function could consume significant resources. This may lead to a denial-of-service. Starting in version 3.14, the function rejects long inputs as soon as practicable prior to any further processing to minimize resource consumption. In version 3.15, this approach was extended to lesser used alternate functions (i.e. per-label conversions and codec support). A workaround is available. Domain names cannot exceed 253 characters in length. If this length limit is enforced prior to passing the domain to the `idna.encode()` function, it should no longer consume significant resources. This is triggered by arbitrarily large inputs that would not occur in normal usage, but may be passed to the library assuming there is no preliminary input validation by the higher-level application.",
+          "severity": "unknown",
+          "confidence": "review required",
+          "path": "requirements.txt",
+          "line": null,
+          "evidence": "631f17a8-922c-4ae5-b477-37a557c824c2",
+          "reproduction": {},
+          "proposed_fix": "Review compatible fixed versions: [\"3.15\"]",
+          "retests": []
+        },
+        {
+          "id": "030abb79-103d-481c-a463-b99e5146675b",
+          "rule": "PYSEC-2019-133",
+          "title": "\"urllib3\" \"1.23\": The urllib3 library before 1.24.2 for Python mishandles certain cases where the desired set of CA certificates is different from the OS store of CA certificates, which results in SSL connections succeeding in situations where a verification failure is the correct outcome. This is related to use of the ssl_context, ca_certs, or ca_certs_dir argument.",
+          "severity": "unknown",
+          "confidence": "review required",
+          "path": "requirements.txt",
+          "line": null,
+          "evidence": "631f17a8-922c-4ae5-b477-37a557c824c2",
+          "reproduction": {},
+          "proposed_fix": "Review compatible fixed versions: [\"1.24.2\"]",
+          "retests": []
+        },
+        {
+          "id": "8c6238b5-bee4-462d-a7dd-62d9868f3d48",
+          "rule": "PYSEC-2019-132",
+          "title": "\"urllib3\" \"1.23\": In the urllib3 library through 1.24.1 for Python, CRLF injection is possible if the attacker controls the request parameter.",
+          "severity": "unknown",
+          "confidence": "review required",
+          "path": "requirements.txt",
+          "line": null,
+          "evidence": "631f17a8-922c-4ae5-b477-37a557c824c2",
+          "reproduction": {},
+          "proposed_fix": "Review compatible fixed versions: [\"1.24.3\"]",
+          "retests": []
+        },
+        {
+          "id": "da84eec9-dd13-4446-a243-41d17be98bc6",
+          "rule": "PYSEC-2020-148",
+          "title": "\"urllib3\" \"1.23\": urllib3 before 1.25.9 allows CRLF injection if the attacker controls the HTTP request method, as demonstrated by inserting CR and LF control characters in the first argument of putrequest(). NOTE: this is similar to CVE-2020-26116.",
+          "severity": "unknown",
+          "confidence": "review required",
+          "path": "requirements.txt",
+          "line": null,
+          "evidence": "631f17a8-922c-4ae5-b477-37a557c824c2",
+          "reproduction": {},
+          "proposed_fix": "Review compatible fixed versions: [\"1.25.9\"]",
+          "retests": []
+        },
+        {
+          "id": "20c485d5-4c22-42f9-b2e2-0323f5919cf4",
+          "rule": "PYSEC-2023-192",
+          "title": "\"urllib3\" \"1.23\": urllib3 is a user-friendly HTTP client library for Python. urllib3 doesn't treat the `Cookie` HTTP header special or provide any helpers for managing cookies over HTTP, that is the responsibility of the user. However, it is possible for a user to specify a `Cookie` header and unknowingly leak information via HTTP redirects to a different origin if that user doesn't disable redirects explicitly. This issue has been patched in urllib3 version 1.26.17 or 2.0.5.",
+          "severity": "unknown",
+          "confidence": "review required",
+          "path": "requirements.txt",
+          "line": null,
+          "evidence": "631f17a8-922c-4ae5-b477-37a557c824c2",
+          "reproduction": {},
+          "proposed_fix": "Review compatible fixed versions: [\"1.26.17\",\"2.0.6\"]",
+          "retests": []
+        },
+        {
+          "id": "a6c5623c-6d97-449a-aeae-ab9b949b4f25",
+          "rule": "PYSEC-2023-207",
+          "title": "\"urllib3\" \"1.23\": urllib3 before 1.24.2 does not remove the authorization HTTP header when following a cross-origin redirect (i.e., a redirect that differs in host, port, or scheme). This can allow for credentials in the authorization header to be exposed to unintended hosts or transmitted in cleartext. NOTE: this issue exists because of an incomplete fix for CVE-2018-20060 (which was case-sensitive).",
+          "severity": "unknown",
+          "confidence": "review required",
+          "path": "requirements.txt",
+          "line": null,
+          "evidence": "631f17a8-922c-4ae5-b477-37a557c824c2",
+          "reproduction": {},
+          "proposed_fix": "Review compatible fixed versions: [\"1.24.2\"]",
+          "retests": []
+        },
+        {
+          "id": "c7673a4d-d761-4a36-aca1-41979ce38650",
+          "rule": "PYSEC-2023-212",
+          "title": "\"urllib3\" \"1.23\": urllib3 is a user-friendly HTTP client library for Python. urllib3 previously wouldn't remove the HTTP request body when an HTTP redirect response using status 301, 302, or 303 after the request had its method changed from one that could accept a request body (like `POST`) to `GET` as is required by HTTP RFCs. Although this behavior is not specified in the section for redirects, it can be inferred by piecing together information from different sections and we have observed the behavior in other major HTTP client implementations like curl and web browsers. Because the vulnerability requires a previously trusted service to become compromised in order to have an impact on confidentiality we believe the exploitability of this vulnerability is low. Additionally, many users aren't putting sensitive data in HTTP request bodies, if this is the case then this vulnerability isn't exploitable. Both of the following conditions must be true to be affected by this vulnerability: 1. Using urllib3 and submitting sensitive information in the HTTP request body (such as form data or JSON) and 2. The origin service is compromised and starts redirecting using 301, 302, or 303 to a malicious peer or the redirected-to service becomes compromised. This issue has been addressed in versions 1.26.18 and 2.0.7 and users are advised to update to resolve this issue. Users unable to update should disable redirects for services that aren't expecting to respond with redirects with `redirects=False` and disable automatic redirects with `redirects=False` and handle 301, 302, and 303 redirects manually by stripping the HTTP request body. ",
+          "severity": "unknown",
+          "confidence": "review required",
+          "path": "requirements.txt",
+          "line": null,
+          "evidence": "631f17a8-922c-4ae5-b477-37a557c824c2",
+          "reproduction": {},
+          "proposed_fix": "Review compatible fixed versions: [\"1.26.18\",\"2.0.7\"]",
+          "retests": []
+        },
+        {
+          "id": "4d823909-bb84-4b94-984b-7207eb31a3b8",
+          "rule": "PYSEC-2026-141",
+          "title": "\"urllib3\" \"1.23\": urllib3 is an HTTP client library for Python. From 1.23 to before 2.7.0, cross-origin redirects followed from the low-level API via ProxyManager.connection_from_url().urlopen(..., assert_same_host=False) still forward these sensitive headers. This vulnerability is fixed in 2.7.0.",
+          "severity": "unknown",
+          "confidence": "review required",
+          "path": "requirements.txt",
+          "line": null,
+          "evidence": "631f17a8-922c-4ae5-b477-37a557c824c2",
+          "reproduction": {},
+          "proposed_fix": "Review compatible fixed versions: [\"2.7.0\"]",
+          "retests": []
+        },
+        {
+          "id": "c8e3ba3f-62aa-497f-a96d-c05e9135286d",
+          "rule": "PYSEC-2026-1999",
+          "title": "\"urllib3\" \"1.23\": urllib3 handles redirects and retries using the same mechanism, which is controlled by the `Retry` object. The most common way to disable redirects is at the request level, as follows:  ```python resp = urllib3.request(\"GET\", \"https://httpbin.org/redirect/1\", redirect=False) print(resp.status) # 302 ```  However, it is also possible to disable redirects, for all requests, by instantiating a `PoolManager` and specifying `retries` in a way that disable redirects:  ```python import urllib3  http = urllib3.PoolManager(retries=0)  # should raise MaxRetryError on redirect http = urllib3.PoolManager(retries=urllib3.Retry(redirect=0))  # equivalent to the above http = urllib3.PoolManager(retries=False)  # should return the first response  resp = http.request(\"GET\", \"https://httpbin.org/redirect/1\") ```  However, the `retries` parameter is currently ignored, which means all the above examples don't disable redirects.  ## Affected usages  Passing `retries` on `PoolManager` instantiation to disable redirects or restrict their number.  By default, requests and botocore users are not affected.  ## Impact  Redirects are often used to exploit SSRF vulnerabilities. An application attempting to mitigate SSRF or open redirect vulnerabilities by disabling redirects at the PoolManager level will remain vulnerable.  ## Remediation  You can remediate this vulnerability with the following steps:   * Upgrade to a patched version of urllib3. If your organization would benefit from the continued support of urllib3 1.x, please contact [sethmichaellarson@gmail.com](mailto:sethmichaellarson@gmail.com) to discuss sponsorship or contribution opportunities.  * Disable redirects at the `request()` level instead of the `PoolManager()` level.",
+          "severity": "unknown",
+          "confidence": "review required",
+          "path": "requirements.txt",
+          "line": null,
+          "evidence": "631f17a8-922c-4ae5-b477-37a557c824c2",
+          "reproduction": {},
+          "proposed_fix": "Review compatible fixed versions: [\"2.5.0\"]",
+          "retests": []
+        },
+        {
+          "id": "3c1aed41-7f29-4c63-9054-ff004d9d90c7",
+          "rule": "PYSEC-2026-1995",
+          "title": "\"urllib3\" \"1.23\": When using urllib3's proxy support with `ProxyManager`, the `Proxy-Authorization` header is only sent to the configured proxy, as expected.  However, when sending HTTP requests *without* using urllib3's proxy support, it's possible to accidentally configure the `Proxy-Authorization` header even though it won't have any effect as the request is not using a forwarding proxy or a tunneling proxy. In those cases, urllib3 doesn't treat the `Proxy-Authorization` HTTP header as one carrying authentication material and thus doesn't strip the header on cross-origin redirects.  Because this is a highly unlikely scenario, we believe the severity of this vulnerability is low for almost all users. Out of an abundance of caution urllib3 will automatically strip the `Proxy-Authorization` header during cross-origin redirects to avoid the small chance that users are doing this on accident.  Users should use urllib3's proxy support or disable automatic redirects to achieve safe processing of the `Proxy-Authorization` header, but we still decided to strip the header by default in order to further protect users who aren't using the correct approach.  ## Affected usages  We believe the number of usages affected by this advisory is low. It requires all of the following to be true to be exploited:  * Setting the `Proxy-Authorization` header without using urllib3's built-in proxy support. * Not disabling HTTP redirects. * Either not using an HTTPS origin server or for the proxy or target origin to redirect to a malicious origin.  ## Remediation  * Using the `Proxy-Authorization` header with urllib3's `ProxyManager`. * Disabling HTTP redirects using `redirects=False` when sending requests. * Not using the `Proxy-Authorization` header.",
+          "severity": "unknown",
+          "confidence": "review required",
+          "path": "requirements.txt",
+          "line": null,
+          "evidence": "631f17a8-922c-4ae5-b477-37a557c824c2",
+          "reproduction": {},
+          "proposed_fix": "Review compatible fixed versions: [\"1.26.19\",\"2.2.2\"]",
+          "retests": []
+        },
+        {
+          "id": "26cf02fe-31d7-4b64-ba7a-462db781cc22",
+          "rule": "PYSEC-2026-1994",
+          "title": "\"urllib3\" \"1.23\": ### Impact  urllib3's [streaming API](https://urllib3.readthedocs.io/en/2.5.0/advanced-usage.html#streaming-and-i-o) is designed for the efficient handling of large HTTP responses by reading the content in chunks, rather than loading the entire response body into memory at once.  When streaming a compressed response, urllib3 can perform decoding or decompression based on the HTTP `Content-Encoding` header (e.g., `gzip`, `deflate`, `br`, or `zstd`). The library must read compressed data from the network and decompress it until the requested chunk size is met. Any resulting decompressed data that exceeds the requested amount is held in an internal buffer for the next read operation.  The decompression logic could cause urllib3 to fully decode a small amount of highly compressed data in a single operation. This can result in excessive resource consumption (high CPU usage and massive memory allocation for the decompressed data; CWE-409) on the client side, even if the application only requested a small chunk of data.   ### Affected usages  Applications and libraries using urllib3 version 2.5.0 and earlier to stream large compressed responses or content from untrusted sources.  `stream()`, `read(amt=256)`, `read1(amt=256)`, `read_chunked(amt=256)`, `readinto(b)` are examples of `urllib3.HTTPResponse` method calls using the affected logic unless decoding is disabled explicitly.   ### Remediation  Upgrade to at least urllib3 v2.6.0 in which the library avoids decompressing data that exceeds the requested amount.  If your environment contains a package facilitating the Brotli encoding, upgrade to at least Brotli 1.2.0 or brotlicffi 1.2.0.0 too. These versions are enforced by the `urllib3[brotli]` extra in the patched versions of urllib3.   ### Credits  The issue was reported by @Cycloctane. Supplemental information was provided by @stamparm during a security audit performed by [7ASecurity](https://7asecurity.com/) and facilitated by [OSTIF](https://ostif.org/).",
+          "severity": "unknown",
+          "confidence": "review required",
+          "path": "requirements.txt",
+          "line": null,
+          "evidence": "631f17a8-922c-4ae5-b477-37a557c824c2",
+          "reproduction": {},
+          "proposed_fix": "Review compatible fixed versions: [\"2.6.0\"]",
+          "retests": []
+        },
+        {
+          "id": "414b3801-a5c4-4bbc-a2ad-d2c21a1e888e",
+          "rule": "PYSEC-2026-1996",
+          "title": "\"urllib3\" \"1.23\": ### Impact  urllib3's [streaming API](https://urllib3.readthedocs.io/en/2.6.2/advanced-usage.html#streaming-and-i-o) is designed for the efficient handling of large HTTP responses by reading the content in chunks, rather than loading the entire response body into memory at once.  urllib3 can perform decoding or decompression based on the HTTP `Content-Encoding` header (e.g., `gzip`, `deflate`, `br`, or `zstd`). When using the streaming API, the library decompresses only the necessary bytes, enabling partial content consumption.  However, for HTTP redirect responses, the library would read the entire response body to drain the connection and decompress the content unnecessarily. This decompression occurred even before any read methods were called, and configured read limits did not restrict the amount of decompressed data. As a result, there was no safeguard against decompression bombs. A malicious server could exploit this to trigger excessive resource consumption on the client (high CPU usage and large memory allocations for decompressed data; CWE-409).  ### Affected usages  Applications and libraries using urllib3 version 2.6.2 and earlier to stream content from untrusted sources by setting `preload_content=False` when they do not disable redirects.   ### Remediation  Upgrade to at least urllib3 v2.6.3 in which the library does not decode content of redirect responses when `preload_content=False`.  If upgrading is not immediately possible, disable [redirects](https://urllib3.readthedocs.io/en/2.6.2/user-guide.html#retrying-requests) by setting `redirect=False` for requests to untrusted source.",
+          "severity": "unknown",
+          "confidence": "review required",
+          "path": "requirements.txt",
+          "line": null,
+          "evidence": "631f17a8-922c-4ae5-b477-37a557c824c2",
+          "reproduction": {},
+          "proposed_fix": "Review compatible fixed versions: [\"2.6.3\"]",
+          "retests": []
+        },
+        {
+          "id": "bc53a852-3c5d-495a-a99b-b75d3b06497b",
+          "rule": "PYSEC-2026-4177",
+          "title": "\"urllib3\" \"1.23\": ## Impact  urllib3's [streaming API](https://urllib3.readthedocs.io/en/2.7.0/advanced-usage.html#streaming-and-i-o) is designed for efficiently handling large HTTP responses by reading the content in chunks, rather than loading the entire response body into memory at once. When decoding a [chunked-transfer-encoded response](https://httpwg.org/specs/rfc9112.html#chunked.encoding), this API reads each chunk's size field by buffering until it sees `\\n` or EOF.  A malicious HTTP server can return `Transfer-Encoding: chunked` and then send a very long run of bytes without any newline, causing the streaming client to buffer that entire run before urllib3 can reject the chunk size as invalid and allocate more memory than intended.  To fix the issue, we'll reject chunk-size fields larger than 65536 bytes, as already done in the non-streaming case, which is currently handled by the Python standard library. Note that this only applies to reading the chunk-size field, not the chunk data, which is already handled correctly. Thus, there shouldn't be any impact for non-malicious servers.  ## Affected usages  Applications and libraries using urllib3 versions earlier than 2.8.0 may be affected when streaming a chunked response from untrusted sources. Specifically, this affects the [read_chunked()](https://urllib3.readthedocs.io/en/stable/reference/urllib3.response.html#urllib3.response.BaseHTTPResponse.read_chunked) and [stream()](https://urllib3.readthedocs.io/en/stable/reference/urllib3.response.html#urllib3.response.BaseHTTPResponse.stream) methods of the HTTPResponse object.  This also affects requests streaming API, which uses urllib3 under the hood.  ## Remediation  Upgrade to urllib3 version 2.8.0 or later, where chunk-size fields larger than 65536 will be rejected. If upgrading is not immediately possible, consider reading the response at once using the [read()](https://urllib3.readthedocs.io/en/stable/reference/urllib3.response.html#urllib3.response.BaseHTTPResponse.read) method.",
+          "severity": "unknown",
+          "confidence": "review required",
+          "path": "requirements.txt",
+          "line": null,
+          "evidence": "631f17a8-922c-4ae5-b477-37a557c824c2",
+          "reproduction": {},
+          "proposed_fix": "Review compatible fixed versions: [\"2.8.0\"]",
+          "retests": []
+        }
+      ]
+    },
+    {
+      "id": "b82d21f1-12a9-47cf-9d5a-184f2619f4bc",
+      "pack": "npm-audit",
+      "version": 1,
+      "input": {},
+      "status": "findings",
+      "error": null,
+      "evidence": {
+        "command": [
+          "npm",
+          "audit",
+          "--json"
+        ],
+        "terminal": {
+          "cancelled": false,
+          "elapsed_ms": 946,
+          "error": null,
+          "exit_code": 1,
+          "id": "1f8b2906-8b35-4eed-8441-bc820f30d2ff",
+          "output": "stdout:\n{\n  \"auditReportVersion\": 2,\n  \"vulnerabilities\": {\n    \"minimist\": {\n      \"name\": \"minimist\",\n      \"severity\": \"critical\",\n      \"isDirect\": true,\n      \"via\": [\n        {\n          \"source\": 1096465,\n          \"name\": \"minimist\",\n          \"dependency\": \"minimist\",\n          \"title\": \"Prototype Pollution in minimist\",\n          \"url\": \"https://github.com/advisories/GHSA-vh95-rmgr-6w4m\",\n          \"severity\": \"moderate\",\n          \"cwe\": [\n            \"CWE-1321\"\n          ],\n          \"cvss\": {\n            \"score\": 5.6,\n            \"vectorString\": \"CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:L/I:L/A:L\"\n          },\n          \"range\": \">=1.0.0 <1.2.3\"\n        },\n        {\n          \"source\": 1097678,\n          \"name\": \"minimist\",\n          \"dependency\": \"minimist\",\n          \"title\": \"Prototype Pollution in minimist\",\n          \"url\": \"https://github.com/advisories/GHSA-xvch-5gv4-984h\",\n          \"severity\": \"critical\",\n          \"cwe\": [\n            \"CWE-1321\"\n          ],\n          \"cvss\": {\n            \"score\": 9.8,\n            \"vectorString\": \"CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H\"\n          },\n          \"range\": \">=1.0.0 <1.2.6\"\n        }\n      ],\n      \"effects\": [],\n      \"range\": \"1.0.0 - 1.2.5\",\n      \"nodes\": [\n        \"node_modules/minimist\"\n      ],\n      \"fixAvailable\": {\n        \"name\": \"minimist\",\n        \"version\": \"1.2.8\",\n        \"isSemVerMajor\": false\n      }\n    }\n  },\n  \"metadata\": {\n    \"vulnerabilities\": {\n      \"info\": 0,\n      \"low\": 0,\n      \"moderate\": 0,\n      \"high\": 0,\n      \"critical\": 1,\n      \"total\": 1\n    },\n    \"dependencies\": {\n      \"prod\": 2,\n      \"dev\": 0,\n      \"optional\": 0,\n      \"peer\": 0,\n      \"peerOptional\": 0,\n      \"total\": 1\n    }\n  }\n}\n\nstderr:\n",
+          "output_truncated": false,
+          "tests_run": null,
+          "timed_out": false,
+          "undoable": false
+        }
+      },
+      "findings": [
+        {
+          "id": "c12787d9-d3b3-43c7-88f1-6775ef59b683",
+          "rule": "minimist",
+          "title": "Dependency advisory: minimist",
+          "severity": "critical",
+          "confidence": "review required",
+          "path": "package-lock.json",
+          "line": null,
+          "evidence": "b82d21f1-12a9-47cf-9d5a-184f2619f4bc",
+          "reproduction": {},
+          "proposed_fix": "Review fix availability and breaking changes: {\"isSemVerMajor\":false,\"name\":\"minimist\",\"version\":\"1.2.8\"}",
+          "retests": []
+        }
+      ]
+    },
+    {
+      "id": "2920e05d-0b39-4d10-9f9e-2e462222a7d1",
+      "pack": "npm-audit",
+      "version": 1,
+      "input": {},
+      "status": "passed",
+      "error": null,
+      "evidence": {
+        "command": [
+          "npm",
+          "audit",
+          "--json"
+        ],
+        "terminal": {
+          "cancelled": false,
+          "elapsed_ms": 813,
+          "error": null,
+          "exit_code": 0,
+          "id": "e6981fa8-e282-4b44-9a6c-f5360c751e6e",
+          "output": "stdout:\n{\n  \"auditReportVersion\": 2,\n  \"vulnerabilities\": {},\n  \"metadata\": {\n    \"vulnerabilities\": {\n      \"info\": 0,\n      \"low\": 0,\n      \"moderate\": 0,\n      \"high\": 0,\n      \"critical\": 0,\n      \"total\": 0\n    },\n    \"dependencies\": {\n      \"prod\": 2,\n      \"dev\": 0,\n      \"optional\": 0,\n      \"peer\": 0,\n      \"peerOptional\": 0,\n      \"total\": 1\n    }\n  }\n}\n\nstderr:\n",
+          "output_truncated": false,
+          "tests_run": null,
+          "timed_out": false,
+          "undoable": false
+        }
+      },
+      "findings": []
+    }
+  ]
+}
