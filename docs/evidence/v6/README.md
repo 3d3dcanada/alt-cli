@@ -105,6 +105,11 @@ are retained; omitted generated files are not rewritten as measured source.
 
 ## Packages and identity
 
+The [published beta verification](published-beta/README.md) records the completed
+clean-tag release, successful main/tag CI, downloaded-asset signatures and a fresh
+consumer installation. These post-publication receipts are separate from the
+earlier local packaging snapshots below.
+
 The local package gate progressed through seven packaging snapshots:
 
 | Snapshot | Gate | Archive SHA-256 |
