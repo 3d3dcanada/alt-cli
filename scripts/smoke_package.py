@@ -99,20 +99,23 @@ with tempfile.TemporaryDirectory(prefix='alt-installed-') as temp:
     assert (root/'restored-state').is_dir()
     # A changed documentation payload must reject the entire update before replacing Alt.
     untouched = binary.read_bytes()
+    def reject_corrupt_package():
+        # A user's Python optimization setting must never bypass installer checks.
+        for optimization in ['0', '1', '2']:
+            rejected = subprocess.run(installer, env={**env, 'PYTHONOPTIMIZE': optimization}, capture_output=True)
+            assert rejected.returncode != 0, ('Corrupt package installed', optimization)
+            assert binary.read_bytes() == untouched
     documentation = package/'README.md'
     original = documentation.read_bytes()
     documentation.write_bytes(original+b'\nTAMPERED\n')
-    rejected = subprocess.run(installer, env=env, capture_output=True)
-    assert rejected.returncode != 0 and binary.read_bytes() == untouched
+    reject_corrupt_package()
     documentation.write_bytes(original)
     unexpected = package/'docs/unmanifested.txt'
     unexpected.write_text('Unlisted files must not be installed.\n')
-    assert subprocess.run(installer, env=env, capture_output=True).returncode != 0
-    assert binary.read_bytes() == untouched
+    reject_corrupt_package()
     unexpected.unlink()
     unexpected.symlink_to(documentation)
-    assert subprocess.run(installer, env=env, capture_output=True).returncode != 0
-    assert binary.read_bytes() == untouched
+    reject_corrupt_package()
     unexpected.unlink()
     if a.verify_key:
         manifest = package/'CONTENTS.json'
@@ -141,4 +144,4 @@ with tempfile.TemporaryDirectory(prefix='alt-installed-') as temp:
         invoke('--access', 'trusted', 'task', 'verify', '--run')
         assert json.loads(invoke('task', 'status').stdout)['verification']['complete']
     invoke('hardware')
-    print('PASS: archive, every-file integrity, isolated repeated install, failed update preserves binary, state backup/restore, docs/licenses'+('; actual previous-version upgrade/rollback/re-upgrade' if prior_hash else '')+('; signature/tamper rejection' if a.verify_key else '')+('; installed TUI' if a.tui else ''))
+    print('PASS: archive, every-file integrity including PYTHONOPTIMIZE=0/1/2, isolated repeated install, failed update preserves binary, state backup/restore, docs/licenses'+('; actual previous-version upgrade/rollback/re-upgrade' if prior_hash else '')+('; signature/tamper rejection' if a.verify_key else '')+('; installed TUI' if a.tui else ''))
