@@ -567,7 +567,11 @@ impl App {
         self.launch_io("Reading saved conversations", move || {
             let rows = Store::open(&root)?.summaries(&query, archived)?;
             Ok(JobResult::Sessions(query, archived, rows))
-        })
+        })?;
+        if let Some(job) = &mut self.job {
+            job.replaceable = true;
+        }
+        Ok(())
     }
     pub fn add_message(&mut self, role: &'static str, text: impl Into<String>) {
         self.messages.push_back(Message {
@@ -2113,6 +2117,42 @@ pub async fn run(
 
 #[cfg(test)]
 mod recovery_tests {
+    #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+    async fn pinning_a_requirement_replaces_a_locked_context_refresh() {
+        use super::*;
+        let data = tempfile::tempdir().unwrap();
+        let cwd = tempfile::tempdir().unwrap();
+        let mut app = App::load(data.path().into(), "goose".into(), None).unwrap();
+        app.preferences.project = cwd.path().into();
+        app.composer = Editor::new("Keep my draft");
+        let locked = crate::project::Project::open(data.path(), cwd.path()).unwrap();
+        app.set_page(Page::Context);
+        let refresh_cancel = app.job.as_ref().unwrap().cancel.clone();
+        app.workbench_action("pin-requirement").unwrap();
+        app.submit_input(
+            InputAction::PinRequirement,
+            "Preserve the public API".into(),
+        )
+        .expect("Pinning a requirement must supersede a disposable context refresh");
+        assert!(refresh_cancel.load(Ordering::Relaxed));
+        drop(locked);
+        while app.job.is_some() {
+            let event = tokio::time::timeout(Duration::from_secs(5), app.job_rx.recv())
+                .await
+                .unwrap()
+                .unwrap();
+            app.job_event(event).unwrap();
+        }
+        assert!(app.workbench.context.contains("Preserve the public API"));
+        assert_eq!(app.composer.text, "Keep my draft");
+        let reopened = crate::project::Project::open(data.path(), cwd.path()).unwrap();
+        assert!(
+            serde_json::to_string(&reopened.pinned().unwrap())
+                .unwrap()
+                .contains("Preserve the public API")
+        );
+    }
+
     #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
     async fn task_check_choices_replace_a_locked_status_refresh() {
         use super::*;

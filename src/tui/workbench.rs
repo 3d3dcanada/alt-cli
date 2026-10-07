@@ -128,6 +128,9 @@ impl App {
                         .await??,
                     ))
                 })?;
+                if let Some(job) = &mut self.job {
+                    job.replaceable = true;
+                }
             }
             "job-new" => {
                 ensure!(
@@ -199,6 +202,9 @@ impl App {
             "context-refresh" => {
                 let brief = self.brief.clone();
                 self.launch_project("Reading project context", move |p, task| Ok(JobResult::Context(format!("User project brief:\n{brief}\n\nPinned requirements:\n{}\n\nLast assembled model memory:\n{}", serde_json::to_string_pretty(&p.pinned()?)?, serde_json::to_string_pretty(&p.context_view(&task)?)?))))?;
+                if let Some(job) = &mut self.job {
+                    job.replaceable = true;
+                }
             }
             "pin-requirement" => self.dialog = Some(Dialog::Input {
                 title: "Pin an important requirement".into(),
