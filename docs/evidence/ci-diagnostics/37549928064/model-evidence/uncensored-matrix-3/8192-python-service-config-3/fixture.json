@@ -1,0 +1,15 @@
+{
+  "oracle_version": 3,
+  "goal": "Implement endpoint(environ) for a local service. Read PORT (default 8080) as an integer 1..65535 and HOST (default 127.0.0.1). Return http://host:port/health, enclosing IPv6 hosts in brackets. Invalid port raises ValueError.",
+  "prompt": "Implement endpoint(environ) for a local service. Read PORT (default 8080) as an integer 1..65535 and HOST (default 127.0.0.1). Return http://host:port/health, enclosing IPv6 hosts in brackets. Invalid port raises ValueError. Inspect relevant files, save a brief plan, use native tools to implement the change, and test it. Report what you actually ran and any remaining uncertainty. Preserve existing public interfaces. Keep your explanation brief.",
+  "original_files": {
+    "solution.py": "def endpoint(environ):\n return \"http://localhost\"\n"
+  },
+  "oracle_command": [
+    "python3",
+    "/home/runner/work/_temp/campaign/8192-python-service-config-3/independent/check.py"
+  ],
+  "oracle_sha256_before": {
+    "check.py": "b2d50afb6774c18db7d888d21a12293e2fa9e09646362850262706c5eda2fa7f"
+  }
+}
