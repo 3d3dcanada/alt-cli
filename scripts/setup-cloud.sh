@@ -60,6 +60,8 @@ python3 scripts/smoke_tui.py
 python3 scripts/smoke_task_tui.py
 python3 scripts/smoke_workbench_tui.py
 python3 scripts/smoke_verification_tui.py
+python3 scripts/smoke_practice_tui.py
 python3 scripts/acceptance_projects.py
 python3 scripts/smoke_goose.py --goose /workspace/.alt-tools/goose
 python3 scripts/smoke_goose.py --goose /workspace/.alt-tools/goose --provider ollama
+python3 scripts/smoke_stream_recovery.py --engine /workspace/.alt-tools/goose --rounds 2 --output /workspace/.alt-tools/stream-recovery.json

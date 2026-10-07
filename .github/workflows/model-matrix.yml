@@ -1,0 +1,97 @@
+name: Complete uncensored model matrix
+on:
+  workflow_dispatch:
+  push:
+    tags: ['eval-*']
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - name: Prepare and validate the candidate
+        run: |
+          sudo mkdir -p /workspace
+          sudo chown "$USER" /workspace
+          ln -s "$GITHUB_WORKSPACE" /workspace/alt-cli
+          bash scripts/setup-cloud.sh
+          bash scripts/build-portable.sh
+          mkdir candidate
+          cp target/portable-glibc231/release/alt candidate/alt
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: frozen-model-candidate
+          path: candidate/alt
+  evaluate:
+    needs: build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [0,1,2,3,4,5,6,7]
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0
+        with:
+          name: frozen-model-candidate
+          path: candidate
+      - name: Acquire exact uncensored weights and pinned runtimes
+        run: |
+          chmod +x candidate/alt
+          candidate/alt --data-dir "$RUNNER_TEMP/bootstrap" install engine
+          candidate/alt --data-dir "$RUNNER_TEMP/bootstrap" install runtime
+          python3 - <<'PY'
+          import hashlib,os,urllib.request
+          from pathlib import Path
+          destination=Path(os.environ['RUNNER_TEMP'])/'Spark-X2.5-1.7B-Abliterated-Q4_K_M.gguf'
+          url='https://huggingface.co/darioooooo0o/Spark-X2.5-1.7B-Abliterated-GGUF/resolve/0193e8f9b55c7f8e9c58799694696a17d8f6c6c5/Spark-X2.5-1.7B-Abliterated-Q4_K_M.gguf'
+          h=hashlib.sha256()
+          with urllib.request.urlopen(url,timeout=120) as response,destination.open('wb') as out:
+            while chunk:=response.read(8*1024*1024): out.write(chunk);h.update(chunk)
+          assert h.hexdigest()=='1e4d920aaff1248b68751e49b16dae6104c5f4d3924a86a290e24b31db08113c'
+          PY
+      - name: Run all assigned attempts and retain failed outcomes
+        env:
+          SHARD: ${{ matrix.shard }}
+        run: |
+          python3 scripts/ci_model_shard.py --binary candidate/alt --root "$RUNNER_TEMP" --shard "$SHARD" --output evidence
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: uncensored-matrix-${{ matrix.shard }}
+          path: evidence/
+  report:
+    permissions:
+      contents: write
+    needs: evaluate
+    if: always()
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0
+        with:
+          pattern: uncensored-matrix-*
+          path: collected
+      - name: Check every matrix cell and summarize
+        run: python3 scripts/summarize_matrix.py collected --output matrix-summary.json
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: complete-model-matrix
+          path: matrix-summary.json
+      - name: Preserve the measured evidence in a dedicated results branch
+        if: always()
+        run: |
+          test -f matrix-summary.json
+          mkdir -p docs/evidence/v6/remote-matrix
+          cp -R collected/. docs/evidence/v6/remote-matrix/
+          cp matrix-summary.json docs/evidence/v6/remote-matrix/summary.json
+          git switch -c "evidence/model-matrix-$GITHUB_RUN_ID"
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add docs/evidence/v6/remote-matrix
+          git commit -m "Record complete uncensored model matrix $GITHUB_RUN_ID"
+          git push origin HEAD

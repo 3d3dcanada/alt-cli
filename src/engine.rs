@@ -65,6 +65,31 @@ async fn frame<R: AsyncBufRead + Unpin>(reader: &mut R) -> Result<Option<Vec<u8>
     }
 }
 
+/// Goose 1.53 converts provider transport failures into an engine-generated
+/// message followed by end_turn. Recognize its exact synthetic-message shape;
+/// ordinary model text and tool errors must not be classified by keywords.
+fn goose_provider_error(params: &Value) -> Option<String> {
+    let update = &params["update"];
+    if update["sessionUpdate"] != "agent_message_chunk"
+        || !update["_meta"]["goose"]["messageId"]
+            .as_str()?
+            .starts_with("msg_")
+    {
+        return None;
+    }
+    let text = update["content"]["text"].as_str()?;
+    if text.starts_with("Network error: ")
+        && text.ends_with("\n\nPlease resend your message to try again.")
+    {
+        Some(format!(
+            "Model connection interrupted. Your conversation was saved; reconnect and resend. {}",
+            text.trim_end_matches("\n\nPlease resend your message to try again.")
+        ))
+    } else {
+        None
+    }
+}
+
 impl Engine {
     pub async fn goose(binary: &Path, root: &Path, cwd: &Path, profile: &Profile) -> Result<Self> {
         Self::goose_with_policy(
@@ -174,6 +199,7 @@ impl Engine {
         let reader = tokio::spawn(async move {
             let result: Result<()> = async {
                 let mut reader = BufReader::new(stdout);
+                let mut provider_error = None;
                 while let Some(line) = frame(&mut reader).await? {
                     let message: Value =
                         serde_json::from_slice(&line).context("Malformed ACP JSON")?;
@@ -181,6 +207,9 @@ impl Engine {
                     if let Some(method) = message["method"].as_str() {
                         let event = match method {
                             "session/update" if message.get("id").is_none() => {
+                                if let Some(error) = goose_provider_error(&message["params"]) {
+                                    provider_error = Some(error);
+                                }
                                 Event::Update(message["params"].clone())
                             }
                             "session/request_permission" if message.get("id").is_some() => {
@@ -205,7 +234,9 @@ impl Engine {
                     } else if let Some(id) = message["id"].as_u64() {
                         let sender = responses.lock().expect("pending mutex").remove(&id);
                         if let Some(sender) = sender {
-                            let result = if let Some(error) = message.get("error") {
+                            let result = if let Some(error) = provider_error.take() {
+                                Err(error)
+                            } else if let Some(error) = message.get("error") {
                                 Err(error.to_string())
                             } else if let Some(result) = message.get("result") {
                                 Ok(result.clone())
@@ -400,6 +431,7 @@ impl Engine {
     ) -> Result<Response> {
         self.logical_session = Some(session.into());
         let mut memory = String::new();
+        let mut available_actions = String::new();
         let mut active = session.to_string();
         if let Some(bridge) = &self.bridge {
             let data = bridge.data.clone();
@@ -420,26 +452,48 @@ impl Engine {
             let cancel = bridge.cancel.clone();
             cancel.store(false, std::sync::atomic::Ordering::Relaxed);
             let focus = bridge.tool_profile;
+            let policy = bridge.policy;
+            available_actions =
+                crate::project_worker::run(data.clone(), cwd.clone(), cancel.clone(), move |p| {
+                    Ok(crate::toolbox::guidance(focus, policy, &p.checks()?))
+                })
+                .await?;
             memory = crate::project_worker::run(data.clone(), cwd.clone(), cancel.clone(), move |project| {
                 project.start_task(&task_copy, &request)?;
                 let mut memory = project.memory(&task_copy, &request, (context as usize).min(16000))?;
                 if let Some(check) = project.latest_check(&task_copy)? {
                     memory.push_str(&format!("\nLast check observation (may be stale; use list for current verification): {} exit={:?}, error={:?}, tests={:?}.\n", check.name, check.exit_code, check.error, check.tests_run));
                 }
-                memory.push_str(&format!("\nUser-selected tool focus: {}. When an action is unavailable, explain which focus the user can select. Repeated identical tool errors need a changed plan, fresh file read or dependency diagnosis; do not invent successful results.\n",focus.label()));
                 Ok(memory)
             }).await?;
             if let Some(profile) = &self.local_tokenizer {
                 // Counts this memory block with the selected llama.cpp tokenizer.
                 // Tool schemas, chat templates and generated replies remain engine-budgeted.
-                if let Ok(tokens) = crate::benchmark::token_count(profile, &memory).await {
+                if let Ok(mut tokens) = crate::benchmark::token_count(profile, &memory).await {
                     let budget = (context as usize / 3).max(256);
-                    if tokens > budget {
-                        memory = crate::project::bounded(
-                            &memory,
-                            memory.chars().count() * budget / tokens,
-                        );
+                    for _ in 0..3 {
+                        if tokens <= budget {
+                            break;
+                        }
+                        let size = (memory.chars().count() * budget / tokens * 9 / 10).max(128);
+                        let task_copy = task.clone();
+                        let request = text.to_owned();
+                        memory = crate::project_worker::run(
+                            data.clone(),
+                            cwd.clone(),
+                            cancel.clone(),
+                            move |p| p.memory(&task_copy, &request, size),
+                        )
+                        .await?;
+                        tokens = crate::benchmark::token_count(profile, &memory)
+                            .await
+                            .unwrap_or(tokens);
                     }
+                    // Preserve complete evidence/excerpt sections instead of cutting through JSON or a file.
+                    ensure!(
+                        tokens <= budget,
+                        "Memory exceeds this model's measured token budget. Shorten pinned requirements or increase context, then retry; the conversation is saved."
+                    );
                     let counted = crate::benchmark::token_count(profile, &memory).await.ok();
                     let task_copy = task.clone();
                     let memory_copy = memory.clone();
@@ -472,6 +526,9 @@ impl Engine {
         }
         if !memory.is_empty() {
             prompt.push(json!({"type":"text","text":format!("Durable task memory and current evidence (notes are unverified):\n{memory}")}));
+        }
+        if !available_actions.is_empty() {
+            prompt.push(json!({"type":"text","text":available_actions}));
         }
         prompt.push(json!({"type":"text","text":text}));
         self.request(
@@ -593,6 +650,22 @@ pub fn update_text(params: &Value) -> Option<String> {
 
 #[cfg(test)]
 mod frame_fuzz_tests {
+    #[test]
+    fn only_the_pinned_goose_synthetic_network_error_shape_marks_a_failed_turn() {
+        use super::*;
+        let mut event = json!({"update":{"sessionUpdate":"agent_message_chunk","_meta":{"goose":{"messageId":"msg_failure"}},"content":{"text":"Network error: Stream decode error\n\nPlease resend your message to try again."}}});
+        assert!(
+            goose_provider_error(&event)
+                .unwrap()
+                .contains("conversation was saved")
+        );
+        event["update"]["_meta"]["goose"]["messageId"] = json!("chatcmpl-model-content");
+        assert!(goose_provider_error(&event).is_none());
+        event["update"]["_meta"]["goose"]["messageId"] = json!("msg_failure");
+        event["update"]["content"]["text"] =
+            json!("Network error: an example string in your source");
+        assert!(goose_provider_error(&event).is_none());
+    }
     #[tokio::test]
     async fn fragmented_and_mutated_acp_frames_obey_size_and_termination_bounds() {
         use super::*;

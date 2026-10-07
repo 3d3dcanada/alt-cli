@@ -70,6 +70,46 @@ pub fn focused_tools(profile: ToolProfile) -> Value {
     list
 }
 
+/// Kept separate from retrieved memory so trimming history cannot remove the
+/// actual capability contract or send a small model after unavailable tools.
+pub fn guidance(profile: ToolProfile, policy: Policy, checks: &[project::CheckSpec]) -> String {
+    let names = focused_tools(profile)["tools"]
+        .as_array()
+        .expect("tool schema")
+        .iter()
+        .filter_map(|v| v["name"].as_str())
+        .collect::<Vec<_>>()
+        .join(", ");
+    let mut text = format!(
+        "Available actions\nTool focus: {}. Tools: {names}. Access: {}.\n",
+        profile.label(),
+        policy.label()
+    );
+    if profile.includes("run_check") {
+        let names = checks
+            .iter()
+            .take(32)
+            .map(|c| c.name.as_str())
+            .collect::<Vec<_>>();
+        text.push_str(&format!("Configured run_check names: {}. Use an exact name; never pass a shell command as its name.\n", serde_json::to_string(&names).expect("check names")));
+        if checks.is_empty() {
+            text.push_str("No named checks are configured. The user can select Prepare project checks on Home or Configure checks in Task. Do not invent check names.\n");
+        }
+    }
+    if profile.includes("terminal") && policy == Policy::Trusted {
+        text.push_str("terminal can execute arbitrary commands, networking and external tools. Use it for the project's actual tests when no named check covers the task. list supplies the Alt executable and data directory for packs/jobs/task commands; read their --help first.\n");
+    } else {
+        text.push_str("Terminal execution is unavailable in this selection. Do not request terminal or invent another shell tool. ");
+        if profile.includes("run_check") && !checks.is_empty() && policy != Policy::ReviewOnly {
+            text.push_str("Execute tests through the configured run_check names above.\n");
+        } else {
+            text.push_str("Explain any execution gap to the user; verification remains unperformed. The user can configure checks or explicitly select All/Terminal focus and Full access.\n");
+        }
+    }
+    text.push_str("After a failed check, read its actual output, repair the implementation and rerun the check. Report unresolved failures. A claimed or printed edit is not an applied edit.\n");
+    text
+}
+
 #[derive(Debug, Clone, Default)]
 struct ContextState {
     task: String,
@@ -94,6 +134,7 @@ struct Service {
     data: PathBuf,
     cwd: PathBuf,
     policy: Policy,
+    tool_profile: ToolProfile,
     events: mpsc::Sender<Event>,
     decisions: Decisions,
     context: Arc<Mutex<ContextState>>,
@@ -114,6 +155,7 @@ impl Bridge {
             data: data.into(),
             cwd: cwd.into(),
             policy,
+            tool_profile: crate::config::Preferences::load(data)?.tool_profile,
             events: events_tx,
             decisions: decisions.clone(),
             context: context.clone(),
@@ -204,10 +246,7 @@ async fn serve_connection(stream: UnixStream, s: &Service) -> Result<()> {
     let signature = project::digest(&serde_json::to_vec(&request)?);
     let id = format!("alt:{}", uuid::Uuid::new_v4());
     let result = execute(s, &context, &id, &request, &signature).await;
-    let failed = result
-        .as_ref()
-        .map(|v| v["isError"] == true || (v.get("exit_code").is_some() && v["exit_code"] != 0))
-        .unwrap_or(true);
+    let failed = result.as_ref().map(tool_failed).unwrap_or(true);
     if let Ok(p) = Project::open(&s.data, &s.cwd) {
         let _ = p.attempt(&context.task, &signature, Some(failed));
     }
@@ -252,6 +291,30 @@ async fn serve_connection(stream: UnixStream, s: &Service) -> Result<()> {
     bytes.push(b'\n');
     writer.write_all(&bytes).await?;
     Ok(())
+}
+
+fn tool_failed(v: &Value) -> bool {
+    v["isError"] == true
+        || v["error"].is_string()
+        || v["timed_out"] == true
+        || v["cancelled"] == true
+        || (v.get("exit_code").is_some() && v["exit_code"] != 0)
+}
+
+#[cfg(test)]
+mod evidence_tests {
+    use super::*;
+    #[test]
+    fn invalid_evidence_is_a_tool_failure_even_when_command_exits_zero() {
+        assert!(tool_failed(
+            &json!({"exit_code":0,"error":"Missing structured report"})
+        ));
+        assert!(tool_failed(&json!({"exit_code":0,"timed_out":true})));
+        assert!(tool_failed(&json!({"exit_code":0,"cancelled":true})));
+        assert!(tool_failed(&json!({"exit_code":null})));
+        assert!(!tool_failed(&json!({"exit_code":0,"error":null})));
+        assert!(!tool_failed(&json!({"checkpoint":"applied"})));
+    }
 }
 async fn approve(
     s: &Service,
@@ -453,8 +516,13 @@ async fn execute(
         "run_check" => {
             let a: CheckArgs = serde_json::from_value(r.arguments.clone())?;
             let checks = Project::open(&s.data, &s.cwd)?.checks()?;
-            let check = checks.iter().find(|v| v.name == a.name)
-                .with_context(|| format!("No configured check named {:?}. Available names: {:?}. Use an exact listed name. In Full access you can run the project's actual test command with terminal, or use the Alt CLI to configure a check. Do not invent a passing result or wait for an unrelated check name.", a.name, checks.iter().map(|c| &c.name).collect::<Vec<_>>()))?;
+            let check = checks.iter().find(|v| v.name == a.name).with_context(|| {
+                format!(
+                    "No configured check named {:?}. {}",
+                    a.name,
+                    guidance(s.tool_profile, s.policy, &checks)
+                )
+            })?;
             ensure!(
                 s.policy != Policy::ReviewOnly,
                 "Review only does not execute code"
@@ -470,7 +538,7 @@ async fn execute(
             )
             .await?;
             let mut value = serde_json::to_value(&result)?;
-            if result.exit_code != Some(0) {
+            if result.exit_code != Some(0) || result.error.is_some() {
                 let changes = Project::open(&s.data, &s.cwd)?.task(&c.task)?.changes;
                 value["next_action"] = json!(if changes == 0 {
                     "No tracked edit has been applied. Invoke edit as a NATIVE TOOL CALL. Printing a JSON code block does not change a file. Read the file, then call edit with path, operation=replace, old_text, new_text, reason. Alt remembers the read hash; expected_sha256 is optional."

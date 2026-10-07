@@ -17,12 +17,13 @@ installation and external tools with your normal account permissions.
 
 ![Alt's terminal and project workspace](docs/screenshots/v4/terminal.png)
 
-**Status: 0.5.0 beta · Linux x86_64 · Apache-2.0.** The screenshot is from the
-working 0.4 interface; 0.5 extends it with verification contracts and qualification
-controls. Model reliability and hardware support are measured separately from
+**Status: 0.6.0 beta · Linux x86_64 · Apache-2.0.** The screenshot is from the
+working 0.4 interface; 0.6 adds practice tasks, clearer check setup and recovery improvements. Model reliability and hardware support are measured separately from
 application tests. [Read the results and remaining gaps](docs/IMPLEMENTATION.md).
 
 ## Try it on your computer
+
+Versioned Linux packages are published on [GitHub Releases](https://github.com/3d3dcanada/alt-cli/releases). See [Installation](docs/INSTALLATION.md) for archive and GitHub provenance verification, or build from source below.
 
 Install [Rust with rustup](https://rustup.rs/), Git and a C compiler first. On
 Debian/Ubuntu, the usual prerequisites are `git build-essential pkg-config curl
@@ -41,13 +42,13 @@ updates, see **[Installation](docs/INSTALLATION.md)**. Use a real terminal; on a
 small computer, `CARGO_BUILD_JOBS=2 cargo build --locked --release` reduces build
 parallelism.
 
-1. **Choose a project** from Home. Start with a folder you recognize.
+1. **Try a practice project** from Home to learn checks, edits and undo, or choose your own project folder.
 2. **Connect a model** you already run in Ollama, LM Studio or another compatible
    server, or import/download a GGUF from Models.
 3. **Install the agent engine** when Home offers it. A managed GGUF also needs
    the optional local runtime. Existing executables can be selected in Settings.
 4. **Choose access in Settings**, then describe the change or investigation.
-5. **Open Task** to inspect edits, configure checks and review actual evidence.
+5. **Prepare project checks** on Home, then open Task to inspect edits and actual evidence.
    A model saying “done” does not mark the behavior verified.
 
 ## What you can do
@@ -105,6 +106,7 @@ and [live evaluations](docs/LIVE_EVALUATION.md).
 
 ```bash
 alt --help
+alt practice
 alt doctor
 alt hardware
 alt models search 'Qwen3 4B heretic'
@@ -125,14 +127,14 @@ Keys are referenced by environment-variable name, not saved in model profiles.
 - [Workspace guide](docs/WORKSPACE_GUIDE.md) · [CLI reference](docs/CLI.md)
 - [Verification contracts](docs/VERIFICATION_CONTRACTS.md) · [Runtime qualification](docs/QUALIFICATION.md)
 - [Architecture](docs/ARCHITECTURE.md) · [Contributing](CONTRIBUTING.md) · [Changelog](CHANGELOG.md)
-- [Implementation and evidence](docs/IMPLEMENTATION.md) · [Five work orders](docs/WORK_ORDERS_0.5.md)
+- [Implementation and evidence](docs/IMPLEMENTATION.md) · [Current work orders](docs/WORK_ORDERS_0.6.md) · [PC test guide](docs/PC_TESTING.md)
 - [Research and project history](docs/research/README.md) · [Documentation index](docs/README.md)
 
-Local validation includes 79 Rust tests, four PTY walkthroughs, 30 responsiveness
+Earlier validation included 79 Rust tests, four PTY walkthroughs, 30 responsiveness
 journeys, 30 terminal lifecycle rounds and packaged install/rollback checks on
 Debian 11 and Ubuntu 24.04. These are scoped measurements, not a guarantee that any
 model can solve any task. Automated checks and raw failures are retained in the
-repository; actual novice sessions and full model matrices remain pending.
+repository; the current report records the additional 0.6 checks, model campaign and pending human/hardware acceptance.
 
 ## Development and license
 

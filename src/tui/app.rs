@@ -174,6 +174,7 @@ pub enum ConfirmAction {
 }
 #[derive(Debug, Clone)]
 pub enum MenuAction {
+    NewPractice,
     Manager { action: String, state: Value },
     StartJob { command: String, keep: bool },
     RequireCheck(String),
@@ -236,6 +237,7 @@ pub enum Dialog {
 }
 
 pub enum JobResult {
+    Practice(crate::practice::Practice),
     Resume(Session),
     PreparedWorkspace(Box<workspace::Options>, Vec<Value>, String),
     Brief(String),
@@ -1049,6 +1051,17 @@ impl App {
                         }
                     }
                     Ok(JobResult::Context(context)) => self.workbench.context = context,
+                    Ok(JobResult::Practice(lesson)) => {
+                        if cancelled {
+                            self.notify(format!("Practice project created at {}. Your current project and message were kept.", lesson.project.display()));
+                        } else {
+                            self.choose_project(&lesson.project)?;
+                            if self.composer.text.trim().is_empty() {
+                                self.composer = Editor::new(&lesson.goal);
+                            }
+                            self.practice_guide();
+                        }
+                    }
                     Ok(JobResult::Jobs(jobs)) => {
                         self.workbench.jobs = jobs;
                         self.workbench.job_selected = self
@@ -1297,6 +1310,7 @@ impl App {
     pub fn menu_action(&mut self, action: MenuAction) -> Result<()> {
         self.dialog = None;
         match action {
+            MenuAction::NewPractice => self.new_practice()?,
             MenuAction::Manager{action,state}=>self.manager_action(&action,state)?,
             MenuAction::StartJob{command,keep}=>self.dialog=Some(Dialog::Input { title: "Job time budget".into(), hint: "Seconds before stopping; 0 means unlimited. Lifetime choice still applies.".into(), editor: Editor::new("0"), action: InputAction::JobTimeout {command,keep}, multiline:false }),
             MenuAction::RequireCheck(name)=>self.toggle_required(name)?,
@@ -1449,7 +1463,7 @@ impl App {
         self.messages.clear();
         self.tools.clear();
         self.dialog = None;
-        self.notify("Project folder selected. New conversations will work in this folder.");
+        self.notify("Project folder selected. Home → Prepare project checks helps set up how changes will be tested.");
         Ok(())
     }
 

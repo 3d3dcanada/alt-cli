@@ -47,6 +47,7 @@ with tempfile.TemporaryDirectory(prefix="alt-package-") as temp:
     shutil.copytree(repo / "docs", package / "docs")
     shutil.copytree(repo / "prompts", package / "prompts")
     shutil.copy2(repo / "scripts/install-package.sh", package / "install.sh")
+    shutil.copy2(repo / "scripts/test-my-pc.py", package / "test-my-pc.py")
     (package / "install.sh").chmod(0o755)
     licenses = package / "licenses"
     licenses.mkdir()

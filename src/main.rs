@@ -33,6 +33,8 @@ struct Args {
 
 #[derive(Subcommand)]
 enum Action {
+    /// Create a fresh practice project with a failing seed, real checks and undo.
+    Practice,
     /// Embedded source, compiler and target provenance; does not open saved state.
     BuildInfo,
     /// Optional language-server references or reviewable identifier rename.
@@ -441,6 +443,13 @@ async fn run() -> Result<()> {
     let root = root.canonicalize()?;
     let command = args.command.unwrap_or(Action::Tui { resume: None });
     match command {
+        Action::Practice => {
+            println!(
+                "{}",
+                serde_json::to_string_pretty(&alt_cli::practice::create(&root)?)?
+            );
+            return Ok(());
+        }
         Action::Language {
             server,
             server_arg,
@@ -1138,12 +1147,13 @@ async fn headless(
     loop {
         tokio::select! {
             result = &mut response => {
-                let result = response_value(result)?;
+                let turn_failed = !matches!(&result, Ok(Ok(_)));
                 // Response and notification channels are separate; drain all
                 // preceding notifications before returning the final response.
                 while let Some(event) = engine.try_event() {
-                    handle_event(engine, store, session, event, if interrupted {Approval::Deny} else {allow}, json_output).await?;
+                    handle_event(engine, store, session, event, if interrupted || turn_failed {Approval::Deny} else {allow}, json_output).await?;
                 }
+                let result = response_value(result)?;
                 if let Some(verification) = engine.verification()? {
                     let note = if verification.complete { "All required checks passed on current files. Review their coverage." } else if verification.requirements.is_empty() { "Verification is not configured. Choose required checks in Task; a model response does not establish completion." } else { "Required checks are not complete on current files. Inspect Task verification before considering this finished." };
                     let evidence = json!({"type":"verification","data":verification,"note":note});

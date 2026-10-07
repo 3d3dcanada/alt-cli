@@ -61,6 +61,29 @@ fn check_evidence(check: &CheckResult) -> String {
     text
 }
 impl App {
+    pub fn new_practice(&mut self) -> Result<()> {
+        ensure!(
+            !self.busy && !self.connecting,
+            "Stop the current task before opening a practice project"
+        );
+        let root = self.root.clone();
+        self.launch_io("Creating your practice project", move || {
+            Ok(JobResult::Practice(crate::practice::create(&root)?))
+        })
+    }
+    pub fn practice_guide(&mut self) {
+        self.dialog = Some(Dialog::Menu {
+            title: "Your first repair".into(),
+            description: "The example has a real bug. Start with its failing check, repair greeting.py, check all four cases, then try Undo in Task. Python 3 is required; a model is optional for manual edits. Your selected access mode is preserved.".into(),
+            items: vec![
+                ("1. See the failing check".into(), "Run Practice behavior; inspect expected and actual results".into(), MenuAction::RunCheck("Practice behavior".into())),
+                ("2. Inspect or edit greeting.py".into(), "Open Project files; Alt saves a checkpoint for edits".into(), MenuAction::Page(Page::Files)),
+                ("3. Ask your selected model".into(), "README.md contains the practice goal; connect a model if needed".into(), MenuAction::Page(Page::Chat)),
+                ("4. Check the repair and try Undo".into(), "Task shows evidence and tracked changes; rerun after undo".into(), MenuAction::Page(Page::Task)),
+                ("Start another practice project".into(), "Create a fresh example; keep this project and its history".into(), MenuAction::NewPractice),
+            ], selected: 0,
+        });
+    }
     pub fn refresh_task(&mut self) -> Result<()> {
         self.refresh_task_with_notice(false)
     }
@@ -105,16 +128,13 @@ impl App {
                 let policy = self.preferences.access_policy;
                 self.launch_project("Reading available checks", move |p,_| {
                     let checks = p.checks()?;
-                    ensure!(!checks.is_empty(),"No checks configured. Choose Configure checks in Task first.");
+                    if checks.is_empty() { return Ok(JobResult::Dialog(check_setup(p))); }
                     Ok(JobResult::Dialog(Dialog::Menu{title:"Run checks again".into(),description:"Runs immediately after your selection and records the exact file snapshot.".into(),items:checks.into_iter().map(|s|(s.name.clone(),format!("{:?} · {} · {}s · {}",s.contract.kind,s.argv.join(" "),s.timeout_secs,policy.label()),MenuAction::RunCheck(s.name))).collect(),selected:0}))
                 })?;
             },
             "task-configure"=> {
                 self.launch_project("Finding project checks", |p,_| {
-                    let mut items=sandbox::suggested(&p.root).into_iter().map(|s|(s.name.clone(),format!("{} · requires installed dependencies",s.argv.join(" ")),MenuAction::ConfigureCheck(s))).collect::<Vec<_>>();
-                    items.push(("Enter a check command".into(),"Register your project's documented command".into(),MenuAction::CustomCheck));
-                    items.push(("Set check purpose and evidence".into(),"Tests, build, lint, health or custom; pin an independent assertion".into(),MenuAction::Manager{action:"check-contract".into(),state:serde_json::json!({})}));
-                    Ok(JobResult::Dialog(Dialog::Menu{title:"Choose what should prove the change works".into(),description:"Commands run in a disposable source copy. A passing command has unknown behavioral coverage until you configure structured test evidence.".into(),items,selected:0}))
+                    Ok(JobResult::Dialog(check_setup(p)))
                 })?;
             },
             "task-memory"=>self.dialog=Some(Dialog::Input{title:"Search project memory and files".into(),hint:"Enter a topic, function name, or error. Current files are indexed locally; no second model is needed.".into(),editor:Editor::new("project"),action:InputAction::MemorySearch,multiline:false}),
@@ -196,4 +216,31 @@ impl App {
         self.notify(format!("Selected {context} context tokens for new conversations. Use Check model to test the selected configuration."));
         Ok(())
     }
+}
+
+fn check_setup(p: &crate::project::Project) -> Dialog {
+    let mut items = sandbox::suggested(&p.root)
+        .into_iter()
+        .map(|s| {
+            (
+                s.name.clone(),
+                format!("{} · requires installed dependencies", s.argv.join(" ")),
+                MenuAction::ConfigureCheck(s),
+            )
+        })
+        .collect::<Vec<_>>();
+    items.push((
+        "Enter a check command".into(),
+        "Register your project's documented command".into(),
+        MenuAction::CustomCheck,
+    ));
+    items.push((
+        "Set check purpose and evidence".into(),
+        "Tests, build, lint, health or custom; pin an independent assertion".into(),
+        MenuAction::Manager {
+            action: "check-contract".into(),
+            state: serde_json::json!({}),
+        },
+    ));
+    Dialog::Menu{title:"Choose what should prove the change works".into(),description:"Choose a suggested command or enter the project's documented check. Saving does not run it. Set its purpose and evidence before treating it as behavioral proof.".into(),items,selected:0}
 }

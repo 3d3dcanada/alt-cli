@@ -44,6 +44,20 @@ The PATH change applies to this terminal. Add that same `export` to your shell's
 startup configuration if `~/.local/bin` is not already there. This copies the
 executable only; keep the checkout for its documentation and future builds.
 
+## Download a versioned beta
+
+Open [GitHub Releases](https://github.com/3d3dcanada/alt-cli/releases), choose the
+beta you want, and download its archive, checksum and Sigstore bundle. No Rust
+compiler is needed. The release notes contain exact verification commands.
+Recent GitHub CLI versions support `gh attestation verify`; its signer workflow
+and source tag must match this repository's `publish.yml` and the selected tag.
+This verifies GitHub-signed build provenance without a shared long-lived key.
+
+After verification, extract the archive and run `bash install.sh`. Its default
+prefix is `~/.local`. For custom state pass `--data-dir /your/alt/state` so the
+installer backs up the folder you actually use. Start with **Try a practice
+project** on Home, then follow [PC testing](PC_TESTING.md).
+
 ## Download a CI package
 
 Open [Actions → Verify Alt](https://github.com/3d3dcanada/alt-cli/actions/workflows/verify.yml),
@@ -55,9 +69,9 @@ They are development packages, not signed production releases.
 Extract the artifact ZIP, then verify and open the contained package:
 
 ```bash
-sha256sum -c alt-0.5.0-linux-x86_64.tar.gz.sha256
-tar -xzf alt-0.5.0-linux-x86_64.tar.gz
-cd alt-0.5.0-linux-x86_64
+sha256sum -c alt-0.6.0-linux-x86_64.tar.gz.sha256
+tar -xzf alt-0.6.0-linux-x86_64.tar.gz
+cd alt-0.6.0-linux-x86_64
 ./install.sh
 ~/.local/bin/alt
 ```
@@ -67,7 +81,7 @@ to choose another prefix. It verifies every packaged file and keeps a previous
 executable when replacing a different version. The package includes build identity,
 platform requirements, a software bill of materials, documentation and licenses.
 SHA256 verifies consistency with the accompanying checksum; it is not a publisher
-signature. Use a separately trusted public key when verifying a signed release.
+signature. Published betas additionally provide GitHub provenance attestations. The separate private-key candidate workflow uses a trusted public key.
 
 ## First launch
 
@@ -138,7 +152,7 @@ install -m 755 target/release/alt "$HOME/.local/bin/alt"
 ```
 
 Preserve local edits before pulling. For a package installation, run the new
-package's installer. Its `./install.sh --rollback` restores the retained previous
+package's installer. It saves a pre-upgrade state backup before changing an existing version and prints its location; a failed backup aborts the update. Its `./install.sh --rollback` restores the retained previous
 executable. **Executable rollback does not downgrade state.** Retain newer state
 and restore the backup that matches the older executable into a new directory:
 

@@ -35,6 +35,7 @@ with tempfile.TemporaryDirectory(prefix='alt-installed-') as temp:
     project.mkdir()
     (project/'check.py').write_text("print('package behavior checked')\n")
     state = root/'state'
+    env['ALT_DATA_DIR'] = str(state)
     def invoke(*args):
         return subprocess.run([str(binary), '--data-dir', str(state), *args], cwd=project, check=True, capture_output=True, text=True)
     installer = ['bash', str(package/'install.sh')]
@@ -51,6 +52,13 @@ with tempfile.TemporaryDirectory(prefix='alt-installed-') as temp:
         invoke('task', 'configure-check', 'package-check', '--', 'python3', 'check.py')
         invoke('--access', 'trusted', 'task', 'check', 'package-check')
         invoke('state','backup',str(root/'pre-upgrade-state.tar.gz'))
+        # Failure to create the automatic backup must leave the old installation intact.
+        blocked = prefix/'share/alt/backups'
+        blocked.parent.mkdir(parents=True,exist_ok=True)
+        blocked.write_text('A file blocks the backup directory')
+        rejected=subprocess.run(installer,env=env,capture_output=True)
+        assert rejected.returncode!=0 and hashlib.sha256(binary.read_bytes()).hexdigest()==prior_hash
+        blocked.unlink()
     else:
         prior_hash = None
     if a.previous:
@@ -67,6 +75,16 @@ with tempfile.TemporaryDirectory(prefix='alt-installed-') as temp:
     for _ in range(2):
         subprocess.run(installer, env=env, check=True, capture_output=True)
     assert binary.read_bytes() == (package/'alt').read_bytes()
+    if a.previous:
+        backups=sorted((prefix/'share/alt/backups').glob('pre-upgrade-*.tar.gz'))
+        assert backups, 'Installer did not preserve pre-upgrade state'
+        restored_auto=root/'automatic-backup-restored'
+        invoke('state','restore',str(backups[-1]),str(restored_auto))
+        prior_checks=subprocess.check_output([str(old),'--data-dir',str(restored_auto),'task','checks'],cwd=project,text=True)
+        assert 'package-check' in prior_checks, 'Automatic backup lost the previous check configuration'
+    pc_report=root/'pc-report'
+    subprocess.run(['python3',str(package/'test-my-pc.py'),'--alt',str(binary),'--data-dir',str(state),'--output',str(pc_report)],check=True,capture_output=True)
+    assert json.loads((pc_report/'summary.json').read_text())['passed']
     invoke('--version')
     assert (prefix/'share/doc/alt/DEPENDENCIES.md').is_file()
     assert len(list((prefix/'share/doc/alt/licenses').iterdir())) > 100

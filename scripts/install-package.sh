@@ -2,8 +2,19 @@
 set -euo pipefail
 package_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 prefix="${ALT_PREFIX:-${HOME}/.local}"
+state_dir="${ALT_DATA_DIR:-${XDG_DATA_HOME:-${HOME}/.local/share}/alt-cli}"
+rollback=false
+verify_key=''
+while (($#)); do
+  case "$1" in
+    --rollback) rollback=true; shift ;;
+    --data-dir) test "$#" -ge 2 || { echo 'Pass the Alt state folder.' >&2; exit 1; }; state_dir="$2"; shift 2 ;;
+    --verify-key) test "$#" -ge 2 || { echo 'Pass the trusted public-key file.' >&2; exit 1; }; verify_key="$2"; shift 2 ;;
+    *) echo "Unknown installation option: $1" >&2; exit 1 ;;
+  esac
+done
 command -v python3 >/dev/null || { echo 'Alt installation needs Python 3 to verify and safely replace files. Install your operating system python3 package, then run this installer again.' >&2; exit 1; }
-if [[ "${1:-}" == --rollback ]]; then
+if "$rollback"; then
   test -x "$prefix/bin/alt.previous" || { echo 'No previous executable was saved.' >&2; exit 1; }
   "$prefix/bin/alt.previous" --version
   python3 - "$prefix/bin/alt.previous" "$prefix/bin/alt" <<'PY'
@@ -27,9 +38,8 @@ fi
 if [[ "$(uname -s)" != Linux || "$(uname -m)" != x86_64 ]]; then
   echo 'This package requires Linux x86_64.' >&2; exit 1
 fi
-if [[ "${1:-}" == --verify-key ]]; then
-  test -n "${2:-}" || { echo 'Pass the trusted public-key file.' >&2; exit 1; }
-  openssl dgst -sha256 -verify "$2" -signature "$package_dir/CONTENTS.json.sig" "$package_dir/CONTENTS.json"
+if [[ -n "$verify_key" ]]; then
+  openssl dgst -sha256 -verify "$verify_key" -signature "$package_dir/CONTENTS.json.sig" "$package_dir/CONTENTS.json"
 fi
 python3 - "$package_dir" <<'PY'
 import hashlib,json,sys
@@ -49,6 +59,15 @@ for name,digest in contents.items():
  assert hashlib.sha256(target.read_bytes()).hexdigest()==digest,f'Package integrity failed: {name}'
 PY
 "$package_dir/alt" --version || { echo 'Incompatible binary; see PLATFORM.json.' >&2; exit 1; }
+# Preserve the corresponding state before replacing an existing installation.
+# An unreadable/incompatible backup aborts the update while the old executable remains.
+if [[ -x "$prefix/bin/alt" && -d "$state_dir" ]] && ! cmp -s "$prefix/bin/alt" "$package_dir/alt"; then
+  backup_dir="$prefix/share/alt/backups"
+  install -d -m 700 "$backup_dir"
+  backup_path="$backup_dir/pre-upgrade-$(date -u +%Y%m%dT%H%M%S%N).tar.gz"
+  "$prefix/bin/alt" --data-dir "$state_dir" state backup "$backup_path" > "$backup_path.report.json"
+  printf 'Saved pre-upgrade state backup:\n  %s\n' "$backup_path"
+fi
 install -d "$prefix/bin" "$prefix/share/doc/alt"
 python3 - "$package_dir/alt" "$prefix/bin/alt" <<'PY'
 import os,sys,tempfile
@@ -71,6 +90,9 @@ PY
 for document in README.md LICENSE THIRD_PARTY.md DEPENDENCIES.md PLATFORM.json BUILD.json SBOM.cdx.json CONTENTS.json; do
   install -m 644 "$package_dir/$document" "$prefix/share/doc/alt/$document"
 done
+if [[ -f "$package_dir/test-my-pc.py" ]]; then
+  install -m 644 "$package_dir/test-my-pc.py" "$prefix/share/doc/alt/test-my-pc.py"
+fi
 cp -R "$package_dir/licenses" "$package_dir/docs" "$package_dir/prompts" "$prefix/share/doc/alt/"
 printf 'Installed Alt. Start it with:\n  %s/bin/alt\n' "$prefix"
 printf 'The previous executable, if any, is retained as alt.previous.\n'
