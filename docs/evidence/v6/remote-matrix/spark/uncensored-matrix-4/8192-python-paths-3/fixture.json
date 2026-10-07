@@ -1,0 +1,16 @@
+{
+  "oracle_version": 4,
+  "goal": "Implement resolve_file(root,relative) returning a resolved pathlib.Path strictly inside root. Reject absolute paths, .. traversal, root itself, and symlinks escaping root with ValueError. Existing valid nested files work.",
+  "prompt": "Implement resolve_file(root,relative) returning a resolved pathlib.Path strictly inside root. Reject absolute paths, .. traversal, root itself, and symlinks escaping root with ValueError. Existing valid nested files work. Inspect relevant files, save a brief plan, use native tools to implement the change, and test it. Report what you actually ran and any remaining uncertainty. Preserve existing public interfaces. Keep your explanation brief.",
+  "original_files": {
+    "solution.py": "def resolve_file(root,relative):\n return relative\n"
+  },
+  "oracle_command": [
+    "python3",
+    "/home/runner/work/_temp/campaign/8192-python-paths-3/independent/check.py"
+  ],
+  "oracle_sha256_before": {
+    "completion.json": "fc9853e4bb2b99db0e12605b8cad7a77be6f03ade8dcba34a0369150a7136f02",
+    "check.py": "9a3fc646941c4728aa7fa62e3693eaec82e266f391aa3dff13a40a3d0fcb548a"
+  }
+}
