@@ -74,13 +74,13 @@ impl App {
     pub fn practice_guide(&mut self) {
         self.dialog = Some(Dialog::Menu {
             title: "Your first repair".into(),
-            description: "The example has a real bug. Start with its failing check, repair greeting.py, check all four cases, then try Undo in Task. Python 3 is required; a model is optional for manual edits. Your selected access mode is preserved.".into(),
+            description: "Fix greeting.py, check all four cases, then Undo in Task. Python 3 is required. Edit by hand or ask your model.".into(),
             items: vec![
-                ("1. See the failing check".into(), "Run Practice behavior; inspect expected and actual results".into(), MenuAction::RunCheck("Practice behavior".into())),
-                ("2. Inspect or edit greeting.py".into(), "Open Project files; Alt saves a checkpoint for edits".into(), MenuAction::Page(Page::Files)),
-                ("3. Ask your selected model".into(), "README.md contains the practice goal; connect a model if needed".into(), MenuAction::Page(Page::Chat)),
-                ("4. Check the repair and try Undo".into(), "Task shows evidence and tracked changes; rerun after undo".into(), MenuAction::Page(Page::Task)),
-                ("Start another practice project".into(), "Create a fresh example; keep this project and its history".into(), MenuAction::NewPractice),
+                ("1. See the failing check".into(), "Compare the expected and actual results.".into(), MenuAction::RunCheck("Practice behavior".into())),
+                ("2. Inspect or edit greeting.py".into(), "Edit the file; Alt keeps an undo checkpoint.".into(), MenuAction::Page(Page::Files)),
+                ("3. Ask your selected model".into(), "Connect a model, then use the README goal.".into(), MenuAction::Page(Page::Chat)),
+                ("4. Check the repair and try Undo".into(), "Inspect evidence; rerun checks after Undo.".into(), MenuAction::Page(Page::Task)),
+                ("Start another practice project".into(), "New example; keep this project's history.".into(), MenuAction::NewPractice),
             ], selected: 0,
         });
     }
