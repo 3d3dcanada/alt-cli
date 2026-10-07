@@ -1,0 +1,49 @@
+{
+  "script_sha256": "d96e54f3f407a932d489ba6395a706cb12d40122ca83df5d64b9eef1138a9d92",
+  "controls": [
+    {
+      "name": "wrong-model",
+      "optimized": false,
+      "rejected": true,
+      "exit": 1,
+      "stderr": "Traceback (most recent call last):\n  File \"/workspace/alt-cli/scripts/analyze_matrix.py\", line 28, in <module>\n    require(summary['identity']['sha256'] == MODELS[a.model]['sha256'], 'Selected model differs from the recorded model')\n  File \"/workspace/alt-cli/scripts/analyze_matrix.py\", line 16, in require\n    raise ValueError(message)\nValueError: Selected model differs from the recorded model\n"
+    },
+    {
+      "name": "changed-review-report-hash",
+      "optimized": false,
+      "rejected": true,
+      "exit": 1,
+      "stderr": "Traceback (most recent call last):\n  File \"/workspace/alt-cli/scripts/analyze_matrix.py\", line 77, in <module>\n    require(review['report_sha256'] == hashlib.sha256(path.read_bytes()).hexdigest(), f'Review report hash differs: {key}')\n  File \"/workspace/alt-cli/scripts/analyze_matrix.py\", line 16, in require\n    raise ValueError(message)\nValueError: Review report hash differs: ('heldout-deduplicate', 1)\n"
+    },
+    {
+      "name": "wrong-model",
+      "optimized": true,
+      "rejected": true,
+      "exit": 1,
+      "stderr": "Traceback (most recent call last):\n  File \"/workspace/alt-cli/scripts/analyze_matrix.py\", line 28, in <module>\n    require(summary['identity']['sha256'] == MODELS[a.model]['sha256'], 'Selected model differs from the recorded model')\n  File \"/workspace/alt-cli/scripts/analyze_matrix.py\", line 16, in require\n    raise ValueError(message)\nValueError: Selected model differs from the recorded model\n"
+    },
+    {
+      "name": "changed-review-report-hash",
+      "optimized": true,
+      "rejected": true,
+      "exit": 1,
+      "stderr": "Traceback (most recent call last):\n  File \"/workspace/alt-cli/scripts/analyze_matrix.py\", line 77, in <module>\n    require(review['report_sha256'] == hashlib.sha256(path.read_bytes()).hexdigest(), f'Review report hash differs: {key}')\n  File \"/workspace/alt-cli/scripts/analyze_matrix.py\", line 16, in require\n    raise ValueError(message)\nValueError: Review report hash differs: ('heldout-deduplicate', 1)\n"
+    },
+    {
+      "name": "changed-fixture.json",
+      "optimized": true,
+      "rejected": true,
+      "exit": 1,
+      "stderr": "Traceback (most recent call last):\n  File \"/workspace/alt-cli/scripts/analyze_matrix.py\", line 49, in <module>\n    require(hashlib.sha256(raw.read_bytes()).hexdigest() == manifest[str(raw.relative_to(path.parent.parent))], f'Raw {name} hash differs: {key}')\n  File \"/workspace/alt-cli/scripts/analyze_matrix.py\", line 16, in require\n    raise ValueError(message)\nValueError: Raw fixture.json hash differs: ('python-cache', 5)\n"
+    },
+    {
+      "name": "changed-turn.jsonl",
+      "optimized": true,
+      "rejected": true,
+      "exit": 1,
+      "stderr": "Traceback (most recent call last):\n  File \"/workspace/alt-cli/scripts/analyze_matrix.py\", line 49, in <module>\n    require(hashlib.sha256(raw.read_bytes()).hexdigest() == manifest[str(raw.relative_to(path.parent.parent))], f'Raw {name} hash differs: {key}')\n  File \"/workspace/alt-cli/scripts/analyze_matrix.py\", line 16, in require\n    raise ValueError(message)\nValueError: Raw turn.jsonl hash differs: ('python-cache', 5)\n"
+    }
+  ],
+  "valid_results_identical_with_optimization": true,
+  "scope": "Wrong model, altered manual-review identity, changed raw fixture/stream bytes are rejected. Optimized Python cannot bypass validation. Valid normal and optimized analyses match the retained analysis."
+}

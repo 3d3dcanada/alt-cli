@@ -1,29 +1,31 @@
    Compiling alt-cli v0.6.0 (/workspace/alt-cli)
-    Finished `test` profile [unoptimized] target(s) in 16.14s
+    Finished `test` profile [unoptimized] target(s) in 17.91s
      Running unittests src/lib.rs (target/debug/deps/alt_cli-47c0238de87e205a)
 
-running 19 tests
+running 21 tests
 test engine::frame_fuzz_tests::only_the_pinned_goose_synthetic_network_error_shape_marks_a_failed_turn ... ok
 test runtime::memory_tests::container_cache_does_not_hide_available_ram_or_free_anonymous_memory ... ok
 test toolbox::evidence_tests::invalid_evidence_is_a_tool_failure_even_when_command_exits_zero ... ok
-test tui::app::recovery_tests::cancelled_conversation_loading_never_opens_an_agent ... ok
 test extensions::sse_tests::framing_survives_every_chunk_boundary_and_requires_event_termination ... ok
+test tui::app::recovery_tests::cancelled_conversation_loading_never_opens_an_agent ... ok
 test tui::app::recovery_tests::damaged_runtime_is_preserved_without_resetting_project_preferences ... ok
 test tui::app::recovery_tests::explicit_operations_never_replace_a_requested_save ... ok
 test engine::frame_fuzz_tests::fragmented_and_mutated_acp_frames_obey_size_and_termination_bounds ... ok
 test tui::app::recovery_tests::new_file_can_replace_a_locked_listing_and_failed_forms_keep_their_text ... ok
 test tui::app::recovery_tests::old_project_results_and_failed_background_forms_do_not_replace_newer_work ... ok
+test tui::app::recovery_tests::pinning_a_requirement_replaces_a_locked_context_refresh ... ok
+test extensions::sse_tests::bounded_seeded_mutation_corpus_never_panics_or_grows_without_limit ... ok
 test tui::input::tests::pasted_source_preserves_tabs_and_accepts_the_documented_editor_limit ... ok
 test tui::input::tests::unicode_editing_and_paste_preserve_boundaries ... ok
-test extensions::sse_tests::bounded_seeded_mutation_corpus_never_panics_or_grows_without_limit ... ok
+test tui::app::recovery_tests::task_check_choices_replace_a_locked_status_refresh ... ok
 test tui::view::tests::corrupt_settings_are_preserved_and_setup_still_opens ... ok
-test tui::view::tests::first_run_is_usable_without_config_and_errors_preserve_forms ... ok
-test tui::view::tests::settings_persist_and_permission_typing_cannot_accidentally_allow ... ok
 test tui::app::recovery_tests::conversation_database_contention_keeps_drafts_responsive_and_saves_after_release ... ok
+test tui::view::tests::settings_persist_and_permission_typing_cannot_accidentally_allow ... ok
+test tui::view::tests::first_run_is_usable_without_config_and_errors_preserve_forms ... ok
 test tui::view::tests::every_page_and_dialog_renders_at_supported_sizes ... ok
 test tui::app::recovery_tests::turn_end_refresh_does_not_race_itself_or_replace_an_open_form ... ok
 
-test result: ok. 19 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.27s
+test result: ok. 21 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.27s
 
      Running unittests src/main.rs (target/debug/deps/alt-b5f9dda7b4465950)
 
@@ -38,14 +40,14 @@ test requested_gpu_and_allocation_failure_explain_recovery_without_substituting_
 test cancellation_interrupts_a_stalled_backend_and_preserves_a_failed_report ... ok
 test qualification_cli_returns_without_opening_an_agent_and_keeps_external_scope_explicit ... ok
 
-test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.11s
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.13s
 
      Running tests/download_recovery.rs (target/debug/deps/download_recovery-f164e943558d3c6f)
 
 running 1 test
 test repeated_network_loss_preserves_offsets_and_only_promotes_the_complete_hash ... ok
 
-test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.93s
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.89s
 
      Running tests/extensions.rs (target/debug/deps/extensions-9510221af8995f46)
 
@@ -55,7 +57,7 @@ test remote_auth_session_and_sse ... ok
 test remote_sse_accepts_multiline_data_and_optional_space ... ok
 test selected_stdio_tools_keep_state_and_reconnect_without_replay ... ok
 
-test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.14s
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.16s
 
      Running tests/faults.rs (target/debug/deps/faults-9bb30824ff237f57)
 
@@ -71,8 +73,8 @@ running 7 tests
 test retrieval_finds_named_files_and_important_terms_after_conversational_filler ... ok
 test retrieved_code_keeps_identifiers_and_original_brackets ... ok
 test suggestions_follow_declared_runners_and_do_not_invent_tests ... ok
-test bounded_memory_keeps_current_evidence_and_whole_excerpts_after_restart ... ok
 test tool_guidance_matches_focus_and_does_not_offer_unavailable_execution ... ok
+test bounded_memory_keeps_current_evidence_and_whole_excerpts_after_restart ... ok
 test missing_practice_interpreter_keeps_actionable_error_and_failed_evidence ... ok
 test practice_repair_verification_restart_undo_and_new_lesson ... ok
 
@@ -86,7 +88,7 @@ test streaming_permissions_and_large_session_replay ... ok
 test cancellation_and_broken_peers_do_not_hang ... ok
 test cli_streams_exports_resumes_and_denies_by_default ... ok
 
-test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 11.43s
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 59.47s
 
      Running tests/jobs.rs (target/debug/deps/jobs-2e3752c5a1563cbb)
 
@@ -97,7 +99,7 @@ test persistent_pty_accepts_input_resize_and_reconnect_then_stops ... ok
 test timeout_and_exit_are_saved_and_pid_reuse_cannot_signal_another_process ... ok
 test exiting_owner_stops_only_owned_jobs_and_large_output_is_bounded ... ok
 
-test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.23s
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.85s
 
      Running tests/language.rs (target/debug/deps/language-c48857eb01ba355b)
 
@@ -114,12 +116,12 @@ test import_preserves_original_and_rejects_wrong_format ... ok
 test interrupted_cache_relocation_preserves_originals_and_resumes_same_destination ... ok
 test interrupted_download_resumes_and_promotes_only_verified_bytes ... ok
 test checksum_failure_and_bad_range_never_create_ready_model ... ok
-test server_ignoring_range_restarts_instead_of_concatenating ... ok
 test multipart_promotes_only_complete_set_and_relocates_without_import_loss ... ok
+test server_ignoring_range_restarts_instead_of_concatenating ... ok
 test pause_interrupts_a_stalled_body_and_keeps_partial_file ... ok
 test hub_authentication_is_scoped_without_mutating_the_test_process_environment ... ok
 
-test result: ok. 9 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.23s
+test result: ok. 9 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.29s
 
      Running tests/packs.rs (target/debug/deps/packs-6a6e8fae1089bd48)
 
@@ -128,7 +130,7 @@ test parsers_reject_incomplete_and_malformed_scans_and_preserve_evidence ... ok
 test git_commit_contains_selected_paths_and_preserves_unrelated_staging ... ok
 test http_failure_retest_and_exports_link_to_real_records ... ok
 
-test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.12s
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.13s
 
      Running tests/parser_properties.rs (target/debug/deps/parser_properties-ee5b42ad24031152)
 
@@ -136,7 +138,7 @@ running 2 tests
 test explicit_tool_focus_retains_full_access_terminal_option ... ok
 test bounded_mutations_of_reports_paths_and_utf16_positions_never_panic ... ok
 
-test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.45s
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.47s
 
      Running tests/project_services.rs (target/debug/deps/project_services-cb118a54c18064fa)
 
@@ -150,7 +152,7 @@ test verification_requires_every_check_and_current_source_command_environment ..
 test zero_tests_after_large_output_cannot_verify_a_requirement ... ok
 test discovery_enforces_file_limit_in_a_flat_directory_without_partial_index_commit ... ok
 
-test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.43s
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.39s
 
      Running tests/project_worker.rs (target/debug/deps/project_worker-b6a8e82a774d8b50)
 
@@ -165,13 +167,13 @@ test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; fini
 running 7 tests
 test enforced_reads_paths_checkpoints_undo_and_conflicts ... ok
 test memory_invalidation_failure_budget_and_crash_recovery ... ok
-test native_tool_bridge_cannot_bypass_approval_or_stale_checks ... ok
 test no_silent_isolation_fallback_and_terminal_is_explicit ... ok
+test native_tool_bridge_cannot_bypass_approval_or_stale_checks ... ok
 test stale_edits_symlinks_creation_deletion_and_atomic_task_undo ... ok
 test deterministic_checks_bind_evidence_to_source_and_preserve_original ... ok
 test check_timeout_cancellation_and_early_exit_kill_background_children ... ok
 
-test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.04s
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.05s
 
      Running tests/recovery.rs (target/debug/deps/recovery-e79263658272ceec)
 
@@ -180,7 +182,7 @@ test recovery_worker ... ok
 test session_metadata_and_events_commit_together_and_inline_preferences_ignore_legacy_file ... ok
 test settings_backup_restore_survive_disk_full_and_abrupt_atomic_writes ... ok
 
-test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.10s
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.11s
 
      Running tests/storage.rs (target/debug/deps/storage-f95addfbe758d3d8)
 
@@ -192,18 +194,18 @@ test history_retention_archives_first_and_restores_without_overwriting ... ok
 test mutated_archive_corpus_preserves_atomic_restore_boundary ... ok
 test retention_never_deletes_a_conversation_that_exceeds_restore_limits ... ok
 
-test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.45s
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.43s
 
      Running tests/verification.rs (target/debug/deps/verification-d2e11904ed8253e2)
 
 running 5 tests
 test dependency_symlinks_track_target_changes_without_following_cycles_forever ... ok
-test structured_reports_reject_missing_incomplete_contradictory_and_fabricated_totals ... ok
 test newer_state_is_rejected_before_any_schema_or_journal_mutation ... ok
+test structured_reports_reject_missing_incomplete_contradictory_and_fabricated_totals ... ok
 test cli_can_convert_an_existing_script_command_into_a_pinned_contract ... ok
 test independent_check_contract_rejects_fake_output_and_stales_on_assertion_or_dependency_changes ... ok
 
-test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.11s
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.12s
 
    Doc-tests alt_cli
 

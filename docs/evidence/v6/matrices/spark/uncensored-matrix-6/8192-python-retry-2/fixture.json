@@ -1,0 +1,16 @@
+{
+  "oracle_version": 4,
+  "goal": "Implement retry(fn,attempts) that invokes fn until success, retries only OSError up to attempts, returns successful value, and rethrows the last error on exhaustion. Positive integer attempts required; other exceptions are not retried.",
+  "prompt": "Implement retry(fn,attempts) that invokes fn until success, retries only OSError up to attempts, returns successful value, and rethrows the last error on exhaustion. Positive integer attempts required; other exceptions are not retried. Inspect relevant files, save a brief plan, use native tools to implement the change, and test it. Report what you actually ran and any remaining uncertainty. Preserve existing public interfaces. Keep your explanation brief.",
+  "original_files": {
+    "solution.py": "def retry(fn,attempts):\n return fn()\n"
+  },
+  "oracle_command": [
+    "python3",
+    "/home/runner/work/_temp/campaign/8192-python-retry-2/independent/check.py"
+  ],
+  "oracle_sha256_before": {
+    "completion.json": "962a0cb8a5d384750adbcfa20e06b0143a6084148cd5622262857773a8d0a6d4",
+    "check.py": "075d3e02731fe0c2948a80048d082046bb5c6c0c29a5f4d53d193f4b1988799b"
+  }
+}

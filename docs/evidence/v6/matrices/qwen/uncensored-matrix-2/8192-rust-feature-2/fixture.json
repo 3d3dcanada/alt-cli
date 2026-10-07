@@ -1,0 +1,18 @@
+{
+  "oracle_version": 4,
+  "goal": "Implement median(&[i64]) -> Option<f64> in the Rust library. Empty input is None; odd/even unsorted inputs work; avoid integer overflow for i64::MAX values. Preserve the public API and do not change Cargo.toml.",
+  "prompt": "Implement median(&[i64]) -> Option<f64> in the Rust library. Empty input is None; odd/even unsorted inputs work; avoid integer overflow for i64::MAX values. Preserve the public API and do not change Cargo.toml. Inspect relevant files, save a brief plan, use native tools to implement the change, and test it. Report what you actually ran and any remaining uncertainty. Preserve existing public interfaces. Keep your explanation brief.",
+  "original_files": {
+    "Cargo.toml": "[package]\nname=\"fixture_stats\"\nversion=\"0.1.0\"\nedition=\"2021\"\n",
+    "src/lib.rs": "pub fn median(_values: &[i64]) -> Option<f64> { None }\n"
+  },
+  "oracle_command": [
+    "python3",
+    "/home/runner/work/_temp/campaign/8192-rust-feature-2/independent/check.py"
+  ],
+  "oracle_sha256_before": {
+    "completion.json": "24e82fd324625221a3bf8b7531fbf0375c57602721dc9df3bbe76f740d56f4f0",
+    "check.py": "a2ab63d36c952c48c0fd9bb967469fb808de099dfce5cc8686ab5d483bd13109",
+    "src/lib.rs": "942eeda306422d082f001ee4a730b80bbc753cf5f1f67d2e3f16fe938be4ca5a"
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "oracle_version": 4,
+  "goal": "Repair order totals across pricing.py and orders.py. Discount is a percentage: 10 means ten percent off. Tax is applied once to the discounted subtotal. Preserve the function names and caller interface.",
+  "prompt": "Repair order totals across pricing.py and orders.py. Discount is a percentage: 10 means ten percent off. Tax is applied once to the discounted subtotal. Preserve the function names and caller interface. Inspect relevant files, save a brief plan, use native tools to implement the change, and test it. Report what you actually ran and any remaining uncertainty. Preserve existing public interfaces. Keep your explanation brief.",
+  "original_files": {
+    "pricing.py": "def discounted(price, percent):\n    return price - percent\n",
+    "orders.py": "from pricing import discounted\ndef total(price, discount_percent, tax_rate):\n    subtotal = discounted(price, discount_percent)\n    return subtotal + price * tax_rate\n"
+  },
+  "oracle_command": [
+    "python3",
+    "/home/runner/work/_temp/campaign/8192-python-multifile-2/independent/check.py"
+  ],
+  "oracle_sha256_before": {
+    "completion.json": "98d3e3a1ab41c16ca7691d8c7715c3177b878d76f7552b2a09e2a69c684f1067",
+    "check.py": "6ce5b9945626388bc17941299f8f3d8438c5b83438f9155d2abf725c0baac37b"
+  }
+}

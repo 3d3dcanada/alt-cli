@@ -1,0 +1,18 @@
+{
+  "script_sha256": "009719d4d265ef08040ef18ab157a7f1c5b023c1d5ab45ab2f51c157f1f770d4",
+  "controls": [
+    {
+      "name": "wrong-model",
+      "rejected": true,
+      "exit": 1,
+      "stderr": "Traceback (most recent call last):\n  File \"/workspace/alt-cli/scripts/analyze_matrix.py\", line 22, in <module>\n    assert summary['identity']['sha256'] == MODELS[a.model]['sha256']\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError\n"
+    },
+    {
+      "name": "changed-review-report-hash",
+      "rejected": true,
+      "exit": 1,
+      "stderr": "Traceback (most recent call last):\n  File \"/workspace/alt-cli/scripts/analyze_matrix.py\", line 47, in <module>\n    assert review['report_sha256'] == hashlib.sha256(path.read_bytes()).hexdigest()\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError\n"
+    }
+  ],
+  "scope": "Actual completed Spark matrix with a wrong model label or an altered manual-review identity must not produce a report."
+}

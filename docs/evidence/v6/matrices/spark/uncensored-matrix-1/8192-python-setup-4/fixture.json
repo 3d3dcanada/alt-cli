@@ -1,0 +1,17 @@
+{
+  "oracle_version": 4,
+  "goal": "Repair solution.py main() to load defaults.json relative to its own module file, not current working directory. Return its greeting and preserve the file. It must also work when imported from another working directory.",
+  "prompt": "Repair solution.py main() to load defaults.json relative to its own module file, not current working directory. Return its greeting and preserve the file. It must also work when imported from another working directory. Inspect relevant files, save a brief plan, use native tools to implement the change, and test it. Report what you actually ran and any remaining uncertainty. Preserve existing public interfaces. Keep your explanation brief.",
+  "original_files": {
+    "solution.py": "import json\ndef main():\n return json.load(open(\"defaults.json\"))[\"greeting\"]\n",
+    "defaults.json": "{\"greeting\":\"Hello, Cedar\"}\n"
+  },
+  "oracle_command": [
+    "python3",
+    "/home/runner/work/_temp/campaign/8192-python-setup-4/independent/check.py"
+  ],
+  "oracle_sha256_before": {
+    "completion.json": "c8db9b2d2692a8536cb7381255628c06279dd015331246da3d91c052a56cada8",
+    "check.py": "dc22d5d2e9a15149af45915da9ccb7e62a6b654103032457fc18e878c0bad6a3"
+  }
+}

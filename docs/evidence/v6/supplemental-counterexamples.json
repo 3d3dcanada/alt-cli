@@ -1,0 +1,144 @@
+{
+  "schema": 2,
+  "checks": [
+    {
+      "model": "spark",
+      "case": "heldout-date",
+      "repeat": 5,
+      "report_sha256": "c5bc4a57c9f08043139edaff5b34a7d3048141ca37f44047c54a0d5ac72b8b5f",
+      "original_frozen_oracle_passed": true,
+      "supplemental_script": "from solution import utc_timestamp\nactual=utc_timestamp('2026-01-01T00:00:00.500Z')\nprint(repr(actual))\nassert actual==1767225600\n",
+      "model_source": {
+        "exit": 1,
+        "passed": false,
+        "stdout": "",
+        "stderr": "Traceback (most recent call last):\n  File \"/tmp/alt-supplemental-0puhjwcc/solution.py\", line 11, in utc_timestamp\n    dt = datetime.datetime.strptime(text, \"%Y-%m-%dT%H:%M:%S%z\")\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/_strptime.py\", line 653, in _strptime_datetime\n    tt, fraction, gmtoff_fraction = _strptime(data_string, format)\n                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/_strptime.py\", line 432, in _strptime\n    raise ValueError(\"time data %r does not match format %r\" %\nValueError: time data '2026-01-01T00:00:00.500Z' does not match format '%Y-%m-%dT%H:%M:%S%z'\n\nDuring handling of the above exception, another exception occurred:\n\nTraceback (most recent call last):\n  File \"<string>\", line 2, in <module>\n  File \"/tmp/alt-supplemental-0puhjwcc/solution.py\", line 15, in utc_timestamp\n    raise ValueError(f\"naive datetime: {text}\")\nValueError: naive datetime: 2026-01-01T00:00:00.500Z\n"
+      },
+      "reference_control": {
+        "exit": 0,
+        "passed": true,
+        "stdout": "1767225600\n",
+        "stderr": ""
+      },
+      "reference_source_sha256": {
+        "solution.py": "fffb14b0c059c0b9de8e368ce733fc756bee1fe6c780e2c130e167fb6c59eb38"
+      }
+    },
+    {
+      "model": "qwen",
+      "case": "heldout-toposort",
+      "repeat": 3,
+      "report_sha256": "0fba65abbb837f646cea3e976495d2d21e2a86ca0159110ddc11cde3c61d4dbb",
+      "original_frozen_oracle_passed": true,
+      "supplemental_script": "from solution import order\nactual=order({'db':[]})\nprint(repr(actual))\nassert actual==['db']\n",
+      "model_source": {
+        "exit": 1,
+        "passed": false,
+        "stdout": "[]\n",
+        "stderr": "Traceback (most recent call last):\n  File \"<string>\", line 4, in <module>\nAssertionError\n"
+      },
+      "reference_control": {
+        "exit": 0,
+        "passed": true,
+        "stdout": "['db']\n",
+        "stderr": ""
+      },
+      "reference_source_sha256": {
+        "solution.py": "4f69c62071f017731c4f0ee13cb0929c1070722620d3fb7901faa700473efbb3"
+      }
+    },
+    {
+      "model": "qwen",
+      "case": "heldout-deduplicate",
+      "repeat": 1,
+      "report_sha256": "e56694ed55367e6edf1b198f828b14a407073de9ee55751a1810b845ceed2a6e",
+      "original_frozen_oracle_passed": true,
+      "supplemental_script": "from solution import unique\nvalues=[{\"id\":None,\"v\":1},{\"id\":None,\"v\":2}]\nactual=unique(values,lambda value:value[\"id\"])\nexpected=values[:1]\nprint(repr(actual))\nif actual!=expected: raise ValueError(f\"Expected {expected!r}, got {actual!r}\")\n",
+      "model_source": {
+        "exit": 1,
+        "passed": false,
+        "stdout": "[]\n",
+        "stderr": "Traceback (most recent call last):\n  File \"<string>\", line 6, in <module>\nValueError: Expected [{'id': None, 'v': 1}], got []\n"
+      },
+      "reference_control": {
+        "exit": 0,
+        "passed": true,
+        "stdout": "[{'id': None, 'v': 1}]\n",
+        "stderr": ""
+      },
+      "reference_source_sha256": {
+        "solution.py": "6e2db8937061a6c2a38fb74f0b1fb03bdb2968c9b98a6cba289953722941166f"
+      }
+    },
+    {
+      "model": "qwen",
+      "case": "heldout-deduplicate",
+      "repeat": 2,
+      "report_sha256": "88c5da962b1a18e71390d52717163cbc90081d1cf0c20c0da6d72ed364660923",
+      "original_frozen_oracle_passed": true,
+      "supplemental_script": "from solution import unique\nvalues=[-1,-2,-1]\nactual=unique(values,lambda value:value)\nexpected=[-1,-2]\nprint(repr(actual))\nif actual!=expected: raise ValueError(f\"Expected {expected!r}, got {actual!r}\")\n",
+      "model_source": {
+        "exit": 1,
+        "passed": false,
+        "stdout": "[-1]\n",
+        "stderr": "Traceback (most recent call last):\n  File \"<string>\", line 6, in <module>\nValueError: Expected [-1, -2], got [-1]\n"
+      },
+      "reference_control": {
+        "exit": 0,
+        "passed": true,
+        "stdout": "[-1, -2]\n",
+        "stderr": ""
+      },
+      "reference_source_sha256": {
+        "solution.py": "6e2db8937061a6c2a38fb74f0b1fb03bdb2968c9b98a6cba289953722941166f"
+      }
+    },
+    {
+      "model": "qwen",
+      "case": "heldout-deduplicate",
+      "repeat": 3,
+      "report_sha256": "30238fbb0fa3e3c1e3ef38af326f8ff38d242622f6b6cb19eb14bfaa78d2d22b",
+      "original_frozen_oracle_passed": true,
+      "supplemental_script": "from solution import unique\nvalues=[{\"id\":None,\"v\":1},{\"id\":None,\"v\":2}]\nactual=unique(values,lambda value:value[\"id\"])\nexpected=values[:1]\nprint(repr(actual))\nif actual!=expected: raise ValueError(f\"Expected {expected!r}, got {actual!r}\")\n",
+      "model_source": {
+        "exit": 1,
+        "passed": false,
+        "stdout": "[]\n",
+        "stderr": "Traceback (most recent call last):\n  File \"<string>\", line 6, in <module>\nValueError: Expected [{'id': None, 'v': 1}], got []\n"
+      },
+      "reference_control": {
+        "exit": 0,
+        "passed": true,
+        "stdout": "[{'id': None, 'v': 1}]\n",
+        "stderr": ""
+      },
+      "reference_source_sha256": {
+        "solution.py": "6e2db8937061a6c2a38fb74f0b1fb03bdb2968c9b98a6cba289953722941166f"
+      }
+    },
+    {
+      "model": "qwen",
+      "case": "heldout-deduplicate",
+      "repeat": 4,
+      "report_sha256": "9902b3ea3af7044e30800a32083e533e11f2427496a3e5e649b2ba8bb7282e9d",
+      "original_frozen_oracle_passed": true,
+      "supplemental_script": "from solution import unique\nvalues=[{\"id\":None,\"v\":1},{\"id\":None,\"v\":2}]\nactual=unique(values,lambda value:value[\"id\"])\nexpected=values[:1]\nprint(repr(actual))\nif actual!=expected: raise ValueError(f\"Expected {expected!r}, got {actual!r}\")\n",
+      "model_source": {
+        "exit": 1,
+        "passed": false,
+        "stdout": "[]\n",
+        "stderr": "Traceback (most recent call last):\n  File \"<string>\", line 6, in <module>\nValueError: Expected [{'id': None, 'v': 1}], got []\n"
+      },
+      "reference_control": {
+        "exit": 0,
+        "passed": true,
+        "stdout": "[{'id': None, 'v': 1}]\n",
+        "stderr": ""
+      },
+      "reference_source_sha256": {
+        "solution.py": "6e2db8937061a6c2a38fb74f0b1fb03bdb2968c9b98a6cba289953722941166f"
+      }
+    }
+  ],
+  "scope": "Six post-hoc counterexamples across three task families discovered during manual review; each probe rejects the retained model repair and accepts the frozen reference repair. These do not change oracle-4 matrix scores and are not new model attempts. They demonstrate limits of passing the existing examples. Expand a separately versioned future oracle; do not tune on these held-out cases while describing them as unseen."
+}

@@ -1,0 +1,41 @@
+[
+  {
+    "name": "native-cat",
+    "argv": [
+      "/usr/bin/cat",
+      "/proc/self/maps"
+    ],
+    "exit": 0,
+    "stderr": "",
+    "stdout_bytes": 2130,
+    "timeout": false
+  },
+  {
+    "name": "emulated-cat-nehalem",
+    "argv": [
+      "qemu-x86_64",
+      "-cpu",
+      "Nehalem",
+      "/usr/bin/cat",
+      "/proc/self/maps"
+    ],
+    "exit": null,
+    "timeout": true,
+    "stderr": "b'qemu-x86_64: QEMU internal SIGSEGV {code=MAPERR, addr=0x20}\\n'",
+    "stdout_bytes": 0
+  },
+  {
+    "name": "emulated-cat-max",
+    "argv": [
+      "qemu-x86_64",
+      "-cpu",
+      "max",
+      "/usr/bin/cat",
+      "/proc/self/maps"
+    ],
+    "exit": null,
+    "timeout": true,
+    "stderr": "b'qemu-x86_64: QEMU internal SIGSEGV {code=MAPERR, addr=0x20}\\n'",
+    "stdout_bytes": 0
+  }
+]

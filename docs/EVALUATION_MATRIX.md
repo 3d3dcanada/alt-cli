@@ -76,9 +76,11 @@ not a blanket claim of higher capability.
 
 `compare_acceptance.py BASELINE CANDIDATE --output comparison.json` rejects mismatched
 weights, fixtures, runtime/engine, contexts, repeats, threads and time budgets. It
-reports source success, naturally ended turns and Wilson intervals separately.
-An `end_turn` stop reason is distinct from a transport response or `max_tokens`;
-even a natural end does not establish that the requested behavior works. The report
+reports source success, protocol turn endings and Wilson intervals separately.
+An `end_turn` stop reason is distinct from `max_tokens`, but it is still only a
+protocol outcome. Goose can return it with a message that the action budget was
+reached. It does not establish that the requested behavior works; derived reports
+identify those budget notices separately. The report
 marks incomplete campaigns. Final-prose claim accuracy remains unassessed until a
 reviewer checks the retained prose against the actual source and tool evidence.
 Success is never inferred from an exit code or fluent explanation.
@@ -93,3 +95,16 @@ Preset promotion requires complete development and held-out matrices on the exac
 configuration, reviewed false claims, acceptable task latency and applicable
 physical hardware measurements. A native tool probe, synthetic protocol fixture,
 small pilot or successful throughput benchmark alone cannot promote a preset.
+
+After validating the full matrix:
+
+```bash
+python3 scripts/analyze_matrix.py RETAINED_MATRIX --model spark \
+  --claims MANUAL_REVIEWS.json --output analysis.json
+```
+
+The source directory must contain `summary.json` and all eight shard directories.
+Manual rows must match the model, case, repeat and original report SHA-256. The
+analysis records reviewed/unreviewed counts and separates action-budget messages
+from protocol stop reasons and behavioral success. A claim classification is a
+reviewer's primary assessment, not automatic proof that every sentence is true.

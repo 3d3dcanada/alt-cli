@@ -1,0 +1,16 @@
+{
+  "oracle_version": 4,
+  "goal": "Implement migrate(connection) for SQLite. In one transaction create items(id integer primary key, name text not null), add active integer not null default 1 to existing/new items, preserve existing rows and be idempotent.",
+  "prompt": "Implement migrate(connection) for SQLite. In one transaction create items(id integer primary key, name text not null), add active integer not null default 1 to existing/new items, preserve existing rows and be idempotent. Inspect relevant files, save a brief plan, use native tools to implement the change, and test it. Report what you actually ran and any remaining uncertainty. Preserve existing public interfaces. Keep your explanation brief.",
+  "original_files": {
+    "solution.py": "def migrate(connection):\n connection.execute(\"drop table if exists items\")\n"
+  },
+  "oracle_command": [
+    "python3",
+    "/home/runner/work/_temp/campaign/8192-python-migration-5/independent/check.py"
+  ],
+  "oracle_sha256_before": {
+    "completion.json": "b671d0c5965a48739e5ad34858928323a0c099cec53453c6a2fe481fa2a0de13",
+    "check.py": "254f8997e394caa9f5222dda7e90238889ccebead2a573f170165abefd0c1042"
+  }
+}

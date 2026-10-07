@@ -1,0 +1,333 @@
+{
+  "schema": 1,
+  "checks": [
+    {
+      "name": "emulator-version",
+      "argv": [
+        "qemu-x86_64",
+        "--version"
+      ],
+      "exit": 0,
+      "passed": true,
+      "seconds": 0.002,
+      "stdout": "qemu-x86_64 version 10.0.13 (Debian 1:10.0.13+ds-0+deb13u1)\nCopyright (c) 2003-2025 Fabrice Bellard and the QEMU Project developers\n",
+      "stderr": ""
+    },
+    {
+      "name": "Nehalem-alt-version",
+      "argv": [
+        "qemu-x86_64",
+        "-cpu",
+        "Nehalem",
+        "/alt",
+        "--version"
+      ],
+      "exit": 0,
+      "passed": true,
+      "seconds": 0.087,
+      "stdout": "alt 0.6.0\n",
+      "stderr": ""
+    },
+    {
+      "name": "Nehalem-alt-practice",
+      "argv": [
+        "qemu-x86_64",
+        "-cpu",
+        "Nehalem",
+        "/alt",
+        "--data-dir",
+        "/tmp/alt-Nehalem",
+        "practice"
+      ],
+      "exit": 0,
+      "passed": true,
+      "seconds": 0.215,
+      "stdout": "{\n  \"project\": \"/tmp/alt-Nehalem/practice/ae05fbb3-e78e-4891-adf6-ef820301f889/project\",\n  \"task\": \"practice-ae05fbb3-e78e-4891-adf6-ef820301f889\",\n  \"goal\": \"Repair greeting.py so greet(name) trims spaces and returns Hello, NAME!, using friend for an empty name. Preserve the function interface. Read the file, apply an edit, and run the configured Practice behavior check. Explain the actual result.\"\n}\n",
+      "stderr": ""
+    },
+    {
+      "name": "Nehalem-goose-version",
+      "argv": [
+        "qemu-x86_64",
+        "-cpu",
+        "Nehalem",
+        "/goose",
+        "--version"
+      ],
+      "exit": 0,
+      "passed": true,
+      "seconds": 0.237,
+      "stdout": " 1.53.0\n",
+      "stderr": ""
+    },
+    {
+      "name": "Nehalem-llama-version",
+      "argv": [
+        "qemu-x86_64",
+        "-cpu",
+        "Nehalem",
+        "/runtime/llama-server",
+        "--version"
+      ],
+      "exit": 0,
+      "passed": true,
+      "seconds": 0.147,
+      "stdout": "",
+      "stderr": "version: 0.6.0-dev (build 11429, commit d81235049)\nbuilt with GNU 11.4.0 for Linux x86_64\n"
+    },
+    {
+      "name": "Penryn-alt-version",
+      "argv": [
+        "qemu-x86_64",
+        "-cpu",
+        "Penryn",
+        "/alt",
+        "--version"
+      ],
+      "exit": 0,
+      "passed": true,
+      "seconds": 0.087,
+      "stdout": "alt 0.6.0\n",
+      "stderr": ""
+    },
+    {
+      "name": "Penryn-alt-practice",
+      "argv": [
+        "qemu-x86_64",
+        "-cpu",
+        "Penryn",
+        "/alt",
+        "--data-dir",
+        "/tmp/alt-Penryn",
+        "practice"
+      ],
+      "exit": 0,
+      "passed": true,
+      "seconds": 0.225,
+      "stdout": "{\n  \"project\": \"/tmp/alt-Penryn/practice/e8872b18-b355-4c47-aace-1d2b91719f91/project\",\n  \"task\": \"practice-e8872b18-b355-4c47-aace-1d2b91719f91\",\n  \"goal\": \"Repair greeting.py so greet(name) trims spaces and returns Hello, NAME!, using friend for an empty name. Preserve the function interface. Read the file, apply an edit, and run the configured Practice behavior check. Explain the actual result.\"\n}\n",
+      "stderr": ""
+    },
+    {
+      "name": "Penryn-goose-version",
+      "argv": [
+        "qemu-x86_64",
+        "-cpu",
+        "Penryn",
+        "/goose",
+        "--version"
+      ],
+      "exit": 0,
+      "passed": true,
+      "seconds": 0.234,
+      "stdout": " 1.53.0\n",
+      "stderr": ""
+    },
+    {
+      "name": "Penryn-llama-version",
+      "argv": [
+        "qemu-x86_64",
+        "-cpu",
+        "Penryn",
+        "/runtime/llama-server",
+        "--version"
+      ],
+      "exit": 0,
+      "passed": true,
+      "seconds": 0.139,
+      "stdout": "",
+      "stderr": "version: 0.6.0-dev (build 11429, commit d81235049)\nbuilt with GNU 11.4.0 for Linux x86_64\n"
+    },
+    {
+      "name": "qemu64-alt-version",
+      "argv": [
+        "qemu-x86_64",
+        "-cpu",
+        "qemu64",
+        "/alt",
+        "--version"
+      ],
+      "exit": 0,
+      "passed": true,
+      "seconds": 0.082,
+      "stdout": "alt 0.6.0\n",
+      "stderr": ""
+    },
+    {
+      "name": "qemu64-alt-practice",
+      "argv": [
+        "qemu-x86_64",
+        "-cpu",
+        "qemu64",
+        "/alt",
+        "--data-dir",
+        "/tmp/alt-qemu64",
+        "practice"
+      ],
+      "exit": 0,
+      "passed": true,
+      "seconds": 0.236,
+      "stdout": "{\n  \"project\": \"/tmp/alt-qemu64/practice/79ffcb45-e494-4179-8fde-f11126551fc1/project\",\n  \"task\": \"practice-79ffcb45-e494-4179-8fde-f11126551fc1\",\n  \"goal\": \"Repair greeting.py so greet(name) trims spaces and returns Hello, NAME!, using friend for an empty name. Preserve the function interface. Read the file, apply an edit, and run the configured Practice behavior check. Explain the actual result.\"\n}\n",
+      "stderr": ""
+    },
+    {
+      "name": "qemu64-goose-version",
+      "argv": [
+        "qemu-x86_64",
+        "-cpu",
+        "qemu64",
+        "/goose",
+        "--version"
+      ],
+      "exit": 0,
+      "passed": true,
+      "seconds": 0.236,
+      "stdout": " 1.53.0\n",
+      "stderr": ""
+    },
+    {
+      "name": "qemu64-llama-version",
+      "argv": [
+        "qemu-x86_64",
+        "-cpu",
+        "qemu64",
+        "/runtime/llama-server",
+        "--version"
+      ],
+      "exit": 0,
+      "passed": true,
+      "seconds": 0.144,
+      "stdout": "",
+      "stderr": "version: 0.6.0-dev (build 11429, commit d81235049)\nbuilt with GNU 11.4.0 for Linux x86_64\n"
+    },
+    {
+      "name": "Nehalem-selected-uncensored-generation",
+      "argv": [
+        "qemu-x86_64",
+        "-cpu",
+        "Nehalem",
+        "/runtime/llama-server",
+        "--model",
+        "/model.gguf",
+        "--ctx-size",
+        "512",
+        "--threads",
+        "2",
+        "--batch-size",
+        "32",
+        "--ubatch-size",
+        "32",
+        "--parallel",
+        "1",
+        "--gpu-layers",
+        "0",
+        "--port",
+        "18819",
+        "--host",
+        "127.0.0.1"
+      ],
+      "passed": true,
+      "load_seconds": 17.812,
+      "response": {
+        "index": 0,
+        "content": "\nassistant:\n\n\n\n",
+        "tokens": [],
+        "id_slot": 0,
+        "stop": true,
+        "model": "/model.gguf",
+        "tokens_predicted": 8,
+        "tokens_evaluated": 5,
+        "generation_settings": {
+          "seed": 42,
+          "temperature": 0.0,
+          "dynatemp_range": 0.0,
+          "dynatemp_exponent": 1.0,
+          "top_k": -1,
+          "top_p": 0.949999988079071,
+          "min_p": 0.05000000074505806,
+          "top_n_sigma": -1.0,
+          "xtc_probability": 0.0,
+          "xtc_threshold": 0.10000000149011612,
+          "typical_p": 1.0,
+          "repeat_last_n": 64,
+          "repeat_penalty": 1.0,
+          "presence_penalty": 0.0,
+          "frequency_penalty": 0.0,
+          "dry_multiplier": 0.0,
+          "dry_base": 1.75,
+          "dry_allowed_length": 2,
+          "dry_penalty_last_n": 64,
+          "dry_sequence_breakers": [
+            "\n",
+            ":",
+            "\"",
+            "*"
+          ],
+          "mirostat": 0,
+          "mirostat_tau": 5.0,
+          "mirostat_eta": 0.10000000149011612,
+          "adaptive_target": -1.0,
+          "adaptive_decay": 0.8999999761581421,
+          "stop": [],
+          "max_tokens": 8,
+          "n_predict": 8,
+          "n_keep": 0,
+          "n_discard": 0,
+          "ignore_eos": false,
+          "stream": false,
+          "logit_bias": [],
+          "n_probs": 0,
+          "min_keep": 0,
+          "grammar": "",
+          "grammar_lazy": false,
+          "grammar_triggers": [],
+          "preserved_tokens": [],
+          "chat_format": "Content-only",
+          "reasoning_format": "deepseek",
+          "reasoning_in_content": false,
+          "generation_prompt": "",
+          "samplers": [
+            "penalties",
+            "dry",
+            "top_n_sigma",
+            "top_k",
+            "typ_p",
+            "top_p",
+            "min_p",
+            "xtc",
+            "temperature"
+          ],
+          "speculative.types": "none",
+          "timings_per_token": false,
+          "post_sampling_probs": false,
+          "backend_sampling": false,
+          "lora": []
+        },
+        "prompt": "Reply with only OK.",
+        "has_new_line": true,
+        "truncated": false,
+        "stop_type": "limit",
+        "stopping_word": "",
+        "tokens_cached": 12,
+        "timings": {
+          "cache_n": 0,
+          "prompt_n": 5,
+          "prompt_ms": 16489.425,
+          "prompt_per_token_ms": 3297.8849999999998,
+          "prompt_per_second": 0.3032246424602435,
+          "predicted_n": 8,
+          "predicted_ms": 26671.157,
+          "predicted_per_token_ms": 3810.165285714286,
+          "predicted_per_second": 0.2624558057230138
+        }
+      },
+      "seconds": 61.126,
+      "process_reaped": true
+    }
+  ],
+  "model_sha256": "1e4d920aaff1248b68751e49b16dae6104c5f4d3924a86a290e24b31db08113c",
+  "alt_sha256": "e8611c9b3e75dd145578c6fb62ca5463b1e411f6ba5aa09606e978fe2ab83d5c",
+  "goose_sha256": "59655719cd9b098dab59b6e2c50f1e565a935992fae2e539f52018a960e0512a",
+  "runtime_sha256": "5faf410bbbc00a1b94b09ee01623699f255365628dfa73b1ee552d9e52a2231d",
+  "passed": true,
+  "scope": "QEMU user-mode CPU instruction compatibility probes for Nehalem, Penryn and qemu64 without AVX, plus one raw-completion forward-generation probe on Nehalem using explicitly selected SHA-pinned uncensored Spark. Container Debian 13, network disabled except loopback. Not physical PC qualification, throughput, full application coverage, GPU support or a model task score."
+}

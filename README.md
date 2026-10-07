@@ -88,8 +88,11 @@ CUDA 13-only build. CPU mode remains available.
 
 The Hub's variant filter uses publisher labels, not a quality certification.
 Qwen Heretic, Spark-X2.5 abliterated and MiMo Heretic derivatives have exploratory
-results in the project. The latest three Spark coding pilots each scored **0/5**;
-no improved preset is advertised. Real LM Studio, private Hub acquisition and GPU
+results in the project. The complete 0.6 CPU matrices passed **7/120** pinned
+behavioral checks for Spark and **16/120** for Qwen. Manual review and additional
+edge cases found unsupported claims and incomplete repairs even among passes.
+These are different model/budget configurations, not a matched comparison.
+No model preset is promoted. Real LM Studio, private Hub acquisition and GPU
 qualification remain open acceptance gates. See [model/runtime qualification](docs/QUALIFICATION.md)
 and [live evaluations](docs/LIVE_EVALUATION.md).
 
@@ -130,7 +133,7 @@ Keys are referenced by environment-variable name, not saved in model profiles.
 - [Implementation and evidence](docs/IMPLEMENTATION.md) · [Current work orders](docs/WORK_ORDERS_0.6.md) · [PC test guide](docs/PC_TESTING.md)
 - [Research and project history](docs/research/README.md) · [Documentation index](docs/README.md)
 
-Current validation includes **91 Rust tests**, five PTY walkthroughs, 30
+Current validation includes **93 Rust tests**, five PTY walkthroughs, 30
 responsiveness journeys, 60 stream-recovery scenarios and packaged
 install/update/rollback checks on Debian 11 and Ubuntu 24.04. The local PC recorder
 also passed a live uncensored-model CPU trial. These measurements do not guarantee

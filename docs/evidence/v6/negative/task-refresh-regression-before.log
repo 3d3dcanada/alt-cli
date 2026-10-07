@@ -1,0 +1,22 @@
+   Compiling alt-cli v0.6.0 (/workspace/alt-cli)
+    Finished `test` profile [unoptimized] target(s) in 16.90s
+     Running unittests src/lib.rs (target/debug/deps/alt_cli-47c0238de87e205a)
+
+running 1 test
+test tui::app::recovery_tests::task_check_choices_replace_a_locked_status_refresh ... FAILED
+
+failures:
+
+---- tui::app::recovery_tests::task_check_choices_replace_a_locked_status_refresh stdout ----
+
+thread 'tui::app::recovery_tests::task_check_choices_replace_a_locked_status_refresh' (234868) panicked at src/tui/app.rs:2130:18:
+A requested check choice should supersede a disposable status refresh: Another background operation is still running. Wait, or pause it first
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    tui::app::recovery_tests::task_check_choices_replace_a_locked_status_refresh
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 19 filtered out; finished in 0.01s
+
+error: test failed, to rerun pass `--lib`
