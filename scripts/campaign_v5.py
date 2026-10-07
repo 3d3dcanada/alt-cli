@@ -50,9 +50,9 @@ def main():
     p.add_argument('--partition',choices=['development','held-out'],default='development')
     p.add_argument('--cases');p.add_argument('--repeats',type=int,default=3);p.add_argument('--context',type=int,default=8192)
     p.add_argument('--generated-tokens',type=int,default=8192);p.add_argument('--requests',type=int,default=12)
-    p.add_argument('--timeout',type=int,default=240);p.add_argument('--threads',type=int,default=2)
+    p.add_argument('--timeout',type=int,default=240);p.add_argument('--threads',type=int,default=2);p.add_argument('--batch',type=int,default=128)
     p.add_argument('--seed',type=int,default=42);p.add_argument('--stop-after',type=int);p.add_argument('--resume',action='store_true')
-    a=p.parse_args();assert a.repeats>0 and a.timeout>0 and a.threads>0
+    a=p.parse_args();assert a.repeats>0 and a.timeout>0 and a.threads>0 and 16<=a.batch<=8192
     cases=a.cases.split(',') if a.cases else (DEVELOPMENT if a.partition=='development' else HELD_OUT)
     assert len(set(cases))==len(cases) and all(n in CASES and CASES[n]['partition']==a.partition for n in cases)
     arms=json.loads(a.arms.read_text());assert arms and len({r['name'] for r in arms})==len(arms)
@@ -64,7 +64,7 @@ def main():
     assert sha(a.model)==a.sha256,'Exact artifact mismatch'
     root=a.output.resolve();root.mkdir(parents=True,exist_ok=a.resume)
     files={n:getattr(a,n).resolve() for n in ['binary','engine','runtime','model']}
-    identity={'schema':1,'oracle_version':ORACLE_VERSION,'artifacts':{n:sha(f) for n,f in files.items()},'arms':arms,'cases':cases,'partition':a.partition,'repeats':a.repeats,'context':a.context,'timeout':a.timeout,'threads':a.threads,'seed':a.seed,'generated_tokens':a.generated_tokens,'requests':a.requests,'uncensored':True,'oracle_code':{n:sha(Path(__file__).with_name(n)) for n in ['acceptance_v5.py','acceptance_projects.py','acceptance_extra.py','live_acceptance.py','campaign_v5.py']}}
+    identity={'schema':1,'oracle_version':ORACLE_VERSION,'artifacts':{n:sha(f) for n,f in files.items()},'arms':arms,'cases':cases,'partition':a.partition,'repeats':a.repeats,'context':a.context,'timeout':a.timeout,'threads':a.threads,'batch':a.batch,'seed':a.seed,'generated_tokens':a.generated_tokens,'requests':a.requests,'uncensored':True,'oracle_code':{n:sha(Path(__file__).with_name(n)) for n in ['acceptance_v5.py','acceptance_projects.py','acceptance_extra.py','live_acceptance.py','live_tui_turn.py','campaign_v5.py']}}
     schedule=[];rng=random.Random(a.seed)
     for rep in range(a.repeats):
         tasks=cases.copy();rng.shuffle(tasks)
@@ -83,7 +83,7 @@ def main():
         if a.stop_after and executed>=a.stop_after:break
         arm=next(r for r in arms if r['name']==cell['arm'])
         freeze_evaluators(root,identity['oracle_code'],True)
-        cmd=[sys.executable,str(evaluator/'live_acceptance.py'),'--suite','v5','--binary',str(root/'alt-under-test'),'--engine',str(files['engine']),'--runtime',str(files['runtime']),'--model',str(files['model']),'--sha256',a.sha256,'--uncensored','--verification-plan','--generated-tokens',str(a.generated_tokens),'--requests',str(a.requests),'--contexts',str(a.context),'--timeout',str(a.timeout),'--threads',str(a.threads),'--partition',a.partition,'--cases',cell['case'],'--repeats','1','--output',str(destination)]
+        cmd=[sys.executable,str(evaluator/'live_acceptance.py'),'--suite','v5','--binary',str(root/'alt-under-test'),'--engine',str(files['engine']),'--runtime',str(files['runtime']),'--model',str(files['model']),'--sha256',a.sha256,'--uncensored','--verification-plan','--generated-tokens',str(a.generated_tokens),'--requests',str(a.requests),'--contexts',str(a.context),'--timeout',str(a.timeout),'--threads',str(a.threads),'--batch',str(a.batch),'--partition',a.partition,'--cases',cell['case'],'--repeats','1','--output',str(destination)]
         for n in ['output_tokens','reasoning_tokens','thinking','temperature','top_p','tool_profile','workflow','skill']:
             if n in arm:cmd+=['--'+n.replace('_','-'),str(arm[n])]
         if destination.exists():cmd.append('--resume')

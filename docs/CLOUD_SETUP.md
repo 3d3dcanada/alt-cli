@@ -10,8 +10,19 @@ It pins Rust 1.99.0 and Goose 1.53.0, verifies the engine artifact, installs the
 Python PTY-test and release-schema dependencies into `/workspace/.alt-tools/python`, and runs
 Rust/build/lint, terminal walkthroughs, both historical and new independent
 project oracles, training/schema/adapter boundaries, executable skill helpers,
-bounded analysis and real-Goose provider/candidate fixtures. It downloads no model weights. Package and
+bounded analysis and real-Goose provider/candidate fixtures, including both compact
+edit formats through both adapters. It downloads no model weights. Package and
 model-quality tests are separate because they take longer and need specific tools.
+
+To retain raw compact protocol and TUI receipts, choose a fresh output directory:
+
+```bash
+ALT_SETUP_EVIDENCE_DIR=/workspace/alt-setup-evidence bash scripts/setup-cloud.sh
+```
+
+Use a different directory for another recorded run so earlier terminal evidence
+remains intact. These scripted provider checks have no model weights and do not
+count as coding successes.
 
 For subsequent shells:
 
@@ -36,7 +47,7 @@ Optional validation:
 ```bash
 # Docker is needed; the portable script builds and packages against Debian 11.
 bash scripts/build-portable.sh
-python3 scripts/release_gate.py dist/alt-0.5.0-linux-x86_64.tar.gz \
+python3 scripts/release_gate.py dist/alt-0.6.0-linux-x86_64.tar.gz \
   --previous /path/to/actual-previous-package.tar.gz --require-upgrade \
   --output dist/release-gate.json
 # For real SSH/tmux acceptance, build the disposable loopback-only test host.

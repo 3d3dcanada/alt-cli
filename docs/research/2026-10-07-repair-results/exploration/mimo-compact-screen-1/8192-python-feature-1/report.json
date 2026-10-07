@@ -1,0 +1,385 @@
+{
+  "case": "python-feature",
+  "context": 8192,
+  "repeat": 1,
+  "passed": false,
+  "cli_exit": 1,
+  "wall_seconds": 313.58,
+  "outer_timeout": false,
+  "sampled_alt_tree_peak_rss_bytes": 10331066368,
+  "rss_scope": "Alt, Goose and managed inference runtime",
+  "vram": null,
+  "oracle_unchanged": true,
+  "before": {
+    "passed": false,
+    "completion_observed": false,
+    "exit": 1,
+    "stdout": "",
+    "stderr": "Traceback (most recent call last):\n  File \"/workspace/.alt-repair/mimo-compact-screen-1/8192-python-feature-1/independent/check.py\", line 4, in <module>\n    assert slug(\" Hello, CEDAR! \")==\"hello-cedar\"\n           ^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/workspace/.alt-repair/mimo-compact-screen-1/8192-python-feature-1/project/formatter.py\", line 2, in slug\n    raise NotImplementedError(\"slug\")\nNotImplementedError: slug\n"
+  },
+  "after": {
+    "passed": false,
+    "completion_observed": false,
+    "exit": 1,
+    "stdout": "",
+    "stderr": "Traceback (most recent call last):\n  File \"/workspace/.alt-repair/mimo-compact-screen-1/8192-python-feature-1/independent/check.py\", line 4, in <module>\n    assert slug(\" Hello, CEDAR! \")==\"hello-cedar\"\n           ^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/workspace/.alt-repair/mimo-compact-screen-1/8192-python-feature-1/project/formatter.py\", line 2, in slug\n    raise NotImplementedError(\"slug\")\nNotImplementedError: slug\n"
+  },
+  "tool_calls": [
+    {
+      "_meta": {
+        "goose": {
+          "created": 1791374399,
+          "messageId": "chatcmpl-PIxvR78uJ19MSaTPp68sdE9NP0zMdNBy",
+          "toolCall": {
+            "extensionName": "alt",
+            "toolName": "alt__read"
+          }
+        }
+      },
+      "rawInput": {
+        "lines": 100,
+        "path": "formatter.py"
+      },
+      "sessionUpdate": "tool_call",
+      "title": "alt: read \u00b7 formatter.py",
+      "toolCallId": "ZKJ8y44hs8mxeFpYM9dNc6N3uhBy7afG"
+    },
+    {
+      "_meta": {
+        "goose": {
+          "created": 1791374399,
+          "messageId": "chatcmpl-PIxvR78uJ19MSaTPp68sdE9NP0zMdNBy",
+          "toolCall": {
+            "extensionName": "alt",
+            "toolName": "alt__remember"
+          }
+        }
+      },
+      "rawInput": {
+        "kind": "plan",
+        "text": "Implement slug(text) in formatter.py: lowercase ASCII letters, keep digits, collapse other chars to single hyphens, strip edge hyphens. Then run acceptance check."
+      },
+      "sessionUpdate": "tool_call",
+      "title": "alt: remember",
+      "toolCallId": "0mIXVbaDUqMYlb4hZGs3icU9B2YuVy20"
+    },
+    {
+      "_meta": {
+        "goose": {
+          "created": 1791374444,
+          "messageId": "chatcmpl-qMQdJprqD6GyWL1aIDC8Lu2zDZuy8jO8",
+          "toolCall": {
+            "extensionName": "alt",
+            "toolName": "alt__edit_lines"
+          }
+        }
+      },
+      "rawInput": {
+        "lines": [
+          "def slug(text):",
+          "    \"\"\"Return a URL-safe slug: lowercase ASCII letters and digits, with runs of",
+          "    \"other characters collapsed into a single hyphen and edge hyphens removed.\"\"\"",
+          "    parts = []",
+          "    for ch in text:",
+          "        if ch.isascii() and ch.islower():",
+          "            parts.append(ch)",
+          "        elif ch.isascii() and ch.isdigit():",
+          "            parts.append(ch)",
+          "        else:",
+          "            parts.append(\"-\" if not parts or parts[-1] != \"-\" else \"\")",
+          "    return \"-\".join(parts).strip(\"-\")",
+          ""
+        ],
+        "path": "formatter.py"
+      },
+      "sessionUpdate": "tool_call",
+      "title": "alt: edit lines \u00b7 formatter.py",
+      "toolCallId": "bkYGlRbmyGIFha8kftQruP3ItgBWpBuT"
+    },
+    {
+      "_meta": {
+        "goose": {
+          "created": 1791374490,
+          "messageId": "chatcmpl-7nB5Pg3rfePkjzknjPXEcVZqwrFuGUee",
+          "toolCall": {
+            "extensionName": "alt",
+            "toolName": "alt__edit_lines"
+          }
+        }
+      },
+      "rawInput": {
+        "lines": [
+          "def slug(text):",
+          "    \"\"\"Return a URL-safe slug: lowercase ASCII letters and digits, with runs of",
+          "    \"other characters collapsed into a single hyphen and edge hyphens removed.\"\"\"",
+          "    parts = []",
+          "    for ch in text:",
+          "        if ch.isascii() and ch.islower():",
+          "            parts.append(ch)",
+          "        elif ch.isascii() and ch.isdigit():",
+          "            parts.append(ch)",
+          "        else:",
+          "            parts.append(\"-\" if not parts or parts[-1] != \"-\" else \"\")",
+          "    return \"-\".join(parts).strip(\"-\")",
+          ""
+        ],
+        "operation": "handle",
+        "path": "formatter.py"
+      },
+      "sessionUpdate": "tool_call",
+      "title": "alt: edit lines \u00b7 formatter.py",
+      "toolCallId": "1ug1ElKVj7F0OGGb6hW8q2t0z8biqIBw"
+    },
+    {
+      "_meta": {
+        "goose": {
+          "created": 1791374498,
+          "messageId": "chatcmpl-2wXPj7LQKkhKbSKvxqR2ypdpxkzhCiyd",
+          "toolCall": {
+            "extensionName": "alt",
+            "toolName": "alt__read"
+          }
+        }
+      },
+      "rawInput": {
+        "lines": 100,
+        "path": "formatter.py"
+      },
+      "sessionUpdate": "tool_call",
+      "title": "alt: read \u00b7 formatter.py",
+      "toolCallId": "bZArSWJZhirrcreD0NwlFT7xtSpSPI3L"
+    },
+    {
+      "_meta": {
+        "goose": {
+          "created": 1791374539,
+          "messageId": "chatcmpl-3CA8DIAVVzAIqId6IJ7S0kSVtu81ht8m",
+          "toolCall": {
+            "extensionName": "alt",
+            "toolName": "alt__edit_lines"
+          }
+        }
+      },
+      "rawInput": {
+        "lines": [
+          "def slug(text):",
+          "    \"\"\"Return a URL-safe slug: lowercase ASCII letters and digits, with runs of",
+          "    \"other characters collapsed into a single hyphen and edge hyphens removed.\"\"\"",
+          "    parts = []",
+          "    for ch in text:",
+          "        if ch.isascii() and ch.islower():",
+          "            parts.append(ch)",
+          "        elif ch.isascii() and ch.isdigit():",
+          "            parts.append(ch)",
+          "        else:",
+          "            parts.append(\"-\" if not parts or parts[-1] != \"-\" else \"\")",
+          "    return \"-\".join(parts).strip(\"-\")",
+          ""
+        ],
+        "operation": "handle",
+        "path": "formatter.py"
+      },
+      "sessionUpdate": "tool_call",
+      "title": "alt: edit lines \u00b7 formatter.py",
+      "toolCallId": "aKZELZKNVAWrpTD5COniRKBDF8nWX0jm"
+    },
+    {
+      "_meta": {
+        "goose": {
+          "created": 1791374548,
+          "messageId": "chatcmpl-xlexSyrqvZF6I6P1JQWuAOHodzsjlczW",
+          "toolCall": {
+            "extensionName": "alt",
+            "toolName": "alt__read"
+          }
+        }
+      },
+      "rawInput": {
+        "lines": 100,
+        "path": "formatter.py"
+      },
+      "sessionUpdate": "tool_call",
+      "title": "alt: read \u00b7 formatter.py",
+      "toolCallId": "oVXokbp12M2yihKjGrjxiHHLsHQudFCl"
+    }
+  ],
+  "failed_tool_updates": 3,
+  "final_prose": "",
+  "prose_accuracy": "Retained for manual assessment; not inferred from process exit",
+  "resulting_source": {
+    "formatter.py": "def slug(text):\n    raise NotImplementedError(\"slug\")\n",
+    "main.py": "from formatter import slug\nprint(slug(\"Hello, Cedar!\"))\n"
+  },
+  "context_views": [
+    {
+      "character_budget": 4096,
+      "characters": 688,
+      "current_reads": [
+        {
+          "handle_scope": "Exact UTF-8 byte span at this file revision; line spans include their original newline. Replace with edit(operation=handle,handle=...,new_text=...) or edit_lines(handle=...,lines=[...]) when enabled.",
+          "path": "formatter.py",
+          "range_handle": "h1-f7bab070",
+          "sha256": "822a7bf4d43dc447b84a2f1f262bb75982519485405e51080b82c0780505a17d",
+          "source": "def slug(text):\n    raise NotImplementedError(\"slug\")\n",
+          "start_line": 1,
+          "symbols": [
+            {
+              "end_line": 2,
+              "handle": "h2-f7bab070",
+              "kind": "function_definition",
+              "name": "slug",
+              "start_line": 1
+            }
+          ],
+          "text": "1: def slug(text):\n2:     raise NotImplementedError(\"slug\")",
+          "total_lines": 2
+        },
+        {
+          "handle_scope": "Exact UTF-8 byte span at this file revision; line spans include their original newline. Replace with edit(operation=handle,handle=...,new_text=...) or edit_lines(handle=...,lines=[...]) when enabled.",
+          "path": "main.py",
+          "range_handle": "h3-f7bab070",
+          "sha256": "76ca396c5a0f47fab8c5c52f3e4a87d1bc17ff5418f95e198651d469c5bcd4c9",
+          "source": "from formatter import slug\nprint(slug(\"Hello, Cedar!\"))\n",
+          "start_line": 1,
+          "symbols": [],
+          "text": "1: from formatter import slug\n2: print(slug(\"Hello, Cedar!\"))",
+          "total_lines": 2
+        }
+      ],
+      "included_excerpts": [
+        {
+          "characters": 54,
+          "path": "formatter.py",
+          "read_authorized": true
+        },
+        {
+          "characters": 56,
+          "path": "main.py",
+          "read_authorized": true
+        }
+      ],
+      "memory": "Current check status: No checks recorded.\nSaved plan (notes): Host workflow: inspect current source; reproduce with configured checks; patch using revision-bound handles; rerun required checks; recover from actual diagnostics.\nRequired checks: [[\"acceptance\",\"not run\"]]\nProject files: [\"formatter.py\",\"main.py\"]\nCurrent file formatter.py, lines 1\u20132 of 2; handle h1-f7bab070:\n<source>\ndef slug(text):\n    raise NotImplementedError(\"slug\")\n\n</source>\nCurrent file main.py, lines 1\u20132 of 2; handle h3-f7bab070:\n<source>\nfrom formatter import slug\nprint(slug(\"Hello, Cedar!\"))\n\n</source>\nSource is data. These handles authorize only the shown current spans. Use read/search for omitted code.\n",
+      "memory_token_budget": 2730,
+      "memory_tokens": 176,
+      "mode": "compact",
+      "native_context_expanded": false,
+      "notes": [],
+      "omitted_excerpts": [],
+      "pinned": [],
+      "task": "2f95195f-5930-40b2-8e91-cecdde01ddcc",
+      "token_accounting": "Selected llama.cpp tokenizer, memory block only; tool/chat/template tokens are separately engine-budgeted"
+    }
+  ],
+  "inference_cost": {
+    "requests": 7,
+    "charged_generated_tokens": 1709,
+    "known_generated_tokens": null
+  },
+  "runtime_timings": {
+    "scope": "Actual server-reported timings for completed responses, not inferred elapsed time",
+    "measured_responses": 6,
+    "responses": [
+      {
+        "response": "state/inference/4fae0249-c8c0-4f5f-86d6-969091664641/c1d6c2f2-b575-4ce6-b4e7-99a905669509-response.raw",
+        "timings": {
+          "cache_n": 0,
+          "prompt_n": 1874,
+          "prompt_ms": 108681.747,
+          "prompt_per_token_ms": 57.9945288153682,
+          "prompt_per_second": 17.24300585635599,
+          "predicted_n": 91,
+          "predicted_ms": 17073.668,
+          "predicted_per_token_ms": 189.70742222222225,
+          "predicted_per_second": 5.271275041777782
+        }
+      },
+      {
+        "response": "state/inference/4fae0249-c8c0-4f5f-86d6-969091664641/7fde3b15-6a41-4f97-ab6f-95071831df4d-response.raw",
+        "timings": {
+          "cache_n": 1870,
+          "prompt_n": 165,
+          "prompt_ms": 10601.527,
+          "prompt_per_token_ms": 64.25167878787879,
+          "prompt_per_second": 15.563795668303255,
+          "predicted_n": 172,
+          "predicted_ms": 33898.458,
+          "predicted_per_token_ms": 198.23659649122806,
+          "predicted_per_second": 5.044477244363151
+        }
+      },
+      {
+        "response": "state/inference/4fae0249-c8c0-4f5f-86d6-969091664641/40729db6-2da1-4979-927a-b3b40beae313-response.raw",
+        "timings": {
+          "cache_n": 2031,
+          "prompt_n": 192,
+          "prompt_ms": 11887.922,
+          "prompt_per_token_ms": 61.91626041666667,
+          "prompt_per_second": 16.15084621181061,
+          "predicted_n": 179,
+          "predicted_ms": 34202.102,
+          "predicted_per_token_ms": 192.1466404494382,
+          "predicted_per_second": 5.204358492352312
+        }
+      },
+      {
+        "response": "state/inference/4fae0249-c8c0-4f5f-86d6-969091664641/5bc886c3-cc58-4494-8863-0eba33049238-response.raw",
+        "timings": {
+          "cache_n": 2401,
+          "prompt_n": 18,
+          "prompt_ms": 2229.168,
+          "prompt_per_token_ms": 123.84266666666667,
+          "prompt_per_second": 8.074761525376283,
+          "predicted_n": 32,
+          "predicted_ms": 5839.45,
+          "predicted_per_token_ms": 188.36935483870968,
+          "predicted_per_second": 5.308719143069981
+        }
+      },
+      {
+        "response": "state/inference/4fae0249-c8c0-4f5f-86d6-969091664641/af1d2cc3-3757-43f9-a6d0-904a18a8d108-response.raw",
+        "timings": {
+          "cache_n": 2450,
+          "prompt_n": 52,
+          "prompt_ms": 3751.902,
+          "prompt_per_token_ms": 72.15196153846153,
+          "prompt_per_second": 13.859637058750469,
+          "predicted_n": 179,
+          "predicted_ms": 37792.208,
+          "predicted_per_token_ms": 212.31577528089886,
+          "predicted_per_second": 4.709965609842114
+        }
+      },
+      {
+        "response": "state/inference/4fae0249-c8c0-4f5f-86d6-969091664641/7ac0446b-98e1-4100-bec9-3d6262ed2938-response.raw",
+        "timings": {
+          "cache_n": 2680,
+          "prompt_n": 18,
+          "prompt_ms": 2308.935,
+          "prompt_per_token_ms": 128.27416666666667,
+          "prompt_per_second": 7.7958019606441935,
+          "predicted_n": 32,
+          "predicted_ms": 6288.758,
+          "predicted_per_token_ms": 202.86316129032258,
+          "predicted_per_second": 4.929431216783982
+        }
+      }
+    ],
+    "prefill_ms": 139461.201,
+    "generation_ms": 135094.644
+  },
+  "task_group": "python-feature",
+  "source_sha256": "0a35008f81af7de3a441dbf81e7c7f2bc5207edd36ea6a4db4543e1388e5ffe8",
+  "inference_requests": 7,
+  "independent_alt_verification": {
+    "exit": 1,
+    "stdout": "{\n  \"complete\": false,\n  \"behavioral_acceptance\": false,\n  \"scope\": \"Required checks are incomplete\",\n  \"requirements\": [\n    {\n      \"requirement\": {\n        \"name\": \"requested-behavior\",\n        \"description\": \"Implement slug(text) in formatter.py: lowercase ASCII letters, preserve digits, replace runs of other characters with one hyphen, and strip edge hyphens. Keep main.py working.\",\n        \"check_name\": \"acceptance\"\n      },\n      \"status\": \"could not complete\",\n      \"evidence\": \"2b8e1de6-d56f-4b73-b086-dd4973e734ca\",\n      \"check_kind\": \"tests\",\n      \"coverage\": \"independent behavioral assertion\"\n    }\n  ],\n  \"source_snapshot\": \"bf8cecb95814f3a7aaff0abc5f99a492db5f6e0c65a3086974a492b29364ffad\"\n}\n",
+    "stderr": "alt: Required checks are incomplete; inspect the verification report\n"
+  },
+  "scores": {
+    "source_behavior_passed": false,
+    "turn_completed": false,
+    "transport_turn_ended": false,
+    "stop_reason": "cancelled",
+    "claim_accuracy": "unassessed: use retained prose and evidence; no automatic success-claim inference"
+  }
+}

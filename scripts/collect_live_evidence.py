@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
-"""Copy bounded live evidence without weights, executables or private state databases."""
+"""Copy completed live attempts without weights, executables or private state databases.
+
+Unfinished attempts stay in the source folder; never copy a changing stream into
+an immutable report collection. Failed completed attempts are always retained.
+"""
 import argparse,hashlib,json,shutil,sqlite3,sys
 from pathlib import Path
 if sys.flags.optimize:raise RuntimeError('Run without Python optimization; evidence assertions must remain enabled')
@@ -10,11 +14,11 @@ def retain(source,target):
  assert source.stat().st_size<32*1024*1024,'Inspect unexpectedly large evidence before copying'
  target.parent.mkdir(parents=True,exist_ok=True);shutil.copy2(source,target)
  manifest[str(target.relative_to(a.destination))]=hashlib.sha256(source.read_bytes()).hexdigest()
-for name in ['configuration.json','summary.json','runtime-model.json','interrupted-run.json','live_acceptance.py','acceptance_projects.py','acceptance_extra.py','acceptance_v5.py']:
+for name in ['configuration.json','summary.json','runtime-model.json','interrupted-run.json','live_acceptance.py','live_tui_turn.py','acceptance_projects.py','acceptance_extra.py','acceptance_v5.py','BUILD.json']:
  source=a.source/name
  if source.exists():retain(source,a.destination/name)
 for run in sorted(a.source.iterdir()):
- if not run.is_dir() or not (run/'turn.jsonl').exists():continue
+ if not run.is_dir() or not (run/'turn.jsonl').exists() or not (run/'report.json').exists():continue
  dest=a.destination/run.name;dest.mkdir(exist_ok=True)
  original=run/'evidence-sha256.json'
  if original.exists():
@@ -22,7 +26,7 @@ for run in sorted(a.source.iterdir()):
    relative=Path(name);assert not relative.is_absolute() and '..' not in relative.parts
    source=run/relative
    assert source.resolve().is_relative_to(run.resolve()) and hashlib.sha256(source.read_bytes()).hexdigest()==digest,'Original evidence changed'
- for name in ['report.json','turn.jsonl','turn.stderr','setup.stdout','setup.stderr','fixture.json','assertion.py','evidence-sha256.json']:
+ for name in ['report.json','turn.jsonl','turn.stderr','setup.stdout','setup.stderr','fixture.json','assertion.py','evidence-sha256.json','terminal.raw','terminal.txt','terminal-after-exit.txt','tui-turn.json']:
   source=run/name
   if source.exists():
    retain(source,dest/name)

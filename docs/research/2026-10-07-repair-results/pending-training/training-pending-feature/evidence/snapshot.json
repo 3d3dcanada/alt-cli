@@ -1,0 +1,1 @@
+{"formatter.py":"import re\n\n\ndef slug(text):\n    \"\"\"Return a lowercase ASCII slug: letters and digits kept, other runs\n    collapsed to a single hyphen, with leading/trailing hyphens removed.\"\"\"\n    slug_text = re.sub(r\"[^a-z0-9]+\", \"-\", text.lower())\n    return slug_text.strip(\"-\")\n","main.py":"from formatter import slug\nprint(slug(\"Hello, Cedar!\"))\n"}

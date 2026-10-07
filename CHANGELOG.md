@@ -2,6 +2,21 @@
 
 ## Unreleased — small-model harness work orders
 
+- Added explicit compact text/line-array tool focus in CLI/TUI, short
+  revision-bound handles, required edit fields, checkpointed creation/deletion,
+  complete current-source packets and refreshed handles after edits.
+- Preserve the complete original request on compact follow-ups, with the latest
+  user message taking precedence; exercise two turns in the actual persistent
+  CLI/TUI conversation and refuse over-budget scope rather than truncate it.
+- Added missing-definition/parser observations and disposable-check path
+  guidance; classify Goose synthetic provider/allowance failures as failed turns
+  while retaining source and conversation evidence.
+- Retained a complete MiMo 9B Q4 CPU pilot (3/4 independent passes per interface)
+  with smaller compact input and faster passing repairs. The subsequent build
+  passed 6/9 MiMo attempts, including 2/4 held-out tasks and the actual 80×24 TUI
+  repair. Retained protocol journeys and two pending-review training captures.
+  Old failures remain unchanged; longer CPU limits are not a like-for-like gain.
+
 - Added a separately versioned v5 behavioral suite, new sealed families and
   immutable matched campaign schedules without rewriting historical oracles.
 - Added migrated explicit inference settings, actual provider request/response

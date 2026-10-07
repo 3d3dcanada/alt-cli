@@ -1,0 +1,139 @@
+{
+  "configuration": {
+    "oracle_version": 5,
+    "context_scope": "Managed runtime native window and engine budget",
+    "model_file": "Spark-X2.5-1.7B-Abliterated-Q4_K_M.gguf",
+    "sha256": "1e4d920aaff1248b68751e49b16dae6104c5f4d3924a86a290e24b31db08113c",
+    "bytes": 1258452320,
+    "uncensored": "Explicit user-selected publisher-labelled uncensored/abliterated artifact; no fallback",
+    "provider": "openai",
+    "endpoint": null,
+    "model_id": null,
+    "runtime": "/workspace/.alt-tools/llama-b11429/llama-b11429/llama-server",
+    "contexts": [
+      8192
+    ],
+    "repeats": 1,
+    "timeout_seconds": 600,
+    "binary_sha256": "d97dbff2c41e279b7b9cf139596c8506963ef021f36b986a18b617a69a8013ea",
+    "physical_gpu_tested": false,
+    "verification_plan": true,
+    "history_notes": 0,
+    "cases": [
+      "python-feature"
+    ],
+    "partition": "development",
+    "tool_profile": "compact",
+    "threads": 2,
+    "batch": 128,
+    "engine_sha256": "59655719cd9b098dab59b6e2c50f1e565a935992fae2e539f52018a960e0512a",
+    "runtime_sha256": "5faf410bbbc00a1b94b09ee01623699f255365628dfa73b1ee552d9e52a2231d",
+    "fixture_sha256": "1f82969582e5b7394fdceb92b97085d218624dfda29d50a16a3fa2188d6f7d30",
+    "suite": "v5",
+    "interface": "cli",
+    "instruction_sha256": null,
+    "inference": {
+      "output_tokens": 1024,
+      "reasoning_tokens": 128,
+      "temperature": 0.0,
+      "top_p": null,
+      "workflow": "host",
+      "skill": null,
+      "generated_tokens": 8192,
+      "requests": 12
+    },
+    "oracle_code_sha256": {
+      "acceptance_projects.py": "453f27af5b3cc558a2190620cee195a392e0a0a45889f43569b96e85765cd32a",
+      "acceptance_extra.py": "2a724e6da5673cb581b3b2c54d338a62bbc917f1753b7edf2774f9e2e005148d",
+      "acceptance_v5.py": "0f669daa7bbe060b131d79e2294ec026e419467be38d969c77f5dfefb897dea7",
+      "live_tui_turn.py": "2cd766153b7b79f36b928d944ed97872c69d0f9f2cbb55a4e3db9a79c78173ea"
+    }
+  },
+  "attempts": [
+    {
+      "case": "python-feature",
+      "context": 8192,
+      "repeat": 1,
+      "passed": false,
+      "cli_exit": 0,
+      "process_exit": 0,
+      "interface": "cli",
+      "wall_seconds": 98.97,
+      "outer_timeout": false,
+      "sampled_alt_tree_peak_rss_bytes": 2479558656,
+      "rss_scope": "Alt, Goose and managed inference runtime",
+      "vram": null,
+      "oracle_unchanged": true,
+      "failed_tool_updates": 0,
+      "prose_accuracy": "Retained for manual assessment; not inferred from process exit",
+      "inference_cost": {
+        "requests": 3,
+        "charged_generated_tokens": 1197,
+        "known_generated_tokens": 1197
+      },
+      "runtime_timings": {
+        "scope": "Actual server-reported timings for completed responses, not inferred elapsed time",
+        "measured_responses": 3,
+        "responses": [
+          {
+            "response": "state/inference/19c36413-b524-49f4-aeb2-c906443aac5b/380ca3e9-8273-4580-8a37-d558426ff289-response.raw",
+            "timings": {
+              "cache_n": 0,
+              "prompt_n": 2047,
+              "prompt_ms": 29637.943,
+              "prompt_per_token_ms": 14.47872154372252,
+              "prompt_per_second": 69.06687147620198,
+              "predicted_n": 136,
+              "predicted_ms": 7264.625,
+              "predicted_per_token_ms": 53.81203703703704,
+              "predicted_per_second": 18.583202849424435
+            }
+          },
+          {
+            "response": "state/inference/19c36413-b524-49f4-aeb2-c906443aac5b/df40a683-7004-487f-b963-262778c10620-response.raw",
+            "timings": {
+              "cache_n": 2182,
+              "prompt_n": 115,
+              "prompt_ms": 2216.492,
+              "prompt_per_token_ms": 19.273843478260872,
+              "prompt_per_second": 51.88378753453655,
+              "predicted_n": 217,
+              "predicted_ms": 11377.288,
+              "predicted_per_token_ms": 52.67262962962963,
+              "predicted_per_second": 18.985192253197773
+            }
+          },
+          {
+            "response": "state/inference/19c36413-b524-49f4-aeb2-c906443aac5b/42ee4a17-a26f-4710-a5cf-e7f18de81af5-response.raw",
+            "timings": {
+              "cache_n": 2513,
+              "prompt_n": 20,
+              "prompt_ms": 426.45,
+              "prompt_per_token_ms": 21.322499999999998,
+              "prompt_per_second": 46.898815804900934,
+              "predicted_n": 844,
+              "predicted_ms": 43840.349,
+              "predicted_per_token_ms": 52.005158956109135,
+              "predicted_per_second": 19.22886152206498
+            }
+          }
+        ],
+        "prefill_ms": 32280.885,
+        "generation_ms": 62482.262
+      },
+      "task_group": "python-feature",
+      "source_sha256": "0a35008f81af7de3a441dbf81e7c7f2bc5207edd36ea6a4db4543e1388e5ffe8",
+      "inference_requests": 3,
+      "scores": {
+        "source_behavior_passed": false,
+        "turn_completed": true,
+        "transport_turn_ended": true,
+        "stop_reason": "end_turn",
+        "claim_accuracy": "unassessed: use retained prose and evidence; no automatic success-claim inference"
+      }
+    }
+  ],
+  "passed": 0,
+  "total": 1,
+  "scope": "Seeded small projects; every attempt retained. These measurements do not establish arbitrary task reliability or GPU performance."
+}

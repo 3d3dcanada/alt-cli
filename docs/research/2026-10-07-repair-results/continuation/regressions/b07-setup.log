@@ -1,0 +1,839 @@
+info: syncing channel updates for 1.99.0-x86_64-unknown-linux-gnu
+info: latest update on 2026-10-01 for version 1.99.0 (b940084d7 2026-09-28)
+info: component clippy is up to date
+info: component rustfmt is up to date
+
+  1.99.0-x86_64-unknown-linux-gnu unchanged - rustc 1.99.0 (b940084d7 2026-09-28)
+
+info: checking for self-update (current version: 1.29.1)
+WARNING: The directory '/home/agent/.cache/pip' or its parent directory is not owned or is not writable by the current user. The cache has been disabled. Check the permissions and owner of that directory. If executing pip with sudo, you should use sudo's -H flag.
+Collecting pyte==0.8.2 (from -r requirements-dev.txt (line 2))
+  Downloading pyte-0.8.2-py3-none-any.whl.metadata (3.0 kB)
+Collecting wcwidth==0.2.13 (from -r requirements-dev.txt (line 3))
+  Downloading wcwidth-0.2.13-py2.py3-none-any.whl.metadata (14 kB)
+Collecting jsonschema==4.26.0 (from -r requirements-dev.txt (line 5))
+  Downloading jsonschema-4.26.0-py3-none-any.whl.metadata (7.6 kB)
+Collecting attrs==26.1.0 (from -r requirements-dev.txt (line 6))
+  Downloading attrs-26.1.0-py3-none-any.whl.metadata (8.8 kB)
+Collecting jsonschema-specifications==2025.9.1 (from -r requirements-dev.txt (line 7))
+  Downloading jsonschema_specifications-2025.9.1-py3-none-any.whl.metadata (2.9 kB)
+Collecting referencing==0.37.0 (from -r requirements-dev.txt (line 8))
+  Downloading referencing-0.37.0-py3-none-any.whl.metadata (2.8 kB)
+Collecting rpds-py==2026.6.3 (from -r requirements-dev.txt (line 9))
+  Downloading rpds_py-2026.6.3-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (4.1 kB)
+Collecting typing-extensions==4.16.0 (from -r requirements-dev.txt (line 10))
+  Downloading typing_extensions-4.16.0-py3-none-any.whl.metadata (3.3 kB)
+Downloading pyte-0.8.2-py3-none-any.whl (31 kB)
+Downloading wcwidth-0.2.13-py2.py3-none-any.whl (34 kB)
+Downloading jsonschema-4.26.0-py3-none-any.whl (90 kB)
+Downloading attrs-26.1.0-py3-none-any.whl (67 kB)
+Downloading jsonschema_specifications-2025.9.1-py3-none-any.whl (18 kB)
+Downloading referencing-0.37.0-py3-none-any.whl (26 kB)
+Downloading rpds_py-2026.6.3-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (366 kB)
+Downloading typing_extensions-4.16.0-py3-none-any.whl (45 kB)
+Installing collected packages: wcwidth, typing-extensions, rpds-py, pyte, attrs, referencing, jsonschema-specifications, jsonschema
+
+Successfully installed attrs-26.1.0 jsonschema-4.26.0 jsonschema-specifications-2025.9.1 pyte-0.8.2 referencing-0.37.0 rpds-py-2026.6.3 typing-extensions-4.16.0 wcwidth-0.2.13
+   Compiling alt-cli v0.6.0 (/workspace/alt-cli)
+    Finished `dev` profile [unoptimized] target(s) in 13.52s
+   Compiling alt-cli v0.6.0 (/workspace/alt-cli)
+    Finished `test` profile [unoptimized] target(s) in 19.14s
+     Running unittests src/lib.rs (target/debug/deps/alt_cli-f7b196ed225a7fc8)
+
+running 22 tests
+test engine::frame_fuzz_tests::exhausted_shared_allowance_is_a_failed_turn_and_model_prose_is_not ... ok
+test engine::frame_fuzz_tests::only_the_pinned_goose_synthetic_network_error_shape_marks_a_failed_turn ... ok
+test runtime::memory_tests::container_cache_does_not_hide_available_ram_or_free_anonymous_memory ... ok
+test toolbox::evidence_tests::invalid_evidence_is_a_tool_failure_even_when_command_exits_zero ... ok
+test tui::app::recovery_tests::cancelled_conversation_loading_never_opens_an_agent ... ok
+test extensions::sse_tests::framing_survives_every_chunk_boundary_and_requires_event_termination ... ok
+test tui::app::recovery_tests::damaged_runtime_is_preserved_without_resetting_project_preferences ... ok
+test tui::app::recovery_tests::explicit_operations_never_replace_a_requested_save ... ok
+test engine::frame_fuzz_tests::fragmented_and_mutated_acp_frames_obey_size_and_termination_bounds ... ok
+test tui::app::recovery_tests::old_project_results_and_failed_background_forms_do_not_replace_newer_work ... ok
+test tui::app::recovery_tests::new_file_can_replace_a_locked_listing_and_failed_forms_keep_their_text ... ok
+test extensions::sse_tests::bounded_seeded_mutation_corpus_never_panics_or_grows_without_limit ... ok
+test tui::app::recovery_tests::task_check_choices_replace_a_locked_status_refresh ... ok
+test tui::app::recovery_tests::pinning_a_requirement_replaces_a_locked_context_refresh ... ok
+test tui::input::tests::pasted_source_preserves_tabs_and_accepts_the_documented_editor_limit ... ok
+test tui::input::tests::unicode_editing_and_paste_preserve_boundaries ... ok
+test tui::app::recovery_tests::conversation_database_contention_keeps_drafts_responsive_and_saves_after_release ... ok
+test tui::view::tests::corrupt_settings_are_preserved_and_setup_still_opens ... ok
+test tui::view::tests::settings_persist_and_permission_typing_cannot_accidentally_allow ... ok
+test tui::view::tests::first_run_is_usable_without_config_and_errors_preserve_forms ... ok
+test tui::app::recovery_tests::turn_end_refresh_does_not_race_itself_or_replace_an_open_form ... ok
+test tui::view::tests::every_page_and_dialog_renders_at_supported_sizes ... ok
+
+test result: ok. 22 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.26s
+
+     Running unittests src/main.rs (target/debug/deps/alt-b6d4f9c7cd265569)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/benchmark.rs (target/debug/deps/benchmark-f7571d903946608e)
+
+running 3 tests
+test requested_gpu_and_allocation_failure_explain_recovery_without_substituting_models ... ok
+test cancellation_interrupts_a_stalled_backend_and_preserves_a_failed_report ... ok
+test qualification_cli_returns_without_opening_an_agent_and_keeps_external_scope_explicit ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.13s
+
+     Running tests/compact_context.rs (target/debug/deps/compact_context-6359495ff43341c0)
+
+running 13 tests
+test clipped_source_never_advertises_an_edit_handle ... ok
+test compact_tools_keep_terminal_checks_and_skills_without_ambiguous_edit_schemas ... ok
+test compact_context_contains_current_authorized_source_and_complete_pins_without_duplicate_request ... ok
+test compact_continuation_keeps_complete_original_scope_and_its_relevant_source ... ok
+test line_edits_preserve_missing_final_newline_and_require_real_read_plan_and_valid_lines ... ok
+test edit_feedback_refreshes_only_actual_changed_source_for_follow_up_repairs ... ok
+test literal_lines_preserve_crlf_unicode_and_backslashes_and_can_undo ... ok
+test named_source_prefetch_does_not_index_unrelated_archives ... ok
+test new_and_empty_files_and_explicit_delete_remain_checkpointed ... ok
+test parser_feedback_reports_missing_definitions_without_forbidding_intentional_changes ... ok
+test migration_retains_legacy_handles_and_short_handles_survive_restart ... ok
+test scalar_text_edits_preserve_partial_crlf_ranges_and_never_unescape_literals ... ok
+test compact_context_prioritizes_actual_failures_over_historical_claims ... ok
+
+test result: ok. 13 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.04s
+
+     Running tests/download_recovery.rs (target/debug/deps/download_recovery-5949d2f44a75aafc)
+
+running 1 test
+test repeated_network_loss_preserves_offsets_and_only_promotes_the_complete_hash ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.39s
+
+     Running tests/extensions.rs (target/debug/deps/extensions-5a0aa054821ea28b)
+
+running 4 tests
+test external_calls_require_actual_alt_approval_and_respect_access ... ok
+test remote_sse_accepts_multiline_data_and_optional_space ... ok
+test remote_auth_session_and_sse ... ok
+test selected_stdio_tools_keep_state_and_reconnect_without_replay ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.14s
+
+     Running tests/faults.rs (target/debug/deps/faults-fa55625581e2f19c)
+
+running 2 tests
+test fault_worker ... ok
+test disk_full_and_abrupt_apply_undo_recover_without_replay_or_partial_source ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.10s
+
+     Running tests/first_task.rs (target/debug/deps/first_task-bae9445163c21e8e)
+
+running 7 tests
+test retrieval_finds_named_files_and_important_terms_after_conversational_filler ... ok
+test retrieved_code_keeps_identifiers_and_original_brackets ... ok
+test suggestions_follow_declared_runners_and_do_not_invent_tests ... ok
+test tool_guidance_matches_focus_and_does_not_offer_unavailable_execution ... ok
+test bounded_memory_keeps_current_evidence_and_whole_excerpts_after_restart ... ok
+test missing_practice_interpreter_keeps_actionable_error_and_failed_evidence ... ok
+test practice_repair_verification_restart_undo_and_new_lesson ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.11s
+
+     Running tests/harness.rs (target/debug/deps/harness-211c418c19d17da2)
+
+running 9 tests
+test analysis_source_chunks_remain_bounded_at_unicode_boundaries ... ok
+test instruction_drafts_need_independent_validation_and_can_rollback ... ok
+test native_decoder_rejects_partial_calls_and_preserves_unicode_fragments ... ok
+test output_settings_override_engine_defaults_and_reject_fake_support ... ok
+test partial_stream_is_not_complete_cost_evidence ... ok
+test skills_are_bounded_and_do_not_grant_permissions ... ok
+test concurrent_change_between_prepare_and_apply_never_overwrites_user ... ok
+test handles_preserve_unicode_crlf_and_duplicate_symbols_and_undo ... ok
+test host_workflow_and_hypotheses_survive_restart_without_becoming_evidence ... ok
+
+test result: ok. 9 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running tests/inference_relay.rs (target/debug/deps/inference_relay-41fee87ff9de2973)
+
+running 2 tests
+test incomplete_stream_keeps_its_reserved_cost_and_cannot_buy_another_call ... ok
+test full_chat_and_tools_are_measured_before_spending_or_forwarding ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.14s
+
+     Running tests/integration.rs (target/debug/deps/integration-89cec51eb830ea5a)
+
+running 4 tests
+test session_recovery_and_profile_validation ... ok
+test streaming_permissions_and_large_session_replay ... ok
+test cancellation_and_broken_peers_do_not_hang ... ok
+test cli_streams_exports_resumes_and_denies_by_default ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 3.63s
+
+     Running tests/jobs.rs (target/debug/deps/jobs-88e6956ee0f32582)
+
+running 5 tests
+test control_keys_are_bytes_not_numeric_strings ... ok
+test disconnected_control_client_does_not_terminate_persistent_job ... ok
+test persistent_pty_accepts_input_resize_and_reconnect_then_stops ... ok
+test timeout_and_exit_are_saved_and_pid_reuse_cannot_signal_another_process ... ok
+test exiting_owner_stops_only_owned_jobs_and_large_output_is_bounded ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.30s
+
+     Running tests/language.rs (target/debug/deps/language-dec5bcb52cf2665a)
+
+running 2 tests
+test failed_batch_restores_earlier_files_through_the_journal ... ok
+test utf16_rename_preview_applies_checkpoints_and_rejects_outside_overlap_staleness ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+
+     Running tests/model_downloads.rs (target/debug/deps/model_downloads-7c263a530bf30563)
+
+running 9 tests
+test hub_token_scope_worker ... ok
+test import_preserves_original_and_rejects_wrong_format ... ok
+test interrupted_cache_relocation_preserves_originals_and_resumes_same_destination ... ok
+test interrupted_download_resumes_and_promotes_only_verified_bytes ... ok
+test checksum_failure_and_bad_range_never_create_ready_model ... ok
+test server_ignoring_range_restarts_instead_of_concatenating ... ok
+test multipart_promotes_only_complete_set_and_relocates_without_import_loss ... ok
+test pause_interrupts_a_stalled_body_and_keeps_partial_file ... ok
+test hub_authentication_is_scoped_without_mutating_the_test_process_environment ... ok
+
+test result: ok. 9 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.32s
+
+     Running tests/packs.rs (target/debug/deps/packs-057a7ecd0c973e5e)
+
+running 3 tests
+test parsers_reject_incomplete_and_malformed_scans_and_preserve_evidence ... ok
+test git_commit_contains_selected_paths_and_preserves_unrelated_staging ... ok
+test http_failure_retest_and_exports_link_to_real_records ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.13s
+
+     Running tests/parser_properties.rs (target/debug/deps/parser_properties-3bf1c746de084ef0)
+
+running 2 tests
+test explicit_tool_focus_retains_full_access_terminal_option ... ok
+test bounded_mutations_of_reports_paths_and_utf16_positions_never_panic ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.56s
+
+     Running tests/project_services.rs (target/debug/deps/project_services-e4c84470ce8925a7)
+
+running 8 tests
+test migrations_preserve_legacy_data_and_reject_newer_schema ... ok
+test pinned_requirements_and_actual_context_survive_restart ... ok
+test incremental_index_reuses_unchanged_rows_and_detects_edits_deletions_cancellation ... ok
+test syntax_and_old_decision_retrieval_keep_current_evidence_at_all_budgets ... ok
+test zero_tests_are_distinguished_from_unknown_output_and_mixed_rust_targets ... ok
+test verification_requires_every_check_and_current_source_command_environment ... ok
+test zero_tests_after_large_output_cannot_verify_a_requirement ... ok
+test discovery_enforces_file_limit_in_a_flat_directory_without_partial_index_commit ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.43s
+
+     Running tests/project_worker.rs (target/debug/deps/project_worker-38bd5ac5cb48a90e)
+
+running 2 tests
+test busy_project_wait_is_cancellable_without_blocking_async_input ... ok
+test cancellation_during_walk_preserves_existing_index_and_worker_retries_lock ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.04s
+
+     Running tests/project_workflow.rs (target/debug/deps/project_workflow-80f6fcd4d4c6f0ea)
+
+running 7 tests
+test enforced_reads_paths_checkpoints_undo_and_conflicts ... ok
+test memory_invalidation_failure_budget_and_crash_recovery ... ok
+test no_silent_isolation_fallback_and_terminal_is_explicit ... ok
+test native_tool_bridge_cannot_bypass_approval_or_stale_checks ... ok
+test stale_edits_symlinks_creation_deletion_and_atomic_task_undo ... ok
+test deterministic_checks_bind_evidence_to_source_and_preserve_original ... ok
+test check_timeout_cancellation_and_early_exit_kill_background_children ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.05s
+
+     Running tests/recovery.rs (target/debug/deps/recovery-ed091ef5455ea46a)
+
+running 3 tests
+test recovery_worker ... ok
+test session_metadata_and_events_commit_together_and_inline_preferences_ignore_legacy_file ... ok
+test settings_backup_restore_survive_disk_full_and_abrupt_atomic_writes ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.09s
+
+     Running tests/storage.rs (target/debug/deps/storage-ddfa67397fadc804)
+
+running 6 tests
+test diagnostics_excludes_environment_values_prompts_endpoints_and_source ... ok
+test malformed_archive_never_creates_destination ... ok
+test backup_restores_consistent_sqlite_and_never_overwrites_existing_state ... ok
+test history_retention_archives_first_and_restores_without_overwriting ... ok
+test mutated_archive_corpus_preserves_atomic_restore_boundary ... ok
+test retention_never_deletes_a_conversation_that_exceeds_restore_limits ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.48s
+
+     Running tests/verification.rs (target/debug/deps/verification-80df5ae3b73deeed)
+
+running 5 tests
+test dependency_symlinks_track_target_changes_without_following_cycles_forever ... ok
+test structured_reports_reject_missing_incomplete_contradictory_and_fabricated_totals ... ok
+test newer_state_is_rejected_before_any_schema_or_journal_mutation ... ok
+test cli_can_convert_an_existing_script_command_into_a_pinned_contract ... ok
+test independent_check_contract_rejects_fake_output_and_stales_on_assertion_or_dependency_changes ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.12s
+
+   Doc-tests alt_cli
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Compiling alt-cli v0.6.0 (/workspace/alt-cli)
+    Finished `dev` profile [unoptimized] target(s) in 7.13s
+PASS: first-run wizard, model selection, project picker, Unicode/multiline paste, brief delivery, tool rejection, cancellation, search/rename/export/resume, connection repair, GGUF import, navigation, resize, terminal restoration, SIGTERM cleanup, Linux parent-death cleanup.
+PASS: Task page, configure/rerun checks without a model, isolation failure reporting, explicit Full access, raw evidence, durable decisions, memory retrieval, export, terminal restoration.
+PASS: file creation/edit/preview/undo, empty filtered list, empty-file edit, pinned context, MCP setup/tool selection, diagnostics, PTY input/persistence/reconnect/stop, narrow terminal and restored terminal settings
+PASS: labelled contract wizard, external assertion pinning, structured evidence, behavioral badge, tool-focus and reasoning-mode selection
+PASS: practice creation, failing seed, edit, four-case independent verification, restart and undo at 120x40
+PASS: practice creation, failing seed, edit, four-case independent verification, restart and undo at 80x24
+PASS: practice creation, failing seed, edit, four-case independent verification, restart and undo at 60x18
+PASS: missing Python is explained in the TUI; restart with the interpreter recovers the same practice check
+PASS: labelled output/sampling/default controls, host workflow, active skill, reviewed-instruction gate, effort/shared/custom budgets, cancel without starting work, saved settings after restart and terminal restoration.
+[
+  {
+    "case": "python-feature",
+    "defect_rejected": true,
+    "repair_accepted": true,
+    "incomplete_repair_rejected": true,
+    "early_zero_exit_rejected": true
+  },
+  {
+    "case": "python-multifile",
+    "defect_rejected": true,
+    "repair_accepted": true
+  },
+  {
+    "case": "rust-feature",
+    "defect_rejected": true,
+    "repair_accepted": true,
+    "incomplete_repair_rejected": true,
+    "early_zero_exit_rejected": true
+  },
+  {
+    "case": "javascript-config",
+    "defect_rejected": true,
+    "repair_accepted": true,
+    "incomplete_repair_rejected": true,
+    "early_zero_exit_rejected": true
+  },
+  {
+    "case": "python-dependency",
+    "defect_rejected": true,
+    "repair_accepted": true,
+    "equivalent_bundled_import_accepted": true,
+    "incomplete_repair_rejected": true
+  },
+  {
+    "case": "python-http-security",
+    "defect_rejected": true,
+    "repair_accepted": true
+  },
+  {
+    "case": "python-cli",
+    "defect_rejected": true,
+    "repair_accepted": true
+  },
+  {
+    "case": "python-config",
+    "defect_rejected": true,
+    "repair_accepted": true
+  },
+  {
+    "case": "python-csv",
+    "defect_rejected": true,
+    "repair_accepted": true
+  },
+  {
+    "case": "python-migration",
+    "defect_rejected": true,
+    "repair_accepted": true
+  },
+  {
+    "case": "python-transaction",
+    "defect_rejected": true,
+    "repair_accepted": true
+  },
+  {
+    "case": "python-pagination",
+    "defect_rejected": true,
+    "repair_accepted": true
+  },
+  {
+    "case": "python-paths",
+    "defect_rejected": true,
+    "repair_accepted": true
+  },
+  {
+    "case": "python-cache",
+    "defect_rejected": true,
+    "repair_accepted": true
+  },
+  {
+    "case": "python-retry",
+    "defect_rejected": true,
+    "repair_accepted": true
+  },
+  {
+    "case": "python-async",
+    "defect_rejected": true,
+    "repair_accepted": true
+  },
+  {
+    "case": "python-jsonl",
+    "defect_rejected": true,
+    "repair_accepted": true
+  },
+  {
+    "case": "python-setup",
+    "defect_rejected": true,
+    "repair_accepted": true
+  },
+  {
+    "case": "python-dependency-api",
+    "defect_rejected": true,
+    "repair_accepted": true
+  },
+  {
+    "case": "python-service-config",
+    "defect_rejected": true,
+    "repair_accepted": true
+  },
+  {
+    "case": "heldout-deduplicate",
+    "defect_rejected": true,
+    "repair_accepted": true
+  },
+  {
+    "case": "heldout-atomic-save",
+    "defect_rejected": true,
+    "repair_accepted": true
+  },
+  {
+    "case": "heldout-toposort",
+    "defect_rejected": true,
+    "repair_accepted": true
+  },
+  {
+    "case": "heldout-date",
+    "defect_rejected": true,
+    "repair_accepted": true
+  }
+]
+{
+  "oracle_version": 5,
+  "tasks": [
+    {
+      "case": "python-feature",
+      "seed_rejected": true,
+      "reference_passed": true,
+      "weak_repair_rejected": null,
+      "stale_source_rejected": true,
+      "changed_oracle_rejected": true,
+      "early_exit_rejected": true
+    },
+    {
+      "case": "python-multifile",
+      "seed_rejected": true,
+      "reference_passed": true,
+      "weak_repair_rejected": null,
+      "stale_source_rejected": true,
+      "changed_oracle_rejected": true,
+      "early_exit_rejected": true
+    },
+    {
+      "case": "rust-feature",
+      "seed_rejected": true,
+      "reference_passed": true,
+      "weak_repair_rejected": null,
+      "stale_source_rejected": true,
+      "changed_oracle_rejected": true,
+      "early_exit_rejected": true
+    },
+    {
+      "case": "javascript-config",
+      "seed_rejected": true,
+      "reference_passed": true,
+      "weak_repair_rejected": null,
+      "stale_source_rejected": true,
+      "changed_oracle_rejected": true,
+      "early_exit_rejected": true
+    },
+    {
+      "case": "python-dependency",
+      "seed_rejected": true,
+      "reference_passed": true,
+      "weak_repair_rejected": null,
+      "stale_source_rejected": true,
+      "changed_oracle_rejected": true,
+      "early_exit_rejected": true
+    },
+    {
+      "case": "python-http-security",
+      "seed_rejected": true,
+      "reference_passed": true,
+      "weak_repair_rejected": null,
+      "stale_source_rejected": true,
+      "changed_oracle_rejected": true,
+      "early_exit_rejected": true
+    },
+    {
+      "case": "python-cli",
+      "seed_rejected": true,
+      "reference_passed": true,
+      "weak_repair_rejected": null,
+      "stale_source_rejected": true,
+      "changed_oracle_rejected": true,
+      "early_exit_rejected": true
+    },
+    {
+      "case": "python-config",
+      "seed_rejected": true,
+      "reference_passed": true,
+      "weak_repair_rejected": null,
+      "stale_source_rejected": true,
+      "changed_oracle_rejected": true,
+      "early_exit_rejected": true
+    },
+    {
+      "case": "python-csv",
+      "seed_rejected": true,
+      "reference_passed": true,
+      "weak_repair_rejected": null,
+      "stale_source_rejected": true,
+      "changed_oracle_rejected": true,
+      "early_exit_rejected": true
+    },
+    {
+      "case": "python-migration",
+      "seed_rejected": true,
+      "reference_passed": true,
+      "weak_repair_rejected": null,
+      "stale_source_rejected": true,
+      "changed_oracle_rejected": true,
+      "early_exit_rejected": true
+    },
+    {
+      "case": "python-transaction",
+      "seed_rejected": true,
+      "reference_passed": true,
+      "weak_repair_rejected": null,
+      "stale_source_rejected": true,
+      "changed_oracle_rejected": true,
+      "early_exit_rejected": true
+    },
+    {
+      "case": "python-pagination",
+      "seed_rejected": true,
+      "reference_passed": true,
+      "weak_repair_rejected": null,
+      "stale_source_rejected": true,
+      "changed_oracle_rejected": true,
+      "early_exit_rejected": true
+    },
+    {
+      "case": "python-paths",
+      "seed_rejected": true,
+      "reference_passed": true,
+      "weak_repair_rejected": null,
+      "stale_source_rejected": true,
+      "changed_oracle_rejected": true,
+      "early_exit_rejected": true
+    },
+    {
+      "case": "python-cache",
+      "seed_rejected": true,
+      "reference_passed": true,
+      "weak_repair_rejected": null,
+      "stale_source_rejected": true,
+      "changed_oracle_rejected": true,
+      "early_exit_rejected": true
+    },
+    {
+      "case": "python-retry",
+      "seed_rejected": true,
+      "reference_passed": true,
+      "weak_repair_rejected": null,
+      "stale_source_rejected": true,
+      "changed_oracle_rejected": true,
+      "early_exit_rejected": true
+    },
+    {
+      "case": "python-async",
+      "seed_rejected": true,
+      "reference_passed": true,
+      "weak_repair_rejected": null,
+      "stale_source_rejected": true,
+      "changed_oracle_rejected": true,
+      "early_exit_rejected": true
+    },
+    {
+      "case": "python-jsonl",
+      "seed_rejected": true,
+      "reference_passed": true,
+      "weak_repair_rejected": null,
+      "stale_source_rejected": true,
+      "changed_oracle_rejected": true,
+      "early_exit_rejected": true
+    },
+    {
+      "case": "python-setup",
+      "seed_rejected": true,
+      "reference_passed": true,
+      "weak_repair_rejected": null,
+      "stale_source_rejected": true,
+      "changed_oracle_rejected": true,
+      "early_exit_rejected": true
+    },
+    {
+      "case": "python-dependency-api",
+      "seed_rejected": true,
+      "reference_passed": true,
+      "weak_repair_rejected": null,
+      "stale_source_rejected": true,
+      "changed_oracle_rejected": true,
+      "early_exit_rejected": true
+    },
+    {
+      "case": "python-service-config",
+      "seed_rejected": true,
+      "reference_passed": true,
+      "weak_repair_rejected": null,
+      "stale_source_rejected": true,
+      "changed_oracle_rejected": true,
+      "early_exit_rejected": true
+    },
+    {
+      "case": "heldout-deduplicate",
+      "seed_rejected": true,
+      "reference_passed": true,
+      "weak_repair_rejected": true,
+      "stale_source_rejected": true,
+      "changed_oracle_rejected": true,
+      "early_exit_rejected": true
+    },
+    {
+      "case": "heldout-atomic-save",
+      "seed_rejected": true,
+      "reference_passed": true,
+      "weak_repair_rejected": true,
+      "stale_source_rejected": true,
+      "changed_oracle_rejected": true,
+      "early_exit_rejected": true
+    },
+    {
+      "case": "heldout-toposort",
+      "seed_rejected": true,
+      "reference_passed": true,
+      "weak_repair_rejected": true,
+      "stale_source_rejected": true,
+      "changed_oracle_rejected": true,
+      "early_exit_rejected": true
+    },
+    {
+      "case": "heldout-date",
+      "seed_rejected": true,
+      "reference_passed": true,
+      "weak_repair_rejected": true,
+      "stale_source_rejected": true,
+      "changed_oracle_rejected": true,
+      "early_exit_rejected": true
+    },
+    {
+      "case": "sealed-intervals",
+      "seed_rejected": true,
+      "reference_passed": true,
+      "weak_repair_rejected": null,
+      "stale_source_rejected": true,
+      "changed_oracle_rejected": true,
+      "early_exit_rejected": true
+    },
+    {
+      "case": "sealed-stream-lines",
+      "seed_rejected": true,
+      "reference_passed": true,
+      "weak_repair_rejected": null,
+      "stale_source_rejected": true,
+      "changed_oracle_rejected": true,
+      "early_exit_rejected": true
+    },
+    {
+      "case": "sealed-cache-expiry",
+      "seed_rejected": true,
+      "reference_passed": true,
+      "weak_repair_rejected": null,
+      "stale_source_rejected": true,
+      "changed_oracle_rejected": true,
+      "early_exit_rejected": true
+    },
+    {
+      "case": "sealed-percent-decoding",
+      "seed_rejected": true,
+      "reference_passed": true,
+      "weak_repair_rejected": null,
+      "stale_source_rejected": true,
+      "changed_oracle_rejected": true,
+      "early_exit_rejected": true
+    }
+  ]
+}
+test_actual_source_execution_and_unchanged_oracle_are_required (__main__.AdapterTests.test_actual_source_execution_and_unchanged_oracle_are_required) ... ok
+test_fluent_scores_without_source_changes_cannot_pass (__main__.AdapterTests.test_fluent_scores_without_source_changes_cannot_pass) ... ok
+test_malformed_resource_output_is_retained_and_not_qualified (__main__.AdapterTests.test_malformed_resource_output_is_retained_and_not_qualified) ... ok
+test_undeclared_missing_or_malformed_calls_are_not_resource_visibility (__main__.AdapterTests.test_undeclared_missing_or_malformed_calls_are_not_resource_visibility) ... ok
+test_empty_oversized_and_control_responses_are_rejected (__main__.OptimizerTests.test_empty_oversized_and_control_responses_are_rejected) ... ok
+test_optimization_cannot_disable_execution_evidence_gates (__main__.OptimizerTests.test_optimization_cannot_disable_execution_evidence_gates) ... ok
+test_tool_markup_is_not_an_instruction_proposal (__main__.OptimizerTests.test_tool_markup_is_not_an_instruction_proposal) ... ok
+test_transport_success_cannot_accept_an_unfinished_proposal (__main__.OptimizerTests.test_transport_success_cannot_accept_an_unfinished_proposal) ... ok
+
+----------------------------------------------------------------------
+Ran 8 tests in 1.759s
+
+OK
+test_engine_cancellation_is_visible_without_fabricating_a_timeout (__main__.CampaignTests.test_engine_cancellation_is_visible_without_fabricating_a_timeout) ... ok
+test_missing_frozen_source_cannot_be_reconstructed_on_resume (__main__.CampaignTests.test_missing_frozen_source_cannot_be_reconstructed_on_resume) ... ok
+test_running_campaign_does_not_import_new_checkout_oracles (__main__.CampaignTests.test_running_campaign_does_not_import_new_checkout_oracles) ... ok
+
+----------------------------------------------------------------------
+Ran 3 tests in 0.013s
+
+OK
+test_ambiguous_or_invalid_json_rejected (test_handoff.ConfigTests.test_ambiguous_or_invalid_json_rejected) ... ok
+test_both_templates_require_exact_model_and_rights (test_handoff.ConfigTests.test_both_templates_require_exact_model_and_rights) ... ok
+test_config_requires_review_and_validation_interval (test_handoff.ConfigTests.test_config_requires_review_and_validation_interval) ... ok
+test_censored_actor_rejected (test_handoff.DataTests.test_censored_actor_rejected) ... ok
+test_cli_exports_fixture_and_training_refuses_it_before_loading (test_handoff.DataTests.test_cli_exports_fixture_and_training_refuses_it_before_loading) ... ok
+test_duplicate_attempt_not_new_training_data (test_handoff.DataTests.test_duplicate_attempt_not_new_training_data) ... ok
+test_existing_output_never_overwritten (test_handoff.DataTests.test_existing_output_never_overwritten) ... ok
+test_export_counts_and_hashes (test_handoff.DataTests.test_export_counts_and_hashes) ... ok
+test_fabricated_transcript_rejected (test_handoff.DataTests.test_fabricated_transcript_rejected) ... ok
+test_failed_or_empty_checks_rejected (test_handoff.DataTests.test_failed_or_empty_checks_rejected) ... ok
+test_family_split_mismatch (test_handoff.DataTests.test_family_split_mismatch) ... ok
+test_fixture_manifest_rejected_by_training_loader (test_handoff.DataTests.test_fixture_manifest_rejected_by_training_loader) ... ok
+test_fixture_rejected_by_production_default (test_handoff.DataTests.test_fixture_rejected_by_production_default) ... ok
+test_missing_required_argument_rejected (test_handoff.DataTests.test_missing_required_argument_rejected) ... ok
+test_model_actor_must_identify_exact_artifact_and_template (test_handoff.DataTests.test_model_actor_must_identify_exact_artifact_and_template) ... ok
+test_orphan_tool_result_rejected (test_handoff.DataTests.test_orphan_tool_result_rejected) ... ok
+test_path_traversal_and_symlink_escape_rejected (test_handoff.DataTests.test_path_traversal_and_symlink_escape_rejected) ... ok
+test_privacy_rights_and_split_attestations_required (test_handoff.DataTests.test_privacy_rights_and_split_attestations_required) ... ok
+test_raw_check_output_hash_required (test_handoff.DataTests.test_raw_check_output_hash_required) ... ok
+test_stale_behavioral_check_rejected (test_handoff.DataTests.test_stale_behavioral_check_rejected) ... ok
+test_string_arguments_rejected (test_handoff.DataTests.test_string_arguments_rejected) ... ok
+test_tampered_prepared_input_rejected (test_handoff.DataTests.test_tampered_prepared_input_rejected) ... ok
+test_test_family_never_exported (test_handoff.DataTests.test_test_family_never_exported) ... ok
+test_trace_hash_mismatch (test_handoff.DataTests.test_trace_hash_mismatch) ... ok
+test_unfinished_tool_exchange_rejected (test_handoff.DataTests.test_unfinished_tool_exchange_rejected) ... ok
+test_unknown_tool_rejected (test_handoff.DataTests.test_unknown_tool_rejected) ... ok
+test_unresolved_source_license_rejected (test_handoff.DataTests.test_unresolved_source_license_rejected) ... ok
+test_unreviewed_source_rejected (test_handoff.DataTests.test_unreviewed_source_rejected) ... ok
+test_valid_reviewed_fixture (test_handoff.DataTests.test_valid_reviewed_fixture) ... ok
+test_only_current_assistant_target_supervised (test_handoff.EncodingTests.test_only_current_assistant_target_supervised) ... ok
+test_overlong_trace_never_silently_truncated (test_handoff.EncodingTests.test_overlong_trace_never_silently_truncated) ... ok
+test_padding_stays_masked (test_handoff.EncodingTests.test_padding_stays_masked) ... ok
+test_recorded_reasoning_must_serialize (test_handoff.EncodingTests.test_recorded_reasoning_must_serialize) ... ok
+test_reproducible_tokenizer_fixture_has_two_targets (test_handoff.EncodingTests.test_reproducible_tokenizer_fixture_has_two_targets) ... ok
+test_template_controls_cannot_override_encoder (test_handoff.EncodingTests.test_template_controls_cannot_override_encoder) ... ok
+test_template_dropping_tool_arguments_rejected (test_handoff.EncodingTests.test_template_dropping_tool_arguments_rejected) ... ok
+test_wrong_generation_prefix_rejected (test_handoff.EncodingTests.test_wrong_generation_prefix_rejected) ... ok
+test_capture_preserves_native_pairing_and_keeps_every_review_pending (test_jobs.JobTests.test_capture_preserves_native_pairing_and_keeps_every_review_pending) ... ok
+test_capture_rejects_stale_source_altered_oracle_and_sealed_renaming (test_jobs.JobTests.test_capture_rejects_stale_source_altered_oracle_and_sealed_renaming) ... ok
+test_checkpoint_resume_uses_exact_dataset_config_and_complete_files (test_jobs.JobTests.test_checkpoint_resume_uses_exact_dataset_config_and_complete_files) ... ok
+test_export_refuses_missing_training_wrong_ancestry_and_changed_adapter (test_jobs.JobTests.test_export_refuses_missing_training_wrong_ancestry_and_changed_adapter) ... ok
+test_schema_rejects_bool_as_integer_extra_fields_and_bad_native_actions (test_jobs.JobTests.test_schema_rejects_bool_as_integer_extra_fields_and_bad_native_actions) ... ok
+test_invalid_gold_is_excluded_never_rewarded (test_pipeline.PipelineTests.test_invalid_gold_is_excluded_never_rewarded) ... ok
+test_native_fragments_and_reasoning_are_preserved (test_pipeline.PipelineTests.test_native_fragments_and_reasoning_are_preserved) ... ok
+test_only_correct_current_unchanged_behavior_receives_efficiency_bonus (test_pipeline.PipelineTests.test_only_correct_current_unchanged_behavior_receives_efficiency_bonus) ... ok
+test_stale_changed_tests_noop_claim_and_missing_rights_are_excluded (test_pipeline.PipelineTests.test_stale_changed_tests_noop_claim_and_missing_rights_are_excluded) ... ok
+
+----------------------------------------------------------------------
+Ran 46 tests in 0.151s
+
+OK
+PASS: python-repair, rust-diagnostics, javascript-setup, configuration-data detect broken behavior and accept the unchanged checks after repair.
+PASS: recursive levels, retained source spans/partial observations, lexical/Unicode bounds, hard limits, timeout reserved costs and unverified labels (scripted provider; no weights).
+PASS: repeated input fails; a newly generated host result is consumed; actual requests and native calls are retained.
+Retained 7 raw files in /tmp/alt-oracle-collection-fjnvzxkk/retained
+{"passed": true, "snapshot_repair_accepted": true, "original_defect_rejected": true, "repeated_pinned_checks": 2, "generated_outputs_excluded": true, "unfinished_attempt_excluded": true, "changed_oracle_rejected": true, "early_zero_exit_rejected_by_structured_check": true, "model_weights_used": false}
+Endpoint reachable; model listed: alt-protocol-fixture
+ACP v1 ready: goose 1.53.0
+Context: 8192 tokens; turn limit: 12
+Inference/tool quality has not been tested by this check.
+Tool inventory (10): alt__edit, alt__evidence, alt__list, alt__read, alt__remember, alt__run_check, alt__search, alt__skill, alt__terminal, fixture_ext__counter
+PASS: real Goose / openai: inventory, ACP, denial, approval, shell evidence, export, resume, stalled-provider kill fallback, instructions (12 fixture inference requests).
+Endpoint reachable; model listed: alt-protocol-fixture
+ACP v1 ready: goose 1.53.0
+Context: 8192 tokens; turn limit: 12
+Inference/tool quality has not been tested by this check.
+Tool inventory (10): alt__edit, alt__evidence, alt__list, alt__read, alt__remember, alt__run_check, alt__search, alt__skill, alt__terminal, fixture_ext__counter
+PASS: real Goose / ollama: inventory, ACP, denial, approval, shell evidence, export, resume, stalled-provider kill fallback, instructions (12 fixture inference requests).
+PASS: Goose/openai: compact initial read, native edit_text edits, denial, checkpoints, checks, stale-handle and failed-check recovery, exhausted-allowance failure with saved source/history.
+PASS: Goose/ollama: compact initial read, native edit_text edits, denial, checkpoints, checks, stale-handle and failed-check recovery, exhausted-allowance failure with saved source/history.
+PASS: Goose/openai: compact-lines initial read, native edit_lines edits, denial, checkpoints, checks, stale-handle and failed-check recovery, exhausted-allowance failure with saved source/history.
+PASS: Goose/ollama: compact-lines initial read, native edit_lines edits, denial, checkpoints, checks, stale-handle and failed-check recovery, exhausted-allowance failure with saved source/history.
+PASS: Goose/openai: compact initial read, native edit_text edits, denial, checkpoints, checks, stale-handle and failed-check recovery, exhausted-allowance failure with saved source/history.
+----------------------------------------
+Exception occurred during processing of request from ('127.0.0.1', 48366)
+Traceback (most recent call last):
+  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/socketserver.py", line 697, in process_request_thread
+    self.finish_request(request, client_address)
+  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/socketserver.py", line 362, in finish_request
+    self.RequestHandlerClass(request, client_address, self)
+  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/socketserver.py", line 766, in __init__
+    self.handle()
+  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/http/server.py", line 440, in handle
+    self.handle_one_request()
+  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/http/server.py", line 428, in handle_one_request
+    method()
+  File "/workspace/alt-cli/scripts/smoke_candidates.py", line 25, in do_POST
+    match=re.search(r'Range handle: (v1:[a-f0-9]+:\d+:\d+:[a-f0-9]+)',content);assert match,content
+                                                                                      ^^^^^
+AssertionError: File: value.txt · read version: cdd6c109503d4e19cad782eef4d9ba162af0d84727445edbb9d300df1adc6048 · 1 lines
+Range handle: h1-9a4dc928
+Symbols: []
+1: broken
+----------------------------------------
+----------------------------------------
+Exception occurred during processing of request from ('127.0.0.1', 58168)
+Traceback (most recent call last):
+  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/socketserver.py", line 697, in process_request_thread
+    self.finish_request(request, client_address)
+  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/socketserver.py", line 362, in finish_request
+    self.RequestHandlerClass(request, client_address, self)
+  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/socketserver.py", line 766, in __init__
+    self.handle()
+  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/http/server.py", line 440, in handle
+    self.handle_one_request()
+  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/http/server.py", line 428, in handle_one_request
+    method()
+  File "/workspace/alt-cli/scripts/smoke_candidates.py", line 25, in do_POST
+    match=re.search(r'Range handle: (v1:[a-f0-9]+:\d+:\d+:[a-f0-9]+)',content);assert match,content
+                                                                                      ^^^^^
+AssertionError: File: value.txt · read version: cdd6c109503d4e19cad782eef4d9ba162af0d84727445edbb9d300df1adc6048 · 1 lines
+Range handle: h1-ee40fa00
+Symbols: []
+1: broken
+----------------------------------------
+Traceback (most recent call last):
+  File "/workspace/alt-cli/scripts/smoke_candidates.py", line 82, in <module>
+    if __name__=='__main__':main()
+                            ^^^^^^
+  File "/workspace/alt-cli/scripts/smoke_candidates.py", line 49, in main
+    assert manifest['selected']==1 and len(manifest['rows'])==1,manifest
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: {'alt_sha256': 'c5b0ce49f3cdb97b3764d111afc11b572d28056753b461e3caade892cb4ff6da', 'base_files': {'value.txt': 'cdd6c109503d4e19cad782eef4d9ba162af0d84727445edbb9d300df1adc6048'}, 'base_modes': {'value.txt': 384}, 'baseline': '6f47302b86ccd7db0bc9fe2a45b3e0479cc2a1e55bd9e8cedcb3ec992ddb860d', 'checks': [{'argv': ['python3', '{assertion}'], 'contract': {'assertion': {'path': '/tmp/alt-candidates-oie4hj_5/assertion.py', 'sha256': 'ded72f1b43f644f76f034c7d97bea2682e4c810a720bffed3fc2cd362b719922'}, 'kind': 'tests', 'report': {'format': 'json', 'path': '.report.json'}}, 'name': 'acceptance', 'timeout_secs': 120}], 'effort': 'careful', 'engine': '/workspace/.alt-tools/goose', 'engine_sha256': '59655719cd9b098dab59b6e2c50f1e565a935992fae2e539f52018a960e0512a', 'generated_tokens': 1000, 'goal': 'Repair value.txt', 'id': 'c901ce71-9dcd-4402-86f8-8466c469b935', 'in_flight': None, 'preferences': {'access_policy': 'trusted', 'active_skill': None, 'context_tokens': 8192, 'engine_path': None, 'instruction_version': None, 'max_turns': 12, 'mouse': True, 'project': '/tmp/alt-candidates-oie4hj_5/project', 'recent_projects': [], 'runtime': {'batch': 128, 'cache_k': 'f16', 'cache_v': 'f16', 'flash_attention': False, 'gpu_layers': 0, 'thinking': None, 'threads': 0}, 'runtime_path': None, 'tool_profile': 'all', 'workflow': 'model-plan'}, 'profile': {'api_key_env': None, 'context_tokens': 16384, 'endpoint': 'http://127.0.0.1:46833/v1', 'inference': {'action_headroom': 256, 'llama_extensions': False, 'max_requests': None, 'min_p': None, 'output_parameter': 'max_tokens', 'output_tokens': 2048, 'reasoning_tokens': None, 'temperature': None, 'top_k': None, 'top_p': None, 'total_generated_tokens': None, 'version': 1}, 'max_turns': 12, 'model': 'fixture', 'provider': 'openai', 'uncensored': True}, 'requests': 12, 'requirements': [{'check_name': 'acceptance', 'description': 'Value fixed', 'name': 'value'}], 'rows': [{'ancestry': '6f47302b86ccd7db0bc9fe2a45b3e0479cc2a1e55bd9e8cedcb3ec992ddb860d', 'changed_tests': False, 'charged_generated_tokens': 500, 'cli_exit': 1, 'deadline_exhausted': False, 'diffs': [], 'eligible': False, 'index': 1, 'requests': 3, 'scope': 'Separate source copy; Full access retains normal host permissions and external side effects. Automatic promotion supports UTF-8 content changes with preserved permissions; other changes remain reviewable in the copy.', 'source_directory': '/tmp/alt-candidates-oie4hj_5/state/candidates/c901ce71-9dcd-4402-86f8-8466c469b935/candidate-1/source', 'source_revision': '6f47302b86ccd7db0bc9fe2a45b3e0479cc2a1e55bd9e8cedcb3ec992ddb860d', 'state_directory': '/tmp/alt-candidates-oie4hj_5/state/candidates/c901ce71-9dcd-4402-86f8-8466c469b935/candidate-1/state', 'unsupported_mode_or_binary_changes': [], 'verification': {'behavioral_acceptance': False, 'complete': False, 'requirements': [{'check_kind': 'tests', 'coverage': 'runner test report; no independent assertion', 'evidence': 'afbf2462-97a0-47c4-9d91-7d0742d8c070', 'requirement': {'check_name': 'acceptance', 'description': 'Value fixed', 'name': 'value'}, 'status': 'could not complete'}], 'scope': 'Required checks are incomplete', 'source_snapshot': '6f47302b86ccd7db0bc9fe2a45b3e0479cc2a1e55bd9e8cedcb3ec992ddb860d'}, 'wall_seconds': 8.097755829}, {'ancestry': '6f47302b86ccd7db0bc9fe2a45b3e0479cc2a1e55bd9e8cedcb3ec992ddb860d', 'changed_tests': False, 'charged_generated_tokens': 500, 'cli_exit': 1, 'deadline_exhausted': False, 'diffs': [], 'eligible': False, 'index': 2, 'requests': 3, 'scope': 'Separate source copy; Full access retains normal host permissions and external side effects. Automatic promotion supports UTF-8 content changes with preserved permissions; other changes remain reviewable in the copy.', 'source_directory': '/tmp/alt-candidates-oie4hj_5/state/candidates/c901ce71-9dcd-4402-86f8-8466c469b935/candidate-2/source', 'source_revision': '6f47302b86ccd7db0bc9fe2a45b3e0479cc2a1e55bd9e8cedcb3ec992ddb860d', 'state_directory': '/tmp/alt-candidates-oie4hj_5/state/candidates/c901ce71-9dcd-4402-86f8-8466c469b935/candidate-2/state', 'unsupported_mode_or_binary_changes': [], 'verification': {'behavioral_acceptance': False, 'complete': False, 'requirements': [{'check_kind': 'tests', 'coverage': 'runner test report; no independent assertion', 'evidence': '1093a919-9e93-4813-83fa-fe6e0f72c927', 'requirement': {'check_name': 'acceptance', 'description': 'Value fixed', 'name': 'value'}, 'status': 'could not complete'}], 'scope': 'Required checks are incomplete', 'source_snapshot': '6f47302b86ccd7db0bc9fe2a45b3e0479cc2a1e55bd9e8cedcb3ec992ddb860d'}, 'wall_seconds': 8.599363321}], 'schema': 1, 'seconds': 60, 'selected': None, 'source_root': '/tmp/alt-candidates-oie4hj_5/project', 'spent_generated_tokens': 1000, 'spent_requests': 6, 'spent_seconds': 16.697064518000005, 'status': 'no-source-progress; two independent attempts left source unchanged'}

@@ -1,0 +1,149 @@
+{
+  "configuration": {
+    "oracle_version": 5,
+    "context_scope": "Managed runtime native window and engine budget",
+    "model_file": "MiMo-V2.6-Distill-Qwen-9B-heretic.Q4_K_M.gguf",
+    "sha256": "00877ff79174b79f72c5ec704901fc958400a0b0d390fb61a068281618116dd1",
+    "bytes": 5629106560,
+    "uncensored": "Explicit user-selected publisher-labelled uncensored/abliterated artifact; no fallback",
+    "provider": "openai",
+    "endpoint": null,
+    "model_id": null,
+    "runtime": "/workspace/.alt-tools/llama-b11429/llama-b11429/llama-server",
+    "contexts": [
+      8192
+    ],
+    "repeats": 1,
+    "timeout_seconds": 300,
+    "binary_sha256": "ce246a19bcb04f2202952828b13030ff2556d0da0091988677176a8e0ff13fc1",
+    "physical_gpu_tested": false,
+    "verification_plan": true,
+    "history_notes": 0,
+    "cases": [
+      "python-feature"
+    ],
+    "partition": "development",
+    "tool_profile": "compact",
+    "threads": 2,
+    "batch": 128,
+    "engine_sha256": "59655719cd9b098dab59b6e2c50f1e565a935992fae2e539f52018a960e0512a",
+    "runtime_sha256": "5faf410bbbc00a1b94b09ee01623699f255365628dfa73b1ee552d9e52a2231d",
+    "fixture_sha256": "1f82969582e5b7394fdceb92b97085d218624dfda29d50a16a3fa2188d6f7d30",
+    "suite": "v5",
+    "instruction_sha256": null,
+    "inference": {
+      "output_tokens": 1024,
+      "reasoning_tokens": 128,
+      "temperature": 0.0,
+      "top_p": null,
+      "workflow": "host",
+      "skill": null,
+      "generated_tokens": 8192,
+      "requests": 8
+    },
+    "oracle_code_sha256": {
+      "acceptance_projects.py": "453f27af5b3cc558a2190620cee195a392e0a0a45889f43569b96e85765cd32a",
+      "acceptance_extra.py": "2a724e6da5673cb581b3b2c54d338a62bbc917f1753b7edf2774f9e2e005148d",
+      "acceptance_v5.py": "0f669daa7bbe060b131d79e2294ec026e419467be38d969c77f5dfefb897dea7"
+    }
+  },
+  "attempts": [
+    {
+      "case": "python-feature",
+      "context": 8192,
+      "repeat": 1,
+      "passed": false,
+      "cli_exit": 1,
+      "wall_seconds": 311.06,
+      "outer_timeout": false,
+      "sampled_alt_tree_peak_rss_bytes": 10233032704,
+      "rss_scope": "Alt, Goose and managed inference runtime",
+      "vram": null,
+      "oracle_unchanged": true,
+      "failed_tool_updates": 2,
+      "prose_accuracy": "Retained for manual assessment; not inferred from process exit",
+      "inference_cost": {
+        "requests": 5,
+        "charged_generated_tokens": 1718,
+        "known_generated_tokens": null
+      },
+      "runtime_timings": {
+        "scope": "Actual server-reported timings for completed responses, not inferred elapsed time",
+        "measured_responses": 4,
+        "responses": [
+          {
+            "response": "state/inference/b7d7f485-e35c-437e-9154-ff7000252a50/6b58fb0d-9b9f-4bf2-94cd-bee46932946e-response.raw",
+            "timings": {
+              "cache_n": 0,
+              "prompt_n": 2078,
+              "prompt_ms": 120280.768,
+              "prompt_per_token_ms": 57.882948989412895,
+              "prompt_per_second": 17.27624486069128,
+              "predicted_n": 44,
+              "predicted_ms": 8963.521,
+              "predicted_per_token_ms": 208.45397674418606,
+              "predicted_per_second": 4.797221984530409
+            }
+          },
+          {
+            "response": "state/inference/b7d7f485-e35c-437e-9154-ff7000252a50/5e0004fe-ae3a-4974-8e7a-d0b97ea12681-response.raw",
+            "timings": {
+              "cache_n": 2121,
+              "prompt_n": 17,
+              "prompt_ms": 1862.821,
+              "prompt_per_token_ms": 109.57770588235293,
+              "prompt_per_second": 9.125943931274126,
+              "predicted_n": 40,
+              "predicted_ms": 7670.095,
+              "predicted_per_token_ms": 196.66910256410256,
+              "predicted_per_second": 5.084682784241916
+            }
+          },
+          {
+            "response": "state/inference/b7d7f485-e35c-437e-9154-ff7000252a50/8b49640c-cc0d-4f71-bf1a-aad7f6248377-response.raw",
+            "timings": {
+              "cache_n": 2177,
+              "prompt_n": 54,
+              "prompt_ms": 4354.08,
+              "prompt_per_token_ms": 80.63111111111111,
+              "prompt_per_second": 12.402160732003088,
+              "predicted_n": 306,
+              "predicted_ms": 59169.988,
+              "predicted_per_token_ms": 193.9999606557377,
+              "predicted_per_second": 5.154640220646995
+            }
+          },
+          {
+            "response": "state/inference/b7d7f485-e35c-437e-9154-ff7000252a50/4e49e062-c2fa-469d-960f-2def97a586b6-response.raw",
+            "timings": {
+              "cache_n": 2227,
+              "prompt_n": 324,
+              "prompt_ms": 20295.802,
+              "prompt_per_token_ms": 62.64136419753086,
+              "prompt_per_second": 15.963892434504436,
+              "predicted_n": 304,
+              "predicted_ms": 58930.91,
+              "predicted_per_token_ms": 194.49145214521454,
+              "predicted_per_second": 5.141614137640162
+            }
+          }
+        ],
+        "prefill_ms": 146793.471,
+        "generation_ms": 134734.514
+      },
+      "task_group": "python-feature",
+      "source_sha256": "0a35008f81af7de3a441dbf81e7c7f2bc5207edd36ea6a4db4543e1388e5ffe8",
+      "inference_requests": 5,
+      "scores": {
+        "source_behavior_passed": false,
+        "turn_completed": false,
+        "transport_turn_ended": false,
+        "stop_reason": "cancelled",
+        "claim_accuracy": "unassessed: use retained prose and evidence; no automatic success-claim inference"
+      }
+    }
+  ],
+  "passed": 0,
+  "total": 1,
+  "scope": "Seeded small projects; every attempt retained. These measurements do not establish arbitrary task reliability or GPU performance."
+}

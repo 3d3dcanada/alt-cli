@@ -1,3 +1,4 @@
+pub mod compact_context;
 pub mod config;
 pub mod engine;
 pub mod extensions;

@@ -1,0 +1,531 @@
+{
+  "case": "sealed-cache-expiry",
+  "context": 8192,
+  "repeat": 1,
+  "passed": true,
+  "cli_exit": 0,
+  "process_exit": 0,
+  "interface": "cli",
+  "wall_seconds": 518.88,
+  "outer_timeout": false,
+  "sampled_alt_tree_peak_rss_bytes": 10851254272,
+  "rss_scope": "Alt, Goose and managed inference runtime",
+  "vram": null,
+  "oracle_unchanged": true,
+  "before": {
+    "passed": false,
+    "completion_observed": false,
+    "exit": 1,
+    "stdout": "",
+    "stderr": "Traceback (most recent call last):\n  File \"/workspace/.alt-repair/mimo-final-sealed/8192-sealed-cache-expiry-1/independent/check.py\", line 5, in <module>\n    assert c.get('x','absent') is False and c.get('n','absent') is None\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError\n"
+  },
+  "after": {
+    "passed": true,
+    "completion_observed": true,
+    "exit": 0,
+    "stdout": "ALT_ORACLE_COMPLETED_2cbb2737b29140a184cc2d0bd969f067\n",
+    "stderr": ""
+  },
+  "tool_calls": [
+    {
+      "_meta": {
+        "goose": {
+          "created": 1791384309,
+          "messageId": "chatcmpl-DpziLBLrMHeza1H6WZrhi5QmonKhY39N",
+          "toolCall": {
+            "extensionName": "alt",
+            "toolName": "alt__read"
+          }
+        }
+      },
+      "rawInput": {
+        "lines": 100,
+        "path": "solution.py",
+        "start_line": 1
+      },
+      "sessionUpdate": "tool_call",
+      "title": "alt: read \u00b7 solution.py",
+      "toolCallId": "o4NXCHm5zIZDzhACMe4DBj9mKTOVnUEH"
+    },
+    {
+      "_meta": {
+        "goose": {
+          "created": 1791384352,
+          "messageId": "chatcmpl-3UYlVvsiv1984YaQR78wCozpTQB9aToY",
+          "toolCall": {
+            "extensionName": "alt",
+            "toolName": "alt__edit_text"
+          }
+        }
+      },
+      "rawInput": {
+        "handle": "h1-90b9ac1a",
+        "new_text": "class Cache:\n    def __init__(self, clock):\n        self.clock = clock\n        self.store = {}\n\n    def put(self, key, value, ttl):\n        self.store[key] = {\"value\": value, \"insertion_time\": self.clock(), \"ttl\": ttl}\n\n    def get(self, key, default=None):\n        entry = self.store.get(key)\n        if entry is None:\n            return default\n        if self.clock() >= entry[\"insertion_time\"] + entry[\"ttl\"]:\n            del self.store[key]\n            return default\n        return entry[\"value\"]\n",
+        "path": "solution.py",
+        "reason": "Implement Cache with clock-based expiry"
+      },
+      "sessionUpdate": "tool_call",
+      "title": "alt: edit text \u00b7 solution.py",
+      "toolCallId": "ozo4GjTGQfu2jeZJeyoGIlIWcRXjoeGe"
+    },
+    {
+      "_meta": {
+        "goose": {
+          "created": 1791384371,
+          "messageId": "chatcmpl-NCkGHYIx4J0CcSvaiNDCZzXlQsfuEwdP",
+          "toolCall": {
+            "extensionName": "alt",
+            "toolName": "alt__run_check"
+          }
+        }
+      },
+      "rawInput": {
+        "name": "acceptance"
+      },
+      "sessionUpdate": "tool_call",
+      "title": "alt: run check \u00b7 acceptance",
+      "toolCallId": "dIGromO0fh5l3rmHmddf4BxVxiVA3zGO"
+    },
+    {
+      "_meta": {
+        "goose": {
+          "created": 1791384394,
+          "messageId": "chatcmpl-oc910hsp8EbU1LOoiggC44Dfv3OqGsZT",
+          "toolCall": {
+            "extensionName": "alt",
+            "toolName": "alt__evidence"
+          }
+        }
+      },
+      "rawInput": {
+        "id": "9940c72c-d67b-4170-864b-a6bb9cc7e232"
+      },
+      "sessionUpdate": "tool_call",
+      "title": "alt: evidence",
+      "toolCallId": "YPgZP3svQHPw3iu6FOKmZTtgQ8XeNBQb"
+    },
+    {
+      "_meta": {
+        "goose": {
+          "created": 1791384438,
+          "messageId": "chatcmpl-8Sq00sZ0EvlC1PnjhrX7nBkWKuOX8CYc",
+          "toolCall": {
+            "extensionName": "alt",
+            "toolName": "alt__read"
+          }
+        }
+      },
+      "rawInput": {
+        "lines": 100,
+        "path": "/workspace/.alt-repair/mimo-final-sealed/8192-sealed-cache-expiry-1/independent/check.py",
+        "start_line": 1
+      },
+      "sessionUpdate": "tool_call",
+      "title": "alt: read \u00b7 /workspace/.alt-repair/mimo-final-sealed/8192-sealed-c...\u2026",
+      "toolCallId": "KhJMWMh4DWrr3swOvFiJfA6TtsmeqMuG"
+    },
+    {
+      "_meta": {
+        "goose": {
+          "created": 1791384444,
+          "messageId": "chatcmpl-Mt2x8dywveKPLZeEdZuTDqTptyCmuFc7",
+          "toolCall": {
+            "extensionName": "alt",
+            "toolName": "alt__search"
+          }
+        }
+      },
+      "rawInput": {
+        "query": "negative ttl"
+      },
+      "sessionUpdate": "tool_call",
+      "title": "alt: search \u00b7 negative ttl",
+      "toolCallId": "gH46BNY8wOZHmbIbFWGc7IcacnzeALFO"
+    },
+    {
+      "_meta": {
+        "goose": {
+          "created": 1791384481,
+          "messageId": "chatcmpl-3k1PinrYp0Qpl23fTi8eD0e4Ceiu1zCt",
+          "toolCall": {
+            "extensionName": "alt",
+            "toolName": "alt__terminal"
+          }
+        }
+      },
+      "rawInput": {
+        "command": "cat /workspace/.alt-repair/mimo-final-sealed/8192-sealed-cache-expiry-1/independent/check.py",
+        "timeout_secs": 30
+      },
+      "sessionUpdate": "tool_call",
+      "title": "alt: terminal \u00b7 cat /workspace/.alt-repair/mimo-final-sealed/8192-seal...\u2026",
+      "toolCallId": "sJZ9HW4lxU4s38FnMoFsFLUMoHFy6MS3"
+    },
+    {
+      "_meta": {
+        "goose": {
+          "created": 1791384533,
+          "messageId": "chatcmpl-NnM4mcFwsC22YKGiXYFLBOv5uk3UZ3yj",
+          "toolCall": {
+            "extensionName": "alt",
+            "toolName": "alt__edit_text"
+          }
+        }
+      },
+      "rawInput": {
+        "handle": "h6-90b9ac1a",
+        "new_text": "    def put(self, key, value, ttl):\n        if ttl < 0:\n            raise ValueError('ttl must be nonnegative')\n        self.store[key] = {\"value\": value, \"insertion_time\": self.clock(), \"ttl\": ttl}",
+        "path": "solution.py",
+        "reason": "Reject negative ttl with ValueError"
+      },
+      "sessionUpdate": "tool_call",
+      "title": "alt: edit text \u00b7 solution.py",
+      "toolCallId": "3VhoK2txLxNvYaQjbnKTZP0Hj4mN38MT"
+    },
+    {
+      "_meta": {
+        "goose": {
+          "created": 1791384551,
+          "messageId": "chatcmpl-Zmn1TQBMOEEER5pP7PQ7LFLn7pniPQeT",
+          "toolCall": {
+            "extensionName": "alt",
+            "toolName": "alt__run_check"
+          }
+        }
+      },
+      "rawInput": {
+        "name": "acceptance"
+      },
+      "sessionUpdate": "tool_call",
+      "title": "alt: run check \u00b7 acceptance",
+      "toolCallId": "eLEvsuYWUby8iukOqXdEpNSSQ58kkUxw"
+    },
+    {
+      "_meta": {
+        "goose": {
+          "created": 1791384603,
+          "messageId": "chatcmpl-D455g2X5uZrjc01mn8DxTh4rOZqjIO3F",
+          "toolCall": {
+            "extensionName": "alt",
+            "toolName": "alt__read"
+          }
+        }
+      },
+      "rawInput": {
+        "lines": 100,
+        "path": "solution.py",
+        "start_line": 1
+      },
+      "sessionUpdate": "tool_call",
+      "title": "alt: read \u00b7 solution.py",
+      "toolCallId": "MSY6gK9cWLfotSU3CZqhZxwqpIAIwLyS"
+    },
+    {
+      "_meta": {
+        "goose": {
+          "created": 1791384665,
+          "messageId": "chatcmpl-JftOG3aKBXqpjwue5YjtvPPZ8eVS43Dv",
+          "toolCall": {
+            "extensionName": "alt",
+            "toolName": "alt__edit_text"
+          }
+        }
+      },
+      "rawInput": {
+        "handle": "h12-90b9ac1a",
+        "new_text": "class Cache:\n    def __init__(self, clock):\n        self.clock = clock\n        self.store = {}\n\n    def put(self, key, value, ttl):\n        if ttl < 0:\n            raise ValueError('ttl must be nonnegative')\n        self.store[key] = {\"value\": value, \"insertion_time\": self.clock(), \"ttl\": ttl}\n\n    def get(self, key, default=None):\n        entry = self.store.get(key)\n        if entry is None:\n            return default\n        if self.clock() >= entry[\"insertion_time\"] + entry[\"ttl\"]:\n            del self.store[key]\n            return default\n        return entry[\"value\"]\n",
+        "path": "solution.py",
+        "reason": "Restore full implementation"
+      },
+      "sessionUpdate": "tool_call",
+      "title": "alt: edit text \u00b7 solution.py",
+      "toolCallId": "8lp8J7dqHcrYI1SFHwnMBZY3Ws22AKnT"
+    },
+    {
+      "_meta": {
+        "goose": {
+          "created": 1791384687,
+          "messageId": "chatcmpl-uGOD5vzHexvXzhbpQF8eAFadyKBb206n",
+          "toolCall": {
+            "extensionName": "alt",
+            "toolName": "alt__run_check"
+          }
+        }
+      },
+      "rawInput": {
+        "name": "acceptance"
+      },
+      "sessionUpdate": "tool_call",
+      "title": "alt: run check \u00b7 acceptance",
+      "toolCallId": "JspEnLy3OARdTS6G7EU8LIx65zef0aBp"
+    }
+  ],
+  "failed_tool_updates": 3,
+  "final_prose": "I've reached the maximum number of actions I can do without user input. Would you like me to continue?",
+  "prose_accuracy": "Retained for manual assessment; not inferred from process exit",
+  "resulting_source": {
+    "solution.py": "class Cache:\n    def __init__(self, clock):\n        self.clock = clock\n        self.store = {}\n\n    def put(self, key, value, ttl):\n        if ttl < 0:\n            raise ValueError('ttl must be nonnegative')\n        self.store[key] = {\"value\": value, \"insertion_time\": self.clock(), \"ttl\": ttl}\n\n    def get(self, key, default=None):\n        entry = self.store.get(key)\n        if entry is None:\n            return default\n        if self.clock() >= entry[\"insertion_time\"] + entry[\"ttl\"]:\n            del self.store[key]\n            return default\n        return entry[\"value\"]\n"
+  },
+  "context_views": [
+    {
+      "character_budget": 4096,
+      "characters": 616,
+      "current_reads": [
+        {
+          "handle_scope": "Exact UTF-8 byte span at this file revision; line spans include their original newline. Replace with edit(operation=handle,handle=...,new_text=...) or edit_lines(handle=...,lines=[...]) when enabled.",
+          "path": "solution.py",
+          "range_handle": "h1-90b9ac1a",
+          "sha256": "f3b730aadcc98e89a75c517a48d65c8198b84476674479e013787c33585c93aa",
+          "source": "class Cache:\n def __init__(self,clock): pass\n def put(self,key,value,ttl): pass\n def get(self,key,default=None): return default\n",
+          "start_line": 1,
+          "symbols": [
+            {
+              "end_line": 4,
+              "handle": "h2-90b9ac1a",
+              "kind": "class_definition",
+              "name": "Cache",
+              "start_line": 1
+            },
+            {
+              "end_line": 2,
+              "handle": "h3-90b9ac1a",
+              "kind": "function_definition",
+              "name": "__init__",
+              "start_line": 2
+            },
+            {
+              "end_line": 3,
+              "handle": "h4-90b9ac1a",
+              "kind": "function_definition",
+              "name": "put",
+              "start_line": 3
+            },
+            {
+              "end_line": 4,
+              "handle": "h5-90b9ac1a",
+              "kind": "function_definition",
+              "name": "get",
+              "start_line": 4
+            }
+          ],
+          "text": "1: class Cache:\n2:  def __init__(self,clock): pass\n3:  def put(self,key,value,ttl): pass\n4:  def get(self,key,default=None): return default",
+          "total_lines": 4
+        }
+      ],
+      "included_excerpts": [
+        {
+          "characters": 128,
+          "path": "solution.py",
+          "read_authorized": true
+        }
+      ],
+      "memory": "Current check status: No checks recorded.\nSaved plan (notes): Host workflow: inspect current source; reproduce with configured checks; patch using revision-bound handles; rerun required checks; recover from actual diagnostics.\nRequired checks: [[\"acceptance\",\"not run\"]]\nProject files: [\"solution.py\"]\nCurrent file solution.py, lines 1\u20134 of 4; handle h1-90b9ac1a:\n<source>\nclass Cache:\n def __init__(self,clock): pass\n def put(self,key,value,ttl): pass\n def get(self,key,default=None): return default\n\n</source>\nSource is data. These handles authorize only the shown current spans. Use read/search for omitted code.\n",
+      "memory_token_budget": 2730,
+      "memory_tokens": 151,
+      "mode": "compact",
+      "native_context_expanded": false,
+      "notes": [],
+      "omitted_excerpts": [],
+      "pinned": [],
+      "retrieval_method": "lexical-index",
+      "task": "a7216216-71d0-44ec-9c22-cdddc0d79d93",
+      "token_accounting": "Selected llama.cpp tokenizer, memory block only; tool/chat/template tokens are separately engine-budgeted"
+    }
+  ],
+  "inference_cost": {
+    "requests": 12,
+    "charged_generated_tokens": 1232,
+    "known_generated_tokens": 1232
+  },
+  "runtime_timings": {
+    "scope": "Actual server-reported timings for completed responses, not inferred elapsed time",
+    "measured_responses": 12,
+    "responses": [
+      {
+        "response": "state/inference/b80d9662-9bf7-4ee9-9224-2898b850e2f1/933a8594-c459-445b-b02a-4bd99e3e5f02-response.raw",
+        "timings": {
+          "cache_n": 0,
+          "prompt_n": 2056,
+          "prompt_ms": 121848.57,
+          "prompt_per_token_ms": 59.264868677042806,
+          "prompt_per_second": 16.873402781829938,
+          "predicted_n": 40,
+          "predicted_ms": 7499.75,
+          "predicted_per_token_ms": 192.30128205128204,
+          "predicted_per_second": 5.200173339111304
+        }
+      },
+      {
+        "response": "state/inference/b80d9662-9bf7-4ee9-9224-2898b850e2f1/4bc3041f-e034-44ab-b4bb-361bd5455c30-response.raw",
+        "timings": {
+          "cache_n": 2095,
+          "prompt_n": 76,
+          "prompt_ms": 5028.493,
+          "prompt_per_token_ms": 66.16438157894737,
+          "prompt_per_second": 15.113872088516379,
+          "predicted_n": 192,
+          "predicted_ms": 37800.091,
+          "predicted_per_token_ms": 197.90623560209426,
+          "predicted_per_second": 5.052897888526247
+        }
+      },
+      {
+        "response": "state/inference/b80d9662-9bf7-4ee9-9224-2898b850e2f1/741ee533-e4a3-40ef-9135-0a92e02262b0-response.raw",
+        "timings": {
+          "cache_n": 2362,
+          "prompt_n": 245,
+          "prompt_ms": 14901.408,
+          "prompt_per_token_ms": 60.82207346938775,
+          "prompt_per_second": 16.4413993630669,
+          "predicted_n": 23,
+          "predicted_ms": 4411.883,
+          "predicted_per_token_ms": 200.54013636363635,
+          "predicted_per_second": 4.986532961096204
+        }
+      },
+      {
+        "response": "state/inference/b80d9662-9bf7-4ee9-9224-2898b850e2f1/0bd5881a-cc83-486f-8949-69abcd48cc78-response.raw",
+        "timings": {
+          "cache_n": 2629,
+          "prompt_n": 206,
+          "prompt_ms": 12994.334,
+          "prompt_per_token_ms": 63.079291262135925,
+          "prompt_per_second": 15.8530633428385,
+          "predicted_n": 53,
+          "predicted_ms": 10100.85,
+          "predicted_per_token_ms": 194.2471153846154,
+          "predicted_per_second": 5.148081597093314
+        }
+      },
+      {
+        "response": "state/inference/b80d9662-9bf7-4ee9-9224-2898b850e2f1/4d2cd408-7a68-4608-b470-da31a2edbd2f-response.raw",
+        "timings": {
+          "cache_n": 2887,
+          "prompt_n": 214,
+          "prompt_ms": 13170.407,
+          "prompt_per_token_ms": 61.54395794392523,
+          "prompt_per_second": 16.24854873505428,
+          "predicted_n": 158,
+          "predicted_ms": 30371.446,
+          "predicted_per_token_ms": 193.44870063694268,
+          "predicted_per_second": 5.169329112614526
+        }
+      },
+      {
+        "response": "state/inference/b80d9662-9bf7-4ee9-9224-2898b850e2f1/eb46ea51-ea6d-48b0-92fc-6f9fcc1a094f-response.raw",
+        "timings": {
+          "cache_n": 3258,
+          "prompt_n": 17,
+          "prompt_ms": 1890.17,
+          "prompt_per_token_ms": 111.1864705882353,
+          "prompt_per_second": 8.993900019574959,
+          "predicted_n": 22,
+          "predicted_ms": 3991.133,
+          "predicted_per_token_ms": 190.05395238095238,
+          "predicted_per_second": 5.261663793213607
+        }
+      },
+      {
+        "response": "state/inference/b80d9662-9bf7-4ee9-9224-2898b850e2f1/eb60c2f5-d785-4829-8ed6-f183fb79d222-response.raw",
+        "timings": {
+          "cache_n": 3296,
+          "prompt_n": 71,
+          "prompt_ms": 4880.433,
+          "prompt_per_token_ms": 68.73849295774647,
+          "prompt_per_second": 14.547889500788148,
+          "predicted_n": 161,
+          "predicted_ms": 32511.831,
+          "predicted_per_token_ms": 203.19894374999998,
+          "predicted_per_second": 4.921285423758508
+        }
+      },
+      {
+        "response": "state/inference/b80d9662-9bf7-4ee9-9224-2898b850e2f1/de026527-60e0-42a8-a5b3-eabdae059cc1-response.raw",
+        "timings": {
+          "cache_n": 3527,
+          "prompt_n": 308,
+          "prompt_ms": 20343.002,
+          "prompt_per_token_ms": 66.0487077922078,
+          "prompt_per_second": 15.140341627061728,
+          "predicted_n": 131,
+          "predicted_ms": 31248.323,
+          "predicted_per_token_ms": 240.37171538461538,
+          "predicted_per_second": 4.160223254220715
+        }
+      },
+      {
+        "response": "state/inference/b80d9662-9bf7-4ee9-9224-2898b850e2f1/5c9b25bd-d49b-4190-971d-2b91b1bb15ac-response.raw",
+        "timings": {
+          "cache_n": 3965,
+          "prompt_n": 198,
+          "prompt_ms": 13501.997,
+          "prompt_per_token_ms": 68.19190404040404,
+          "prompt_per_second": 14.664497407309453,
+          "predicted_n": 23,
+          "predicted_ms": 4477.063,
+          "predicted_per_token_ms": 203.50286363636363,
+          "predicted_per_second": 4.913935765478396
+        }
+      },
+      {
+        "response": "state/inference/b80d9662-9bf7-4ee9-9224-2898b850e2f1/118d197b-64d5-438a-a45e-1bffc63eda01-response.raw",
+        "timings": {
+          "cache_n": 4185,
+          "prompt_n": 228,
+          "prompt_ms": 14779.589,
+          "prompt_per_token_ms": 64.82275877192983,
+          "prompt_per_second": 15.426680674273147,
+          "predicted_n": 168,
+          "predicted_ms": 36874.796,
+          "predicted_per_token_ms": 220.80716167664673,
+          "predicted_per_second": 4.5288386137783645
+        }
+      },
+      {
+        "response": "state/inference/b80d9662-9bf7-4ee9-9224-2898b850e2f1/03ff4e63-e62f-4bf2-bd6d-0a8ff39873b9-response.raw",
+        "timings": {
+          "cache_n": 4580,
+          "prompt_n": 103,
+          "prompt_ms": 7132.2,
+          "prompt_per_token_ms": 69.24466019417476,
+          "prompt_per_second": 14.44154678780741,
+          "predicted_n": 238,
+          "predicted_ms": 54462.822,
+          "predicted_per_token_ms": 229.80093670886075,
+          "predicted_per_second": 4.351592357810618
+        }
+      },
+      {
+        "response": "state/inference/b80d9662-9bf7-4ee9-9224-2898b850e2f1/fdddbb7a-0f6c-4109-b1c3-d18348f72025-response.raw",
+        "timings": {
+          "cache_n": 4920,
+          "prompt_n": 263,
+          "prompt_ms": 18279.279,
+          "prompt_per_token_ms": 69.5029619771863,
+          "prompt_per_second": 14.387876020711758,
+          "predicted_n": 23,
+          "predicted_ms": 4386.503,
+          "predicted_per_token_ms": 199.38649999999998,
+          "predicted_per_second": 5.01538469254438
+        }
+      }
+    ],
+    "prefill_ms": 248749.882,
+    "generation_ms": 258136.491
+  },
+  "task_group": "cache-expiry",
+  "source_sha256": "ec5796dd6701717657c23a676bf80d398edb4dd23f4a8a5dde333b9aadf05a6f",
+  "inference_requests": 12,
+  "independent_alt_verification": {
+    "exit": 0,
+    "stdout": "{\n  \"complete\": true,\n  \"behavioral_acceptance\": true,\n  \"scope\": \"Pinned independent assertions passed on current files; review their behavioral coverage\",\n  \"requirements\": [\n    {\n      \"requirement\": {\n        \"name\": \"requested-behavior\",\n        \"description\": \"Implement Cache(clock) with put(key,value,ttl) and get(key,default=None). ttl must be nonnegative and is measured with the supplied clock. A value expires when clock() >= insertion_time+ttl. Preserve false/None values and overwrite keys; do not use wall-clock time.\",\n        \"check_name\": \"acceptance\"\n      },\n      \"status\": \"passed on current files\",\n      \"evidence\": \"a4e17427-c4d6-4c15-a287-4af3ab7a7379\",\n      \"check_kind\": \"tests\",\n      \"coverage\": \"independent behavioral assertion\"\n    }\n  ],\n  \"source_snapshot\": \"586c073dbf08b3be81244bfce95a263d72ad9452f9f3510bb093e8339cd54d58\"\n}\n",
+    "stderr": ""
+  },
+  "scores": {
+    "source_behavior_passed": true,
+    "turn_completed": true,
+    "transport_turn_ended": true,
+    "stop_reason": "end_turn",
+    "claim_accuracy": "unassessed: use retained prose and evidence; no automatic success-claim inference"
+  }
+}

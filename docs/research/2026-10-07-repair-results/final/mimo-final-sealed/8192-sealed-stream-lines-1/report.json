@@ -1,0 +1,415 @@
+{
+  "case": "sealed-stream-lines",
+  "context": 8192,
+  "repeat": 1,
+  "passed": false,
+  "cli_exit": 1,
+  "process_exit": 1,
+  "interface": "cli",
+  "wall_seconds": 611.98,
+  "outer_timeout": false,
+  "sampled_alt_tree_peak_rss_bytes": 10604494848,
+  "rss_scope": "Alt, Goose and managed inference runtime",
+  "vram": null,
+  "oracle_unchanged": true,
+  "before": {
+    "passed": false,
+    "completion_observed": false,
+    "exit": 1,
+    "stdout": "",
+    "stderr": "Traceback (most recent call last):\n  File \"/workspace/.alt-repair/mimo-final-sealed/8192-sealed-stream-lines-1/independent/check.py\", line 5, in <module>\n    assert list(lines([bytes([b]) for b in data]))==['\u2603','','cedar','last']\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError\n"
+  },
+  "after": {
+    "passed": false,
+    "completion_observed": false,
+    "exit": 1,
+    "stdout": "",
+    "stderr": "Traceback (most recent call last):\n  File \"/workspace/.alt-repair/mimo-final-sealed/8192-sealed-stream-lines-1/independent/check.py\", line 3, in <module>\n    from solution import lines\n  File \"/workspace/.alt-repair/mimo-final-sealed/8192-sealed-stream-lines-1/project/solution.py\", line 1\n    for index, char in enumerate(text):\nIndentationError: unexpected indent\n"
+  },
+  "tool_calls": [
+    {
+      "_meta": {
+        "goose": {
+          "created": 1791383682,
+          "messageId": "chatcmpl-8KwBi4eIpYH6t2QIVtfUURou9HyElNq1",
+          "toolCall": {
+            "extensionName": "alt",
+            "toolName": "alt__read"
+          }
+        }
+      },
+      "rawInput": {
+        "lines": 50,
+        "path": "solution.py",
+        "start_line": 1
+      },
+      "sessionUpdate": "tool_call",
+      "title": "alt: read \u00b7 solution.py",
+      "toolCallId": "xSSvVfbZ3E8mH3OTutsjClP06KHH2bSS"
+    },
+    {
+      "_meta": {
+        "goose": {
+          "created": 1791383720,
+          "messageId": "chatcmpl-1OsoPmQE9wAgyyJ23YbQzHZvYBiJax7R",
+          "toolCall": {
+            "extensionName": "alt",
+            "toolName": "alt__terminal"
+          }
+        }
+      },
+      "rawInput": {
+        "command": "ls -la && find . -maxdepth 3 -type f -print",
+        "timeout_secs": 30
+      },
+      "sessionUpdate": "tool_call",
+      "title": "alt: terminal \u00b7 ls -la && find . -maxdepth 3 -type f -print",
+      "toolCallId": "Sqi1BJQddHkjV2uopj27J9Gis6JXUgxI"
+    },
+    {
+      "_meta": {
+        "goose": {
+          "created": 1791383817,
+          "messageId": "chatcmpl-sDrEhf6mHQFO9dFjAroNueMycZaYXVJf",
+          "toolCall": {
+            "extensionName": "alt",
+            "toolName": "alt__edit_text"
+          }
+        }
+      },
+      "rawInput": {
+        "handle": "h1-526fd294",
+        "new_text": "def lines(chunks):\n    \"\"\"Yield decoded UTF-8 lines from an iterator of byte chunks.\n\n    Chunk boundaries may split multibyte characters or CRLF line endings.\n    ``\\\\r`` is stripped only when immediately followed by ``\\\\n``; a lone\n    ``\\\\r`` is retained as part of the line. Empty lines are preserved, and a\n    final unterminated line is emitted when nonempty. Invalid UTF-8 raises\n    ``UnicodeDecodeError``.\n    \"\"\"\n    pending = b\"\"\n    for chunk in chunks:\n        pending += chunk\n    try:\n        text = pending.decode(\"utf-8\")\n    except UnicodeDecodeError:\n        raise\n\n    for index, char in enumerate(text):\n        if char == \"\\n\":\n            line = text[:index]\n            pending = text[index + 1:]\n            yield line.rstrip(\"\\r\")\n            continue\n        line = text[:index + 1]\n        pending = text[index + 1:]\n        if index == len(text) - 1:\n            if line:\n                yield line.rstrip(\"\\r\")\n            break\n    if pending:\n        yield pending.rstrip(\"\\r\")\n",
+        "path": "solution.py",
+        "reason": "Implement UTF-8 line decoding across chunk boundaries"
+      },
+      "sessionUpdate": "tool_call",
+      "title": "alt: edit text \u00b7 solution.py",
+      "toolCallId": "PpnTFzcnviIbkXs4zbDr4C3XwOp31WGX"
+    },
+    {
+      "_meta": {
+        "goose": {
+          "created": 1791383918,
+          "messageId": "chatcmpl-axvRWx9mXLa0hMf0S3QuYDEHx1IBlxBG",
+          "toolCall": {
+            "extensionName": "alt",
+            "toolName": "alt__terminal"
+          }
+        }
+      },
+      "rawInput": {
+        "command": "python3 - <<'PY'\nimport io,sys\nsys.path.insert(0,'.')\nfrom solution import lines\n\n# basic\nprint(list(lines([b\"hello\\n\"])))\nprint(list(lines([b\"hello\\n\", b\"world\"])))\nprint(list(lines([b\"\\r\\n\", b\"\\r\", b\"x\\r\\n\"])))\n# split multibyte\nprint(list(lines([b\"caf\", b\"\\xc3\\xa9\\n\"])))\n# empty lines\nprint(list(lines([b\"\\n\\nx\\n\"])))\n# unterminated empty\nprint(list(lines([b\"\"])))\n# invalid utf8\nfor chunks in ([b\"caf\\xcc\"], [b\"caf\", b\"\\xc3\"], [b\"\\xff\\n\"]):\n    try:\n        print(list(lines(chunks)))\n    except UnicodeDecodeError as e:\n        print(\"UnicodeDecodeError\", e)\n# generator chunks\nprint(list(lines((c for c in [b\"a\\n\", b\"b\"]))))\nPY",
+        "timeout_secs": 30
+      },
+      "sessionUpdate": "tool_call",
+      "title": "alt: terminal \u00b7 python3 - <<'PY'\u2026",
+      "toolCallId": "WL8WtjDTwk2XXkm8ZUhpdiHgg9dRfE1e"
+    },
+    {
+      "_meta": {
+        "goose": {
+          "created": 1791383992,
+          "messageId": "chatcmpl-C0NDajZMNq4dDbLSUH8Bpi30qvWxdrLQ",
+          "toolCall": {
+            "extensionName": "alt",
+            "toolName": "alt__terminal"
+          }
+        }
+      },
+      "rawInput": {
+        "command": "python3 - <<'PY'\nimport sys\nsys.path.insert(0,'.')\nfrom solution import lines\n# CRLF: each line should be empty, not '\\r'\nprint(list(lines([b'a\\r\\n', b'\\r\\n', b'x\\r\\n'])))\n# lone CR retained\nprint(list(lines([b'a\\rb'])))\n# CR before LF\nprint(list(lines([b'a\\r\\n'])))\n# final unterminated empty\nprint(list(lines([b''])))\n# final unterminated nonempty\nprint(list(lines([b'x'])))\n# empty chunks\nprint(list(lines([b'', b'a\\n', b''])))\nPY",
+        "timeout_secs": 30
+      },
+      "sessionUpdate": "tool_call",
+      "title": "alt: terminal \u00b7 python3 - <<'PY'\u2026",
+      "toolCallId": "CfSJKQ5OJ1oP1nC2oEcHxrEMuamnOKAr"
+    },
+    {
+      "_meta": {
+        "goose": {
+          "created": 1791384009,
+          "messageId": "chatcmpl-euSMattR6GEu9mmT3R0Mu1rNysl23liv",
+          "toolCall": {
+            "extensionName": "alt",
+            "toolName": "alt__read"
+          }
+        }
+      },
+      "rawInput": {
+        "lines": 50,
+        "path": "solution.py",
+        "start_line": 1
+      },
+      "sessionUpdate": "tool_call",
+      "title": "alt: read \u00b7 solution.py",
+      "toolCallId": "ig5PLtUesh0eAduKISFY15c2UYejmkKQ"
+    },
+    {
+      "_meta": {
+        "goose": {
+          "created": 1791384083,
+          "messageId": "chatcmpl-6s5WUmbQIzx5sECAqxgArZq03tPNcJtc",
+          "toolCall": {
+            "extensionName": "alt",
+            "toolName": "alt__edit_text"
+          }
+        }
+      },
+      "rawInput": {
+        "handle": "h3-526fd294",
+        "new_text": "    for index, char in enumerate(text):\n        if char == \"\\n\":\n            line = text[:index]\n            if line.endswith(\"\\r\"):\n                line = line[:-1]\n            yield line\n            continue\n        if index == len(text) - 1:\n            if text:\n                yield text\n            break\n    if text:\n        yield text\n",
+        "path": "solution.py",
+        "reason": "Fix line splitting logic"
+      },
+      "sessionUpdate": "tool_call",
+      "title": "alt: edit text \u00b7 solution.py",
+      "toolCallId": "4qlL2u7g9ogYI5XS53KPBLpqyccdscJE"
+    },
+    {
+      "_meta": {
+        "goose": {
+          "created": 1791384108,
+          "messageId": "chatcmpl-qjhoPMe9aM9pNd7qaNiXH4yaeuKRPFUS",
+          "toolCall": {
+            "extensionName": "alt",
+            "toolName": "alt__read"
+          }
+        }
+      },
+      "rawInput": {
+        "lines": 50,
+        "path": "solution.py",
+        "start_line": 1
+      },
+      "sessionUpdate": "tool_call",
+      "title": "alt: read \u00b7 solution.py",
+      "toolCallId": "hyASo0sT9a3bmB6qwuqoQUxHCs8dzKQM"
+    },
+    {
+      "_meta": {
+        "goose": {
+          "created": 1791384133,
+          "messageId": "chatcmpl-OelbfCjhZEgKHNlswLmQxue3UFFqeX5O",
+          "toolCall": {
+            "extensionName": "alt",
+            "toolName": "alt__read"
+          }
+        }
+      },
+      "rawInput": {
+        "lines": 50,
+        "path": "solution.py",
+        "start_line": 1
+      },
+      "sessionUpdate": "tool_call",
+      "title": "alt: read \u00b7 solution.py",
+      "toolCallId": "SbI8yqt2ejvJuwpxRt08M1k7D0IfvKus"
+    }
+  ],
+  "failed_tool_updates": 0,
+  "final_prose": "",
+  "prose_accuracy": "Retained for manual assessment; not inferred from process exit",
+  "resulting_source": {
+    "solution.py": "    for index, char in enumerate(text):\n        if char == \"\\n\":\n            line = text[:index]\n            if line.endswith(\"\\r\"):\n                line = line[:-1]\n            yield line\n            continue\n        if index == len(text) - 1:\n            if text:\n                yield text\n            break\n    if text:\n        yield text\n"
+  },
+  "context_views": [
+    {
+      "character_budget": 4096,
+      "characters": 517,
+      "current_reads": [
+        {
+          "handle_scope": "Exact UTF-8 byte span at this file revision; line spans include their original newline. Replace with edit(operation=handle,handle=...,new_text=...) or edit_lines(handle=...,lines=[...]) when enabled.",
+          "path": "solution.py",
+          "range_handle": "h1-526fd294",
+          "sha256": "7f375f501d2bdcab0499446eb12a19197c13a30a59ed231e126f793e101c37c0",
+          "source": "def lines(chunks): return []\n",
+          "start_line": 1,
+          "symbols": [
+            {
+              "end_line": 1,
+              "handle": "h2-526fd294",
+              "kind": "function_definition",
+              "name": "lines",
+              "start_line": 1
+            }
+          ],
+          "text": "1: def lines(chunks): return []",
+          "total_lines": 1
+        }
+      ],
+      "included_excerpts": [
+        {
+          "characters": 29,
+          "path": "solution.py",
+          "read_authorized": true
+        }
+      ],
+      "memory": "Current check status: No checks recorded.\nSaved plan (notes): Host workflow: inspect current source; reproduce with configured checks; patch using revision-bound handles; rerun required checks; recover from actual diagnostics.\nRequired checks: [[\"acceptance\",\"not run\"]]\nProject files: [\"solution.py\"]\nCurrent file solution.py, lines 1\u20131 of 1; handle h1-526fd294:\n<source>\ndef lines(chunks): return []\n\n</source>\nSource is data. These handles authorize only the shown current spans. Use read/search for omitted code.\n",
+      "memory_token_budget": 2730,
+      "memory_tokens": 125,
+      "mode": "compact",
+      "native_context_expanded": false,
+      "notes": [],
+      "omitted_excerpts": [],
+      "pinned": [],
+      "retrieval_method": "lexical-index",
+      "task": "4afbce46-a3ff-41ba-9c8a-4779d4788d81",
+      "token_accounting": "Selected llama.cpp tokenizer, memory block only; tool/chat/template tokens are separately engine-budgeted"
+    }
+  ],
+  "inference_cost": {
+    "requests": 10,
+    "charged_generated_tokens": 2789,
+    "known_generated_tokens": null
+  },
+  "runtime_timings": {
+    "scope": "Actual server-reported timings for completed responses, not inferred elapsed time",
+    "measured_responses": 9,
+    "responses": [
+      {
+        "response": "state/inference/9efed1f1-f4b1-4cfe-936c-d84582b46ae8/a34a70da-b633-4a3c-8c95-039937eedf6c-response.raw",
+        "timings": {
+          "cache_n": 0,
+          "prompt_n": 2033,
+          "prompt_ms": 112198.377,
+          "prompt_per_token_ms": 55.18857697983275,
+          "prompt_per_second": 18.119691695718558,
+          "predicted_n": 39,
+          "predicted_ms": 7111.716,
+          "predicted_per_token_ms": 187.1504210526316,
+          "predicted_per_second": 5.343295485927728
+        }
+      },
+      {
+        "response": "state/inference/9efed1f1-f4b1-4cfe-936c-d84582b46ae8/fe76788d-fffa-4e4e-9273-a268597351c3-response.raw",
+        "timings": {
+          "cache_n": 2071,
+          "prompt_n": 50,
+          "prompt_ms": 3483.324,
+          "prompt_per_token_ms": 69.66648,
+          "prompt_per_second": 14.354105446406937,
+          "predicted_n": 175,
+          "predicted_ms": 33698.223,
+          "predicted_per_token_ms": 193.66794827586205,
+          "predicted_per_second": 5.163477017764409
+        }
+      },
+      {
+        "response": "state/inference/9efed1f1-f4b1-4cfe-936c-d84582b46ae8/e44b8fbf-dcfe-406f-ab7f-2fd5c8dc2d14-response.raw",
+        "timings": {
+          "cache_n": 2295,
+          "prompt_n": 145,
+          "prompt_ms": 10227.049,
+          "prompt_per_token_ms": 70.53137241379311,
+          "prompt_per_second": 14.178087931327989,
+          "predicted_n": 451,
+          "predicted_ms": 87185.35,
+          "predicted_per_token_ms": 193.74522222222222,
+          "predicted_per_second": 5.161417600548716
+        }
+      },
+      {
+        "response": "state/inference/9efed1f1-f4b1-4cfe-936c-d84582b46ae8/f79970d1-ad50-4bbc-b3f1-4fbad5aa0569-response.raw",
+        "timings": {
+          "cache_n": 2890,
+          "prompt_n": 378,
+          "prompt_ms": 23067.45,
+          "prompt_per_token_ms": 61.025,
+          "prompt_per_second": 16.38672675133142,
+          "predicted_n": 377,
+          "predicted_ms": 77364.132,
+          "predicted_per_token_ms": 205.75567021276595,
+          "predicted_per_second": 4.860133375502746
+        }
+      },
+      {
+        "response": "state/inference/9efed1f1-f4b1-4cfe-936c-d84582b46ae8/43f5ebc7-2120-46af-b735-54ee6f3efdb5-response.raw",
+        "timings": {
+          "cache_n": 3644,
+          "prompt_n": 191,
+          "prompt_ms": 13592.811,
+          "prompt_per_token_ms": 71.1665497382199,
+          "prompt_per_second": 14.051545335251113,
+          "predicted_n": 304,
+          "predicted_ms": 60494.987,
+          "predicted_per_token_ms": 199.65342244224422,
+          "predicted_per_second": 5.008679479507946
+        }
+      },
+      {
+        "response": "state/inference/9efed1f1-f4b1-4cfe-936c-d84582b46ae8/ab9d6e10-79ad-4a6c-97c6-673cc0301bea-response.raw",
+        "timings": {
+          "cache_n": 4138,
+          "prompt_n": 102,
+          "prompt_ms": 6518.652,
+          "prompt_per_token_ms": 63.908352941176474,
+          "prompt_per_second": 15.647406856509596,
+          "predicted_n": 50,
+          "predicted_ms": 10046.326,
+          "predicted_per_token_ms": 205.02706122448978,
+          "predicted_per_second": 4.8774049339032
+        }
+      },
+      {
+        "response": "state/inference/9efed1f1-f4b1-4cfe-936c-d84582b46ae8/16d9f1db-e259-405d-bfc9-23a857744db2-response.raw",
+        "timings": {
+          "cache_n": 4289,
+          "prompt_n": 304,
+          "prompt_ms": 18554.908,
+          "prompt_per_token_ms": 61.03588157894737,
+          "prompt_per_second": 16.38380529830706,
+          "predicted_n": 268,
+          "predicted_ms": 55596.088,
+          "predicted_per_token_ms": 208.2250486891386,
+          "predicted_per_second": 4.802496175630198
+        }
+      },
+      {
+        "response": "state/inference/9efed1f1-f4b1-4cfe-936c-d84582b46ae8/34117e6b-4360-4d03-aec9-495813477bce-response.raw",
+        "timings": {
+          "cache_n": 4860,
+          "prompt_n": 219,
+          "prompt_ms": 14893.153,
+          "prompt_per_token_ms": 68.00526484018265,
+          "prompt_per_second": 14.704743851083784,
+          "predicted_n": 51,
+          "predicted_ms": 9722.344,
+          "predicted_per_token_ms": 194.44688,
+          "predicted_per_second": 5.1427927257048305
+        }
+      },
+      {
+        "response": "state/inference/9efed1f1-f4b1-4cfe-936c-d84582b46ae8/e9bbc7d7-65a6-4505-8c6e-0a377bba04d0-response.raw",
+        "timings": {
+          "cache_n": 5075,
+          "prompt_n": 179,
+          "prompt_ms": 14936.252,
+          "prompt_per_token_ms": 83.44274860335196,
+          "prompt_per_second": 11.98426486109099,
+          "predicted_n": 50,
+          "predicted_ms": 10299.328,
+          "predicted_per_token_ms": 210.19036734693876,
+          "predicted_per_second": 4.757591951630243
+        }
+      }
+    ],
+    "prefill_ms": 217471.976,
+    "generation_ms": 351518.494
+  },
+  "task_group": "stream-lines",
+  "source_sha256": "b280f63f97bd8607ee061d9e8a9e04483b46b1f4a777d6c687cb6d5db799b9a7",
+  "inference_requests": 10,
+  "independent_alt_verification": {
+    "exit": 1,
+    "stdout": "{\n  \"complete\": false,\n  \"behavioral_acceptance\": false,\n  \"scope\": \"Required checks are incomplete\",\n  \"requirements\": [\n    {\n      \"requirement\": {\n        \"name\": \"requested-behavior\",\n        \"description\": \"Implement lines(chunks): an iterator of decoded UTF-8 lines from byte chunks. Chunk boundaries may split multibyte characters or CRLF. Strip LF and an immediately preceding CR, retain empty lines, and emit a nonempty final unterminated line. Invalid UTF-8 must raise UnicodeDecodeError.\",\n        \"check_name\": \"acceptance\"\n      },\n      \"status\": \"could not complete\",\n      \"evidence\": \"16f5cbe2-2e31-4cae-8c0e-a556e7eed181\",\n      \"check_kind\": \"tests\",\n      \"coverage\": \"independent behavioral assertion\"\n    }\n  ],\n  \"source_snapshot\": \"16ecf2a8682fe8f526870a8286ae66f9cfa44df50a5c042f56a9d958ca7e07b1\"\n}\n",
+    "stderr": "alt: Required checks are incomplete; inspect the verification report\n"
+  },
+  "scores": {
+    "source_behavior_passed": false,
+    "turn_completed": false,
+    "transport_turn_ended": false,
+    "stop_reason": "cancelled",
+    "claim_accuracy": "unassessed: use retained prose and evidence; no automatic success-claim inference"
+  }
+}

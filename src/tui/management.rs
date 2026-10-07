@@ -150,7 +150,7 @@ impl App {
         }
         if action == "tools-focus" {
             self.manager_menu("Which tools fit this task?","This changes the schemas shown on the next connection. Full access remains an independent setting. Select All whenever the task needs a wider tool set.",
-                [("All native tools","all"),("Inspect and explain","inspect"),("Read, edit and run named checks","coding"),("Terminal and file reading","terminal")].into_iter().map(|(label,profile)|(label.into(),String::new(),"tools-focus-save".into(),json!({"profile":profile}))).collect());
+                [("All native tools","all"),("Inspect and explain","inspect"),("Read, edit and run named checks","coding"),("Terminal and file reading","terminal"),("Compact: smaller context and simple text edits","compact"),("Compact with line-array edits","compact-lines")].into_iter().map(|(label,profile)|(label.into(),String::new(),"tools-focus-save".into(),json!({"profile":profile}))).collect());
             return Ok(());
         }
         if action == "tools-focus-save" {

@@ -78,6 +78,12 @@ the selected state folder under `inference`. The recorder also runs the strict
 native tool round trip. A prose or XML call, repeated calls ending at the output
 limit, or missing final result is a failure rather than an executable command.
 
+Also compare **All native tools** and **Compact** in **Settings → Tool focus**.
+Keep context, output/reasoning allocation, workflow and the total allowance equal.
+Record whether compact source packets and short edit handles reduce repeated reads
+or malformed arguments. **Compact with line-array edits** is a separate format to
+test explicitly. These selections keep your model and access mode.
+
 Compare **Model-written plan** and **Host workflow** on copies of the same task,
 using the same model, checks and total time/token/request allowance. Try one
 short skill with its declared helper, then **Review candidates** with a modest

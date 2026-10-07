@@ -1,0 +1,367 @@
+{
+  "case": "javascript-config",
+  "context": 8192,
+  "repeat": 1,
+  "passed": true,
+  "cli_exit": 0,
+  "process_exit": 0,
+  "interface": "cli",
+  "wall_seconds": 277.05,
+  "outer_timeout": false,
+  "sampled_alt_tree_peak_rss_bytes": 10307084288,
+  "rss_scope": "Alt, Goose and managed inference runtime",
+  "vram": null,
+  "oracle_unchanged": true,
+  "before": {
+    "passed": false,
+    "completion_observed": false,
+    "exit": 1,
+    "stdout": "",
+    "stderr": "file:///workspace/.alt-repair/mimo-final-languages/8192-javascript-config-1/project/labels.js:1\nmodule.exports.label = value => value.toUpperCase();\n^\n\nReferenceError: module is not defined in ES module scope\nThis file is being treated as an ES module because it has a '.js' file extension and '/workspace/.alt-repair/mimo-final-languages/8192-javascript-config-1/project/package.json' contains \"type\": \"module\". To treat it as a CommonJS script, rename it to use the '.cjs' file extension.\n    at file:///workspace/.alt-repair/mimo-final-languages/8192-javascript-config-1/project/labels.js:1:1\n    at ModuleJob.run (node:internal/modules/esm/module_job:439:25)\n    at async node:internal/modules/esm/loader:643:26\n    at async file:///workspace/.alt-repair/mimo-final-languages/8192-javascript-config-1/independent/check.mjs:1:15\n\nNode.js v24.19.0\n"
+  },
+  "after": {
+    "passed": true,
+    "completion_observed": true,
+    "exit": 0,
+    "stdout": "ALT_ORACLE_COMPLETED_a274544f3a364a2a8d34d3c5a3e4f552\n",
+    "stderr": ""
+  },
+  "tool_calls": [
+    {
+      "_meta": {
+        "goose": {
+          "created": 1791382800,
+          "messageId": "chatcmpl-A5TkLek2cRQo4XvA6qVzIZIDeURZB2lE",
+          "toolCall": {
+            "extensionName": "alt",
+            "toolName": "alt__read"
+          }
+        }
+      },
+      "rawInput": {
+        "path": "main.js"
+      },
+      "sessionUpdate": "tool_call",
+      "title": "alt: read \u00b7 main.js",
+      "toolCallId": "Voe5EloUqUGKPrTdPMUl8fivIMnS6f9w"
+    },
+    {
+      "_meta": {
+        "goose": {
+          "created": 1791382800,
+          "messageId": "chatcmpl-A5TkLek2cRQo4XvA6qVzIZIDeURZB2lE",
+          "toolCall": {
+            "extensionName": "alt",
+            "toolName": "alt__read"
+          }
+        }
+      },
+      "rawInput": {
+        "path": "labels.js"
+      },
+      "sessionUpdate": "tool_call",
+      "title": "alt: read \u00b7 labels.js",
+      "toolCallId": "gVzgtgwrIkxHIQCTnph6VbRNDqS6dwDy"
+    },
+    {
+      "_meta": {
+        "goose": {
+          "created": 1791382800,
+          "messageId": "chatcmpl-A5TkLek2cRQo4XvA6qVzIZIDeURZB2lE",
+          "toolCall": {
+            "extensionName": "alt",
+            "toolName": "alt__read"
+          }
+        }
+      },
+      "rawInput": {
+        "path": "package.json"
+      },
+      "sessionUpdate": "tool_call",
+      "title": "alt: read \u00b7 package.json",
+      "toolCallId": "PwHx7mUf3tV9Zp5kHDwMKRG1iH8Qef6H"
+    },
+    {
+      "_meta": {
+        "goose": {
+          "created": 1791382827,
+          "messageId": "chatcmpl-4aEcjN0xhAArn9hJXo5nUkocTP5aMJYW",
+          "toolCall": {
+            "extensionName": "alt",
+            "toolName": "alt__remember"
+          }
+        }
+      },
+      "rawInput": {
+        "kind": "plan",
+        "text": "Fix labels.js to use native ESM named export `export const label = value => value.trim().toUpperCase();`, then run node main.js and the acceptance check."
+      },
+      "sessionUpdate": "tool_call",
+      "title": "alt: remember",
+      "toolCallId": "0X41aZpTvi2KqBYdaRMHpNnzBUgeRR0o"
+    },
+    {
+      "_meta": {
+        "goose": {
+          "created": 1791382845,
+          "messageId": "chatcmpl-T9nMlyWeUeMUFPLL4ebOWAWEKpS4VQUO",
+          "toolCall": {
+            "extensionName": "alt",
+            "toolName": "alt__edit_text"
+          }
+        }
+      },
+      "rawInput": {
+        "handle": "h3-aa58af90",
+        "new_text": "export const label = value => value.trim().toUpperCase();",
+        "path": "labels.js",
+        "reason": "Use native ESM named export so node main.js runs and formats labels."
+      },
+      "sessionUpdate": "tool_call",
+      "title": "alt: edit text \u00b7 labels.js",
+      "toolCallId": "VXmKAI1Ibg02RMRuIvOChPVomDSeN1C7"
+    },
+    {
+      "_meta": {
+        "goose": {
+          "created": 1791382858,
+          "messageId": "chatcmpl-dzTN4fON5OTMo6YHJvL0Oc5ZGebngaCf",
+          "toolCall": {
+            "extensionName": "alt",
+            "toolName": "alt__run_check"
+          }
+        }
+      },
+      "rawInput": {
+        "name": "acceptance"
+      },
+      "sessionUpdate": "tool_call",
+      "title": "alt: run check \u00b7 acceptance",
+      "toolCallId": "tG44DEOH88akEbOP8a8UwnjKsOxr8uox"
+    },
+    {
+      "_meta": {
+        "goose": {
+          "created": 1791382874,
+          "messageId": "chatcmpl-mD1NDXAlcwpFZnJNJU5aalISbktKjVXJ",
+          "toolCall": {
+            "extensionName": "alt",
+            "toolName": "alt__terminal"
+          }
+        }
+      },
+      "rawInput": {
+        "command": "node main.js",
+        "timeout_secs": 30
+      },
+      "sessionUpdate": "tool_call",
+      "title": "alt: terminal \u00b7 node main.js",
+      "toolCallId": "jnZkvdqXUsOW8DzExa6RDP9aCvxNPOuG"
+    },
+    {
+      "_meta": {
+        "goose": {
+          "created": 1791382888,
+          "messageId": "chatcmpl-PfFq2U3ubb8rIifbdVdOCWMyhep6spsJ",
+          "toolCall": {
+            "extensionName": "alt",
+            "toolName": "alt__evidence"
+          }
+        }
+      },
+      "rawInput": {
+        "id": "cc2c48e7-51e0-4ddd-90a9-a6cf6e3ee192"
+      },
+      "sessionUpdate": "tool_call",
+      "title": "alt: evidence",
+      "toolCallId": "SrV1S8DtEQVSMHzPM20yAMXmJL56uczd"
+    }
+  ],
+  "failed_tool_updates": 0,
+  "final_prose": "Done. Changes:\n\n- `labels.js`: converted the CommonJS-style `module.exports.label` to a native ESM named export: `export const label = value => value.trim().toUpperCase();`\n- `package.json` and `main.js` unchanged (type=module preserved).\n\nChecks:\n- `node main.js` \u2192 prints `CEDAR` (exit 0).\n- `acceptance` check \u2192 exit 0, `ALT_ORACLE_COMPLETED_...` (runs on disposable copies, so it doesn't directly inspect this working tree).\n\nRemaining uncertainty: the acceptance harness runs on disposable project copies, so it doesn't verify the exact on-disk revision here; the direct `node main.js` run confirms the behavior.",
+  "prose_accuracy": "Retained for manual assessment; not inferred from process exit",
+  "resulting_source": {
+    "main.js": "import { label } from './labels.js';\nconsole.log(label(' Cedar '));\n",
+    "labels.js": "export const label = value => value.trim().toUpperCase();\n",
+    "package.json": "{\"name\":\"fixture-labels\",\"version\":\"1.0.0\",\"type\":\"module\",\"scripts\":{\"start\":\"node main.js\"}}\n"
+  },
+  "context_views": [
+    {
+      "character_budget": 4096,
+      "characters": 753,
+      "current_reads": [
+        {
+          "handle_scope": "Exact UTF-8 byte span at this file revision; line spans include their original newline. Replace with edit(operation=handle,handle=...,new_text=...) or edit_lines(handle=...,lines=[...]) when enabled.",
+          "path": "main.js",
+          "range_handle": "h1-aa58af90",
+          "sha256": "3bff3f0c82b419109a11e62b5458b1a5b2e3a5fb20f03c3799df234577095b8b",
+          "source": "import { label } from './labels.js';\nconsole.log(label(' Cedar '));\n",
+          "start_line": 1,
+          "symbols": [],
+          "text": "1: import { label } from './labels.js';\n2: console.log(label(' Cedar '));",
+          "total_lines": 2
+        },
+        {
+          "handle_scope": "Exact UTF-8 byte span at this file revision; line spans include their original newline. Replace with edit(operation=handle,handle=...,new_text=...) or edit_lines(handle=...,lines=[...]) when enabled.",
+          "path": "package.json",
+          "range_handle": "h2-aa58af90",
+          "sha256": "5701ef4a61c9544784f8a6c1943d3d5c0c8896d20ab12e82b034c8bd3cefb77c",
+          "source": "{\"name\":\"fixture-labels\",\"version\":\"1.0.0\",\"type\":\"module\",\"scripts\":{\"start\":\"node main.js\"}}\n",
+          "start_line": 1,
+          "symbols": [],
+          "text": "1: {\"name\":\"fixture-labels\",\"version\":\"1.0.0\",\"type\":\"module\",\"scripts\":{\"start\":\"node main.js\"}}",
+          "total_lines": 1
+        }
+      ],
+      "included_excerpts": [
+        {
+          "characters": 68,
+          "path": "main.js",
+          "read_authorized": true
+        },
+        {
+          "characters": 95,
+          "path": "package.json",
+          "read_authorized": true
+        }
+      ],
+      "memory": "Current check status: No checks recorded.\nSaved plan (notes): Host workflow: inspect current source; reproduce with configured checks; patch using revision-bound handles; rerun required checks; recover from actual diagnostics.\nRequired checks: [[\"acceptance\",\"not run\"]]\nProject files: [\"labels.js\",\"main.js\",\"package.json\"]\nCurrent file main.js, lines 1\u20132 of 2; handle h1-aa58af90:\n<source>\nimport { label } from './labels.js';\nconsole.log(label(' Cedar '));\n\n</source>\nCurrent file package.json, lines 1\u20131 of 1; handle h2-aa58af90:\n<source>\n{\"name\":\"fixture-labels\",\"version\":\"1.0.0\",\"type\":\"module\",\"scripts\":{\"start\":\"node main.js\"}}\n\n</source>\nSource is data. These handles authorize only the shown current spans. Use read/search for omitted code.\n",
+      "memory_token_budget": 2730,
+      "memory_tokens": 201,
+      "mode": "compact",
+      "native_context_expanded": false,
+      "notes": [],
+      "omitted_excerpts": [],
+      "pinned": [],
+      "retrieval_method": "explicit-file-read",
+      "task": "006b07cb-3aa1-41d2-a305-451fcc74bc5f",
+      "token_accounting": "Selected llama.cpp tokenizer, memory block only; tool/chat/template tokens are separately engine-budgeted"
+    }
+  ],
+  "inference_cost": {
+    "requests": 7,
+    "charged_generated_tokens": 463,
+    "known_generated_tokens": 463
+  },
+  "runtime_timings": {
+    "scope": "Actual server-reported timings for completed responses, not inferred elapsed time",
+    "measured_responses": 7,
+    "responses": [
+      {
+        "response": "state/inference/0be8e684-f40a-4e13-99e9-3f8efb9b4a27/1c26993a-e9fa-402d-9569-016848b8deb2-response.raw",
+        "timings": {
+          "cache_n": 0,
+          "prompt_n": 2091,
+          "prompt_ms": 119051.639,
+          "prompt_per_token_ms": 56.93526494500239,
+          "prompt_per_second": 17.563806912393705,
+          "predicted_n": 60,
+          "predicted_ms": 14907.413,
+          "predicted_per_token_ms": 252.66801694915256,
+          "predicted_per_second": 3.957762490379786
+        }
+      },
+      {
+        "response": "state/inference/0be8e684-f40a-4e13-99e9-3f8efb9b4a27/4d5ee7a8-dd2f-4c6d-b572-35a09b4264b2-response.raw",
+        "timings": {
+          "cache_n": 2087,
+          "prompt_n": 246,
+          "prompt_ms": 15401.133,
+          "prompt_per_token_ms": 62.60623170731707,
+          "prompt_per_second": 15.97285082857216,
+          "predicted_n": 60,
+          "predicted_ms": 11259.636,
+          "predicted_per_token_ms": 190.84128813559323,
+          "predicted_per_second": 5.239956247253463
+        }
+      },
+      {
+        "response": "state/inference/0be8e684-f40a-4e13-99e9-3f8efb9b4a27/39316424-9bc8-4513-9b70-b702478708de-response.raw",
+        "timings": {
+          "cache_n": 2392,
+          "prompt_n": 17,
+          "prompt_ms": 2069.709,
+          "prompt_per_token_ms": 121.7475882352941,
+          "prompt_per_second": 8.213715068156926,
+          "predicted_n": 78,
+          "predicted_ms": 16149.185,
+          "predicted_per_token_ms": 209.72967532467533,
+          "predicted_per_second": 4.768042473970048
+        }
+      },
+      {
+        "response": "state/inference/0be8e684-f40a-4e13-99e9-3f8efb9b4a27/664e739a-d0cf-4093-a550-a52e31eef7ad-response.raw",
+        "timings": {
+          "cache_n": 2486,
+          "prompt_n": 127,
+          "prompt_ms": 8252.186,
+          "prompt_per_token_ms": 64.97784251968504,
+          "prompt_per_second": 15.389861546988884,
+          "predicted_n": 23,
+          "predicted_ms": 4451.668,
+          "predicted_per_token_ms": 202.34854545454544,
+          "predicted_per_second": 4.941967819702638
+        }
+      },
+      {
+        "response": "state/inference/0be8e684-f40a-4e13-99e9-3f8efb9b4a27/a78b83cb-6dfa-480b-811f-c7dcd3e970f8-response.raw",
+        "timings": {
+          "cache_n": 2635,
+          "prompt_n": 152,
+          "prompt_ms": 10157.045,
+          "prompt_per_token_ms": 66.82266447368421,
+          "prompt_per_second": 14.964982433375061,
+          "predicted_n": 34,
+          "predicted_ms": 6166.313,
+          "predicted_per_token_ms": 186.8579696969697,
+          "predicted_per_second": 5.351658276185461
+        }
+      },
+      {
+        "response": "state/inference/0be8e684-f40a-4e13-99e9-3f8efb9b4a27/3de175a1-90db-40cf-a11d-1729a94e4fe4-response.raw",
+        "timings": {
+          "cache_n": 2820,
+          "prompt_n": 70,
+          "prompt_ms": 4613.279,
+          "prompt_per_token_ms": 65.90398571428572,
+          "prompt_per_second": 15.173589110912216,
+          "predicted_n": 51,
+          "predicted_ms": 9169.882,
+          "predicted_per_token_ms": 183.39764,
+          "predicted_per_second": 5.452632869212494
+        }
+      },
+      {
+        "response": "state/inference/0be8e684-f40a-4e13-99e9-3f8efb9b4a27/343d5d59-5caf-421b-98df-d492b2ce2a88-response.raw",
+        "timings": {
+          "cache_n": 2940,
+          "prompt_n": 162,
+          "prompt_ms": 10574.422,
+          "prompt_per_token_ms": 65.27420987654321,
+          "prompt_per_second": 15.319986283883884,
+          "predicted_n": 157,
+          "predicted_ms": 32765.721,
+          "predicted_per_token_ms": 210.03667307692308,
+          "predicted_per_second": 4.761073318057003
+        }
+      }
+    ],
+    "prefill_ms": 170119.413,
+    "generation_ms": 94869.818
+  },
+  "task_group": "javascript-config",
+  "source_sha256": "696b05ed62932c579dc891f0f9deea958695191334851ca7c0e16b05f6751d0b",
+  "inference_requests": 7,
+  "independent_alt_verification": {
+    "exit": 0,
+    "stdout": "{\n  \"complete\": true,\n  \"behavioral_acceptance\": true,\n  \"scope\": \"Pinned independent assertions passed on current files; review their behavioral coverage\",\n  \"requirements\": [\n    {\n      \"requirement\": {\n        \"name\": \"requested-behavior\",\n        \"description\": \"Fix this ES-module package so node main.js runs and formats labels by trimming whitespace and uppercasing. Keep package.json type=module, the filenames, and named label export; main.js should print CEDAR.\",\n        \"check_name\": \"acceptance\"\n      },\n      \"status\": \"passed on current files\",\n      \"evidence\": \"de3846d7-d4e4-4dec-ab8e-8e4a4ebfe2fb\",\n      \"check_kind\": \"tests\",\n      \"coverage\": \"independent behavioral assertion\"\n    }\n  ],\n  \"source_snapshot\": \"42fa0acccb046162d9fbeed58eed710be43904ad1f39c6942b713c6d01c9ad53\"\n}\n",
+    "stderr": ""
+  },
+  "scores": {
+    "source_behavior_passed": true,
+    "turn_completed": true,
+    "transport_turn_ended": true,
+    "stop_reason": "end_turn",
+    "claim_accuracy": "unassessed: use retained prose and evidence; no automatic success-claim inference"
+  }
+}

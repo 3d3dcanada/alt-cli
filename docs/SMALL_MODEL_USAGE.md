@@ -19,7 +19,54 @@ probe used CPU, 4K context and a specific pinned artifact; it does not establish
 Pascal kernel support, VRAM fit or coding reliability. GPU layers require your
 own compatible runtime. See [PC testing](PC_TESTING.md).
 
+The later [repair pilot](research/2026-10-07-repair-results/README.md) used that
+same 9B Q4 artifact at **8K**, with 1,024 output tokens, a 128-token reasoning
+allocation and ten-minute CPU deadlines. Both original and compact interfaces
+passed 3/4 tasks; compact used less input and its successful repairs took less
+time in this small pilot. Some earlier four-minute and five-minute CPU trials
+timed out before corrected calls completed. Other attempts failed through invalid
+arguments or incorrect logic. Context, output reserve and loading/preparation cost must be measured
+together; a successful short probe does not qualify a coding configuration.
+
 ## Give the model clear settings and actual evidence
+
+In Compact, a follow-up such as “continue” retains the complete original task
+request as context. Your latest message takes precedence, and source retrieval
+uses both messages. If the stored request and pinned requirements exceed the
+context budget, Alt reports the limit instead of silently dropping requirements.
+Start a new conversation for a separate task.
+
+Output and reasoning reserves share the native context window with conversation
+history and tools. Increasing output can leave less room for accumulated input.
+An 8K Rust development trial stopped at ten issued requests because input exceeded
+its reserve; an explicit 16K trial reached twelve requests but still failed the
+unchanged check. More room and reasoning output alone did not establish a repair.
+
+**Alt+6 → Tool focus → Compact** selects smaller current-source context and simple
+text edits. The host supplies complete observed source spans with short handles;
+the model sends a path, handle and replacement text. Failed or stale writes are
+refused. A successful edit returns the actual updated source and its new handle
+for correction after a failed check. Pinned requirements and current check
+status take priority over historical notes.
+
+Edit feedback identifies previously extracted definitions missing from the
+current source. This is a review hint; intentional deletion and renaming remain
+available. Parser observations are separate from actual compiler and behavioral
+checks. Check traceback paths under `/tmp` refer to completed disposable copies;
+read and edit the original project with relative paths. Raw diagnostics remain
+available in evidence.
+
+**Compact with line-array edits** is an explicit alternative for parsers that
+handle arrays reliably. It takes one literal source line per array item. The
+scalar format avoids nested JSON-array parsing in native tool templates. Neither
+choice changes the selected model, access mode or configured check requirements.
+Keep **All native tools** to use the original context and edit interface.
+
+The equivalent commands are `alt tools compact`, `alt tools compact-lines` and
+`alt tools all`. Choose the workflow separately with `alt workflow host` or
+`alt workflow model-plan`. These are explicit choices, not automatically promoted
+quality presets. See [repair work orders](REPAIR_WORK_ORDERS.md) for the tests and
+the database migration note.
 
 Press **Alt+6 → Model and runtime settings**. The menu offers:
 

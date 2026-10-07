@@ -1,0 +1,228 @@
+{
+  "configuration": {
+    "oracle_version": 5,
+    "context_scope": "Managed runtime native window and engine budget",
+    "model_file": "MiMo-V2.6-Distill-Qwen-9B-heretic.Q4_K_M.gguf",
+    "sha256": "00877ff79174b79f72c5ec704901fc958400a0b0d390fb61a068281618116dd1",
+    "bytes": 5629106560,
+    "uncensored": "Explicit user-selected publisher-labelled uncensored/abliterated artifact; no fallback",
+    "provider": "openai",
+    "endpoint": null,
+    "model_id": null,
+    "runtime": "/workspace/.alt-tools/llama-b11429/llama-b11429/llama-server",
+    "contexts": [
+      8192
+    ],
+    "repeats": 1,
+    "timeout_seconds": 600,
+    "binary_sha256": "d97dbff2c41e279b7b9cf139596c8506963ef021f36b986a18b617a69a8013ea",
+    "physical_gpu_tested": false,
+    "verification_plan": true,
+    "history_notes": 0,
+    "cases": [
+      "python-multifile"
+    ],
+    "partition": "development",
+    "tool_profile": "compact",
+    "threads": 2,
+    "batch": 128,
+    "engine_sha256": "59655719cd9b098dab59b6e2c50f1e565a935992fae2e539f52018a960e0512a",
+    "runtime_sha256": "5faf410bbbc00a1b94b09ee01623699f255365628dfa73b1ee552d9e52a2231d",
+    "fixture_sha256": "92a7f3097d4ba3488e92503a7039c87e0bd17d3919d44335fc3187ad48ce212e",
+    "suite": "v5",
+    "interface": "tui",
+    "width": 80,
+    "height": 24,
+    "instruction_sha256": null,
+    "inference": {
+      "output_tokens": 1024,
+      "reasoning_tokens": 128,
+      "temperature": 0.0,
+      "top_p": null,
+      "workflow": "host",
+      "skill": null,
+      "generated_tokens": 8192,
+      "requests": 12
+    },
+    "oracle_code_sha256": {
+      "acceptance_projects.py": "453f27af5b3cc558a2190620cee195a392e0a0a45889f43569b96e85765cd32a",
+      "acceptance_extra.py": "2a724e6da5673cb581b3b2c54d338a62bbc917f1753b7edf2774f9e2e005148d",
+      "acceptance_v5.py": "0f669daa7bbe060b131d79e2294ec026e419467be38d969c77f5dfefb897dea7",
+      "live_tui_turn.py": "2cd766153b7b79f36b928d944ed97872c69d0f9f2cbb55a4e3db9a79c78173ea"
+    }
+  },
+  "attempts": [
+    {
+      "case": "python-multifile",
+      "context": 8192,
+      "repeat": 1,
+      "passed": true,
+      "cli_exit": null,
+      "process_exit": 0,
+      "interface": "tui",
+      "wall_seconds": 312.86,
+      "outer_timeout": false,
+      "sampled_alt_tree_peak_rss_bytes": 10381209600,
+      "rss_scope": "Alt, Goose and managed inference runtime",
+      "vram": null,
+      "oracle_unchanged": true,
+      "failed_tool_updates": 0,
+      "prose_accuracy": "Retained for manual assessment; not inferred from process exit",
+      "tui": {
+        "interface": "tui",
+        "width": 80,
+        "height": 24,
+        "access_policy": "trusted",
+        "sent_prompt": true,
+        "permissions_approved": 4,
+        "permissions_denied": 0,
+        "terminal_restored": true,
+        "error": null,
+        "timed_out": false,
+        "response_ready_visible": true,
+        "quit_signal_fallback": false,
+        "process_exit": 0,
+        "sampled_alt_tree_peak_rss_bytes": 10381209600,
+        "wall_seconds": 312.82
+      },
+      "inference_cost": {
+        "requests": 8,
+        "charged_generated_tokens": 639,
+        "known_generated_tokens": 639
+      },
+      "runtime_timings": {
+        "scope": "Actual server-reported timings for completed responses, not inferred elapsed time",
+        "measured_responses": 8,
+        "responses": [
+          {
+            "response": "state/inference/19e13a49-3e23-414e-b8b5-01f5586aad60/728304ab-6640-4fa8-bcf1-bb494f1e5f50-response.raw",
+            "timings": {
+              "cache_n": 0,
+              "prompt_n": 2089,
+              "prompt_ms": 127038.226,
+              "prompt_per_token_ms": 60.81293729056965,
+              "prompt_per_second": 16.44386942242093,
+              "predicted_n": 54,
+              "predicted_ms": 10391.117,
+              "predicted_per_token_ms": 196.05881132075473,
+              "predicted_per_second": 5.100510368615809
+            }
+          },
+          {
+            "response": "state/inference/19e13a49-3e23-414e-b8b5-01f5586aad60/50594dbe-06cd-413f-8d51-627b5f044cea-response.raw",
+            "timings": {
+              "cache_n": 2142,
+              "prompt_n": 17,
+              "prompt_ms": 2148.236,
+              "prompt_per_token_ms": 126.36682352941176,
+              "prompt_per_second": 7.913469469834786,
+              "predicted_n": 86,
+              "predicted_ms": 19894.812,
+              "predicted_per_token_ms": 234.0566117647059,
+              "predicted_per_second": 4.272470632042162
+            }
+          },
+          {
+            "response": "state/inference/19e13a49-3e23-414e-b8b5-01f5586aad60/b9ba44da-8076-4371-9236-bc219b0f3efb-response.raw",
+            "timings": {
+              "cache_n": 2244,
+              "prompt_n": 126,
+              "prompt_ms": 8386.709,
+              "prompt_per_token_ms": 66.56118253968255,
+              "prompt_per_second": 15.023771541375764,
+              "predicted_n": 96,
+              "predicted_ms": 18455.345,
+              "predicted_per_token_ms": 194.2667894736842,
+              "predicted_per_second": 5.147560232550516
+            }
+          },
+          {
+            "response": "state/inference/19e13a49-3e23-414e-b8b5-01f5586aad60/17c0bcbb-9634-4220-88a5-88f24efc8e35-response.raw",
+            "timings": {
+              "cache_n": 2465,
+              "prompt_n": 123,
+              "prompt_ms": 7819.737,
+              "prompt_per_token_ms": 63.575097560975614,
+              "prompt_per_second": 15.729429263413845,
+              "predicted_n": 23,
+              "predicted_ms": 4133.149,
+              "predicted_per_token_ms": 187.8704090909091,
+              "predicted_per_second": 5.322818025674854
+            }
+          },
+          {
+            "response": "state/inference/19e13a49-3e23-414e-b8b5-01f5586aad60/f321f731-769e-4feb-8dd7-959ce4e5ff5f-response.raw",
+            "timings": {
+              "cache_n": 2610,
+              "prompt_n": 154,
+              "prompt_ms": 10208.091,
+              "prompt_per_token_ms": 66.2863051948052,
+              "prompt_per_second": 15.086072410600572,
+              "predicted_n": 55,
+              "predicted_ms": 10247.388,
+              "predicted_per_token_ms": 189.76644444444446,
+              "predicted_per_second": 5.269635540295732
+            }
+          },
+          {
+            "response": "state/inference/19e13a49-3e23-414e-b8b5-01f5586aad60/b05bd395-7354-4991-bb6e-b9af9ce9418a-response.raw",
+            "timings": {
+              "cache_n": 2818,
+              "prompt_n": 168,
+              "prompt_ms": 11485.21,
+              "prompt_per_token_ms": 68.36434523809524,
+              "prompt_per_second": 14.62750789928961,
+              "predicted_n": 76,
+              "predicted_ms": 14708.811,
+              "predicted_per_token_ms": 196.11748,
+              "predicted_per_second": 5.098984547425349
+            }
+          },
+          {
+            "response": "state/inference/19e13a49-3e23-414e-b8b5-01f5586aad60/127b36e9-3d1d-4111-ad90-8e9fea3b02fb-response.raw",
+            "timings": {
+              "cache_n": 3061,
+              "prompt_n": 78,
+              "prompt_ms": 5447.913,
+              "prompt_per_token_ms": 69.84503846153845,
+              "prompt_per_second": 14.317409253782138,
+              "predicted_n": 91,
+              "predicted_ms": 17488.863,
+              "predicted_per_token_ms": 194.32070000000002,
+              "predicted_per_second": 5.146132141351899
+            }
+          },
+          {
+            "response": "state/inference/19e13a49-3e23-414e-b8b5-01f5586aad60/448d742a-975b-4ae6-a70b-d582e7d4a8c3-response.raw",
+            "timings": {
+              "cache_n": 3229,
+              "prompt_n": 17,
+              "prompt_ms": 1925.444,
+              "prompt_per_token_ms": 113.26141176470588,
+              "prompt_per_second": 8.829132397514549,
+              "predicted_n": 158,
+              "predicted_ms": 30355.703,
+              "predicted_per_token_ms": 193.34842675159237,
+              "predicted_per_second": 5.172010017359835
+            }
+          }
+        ],
+        "prefill_ms": 174459.566,
+        "generation_ms": 125675.18800000001
+      },
+      "task_group": "python-multifile",
+      "source_sha256": "ca2b968d83b887f6788b566813f26b5ae0f74fec1e1dad002d1c532a835a4e05",
+      "inference_requests": 8,
+      "scores": {
+        "source_behavior_passed": true,
+        "turn_completed": true,
+        "transport_turn_ended": true,
+        "stop_reason": "end_turn",
+        "claim_accuracy": "unassessed: use retained prose and evidence; no automatic success-claim inference"
+      }
+    }
+  ],
+  "passed": 1,
+  "total": 1,
+  "scope": "Seeded small projects; every attempt retained. These measurements do not establish arbitrary task reliability or GPU performance."
+}

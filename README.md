@@ -15,18 +15,30 @@ or server connections. It does not modify model weights or silently replace your
 selected model. Full access supports arbitrary commands, networking, package
 installation and external tools with your normal account permissions.
 
-![Alt 0.6 showing the independently checked practice repair](docs/screenshots/v6/verified-80x24.png)
+![Alt's actual 80×24 TUI after a MiMo 9B Q4 model repair and independent checks](docs/screenshots/v6/native-model-repair-80x24.png)
 
-**Status: 0.6.0 beta · Linux x86_64 · Apache-2.0.** The screenshot shows the actual
-0.6 practice workflow after a manual edit and four behavioral checks. Model reliability and hardware support are measured separately from
+**Status: 0.6.0 beta · Linux x86_64 · Apache-2.0.** The screenshot shows an actual
+CPU MiMo 9B Q4 repair through the TUI, after the unchanged independent checks passed.
+Model reliability and hardware support are measured separately from
 application tests. [Read the results and remaining gaps](docs/IMPLEMENTATION.md).
 
 **New on `main`:** explicit inference allocation, host task workflows, bounded
 skills, source handles, serial checked candidates, reviewed instruction trials
-and offline training tools. Build from source to use these additions; the older
+and offline training tools. Compact text/line-array tool choices reduce repeated
+context and provide updated source handles after edits. Build from source to use these additions; the older
 published archive predates them. See [the usage guide](docs/SMALL_MODEL_USAGE.md)
 and [work-order delivery and evidence](docs/SMALL_MODEL_DELIVERY.md). No weights
 have been trained or new quality presets promoted.
+
+The [repair follow-up](docs/research/2026-10-07-repair-results/README.md) now has
+independently verified MiMo 9B Q4 repairs. A matched CPU pilot passed **3/4** with
+each interface; compact used about 38% less initial input and its passing repairs
+were faster in this small sample. The subsequent portable build passed **6/9**
+MiMo attempts: both Python feature repeats, JavaScript, two of four held-out tasks
+and the two-file repair through the actual TUI. Rust and two held-out tasks failed.
+The longer CPU allowance differs from the earlier 22 failures.
+The current continuation fix also passed a separate real two-turn MiMo TUI trial;
+the earlier failed continuation attempt is retained in that evidence.
 
 ## Try it on your computer
 
@@ -148,7 +160,11 @@ Keys are referenced by environment-variable name, not saved in model profiles.
 - [Implementation and evidence](docs/IMPLEMENTATION.md) · [Current work orders](docs/WORK_ORDERS_0.6.md) · [PC test guide](docs/PC_TESTING.md)
 - [Research and project history](docs/research/README.md) · [Documentation index](docs/README.md)
 
-Current validation includes **93 Rust tests**, five PTY walkthroughs, 30
+Current source validation includes **119 Rust tests**, strict Clippy, both adapter
+fixtures for both compact edit formats, and actual small-terminal permission,
+edit/check/undo and conversation-continuation journeys. Compact follow-ups retain
+the complete original request as context, with the latest user message taking
+precedence. The retained 0.6 acceptance also includes five PTY walkthroughs, 30
 responsiveness journeys, 60 stream-recovery scenarios and packaged
 install/update/rollback checks on Debian 11 and Ubuntu 24.04. The local PC recorder
 also passed a live uncensored-model CPU trial. These measurements do not guarantee

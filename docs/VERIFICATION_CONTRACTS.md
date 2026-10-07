@@ -66,7 +66,15 @@ Its assertions are pinned and checked for changes, but Full access is not a host
 code isolation boundary. Model text, successful tool calls and edited project tests
 do not automatically become independent behavioral acceptance.
 
-Project state schema is now version 3. Before upgrading an existing installation,
+Configured checks and candidate exploration use bounded source snapshots: at most
+4,096 files, 64 MiB total and 1 MiB per file. Generated/dependency directories and
+sensitive paths are excluded by the project's snapshot rules. A limit failure is
+reported; it cannot become a passing check. Native text edits have the same 1 MiB
+file limit. For larger projects, choose a smaller project root or use the Full
+terminal to run the project's normal commands. Terminal results do not automatically
+satisfy the independently pinned check contract.
+
+Project state schema is now version 4. Before upgrading an existing installation,
 make a state backup. Executable rollback does not downgrade SQLite or settings:
 restore the matching older backup into a new data directory and retain the newer
 state for recovery. Opening a newer database is rejected before schema changes.
