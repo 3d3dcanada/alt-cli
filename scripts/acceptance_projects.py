@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Disposable projects and independent oracles kept outside the editable project."""
-import json,os,subprocess,tempfile
+import hashlib,json,os,subprocess,tempfile,uuid
 from pathlib import Path
 CASES={
  'python-feature':{
@@ -77,23 +77,61 @@ CASES['python-http-security']['oracle'] = CASES['python-http-security']['oracle'
 CASES['python-http-security']['fixed']['server.py']=CASES['python-http-security']['files']['server.py'].replace("self.send_response(503);body={'status':'starting'}","self.send_response(200);body={'status':'ok'}").replace('db.execute("select name from users where name = \'"+name+"\'")','db.execute("select name from users where name = ?",(name,))')
 from acceptance_extra import EXTRA
 CASES.update(EXTRA)
-ORACLE_VERSION = 3
+ORACLE_VERSION = 4
 DEVELOPMENT = [name for name,case in CASES.items() if case.get("partition","development")=="development"]
 HELD_OUT = [name for name,case in CASES.items() if case.get("partition")=="held-out"]
 def write(project,files):
  for name,body in files.items():p=project/name;p.parent.mkdir(parents=True,exist_ok=True);p.write_text(body)
 def setup(name,root):
  case=CASES[name];project=root/'project';project.mkdir(parents=True);write(project,case['files']);oracle=root/'independent';oracle.mkdir()
+ receipt='ALT_ORACLE_COMPLETED_'+uuid.uuid4().hex
+ (oracle/'completion.json').write_text(json.dumps({'receipt':receipt})+'\n')
  if name=='rust-feature':
-  (oracle/'src').mkdir();(oracle/'src/lib.rs').write_text(case['oracle']);(oracle/'Cargo.toml').write_text('[package]\nname="independent_oracle"\nversion="0.1.0"\nedition="2021"\n[dependencies]\nfixture_stats={path='+json.dumps(str(project))+'}\n');command=['cargo','test','--offline','--manifest-path',str(oracle/'Cargo.toml')]
+  (oracle/'src').mkdir();(oracle/'src/lib.rs').write_text(case['oracle'])
+  # The same pinned assertions must test the execution snapshot, not an absolute
+  # dependency on the original editable folder. Build output is never an input.
+  (oracle/'check.py').write_text('''import json,os,shutil,subprocess,sys,tempfile
+from pathlib import Path
+source=Path(__file__).parent/'src/lib.rs'
+with tempfile.TemporaryDirectory(prefix='alt-rust-oracle-') as d:
+ root=Path(d); (root/'project').symlink_to(Path.cwd(),target_is_directory=True)
+ crate=root/'independent'; (crate/'src').mkdir(parents=True)
+ shutil.copy2(source,crate/'src/lib.rs')
+ (crate/'Cargo.toml').write_text('[package]\\nname="independent_oracle"\\nversion="0.1.0"\\nedition="2021"\\n[dependencies]\\nfixture_stats={path='+json.dumps(str(Path.cwd()))+'}\\n')
+ env={**os.environ,'CARGO_TARGET_DIR':str(root/'target')}
+ result=subprocess.run(['cargo','test','--offline','--manifest-path',str(crate/'Cargo.toml')],env=env,capture_output=True,text=True)
+ print(result.stdout,end=''); print(result.stderr,end='',file=sys.stderr)
+ passed=result.returncode==0 and 'test behavior ... ok' in result.stdout and 'test result: ok. 1 passed; 0 failed;' in result.stdout
+ if passed: print(COMPLETION_RECEIPT_PLACEHOLDER)
+ sys.exit(0 if passed else 1)
+'''.replace('COMPLETION_RECEIPT_PLACEHOLDER',repr(receipt)))
+  command=['python3',str(oracle/'check.py')]
  elif name=='javascript-config':
-  (oracle/'check.mjs').write_text(case['oracle']);command=['node',str(oracle/'check.mjs')]
+  (oracle/'check.mjs').write_text(case['oracle']+'\nconsole.log('+json.dumps(receipt)+');\n');command=['node',str(oracle/'check.mjs')]
  else:
-  (oracle/'check.py').write_text("import sys,os\nsys.path.insert(0,os.getcwd())\n"+case['oracle']);command=['python3',str(oracle/'check.py')]
+  (oracle/'check.py').write_text("import sys,os\nsys.path.insert(0,os.getcwd())\n"+case['oracle']+'\nprint('+repr(receipt)+')\n');command=['python3',str(oracle/'check.py')]
  return project,command
+def completion_receipt(command):
+ return json.loads((Path(command[-1]).parent/'completion.json').read_text())['receipt']
+def oracle_inputs(run_dir):
+ """Call immediately after fixture creation, before executing any commands."""
+ return {str(f.relative_to(run_dir/'independent')):hashlib.sha256(f.read_bytes()).hexdigest() for f in (run_dir/'independent').rglob('*') if f.is_file()}
+def assertion_script(run_dir, command, inputs):
+ hashes={str(run_dir/'independent'/name):digest for name,digest in inputs.items()}
+ script="import hashlib,json,os,subprocess,sys\nfrom pathlib import Path\n"
+ script+=f"hashes={hashes!r}\ncommand={command!r}\nreceipt={completion_receipt(command)!r}\n"
+ script+="if not all(Path(p).is_file() and hashlib.sha256(Path(p).read_bytes()).hexdigest()==h for p,h in hashes.items()): raise RuntimeError('Oracle inputs changed')\n"
+ script+="env={**os.environ,'ALT_PROJECT_URL':Path.cwd().as_uri(),'PYTHONDONTWRITEBYTECODE':'1','PYTHONOPTIMIZE':'0'}\n"
+ script+="r=subprocess.run(command,env=env,timeout=60,capture_output=True,text=True)\nprint(r.stdout,end='');print(r.stderr,end='',file=sys.stderr)\npassed=r.returncode==0 and receipt in r.stdout.splitlines()\n"
+ script+="Path(os.environ['ALT_CHECK_REPORT']).write_text(json.dumps({'schema':1,'complete':True,'tests':[{'name':'requested behavior assertions','status':'passed' if passed else 'failed'}]}))\nsys.exit(0 if passed else 1)\n"
+ return script
 def check(project,command):
- env={**os.environ,'ALT_PROJECT_URL':project.as_uri(),'CARGO_TARGET_DIR':str(project.parent/'oracle-target'),'PYTHONDONTWRITEBYTECODE':'1'}
- try:r=subprocess.run(command,cwd=project,env=env,capture_output=True,text=True,timeout=60);return {'passed':r.returncode==0,'exit':r.returncode,'stdout':r.stdout,'stderr':r.stderr}
+ env={**os.environ,'ALT_PROJECT_URL':project.as_uri(),'CARGO_TARGET_DIR':str(project.parent/'oracle-target'),'PYTHONDONTWRITEBYTECODE':'1','PYTHONOPTIMIZE':'0'}
+ try:
+  receipt=completion_receipt(command)
+  r=subprocess.run(command,cwd=project,env=env,capture_output=True,text=True,timeout=60)
+  observed=receipt in r.stdout.splitlines()
+  return {'passed':r.returncode==0 and observed,'completion_observed':observed,'exit':r.returncode,'stdout':r.stdout,'stderr':r.stderr}
  except Exception as e:return {'passed':False,'error':repr(e)}
 def self_test():
  results=[]
@@ -115,5 +153,19 @@ def self_test():
     write(project,weak_repairs[name]);weak=check(project,command)
     assert not weak['passed'],(name,'oracle accepted incomplete repair',weak)
     results[-1]['incomplete_repair_rejected']=True
+   if name=='python-feature':
+    write(project,{'formatter.py':'import sys\nsys.exit(0)\n'})
+    early=check(project,command)
+    assert early['exit']==0 and not early['passed'] and not early['completion_observed']
+    results[-1]['early_zero_exit_rejected']=True
+   if name=='rust-feature':
+    write(project,{'src/lib.rs':'pub fn median(_: &[i64]) -> Option<f64> { std::process::exit(0) }\n'})
+    assert not check(project,command)['passed'], 'A Rust test process exiting early must not pass'
+    results[-1]['early_zero_exit_rejected']=True
+   if name=='javascript-config':
+    write(project,{'labels.js':'export const label = value => value;\nprocess.exit(0);\n'})
+    early=check(project,command)
+    assert early['exit']==0 and not early['passed'] and not early['completion_observed']
+    results[-1]['early_zero_exit_rejected']=True
  print(json.dumps(results,indent=2))
 if __name__=='__main__':self_test()

@@ -94,10 +94,13 @@ jobs:
         if: always()
         run: |
           test -f matrix-summary.json
+          # Commit evidence on the current default branch so the Actions token
+          # is only writing documents, never restoring an older workflow file.
+          git fetch origin main:refs/remotes/origin/main
+          git switch -c "evidence/model-matrix-$GITHUB_RUN_ID" origin/main
           mkdir -p docs/evidence/v6/remote-matrix/"$MATRIX_MODEL"
           cp -R collected/. docs/evidence/v6/remote-matrix/"$MATRIX_MODEL"/
           cp matrix-summary.json docs/evidence/v6/remote-matrix/"$MATRIX_MODEL"/summary.json
-          git switch -c "evidence/model-matrix-$GITHUB_RUN_ID"
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add docs/evidence/v6/remote-matrix

@@ -2,7 +2,7 @@
 """Reject missing, duplicated or mismatched cells before reporting a full matrix."""
 import argparse, hashlib, json, os
 from pathlib import Path
-from acceptance_projects import DEVELOPMENT, HELD_OUT
+from acceptance_projects import DEVELOPMENT, HELD_OUT, ORACLE_VERSION
 from evaluation_models import MODELS
 
 p=argparse.ArgumentParser(description=__doc__); p.add_argument('source',type=Path); p.add_argument('--output',type=Path,required=True); p.add_argument('--model',choices=MODELS,default='spark'); a=p.parse_args()
@@ -15,6 +15,7 @@ for shard in sorted(a.source.glob('*')):
         identity={key:config.get(key) for key in ['binary_sha256','sha256','engine_sha256','runtime_sha256','contexts','repeats','timeout_seconds','tool_profile','thinking','verification_plan','threads','oracle_version']}
         host=json.loads((shard/'host.json').read_text()); identity['harness_inputs']=host['harness_inputs']; identities.append(identity)
         assert identity['contexts']==[8192] and identity['repeats']==5 and identity['verification_plan'] is True
+        assert identity['oracle_version']==ORACLE_VERSION, 'Different oracle execution contract; retain as a separate historical cohort'
         assert identity['sha256']==MODELS[a.model]['sha256']
         manifest=json.loads((shard/'RAW-SHA256.json').read_text())
         assert all(hashlib.sha256((shard/name).read_bytes()).hexdigest()==digest for name,digest in manifest.items()), 'Retained evidence changed'

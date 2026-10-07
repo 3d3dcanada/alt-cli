@@ -4,7 +4,7 @@ Every attempt, timeout, independent oracle and source diff is retained.
 """
 import argparse,hashlib,json,os,signal,sqlite3,subprocess,time,urllib.request,shutil,sys
 from pathlib import Path
-from acceptance_projects import CASES,setup,check,ORACLE_VERSION,DEVELOPMENT,HELD_OUT
+from acceptance_projects import CASES,setup,check,ORACLE_VERSION,DEVELOPMENT,HELD_OUT,oracle_inputs,assertion_script
 p=argparse.ArgumentParser(description=__doc__)
 p.add_argument('--thinking',choices=['default','on','off'],default='default');p.add_argument('--stop-after',type=int,help='Retain a bounded pilot and leave remaining matrix cells explicitly unmeasured');p.add_argument('--resume',action='store_true');p.add_argument('--tool-profile',choices=['all','inspect','coding','terminal'],default='all');p.add_argument('--partition',choices=['development','held-out','all'],default='development');p.add_argument('--threads',type=int,default=2)
 p.add_argument('--verification-plan',action='store_true');p.add_argument('--history-notes',type=int,default=0)
@@ -54,7 +54,7 @@ for context in config['contexts']:
     results.append(json.loads((run_dir/'report.json').read_text()));continue
    if run_dir.exists():
     interrupted=root/'interrupted';interrupted.mkdir(exist_ok=True);run_dir.rename(interrupted/(label+'-'+str(time.time_ns())))
-   run_dir.mkdir();project,oracle=setup(name,run_dir);state=run_dir/'state';state.mkdir()
+   run_dir.mkdir();project,oracle=setup(name,run_dir);oracle_hash=oracle_inputs(run_dir);state=run_dir/'state';state.mkdir()
    (state/'preferences.toml').write_text(f'project={json.dumps(str(project))}\ncontext_tokens={context}\nmax_turns=12\naccess_policy="trusted"\n'+(f'runtime_path={json.dumps(str(a.runtime.resolve()))}\n'if a.runtime else '')+(f'tool_profile={json.dumps(a.tool_profile)}\n[runtime]\nthreads={a.threads}\n' if subprocess.check_output([str(binary),'--version'],text=True).strip()!='alt 0.4.1' else ''))
    (state/'runtime.toml').write_text(f'threads={a.threads}\n')
    if a.thinking!='default':
@@ -67,14 +67,7 @@ for context in config['contexts']:
     # A pinned wrapper invokes the actual oracle, emits structured evidence and
     # hashes every external oracle input before execution. It never embeds a repair.
     assertion=run_dir/'assertion.py'
-    oracle_files={str(f):hashlib.sha256(f.read_bytes()).hexdigest() for f in (run_dir/'independent').rglob('*') if f.is_file()}
-    script="import hashlib,json,os,subprocess,sys\nfrom pathlib import Path\n"
-    script+=f"hashes={oracle_files!r}\ncommand={oracle!r}\n"
-    script+="assert all(Path(p).is_file() and hashlib.sha256(Path(p).read_bytes()).hexdigest()==h for p,h in hashes.items()), 'Oracle inputs changed'\n"
-    script+="env={**os.environ,'ALT_PROJECT_URL':Path.cwd().as_uri(),'PYTHONDONTWRITEBYTECODE':'1'}\n"
-    script+="r=subprocess.run(command,env=env,timeout=60)\n"
-    script+="Path(os.environ['ALT_CHECK_REPORT']).write_text(json.dumps({'schema':1,'complete':True,'tests':[{'name':'requested behavior assertions','status':'passed' if r.returncode==0 else 'failed'}]}))\nsys.exit(r.returncode)\n"
-    assertion.write_text(script)
+    assertion.write_text(assertion_script(run_dir,oracle,oracle_hash))
     subprocess.run(base+['task','configure-check','acceptance','--','python3',str(assertion)],cwd=project,check=True,capture_output=True)
     subprocess.run(base+['task','contract','acceptance','--kind','tests','--format','json','--report','.alt-acceptance.json','--assertion',str(assertion)],cwd=project,check=True,capture_output=True)
     subprocess.run(base+['task','require','requested-behavior','--check','acceptance','--description',CASES[name]['goal']],cwd=project,check=True,capture_output=True)
@@ -82,7 +75,6 @@ for context in config['contexts']:
     subprocess.run(base+['task','remember','Cedar requirement: preserve the original public API and use the bundled helper when fixing dependency imports.'],cwd=project,check=True,capture_output=True)
     for n in range(a.history_notes):subprocess.run(base+['task','remember',f'Unrelated layout decision {n}: use spacing for panel {n}.'],cwd=project,check=True,capture_output=True)
     subprocess.run(base+['task','pin','Preserve the original public API.'],cwd=project,check=True,capture_output=True)
-   oracle_hash={str(f.relative_to(run_dir/'independent')):hashlib.sha256(f.read_bytes()).hexdigest()for f in (run_dir/'independent').rglob('*')if f.is_file()}
    prompt=CASES[name]['goal']+' Inspect relevant files, save a brief plan, use native tools to implement the change, and test it. Report what you actually ran and any remaining uncertainty. Preserve existing public interfaces. Keep your explanation brief.'
    (run_dir/'fixture.json').write_text(json.dumps({'oracle_version':ORACLE_VERSION,'goal':CASES[name]['goal'],'prompt':prompt,'original_files':CASES[name]['files'],'oracle_command':oracle,'oracle_sha256_before':oracle_hash},indent=2)+'\n')
    started=time.monotonic();peak=0;timed_out=False
@@ -123,7 +115,7 @@ for context in config['contexts']:
    (run_dir/'report.json').write_text(json.dumps(result,indent=2)+'\n')
    retained=['report.json','fixture.json','turn.jsonl','turn.stderr','setup.stdout','setup.stderr']
    if (run_dir/'assertion.py').exists():retained.append('assertion.py')
-   retained += [str(f.relative_to(run_dir)) for f in (run_dir/'independent').rglob('*') if f.is_file()]
+   retained += ['independent/'+name for name in oracle_hash]
    (run_dir/'evidence-sha256.json').write_text(json.dumps({f:hashlib.sha256((run_dir/f).read_bytes()).hexdigest() for f in retained},sort_keys=True,indent=2)+'\n');results.append(result)
    summary={'configuration':config,'attempts':[{k:v for k,v in r.items()if k not in ['tool_calls','before','after','resulting_source','final_prose','context_views','independent_alt_verification']}for r in results],'passed':sum(r['passed']for r in results),'total':len(results),'scope':'Seeded small projects; every attempt retained. These measurements do not establish arbitrary task reliability or GPU performance.'};(root/'summary.json').write_text(json.dumps(summary,indent=2)+'\n');print(label,'PASS'if result['passed']else'FAIL',result['wall_seconds'],'seconds',flush=True)
 print(json.dumps({'passed':sum(r['passed']for r in results),'total':len(results)},indent=2))

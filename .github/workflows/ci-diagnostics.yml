@@ -6,6 +6,10 @@ on:
         description: Failed run in this repository to inspect
         type: string
         required: true
+      model_evidence:
+        description: Also recover available model evidence artifacts, excluding generated build outputs
+        type: boolean
+        default: false
 permissions:
   contents: read
 jobs:
@@ -34,13 +38,30 @@ jobs:
           # query strings so transient download credentials are not retained.
           p.write_text(re.sub(r'(https?://[^\s?"<>]+)\?[^\s"<>]+',r'\1?[query omitted]',p.read_text()))
           PY
+      - name: Recover available model evidence without replacing its reported identities
+        if: inputs.model_evidence
+        run: |
+          python3 - <<'PY'
+          import hashlib,json,os,pathlib,re,subprocess
+          root=pathlib.Path('diagnostics'); rows=[]
+          for pattern in ['uncensored-matrix-*','complete-model-matrix']:
+              result=subprocess.run(['gh','run','download',os.environ['TARGET_RUN'],'--repo',os.environ['GITHUB_REPOSITORY'],'--pattern',pattern,'--dir',str(root/'model-evidence')],capture_output=True,text=True)
+              rows.append({'pattern':pattern,'exit':result.returncode,'error':re.sub(r'https?://\S+','[download URL omitted]',result.stderr)})
+          omitted=[]
+          for p in sorted((root/'model-evidence').rglob('*')):
+              if p.is_file() and ('/independent/target/' in str(p) or '__pycache__' in p.parts):
+                  omitted.append({'path':str(p.relative_to(root)),'sha256':hashlib.sha256(p.read_bytes()).hexdigest(),'reason':'Generated compiler/interpreter output; not a declared assertion source'})
+                  p.unlink()
+          (root/'recovery.json').write_text(json.dumps({'downloads':rows,'omitted_generated_files':omitted,'scope':'Recovered available artifacts. Missing/aborted attempts remain unmeasured; original summaries and identities are not rewritten.'},indent=2)+'\n')
+          PY
       - name: Retain diagnostics in a dedicated evidence branch
         run: |
           set -euo pipefail
+          git fetch origin main:refs/remotes/origin/main
+          git switch -c "evidence/ci-diagnostics-$GITHUB_RUN_ID" origin/main
           destination="docs/evidence/ci-diagnostics/$TARGET_RUN"
           mkdir -p "$destination"
-          cp diagnostics/* "$destination/"
-          git switch -c "evidence/ci-diagnostics-$GITHUB_RUN_ID"
+          cp -R diagnostics/. "$destination/"
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add "$destination"
