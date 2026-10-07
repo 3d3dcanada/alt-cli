@@ -1,0 +1,40 @@
+report	Check every matrix cell and summarize	﻿2026-10-07T01:11:29.8956876Z ##[group]Run python3 scripts/summarize_matrix.py collected --output matrix-summary.json --model "$MATRIX_MODEL"
+report	Check every matrix cell and summarize	2026-10-07T01:11:29.8960277Z ^[[36;1mpython3 scripts/summarize_matrix.py collected --output matrix-summary.json --model "$MATRIX_MODEL"^[[0m
+report	Check every matrix cell and summarize	2026-10-07T01:11:29.9231134Z shell: /usr/bin/bash -e {0}
+report	Check every matrix cell and summarize	2026-10-07T01:11:29.9232499Z env:
+report	Check every matrix cell and summarize	2026-10-07T01:11:29.9233626Z   MATRIX_MODEL: qwen
+report	Check every matrix cell and summarize	2026-10-07T01:11:29.9235065Z ##[endgroup]
+report	Check every matrix cell and summarize	2026-10-07T01:11:29.9757771Z Matrix recorded 0/120 attempts; behavioral successes 0. Complete: False. No preset promotion.
+report	Check every matrix cell and summarize	2026-10-07T01:11:29.9759831Z 
+report	Check every matrix cell and summarize	2026-10-07T01:11:29.9829283Z ##[error]Process completed with exit code 2.
+report	Preserve the measured evidence in a dedicated results branch	﻿2026-10-07T01:11:31.2332107Z ##[group]Run test -f matrix-summary.json
+report	Preserve the measured evidence in a dedicated results branch	2026-10-07T01:11:31.2332576Z ^[[36;1mtest -f matrix-summary.json^[[0m
+report	Preserve the measured evidence in a dedicated results branch	2026-10-07T01:11:31.2333039Z ^[[36;1mmkdir -p docs/evidence/v6/remote-matrix/"$MATRIX_MODEL"^[[0m
+report	Preserve the measured evidence in a dedicated results branch	2026-10-07T01:11:31.2333573Z ^[[36;1mcp -R collected/. docs/evidence/v6/remote-matrix/"$MATRIX_MODEL"/^[[0m
+report	Preserve the measured evidence in a dedicated results branch	2026-10-07T01:11:31.2334545Z ^[[36;1mcp matrix-summary.json docs/evidence/v6/remote-matrix/"$MATRIX_MODEL"/summary.json^[[0m
+report	Preserve the measured evidence in a dedicated results branch	2026-10-07T01:11:31.2335139Z ^[[36;1mgit switch -c "evidence/model-matrix-$GITHUB_RUN_ID"^[[0m
+report	Preserve the measured evidence in a dedicated results branch	2026-10-07T01:11:31.2335615Z ^[[36;1mgit config user.name 'github-actions[bot]'^[[0m
+report	Preserve the measured evidence in a dedicated results branch	2026-10-07T01:11:31.2336139Z ^[[36;1mgit config user.email '41898282+github-actions[bot]@users.noreply.github.com'^[[0m
+report	Preserve the measured evidence in a dedicated results branch	2026-10-07T01:11:31.2336679Z ^[[36;1mgit add docs/evidence/v6/remote-matrix^[[0m
+report	Preserve the measured evidence in a dedicated results branch	2026-10-07T01:11:31.2337185Z ^[[36;1mgit commit -m "Record complete uncensored model matrix $GITHUB_RUN_ID"^[[0m
+report	Preserve the measured evidence in a dedicated results branch	2026-10-07T01:11:31.2337645Z ^[[36;1mgit push origin HEAD^[[0m
+report	Preserve the measured evidence in a dedicated results branch	2026-10-07T01:11:31.2400186Z shell: /usr/bin/bash -e {0}
+report	Preserve the measured evidence in a dedicated results branch	2026-10-07T01:11:31.2400538Z env:
+report	Preserve the measured evidence in a dedicated results branch	2026-10-07T01:11:31.2400784Z   MATRIX_MODEL: qwen
+report	Preserve the measured evidence in a dedicated results branch	2026-10-07T01:11:31.2401071Z ##[endgroup]
+report	Preserve the measured evidence in a dedicated results branch	2026-10-07T01:11:31.2586203Z Switched to a new branch 'evidence/model-matrix-37550199900'
+report	Preserve the measured evidence in a dedicated results branch	2026-10-07T01:11:31.3368282Z [evidence/model-matrix-37550199900 5b50c37] Record complete uncensored model matrix 37550199900
+report	Preserve the measured evidence in a dedicated results branch	2026-10-07T01:11:31.3369360Z  9 files changed, 591 insertions(+)
+report	Preserve the measured evidence in a dedicated results branch	2026-10-07T01:11:31.3370063Z  create mode 100644 docs/evidence/v6/remote-matrix/qwen/summary.json
+report	Preserve the measured evidence in a dedicated results branch	2026-10-07T01:11:31.3370693Z  create mode 100644 docs/evidence/v6/remote-matrix/qwen/uncensored-matrix-0/campaign.log
+report	Preserve the measured evidence in a dedicated results branch	2026-10-07T01:11:31.3371378Z  create mode 100644 docs/evidence/v6/remote-matrix/qwen/uncensored-matrix-1/campaign.log
+report	Preserve the measured evidence in a dedicated results branch	2026-10-07T01:11:31.3372024Z  create mode 100644 docs/evidence/v6/remote-matrix/qwen/uncensored-matrix-2/campaign.log
+report	Preserve the measured evidence in a dedicated results branch	2026-10-07T01:11:31.3372707Z  create mode 100644 docs/evidence/v6/remote-matrix/qwen/uncensored-matrix-3/campaign.log
+report	Preserve the measured evidence in a dedicated results branch	2026-10-07T01:11:31.3373401Z  create mode 100644 docs/evidence/v6/remote-matrix/qwen/uncensored-matrix-4/campaign.log
+report	Preserve the measured evidence in a dedicated results branch	2026-10-07T01:11:31.3374597Z  create mode 100644 docs/evidence/v6/remote-matrix/qwen/uncensored-matrix-5/campaign.log
+report	Preserve the measured evidence in a dedicated results branch	2026-10-07T01:11:31.3375257Z  create mode 100644 docs/evidence/v6/remote-matrix/qwen/uncensored-matrix-6/campaign.log
+report	Preserve the measured evidence in a dedicated results branch	2026-10-07T01:11:31.3375906Z  create mode 100644 docs/evidence/v6/remote-matrix/qwen/uncensored-matrix-7/campaign.log
+report	Preserve the measured evidence in a dedicated results branch	2026-10-07T01:11:32.8555986Z To https://github.com/3d3dcanada/alt-cli
+report	Preserve the measured evidence in a dedicated results branch	2026-10-07T01:11:32.8557897Z  ! [remote rejected] HEAD -> evidence/model-matrix-37550199900 (refusing to allow a GitHub App to create or update workflow `.github/workflows/model-matrix.yml` without `workflows` permission)
+report	Preserve the measured evidence in a dedicated results branch	2026-10-07T01:11:32.8559997Z error: failed to push some refs to 'https://github.com/3d3dcanada/alt-cli'
+report	Preserve the measured evidence in a dedicated results branch	2026-10-07T01:11:32.8576712Z ##[error]Process completed with exit code 1.
