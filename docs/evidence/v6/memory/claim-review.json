@@ -1,0 +1,118 @@
+{
+  "schema": 1,
+  "method": "Manual review of all 12 retained prose responses against source-before.py, prompts and saved-memory context; machine-graded JSON values remain a separate metric.",
+  "reviewed": 12,
+  "incorrect_source_attributions": 6,
+  "incorrect_answers": 1,
+  "rows": [
+    {
+      "cohort": "spark",
+      "phase": "baseline",
+      "report": "spark/baseline/report.json",
+      "report_sha256": "b8190f67aa19acd774422313c67e4bd19458e324fb5e264ff0049aef54f34a18",
+      "structured_values_correct": true,
+      "prose_assessment": "incorrect_source_attribution",
+      "reason": "The prose attributes the release tag and transport to cedar_settings.py. The retained file contains only cedar_inventory_port; the tag and transport come from pinned/saved memory. Returned JSON values are correct."
+    },
+    {
+      "cohort": "spark",
+      "phase": "restart_after_200_notes",
+      "report": "spark/restart_after_200_notes/report.json",
+      "report_sha256": "0a1d24ce1cee678eb50eb95abd6eb9e82a451e7f4a79a59e35bbedc83eaa7dd1",
+      "structured_values_correct": true,
+      "prose_assessment": "incorrect_source_attribution",
+      "reason": "The prose attributes the release tag and transport to cedar_settings.py. The retained file contains only cedar_inventory_port; the tag and transport come from pinned/saved memory. Returned JSON values are correct."
+    },
+    {
+      "cohort": "spark",
+      "phase": "restart_after_source_edit",
+      "report": "spark/restart_after_source_edit/report.json",
+      "report_sha256": "68522e7479a0b5014fcf177fd255e66d484d0649eb5c6fbb58e8959d128b00a4",
+      "structured_values_correct": true,
+      "prose_assessment": "incorrect_source_attribution",
+      "reason": "The prose attributes the release tag and transport to cedar_settings.py. The retained file contains only cedar_inventory_port; the tag and transport come from pinned/saved memory. Returned JSON values are correct."
+    },
+    {
+      "cohort": "qwen",
+      "phase": "baseline",
+      "report": "qwen/baseline/report.json",
+      "report_sha256": "fb1e6c9a0fd23002b90b27a87a9899aa7c500593288dd0c546c976a3709d4c0c",
+      "structured_values_correct": true,
+      "prose_assessment": "no_contradiction_found",
+      "reason": "Returned the expected values. Where provenance was stated (corrected baseline), it correctly separates pinned requirement, saved decision and file value."
+    },
+    {
+      "cohort": "qwen",
+      "phase": "restart_after_200_notes",
+      "report": "qwen/restart_after_200_notes/report.json",
+      "report_sha256": "94c1b2fdb63ea2ac05a61b82f8f9d499f3523a1d0e1a34042b82d1ddcd65cbdc",
+      "structured_values_correct": false,
+      "prose_assessment": "incorrect_answer_and_source_interpretation",
+      "reason": "Returned unknown for available pinned/saved values and treated search highlight brackets as part of a source identifier. Its own explanation acknowledges both values but dismisses them because they are not in the file."
+    },
+    {
+      "cohort": "qwen",
+      "phase": "restart_after_source_edit",
+      "report": "qwen/restart_after_source_edit/report.json",
+      "report_sha256": "f69952464db59ba0ff571f32a71443b64bd7b2690dd73c73eca4207ebafa2322",
+      "structured_values_correct": true,
+      "prose_assessment": "no_contradiction_found",
+      "reason": "Returned the expected values. Where provenance was stated (corrected baseline), it correctly separates pinned requirement, saved decision and file value."
+    },
+    {
+      "cohort": "spark-candidate",
+      "phase": "baseline",
+      "report": "spark-candidate/baseline/report.json",
+      "report_sha256": "a71885a6fce35298f63b8e7e545628e6f569103055722024eb4ec910771d87b5",
+      "structured_values_correct": true,
+      "prose_assessment": "incorrect_source_attribution",
+      "reason": "The prose attributes the release tag and transport to cedar_settings.py. The retained file contains only cedar_inventory_port; the tag and transport come from pinned/saved memory. Returned JSON values are correct."
+    },
+    {
+      "cohort": "spark-candidate",
+      "phase": "restart_after_200_notes",
+      "report": "spark-candidate/restart_after_200_notes/report.json",
+      "report_sha256": "15a57a9ef925f6057342064013884762f69e4b029722eeed5fbf3a468269c6a7",
+      "structured_values_correct": true,
+      "prose_assessment": "incorrect_source_attribution",
+      "reason": "The prose attributes the release tag and transport to cedar_settings.py. The retained file contains only cedar_inventory_port; the tag and transport come from pinned/saved memory. Returned JSON values are correct."
+    },
+    {
+      "cohort": "spark-candidate",
+      "phase": "restart_after_source_edit",
+      "report": "spark-candidate/restart_after_source_edit/report.json",
+      "report_sha256": "e3d65c2889ed446c2b24c684c16e06590175a4fd9a8c0c0d173ccd512ded6751",
+      "structured_values_correct": true,
+      "prose_assessment": "incorrect_source_attribution",
+      "reason": "The prose attributes the release tag and transport to cedar_settings.py. The retained file contains only cedar_inventory_port; the tag and transport come from pinned/saved memory. Returned JSON values are correct."
+    },
+    {
+      "cohort": "qwen-candidate",
+      "phase": "baseline",
+      "report": "qwen-candidate/baseline/report.json",
+      "report_sha256": "cca38a771fcaad3b013079126363f1fd03f26e644c5914558f1ae76bd1a727f5",
+      "structured_values_correct": true,
+      "prose_assessment": "no_contradiction_found",
+      "reason": "Returned the expected values. Where provenance was stated (corrected baseline), it correctly separates pinned requirement, saved decision and file value."
+    },
+    {
+      "cohort": "qwen-candidate",
+      "phase": "restart_after_200_notes",
+      "report": "qwen-candidate/restart_after_200_notes/report.json",
+      "report_sha256": "0b84b69b712771c8805add7e227e70e1e47309e51e71c816f8b21e8d5118fe84",
+      "structured_values_correct": true,
+      "prose_assessment": "no_contradiction_found",
+      "reason": "Returned the expected values. Where provenance was stated (corrected baseline), it correctly separates pinned requirement, saved decision and file value."
+    },
+    {
+      "cohort": "qwen-candidate",
+      "phase": "restart_after_source_edit",
+      "report": "qwen-candidate/restart_after_source_edit/report.json",
+      "report_sha256": "a301599d3fddc268dadaaad2a139ab479b0ba3e1c0ba8e7eb44ce06afa27ccf5",
+      "structured_values_correct": true,
+      "prose_assessment": "no_contradiction_found",
+      "reason": "Returned the expected values. Where provenance was stated (corrected baseline), it correctly separates pinned requirement, saved decision and file value."
+    }
+  ],
+  "scope": "Descriptive review of these observations only; no statistical reliability or broader coding claim."
+}

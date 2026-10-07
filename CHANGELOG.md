@@ -6,6 +6,8 @@
 - Matched model instructions to selected tools and configured checks; surfaced evidence errors as failed calls.
 - Improved check discovery, small-terminal evidence display and bounded retrieval.
 - Fixed partial-download write completion and Goose synthetic network-error handling.
+- Fixed file-edit submission racing background listings, retained changed filenames on narrow screens, and preserved actionable missing-interpreter errors.
+- Removed search highlighting from source snippets and strengthened evaluation completion/snapshot checks.
 - Added sustained stream recovery, complete model matrix tooling, automatic pre-upgrade backups, GitHub-attested release publication and a local PC test kit.
 
 

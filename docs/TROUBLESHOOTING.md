@@ -23,6 +23,8 @@ For a report, include the operation, exact error and relevant redacted output.
 | Model reaches its output limit | Review its template and token use. An explicit reasoning-mode experiment can help some templates, but the measured Spark pilot did not improve correctness. |
 | Model repeats calls to an unavailable tool | Inspect Settings → Tool focus. Coding needs named checks; select All/Terminal yourself if arbitrary commands are intended. |
 | Guided check reports unavailable isolation | Install Bubblewrap and check whether the host allows user namespaces. Guided checks fail closed; access mode is an explicit user choice. |
+| Practice check cannot start `python3` | Install your distribution’s Python 3 package, then rerun the practice check. The missing-runner error is retained as evidence. |
+| No project checks are configured | Choose **Prepare project checks** on Home, inspect the suggested command and add the check you want. |
 | Tests exit zero but verification fails | A Tests contract needs a fresh complete case-level report with executed passing tests. Check the selected format, report path and raw evidence. |
 | Passing evidence became stale | Source, verifier, command, assertion or tracked dependencies changed. Rerun the required checks. |
 | Undo refuses to overwrite a file | The file changed after the recorded edit. Review the current file/diff and preserve manual changes before deciding how to recover. |

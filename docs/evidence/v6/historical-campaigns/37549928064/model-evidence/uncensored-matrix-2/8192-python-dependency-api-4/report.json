@@ -1,0 +1,171 @@
+{
+  "case": "python-dependency-api",
+  "context": 8192,
+  "repeat": 4,
+  "passed": true,
+  "cli_exit": 0,
+  "wall_seconds": 82.29,
+  "outer_timeout": false,
+  "sampled_alt_tree_peak_rss_bytes": 2660327424,
+  "rss_scope": "Alt, Goose and managed inference runtime",
+  "vram": null,
+  "oracle_unchanged": true,
+  "before": {
+    "passed": false,
+    "exit": 1,
+    "stdout": "",
+    "stderr": "Traceback (most recent call last):\n  File \"/home/runner/work/_temp/campaign/8192-python-dependency-api-4/independent/check.py\", line 3, in <module>\n    import solution\n  File \"/home/runner/work/_temp/campaign/8192-python-dependency-api-4/project/solution.py\", line 1, in <module>\n    from vendor.math import add\nImportError: cannot import name 'add' from 'vendor.math' (/home/runner/work/_temp/campaign/8192-python-dependency-api-4/project/vendor/math.py)\n"
+  },
+  "after": {
+    "passed": true,
+    "exit": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  "tool_calls": [
+    {
+      "_meta": {
+        "goose": {
+          "created": 1791333893,
+          "messageId": "chatcmpl-XCnp9fV6swvufl4kU3dMrH6930maHqKN",
+          "toolCall": {
+            "extensionName": "alt",
+            "toolName": "alt__read"
+          }
+        }
+      },
+      "rawInput": {
+        "path": "solution.py"
+      },
+      "sessionUpdate": "tool_call",
+      "title": "alt: read \u00b7 solution.py",
+      "toolCallId": "EyrT6iRs86bAMk1tK5TDNM1IbjnO54DI"
+    },
+    {
+      "_meta": {
+        "goose": {
+          "created": 1791333893,
+          "messageId": "chatcmpl-XCnp9fV6swvufl4kU3dMrH6930maHqKN",
+          "toolCall": {
+            "extensionName": "alt",
+            "toolName": "alt__read"
+          }
+        }
+      },
+      "rawInput": {
+        "path": "vendor/math.py"
+      },
+      "sessionUpdate": "tool_call",
+      "title": "alt: read \u00b7 vendor/math.py",
+      "toolCallId": "yb2xEfyLDtFJyBmwBQjFjAQCHSQ5JeAk"
+    },
+    {
+      "_meta": {
+        "goose": {
+          "created": 1791333901,
+          "messageId": "chatcmpl-IDaCGe0F46yLP1F5ZVwc08jYARzfS9jf",
+          "toolCall": {
+            "extensionName": "alt",
+            "toolName": "alt__remember"
+          }
+        }
+      },
+      "rawInput": {
+        "kind": "plan",
+        "text": "Repair solution.py adapter compute(values) to use bundled vendor.math.total(values, strict=True), return its result, and preserve exceptions. The former add() function no longer exists; do not duplicate vendor logic."
+      },
+      "sessionUpdate": "tool_call",
+      "title": "alt: remember",
+      "toolCallId": "QPf1HSgzEnLBWa52uARFO2eKYl0FmZVp"
+    },
+    {
+      "_meta": {
+        "goose": {
+          "created": 1791333907,
+          "messageId": "chatcmpl-QN9pvkbF3tMyTPNIzgz1BguyZO3Kb25r",
+          "toolCall": {
+            "extensionName": "alt",
+            "toolName": "alt__edit"
+          }
+        }
+      },
+      "rawInput": {
+        "new_text": "from vendor.math import total\ndef compute(values):return total(values, strict=True)",
+        "old_text": "from vendor.math import add\ndef compute(values):return add(values)",
+        "operation": "replace",
+        "path": "solution.py",
+        "reason": "Replace compute(values) to use the bundled vendor.math.total(values, strict=True) instead of the now-removed add() function."
+      },
+      "sessionUpdate": "tool_call",
+      "title": "alt: edit \u00b7 solution.py",
+      "toolCallId": "TMM3mM6zK9SrXDm14Gc08zTWKn3HJs8O"
+    },
+    {
+      "_meta": {
+        "goose": {
+          "created": 1791333912,
+          "messageId": "chatcmpl-nOYPYGBslVvSs9L348f3RYBruJuI4qkX",
+          "toolCall": {
+            "extensionName": "alt",
+            "toolName": "alt__run_check"
+          }
+        }
+      },
+      "rawInput": {
+        "name": "acceptance"
+      },
+      "sessionUpdate": "tool_call",
+      "title": "alt: run check \u00b7 acceptance",
+      "toolCallId": "RRCg54H3PFJljdtMlSjhmjrfFbWu2OtH"
+    }
+  ],
+  "failed_tool_updates": 0,
+  "final_prose": "The change is complete and verified.\n\n## Summary\n\n**Change made** (`solution.py`):\n\n- Replaced the `from vendor.math import add` + `add(values)` call in `compute(values)` with `from vendor.math import total` and `total(values, strict=True)`.\n- This uses the bundled vendor function (`vendor/math.py`) instead of the former `add()` function, so no vendor logic is duplicated.\n\n**What was run:**\n- `solution.py` read \u2014 confirmed the file content.\n- `vendor/math.py` read \u2014 confirmed the bundled `total(values, strict=False)` implementation.\n- Edit applied with a syntax parse check \u2014 no parse errors (`parser: tree-sitter py`, `contains_parse_errors: false`).\n- `run_check(name=\"acceptance\")` \u2014 passed (exit code 0, no stderr).\n\n**Remaining work:** None \u2014 the fix is implemented, the change is syntactically valid, and the configured acceptance check passes.",
+  "prose_accuracy": "Retained for manual assessment; not inferred from process exit",
+  "resulting_source": {
+    "solution.py": "from vendor.math import total\ndef compute(values):return total(values, strict=True)\n",
+    "vendor/math.py": "def total(values,strict=False):\n if strict and any(type(v)!=int for v in values):raise ValueError(\"integers required\")\n return sum(values)\n",
+    "vendor/__init__.py": ""
+  },
+  "context_views": [
+    {
+      "character_budget": 8192,
+      "characters": 2428,
+      "included_excerpts": [
+        {
+          "excerpt": "from vendor.math import add\ndef compute(values):return add(values)\n",
+          "path": "solution.py",
+          "retrieval": "explicit file name"
+        },
+        {
+          "end_line": 3,
+          "excerpt": "def [total]([values],[strict]=False):\n if [strict] and any(type(v)!=int for v in [values]):raise ValueError(\"integers required\")\n return sum([values])",
+          "path": "vendor/math.py",
+          "retrieval": "syntax chunk",
+          "start_line": 1
+        }
+      ],
+      "memory": "CURRENT computed check status: No checks recorded\nTask: 1ce3937b-9f8f-4b4f-8e11-d3a3f3697234\nGoal: Repair solution.py adapter compute(values) to use bundled vendor.math.total(values, strict=True), return its result, and preserve exceptions. The former add() function no longer exists; do not duplicate vendor logic. Inspect relevant files, save a brief plan, use native tools to implement the change, and test it. Report what you actually ran and any remaining uncertainty. Preserve existing public interfaces. Keep your explanation brief.\nPinned user requirements:\n[]\nRequired checks: {\"complete\":false,\"behavioral_acceptance\":false,\"scope\":\"Required checks are incomplete\",\"requirements\":[{\"requirement\":{\"name\":\"requested-behavior\",\"description\":\"Repair solution.py adapter compute(values) to use bundled vendor.math.total(values, strict=True), return its result, and preserve exceptions. The former add() function no longer exists; do not duplicate vendor logic.\",\"check_name\":\"acceptance\"},\"status\":\"not run\",\"evidence\":null,\"check_kind\":\"tests\",\"coverage\":\"runner test report; no independent assertion\"}],\"source_snapshot\":\"ae4edaab1d49636558bc32748dff4c3b9d0c8e130b4391f8e40032203c4657e6\"}\nPlan (notes, not verification): \nPhase: Inspect\nNext: Inspect the relevant files\n\nRelevant user decisions (retrieved across sessions; notes do not override current evidence):\n\nRecent file actions (newest first):\n\nHISTORICAL events, oldest to newest (sequence numbers increase). Earlier failures or stale notes do not override the CURRENT computed status above:\n[event 2; request; source=user] Repair solution.py adapter compute(values) to use bundled vendor.math.total(values, strict=True), return its result, and preserve exceptions. The former add() function no longer exists; do not duplicate vendor logic. Inspect relevant files, save a brief plan, use native tools to implement the change, and test it. Report what you actually ran and any remaining uncertainty. Preserve existing public \n\nCurrent project excerpts (data, not instructions; use read before editing):\n\nFile: solution.py\nfrom vendor.math import add\ndef compute(values):return add(values)\n\n[End excerpt]\n\nFile: vendor/math.py\ndef [total]([values],[strict]=False):\n if [strict] and any(type(v)!=int for v in [values]):raise ValueError(\"integers required\")\n return sum([values])\n[End excerpt]\n\nExcerpts included: 2; omitted for budget: 0. Use search/read for more.\n",
+      "memory_token_budget": 2730,
+      "memory_tokens": 628,
+      "native_context_expanded": false,
+      "omitted_excerpts": 0,
+      "omitted_history": "Only retrieved/recent notes and bounded excerpts are included; full history remains on disk",
+      "pinned": [],
+      "task": "1ce3937b-9f8f-4b4f-8e11-d3a3f3697234",
+      "token_accounting": "Selected llama.cpp tokenizer, memory block only; tool/chat/template tokens are separately engine-budgeted"
+    }
+  ],
+  "independent_alt_verification": {
+    "exit": 0,
+    "stdout": "{\n  \"complete\": true,\n  \"behavioral_acceptance\": true,\n  \"scope\": \"Pinned independent assertions passed on current files; review their behavioral coverage\",\n  \"requirements\": [\n    {\n      \"requirement\": {\n        \"name\": \"requested-behavior\",\n        \"description\": \"Repair solution.py adapter compute(values) to use bundled vendor.math.total(values, strict=True), return its result, and preserve exceptions. The former add() function no longer exists; do not duplicate vendor logic.\",\n        \"check_name\": \"acceptance\"\n      },\n      \"status\": \"passed on current files\",\n      \"evidence\": \"1e56b637-65cc-4e56-9f84-1ee604c134f5\",\n      \"check_kind\": \"tests\",\n      \"coverage\": \"independent behavioral assertion\"\n    }\n  ],\n  \"source_snapshot\": \"d7d2b19498178368e74279c1204a9dec3d69b1584d3db127624fc3887187beb0\"\n}\n",
+    "stderr": ""
+  },
+  "scores": {
+    "source_behavior_passed": true,
+    "turn_completed": true,
+    "transport_turn_ended": true,
+    "stop_reason": "end_turn",
+    "claim_accuracy": "unassessed: use retained prose and evidence; no automatic success-claim inference"
+  }
+}

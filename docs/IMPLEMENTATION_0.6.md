@@ -15,11 +15,24 @@ qualification and actual beginner usability are separate results.
 - **Try a practice project** creates a fresh example with four independently
   pinned Python behavioral checks. It demonstrates a real failing seed, repair,
   saved evidence, restart and undo. `alt practice` also creates an example.
-- Small terminals prioritize verification status over a long task description.
+- Practice is visible near the top of Home at 80×24. Missing Python is reported
+  as a missing interpreter, with a recovery instruction; a missing structured
+  report no longer replaces the original execution error.
+- File creation/edit submission replaces a disposable background file listing,
+  so a slow listing cannot block the requested edit. Checks, saves and downloads
+  remain nonreplaceable. Failed replacement work preserves the form draft.
+- Small terminals retain both verification and the changed filename at 60×18;
+  practice remains visible on Home at 80×24.
 - Memory presents complete source excerpts, records omitted excerpts, retrieves
   explicitly named files and filters conversational filler. Token-budget trimming
   reassembles memory rather than cutting through an excerpt. Current evidence
   retains priority over historical notes; native context is not enlarged.
+- Search snippets preserve identifiers and original brackets. SQLite highlight
+  markup previously made `cedar_inventory_port` look like
+  `[cedar]_[inventory]_[port]`; a real Qwen continuation misread it as source.
+  Sentence-ending punctuation also no longer prevents a named file lookup.
+  Snippets can omit source sections, so their heading explicitly directs the
+  model to read files before editing.
 - Interrupted downloads finish pending writes before reporting a resumable
   offset. Repeated real HTTP truncations exercise this boundary.
 - The Goose 1.53 adapter recognizes its synthetic network-failure message and
@@ -36,23 +49,67 @@ qualification and actual beginner usability are separate results.
 
 ## Verification record
 
-Results for this candidate are being collected. No pending check below is a pass.
+The [evidence index](evidence/v6/README.md) separates application checks, live
+model outcomes, historical campaigns and exact package identities.
 
-- Targeted practice, tool-guidance, retrieval and download-recovery Rust checks
-  have passed; final whole-tree checks are recorded in the evidence index.
-- The real practice PTY journey passes at 120×40, 80×24 and 60×18, including
-  persisted verification after restart and return to the original failure after undo.
-- The streaming suite passed 60 scenarios across 12 repeated normal/disconnect/
-  cancel/engine-crash/reconnect cycles with actual Alt and Goose processes.
-  The HTTP provider is deterministic and contains no model weights.
-- The complete uncensored matrix records 100 development and 20 held-out attempts
-  on one frozen executable. A failed behavioral task remains a failure even if
-  the model claims completion or the engine returns `end_turn`. Candidate pilots
-  and interrupted campaigns remain separate from that matrix.
+| Measurement | Result and scope |
+|---|---|
+| Rust checks | 91 tests passed; formatting and strict Clippy passed |
+| Terminal journeys | Home, task, workbench, verification and practice passed through real PTYs |
+| Responsiveness under project lock | 30/30 final-package journeys passed across three sizes; input p95 40.2 ms and cancellation p95 61.2 ms in this cloud |
+| Practice recovery | 120×40, 80×24 and 60×18; edit/check, restart, undo and missing-Python recovery passed |
+| Goose adapter | Actual Goose 1.53 against OpenAI-compatible and Ollama protocol fixtures passed; fixtures contain no weights |
+| Sustained stream recovery | 60 scenarios across 12 normal/disconnect/cancel/engine-crash/reconnect cycles passed; partial history and process cleanup checked |
+| Incremental retrieval | 5,001 files: 14.659 s initial, 0.085 s unchanged, 0.093 s edit/delete; debug build on shared cloud CPU with warm filesystem cache |
+| Live memory continuation | Corrected Spark and Qwen each returned the required values in 3/3 observations, including restarts, 200 distracting notes and an edited source value |
+| PC recorder | All five checks passed on cloud CPU with uncensored Spark; nine qualification rows across 2K/4K/8K plus a native-tool probe |
+| Package gate | All seven local checks passed, including actual installed TUI and prior-version recovery on Debian 11 and Ubuntu 24.04 |
+| Dependency audit | No advisories or warning groups in the recorded audit |
+| Oracle controls | All 24 broken seeds rejected and known repairs accepted; selected incomplete repairs and Python/Rust/JavaScript early-zero-exit controls rejected |
 
-The final evidence index and measured matrix totals will be added after the
-campaign, package gate and remote checks finish. No recommended preset or broad
-coding-reliability claim follows from an application test pass.
+The initial memory observations were Spark 3/3 and Qwen 2/3. Qwen misread search
+highlight markup as source and missed saved requirements. After preserving raw
+source in snippets, both models recorded 3/3 on fresh runs. These are six narrow
+continuation observations, not a statistical improvement claim or a larger native
+context window. Manual review also found that all six Spark responses incorrectly
+attributed saved/pinned values to the source file, which contained only the port.
+Correct JSON values therefore do not establish accurate explanatory prose. The
+[12-response claim review](evidence/v6/memory/claim-review.json) retains that result.
+The live recorder tests runtime operation and one small tool
+interaction, not general coding reliability.
+
+The coding matrices are still running. Final scores will be recorded before this
+candidate is published; pending attempts are not passes. Earlier pilots and
+interrupted campaigns remain separate. No model preset is promoted.
+
+### Evaluation defects found during this pass
+
+The earlier harness could accept a project that exited successfully before its
+assertions ran. Oracle contract 4 now requires a per-attempt completion receipt;
+the Rust driver additionally requires the named behavioral test to complete. Rust
+checks build against the actual checked snapshot. The collector copies declared
+assertion inputs, excluding generated compiler output that interrupted an earlier
+export. These changes preserve task goals and behavioral assertions. They do not
+claim adversarial containment for arbitrary code running with Full access.
+
+Fresh complete matrices use this contract. Old contract-3 results cannot be used
+as a matched baseline or pooled into acceptance. Original available artifacts,
+failed CI diagnostics and cancellation reasons are retained, including outputs
+from incomplete campaigns. Unuploaded files on canceled runners cannot be
+reconstructed. A model's completion claim or `end_turn` does not establish a
+passing behavioral result.
+
+### Package provenance
+
+The final local package gate covers archive SHA-256
+`971b49b2bba7808d473ae9ff5cbe2b90bf81ba7080346e04dab910338276944a`.
+Its compiled input fingerprint matches the final UI source. The local build has
+a dirty marker because documentation/evidence were being prepared; its build
+record preserves that fact. Earlier local gates and memory/recorder binaries
+are labelled by their own identities rather than represented as this archive.
+Publication rebuilds from a clean tag, reruns the exact-package upgrade gate and
+verifies a GitHub workflow-identity attestation before creating the release. The
+published archive therefore has its own hash and attached gate report.
 
 ## Outside cloud acceptance
 
@@ -61,7 +118,10 @@ and newer GPUs still need measurement. Follow [PC testing](PC_TESTING.md).
 Actual uncoached beginner sessions require people; terminal automation does not
 replace the [novice protocol](NOVICE_ACCEPTANCE.md). Private/gated model acquisition
 requires applicable credentials, and real LM Studio remains a separate connection
-qualification. The cloud does not supply those observations.
+qualification. Official LM Studio installer acquisition returned HTTP 403 both
+in this cloud and on a separate GitHub-hosted runner; compatible-protocol fixture
+passes are not represented as actual LM Studio inference. The cloud does not
+supply those remaining observations.
 
 See [0.5 evidence](IMPLEMENTATION_0.5.md) for the preceding snapshot. Its statements
 about unpublished source and unrun remote CI describe that earlier point in time;
