@@ -62,10 +62,13 @@ python3 scripts/smoke_workbench_tui.py
 python3 scripts/smoke_verification_tui.py
 python3 scripts/smoke_practice_tui.py
 python3 scripts/smoke_harness_tui.py
+python3 scripts/smoke_allowance_tui.py --engine /workspace/.alt-tools/goose
+python3 scripts/smoke_pc_recorder.py --engine /workspace/.alt-tools/goose
 python3 scripts/acceptance_projects.py
 python3 scripts/acceptance_v5.py
 python3 scripts/test_research_adapters.py -v
 python3 scripts/test_campaign.py -v
+python3 scripts/test_evaluation_preflight.py -v
 python3 -m unittest discover -s training/tests -v
 python3 scripts/smoke_skills.py
 python3 scripts/smoke_analysis.py
@@ -85,6 +88,8 @@ compact_probe() {
 }
 compact_probe compact-openai
 compact_probe compact-ollama --provider ollama
+compact_probe repository-openai --git-project --conversation-turns 12
+compact_probe repository-ollama --provider ollama --git-project --conversation-turns 12
 compact_probe compact-lines-openai --tool-profile compact-lines
 compact_probe compact-lines-ollama --provider ollama --tool-profile compact-lines
 compact_probe compact-tui --interface tui

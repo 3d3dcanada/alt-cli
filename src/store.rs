@@ -95,6 +95,35 @@ impl Store {
             .collect::<rusqlite::Result<_>>()?)
     }
 
+    /// Explicitly updates only allocation on an existing model selection. Keep
+    /// the durable session and the audit event in the same transaction.
+    pub fn update_allocation(&self, id: &str, profile: Profile) -> Result<Session> {
+        profile.validate()?;
+        let mut session = self.get(id)?;
+        let before = session.profile.clone();
+        let mut identity = profile.clone();
+        identity.context_tokens = before.context_tokens;
+        identity.max_turns = before.max_turns;
+        identity.inference = before.inference.clone();
+        ensure!(
+            serde_json::to_value(&identity)? == serde_json::to_value(&before)?,
+            "Allocation recovery cannot change the saved model, provider, endpoint or authentication binding"
+        );
+        let tx = self.0.unchecked_transaction()?;
+        tx.execute(
+            "UPDATE sessions SET profile=?1 WHERE id=?2",
+            params![serde_json::to_string(&profile)?, id],
+        )?;
+        let event = serde_json::json!({"type":"allocation_changed","before":{"context_tokens":before.context_tokens,"max_turns":before.max_turns,"inference":before.inference},"after":{"context_tokens":profile.context_tokens,"max_turns":profile.max_turns,"inference":profile.inference},"model_unchanged":true,"scope":"Explicit saved allocation update; next connection records a new allowance"});
+        tx.execute(
+            "INSERT INTO events(session_id,payload) VALUES(?1,?2)",
+            params![id, serde_json::to_string(&event)?],
+        )?;
+        tx.commit()?;
+        session.profile = profile;
+        Ok(session)
+    }
+
     pub fn append(&self, id: &str, event: &serde_json::Value) -> Result<()> {
         let tx = self.0.unchecked_transaction()?;
         ensure!(

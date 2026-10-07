@@ -1,0 +1,261 @@
+{
+  "changes": [
+    {
+      "after": "def greet(name):\ndef greet(name):\n    return 'Hello, ' + (name.strip() or 'friend') + '!'\n",
+      "after_hash": "ef6a40d543fa245b7bfb86e7a9633abe2712a743bf1794f317f976333b81a86b",
+      "before": "def greet(name):\n    return 'Hello, ' + (name.strip() or 'friend') + '!'\n",
+      "before_hash": "4b9aab3017fb274c0ec83de8bc32711886ae9beb31e358d7a74fd1fd774c0b58",
+      "id": "d0aa75e0-9fed-4d6b-85d1-f9031e9186b6",
+      "mode": 384,
+      "path": "greeting.py",
+      "reason": "Implement the requested change",
+      "status": "applied",
+      "task": "40e8b204-bf43-481b-a5f9-66aed8541edb",
+      "test_change": false
+    },
+    {
+      "after": "def greet(name):\n    return 'Hello, ' + (name.strip() or 'friend') + '!'\n",
+      "after_hash": "4b9aab3017fb274c0ec83de8bc32711886ae9beb31e358d7a74fd1fd774c0b58",
+      "before": "def greet(name):\n    return 'Hello, ' + name + '!'\n",
+      "before_hash": "30606cf0e9c2eb93e5bbc1f9844df14c368c244c9a200fdcbc7a49e0685c1770",
+      "id": "5cc0fa9e-f54e-45a2-9aa4-e059fb807c78",
+      "mode": 384,
+      "path": "greeting.py",
+      "reason": "Implement the requested change",
+      "status": "applied",
+      "task": "40e8b204-bf43-481b-a5f9-66aed8541edb",
+      "test_change": false
+    }
+  ],
+  "check_reports": [
+    {
+      "check_id": "4ddb37d4-942b-4a9e-ad3a-5f9e62e1d05a",
+      "sha256": "f1b94028c4c883cbb8d96ad0aeb7c50fbd928a7083760ec606e3a22eeba1cea1",
+      "text": "{\"schema\": 1, \"complete\": true, \"tests\": [{\"name\": \"ordinary name\", \"status\": \"passed\"}, {\"name\": \"trim spaces\", \"status\": \"failed\"}, {\"name\": \"empty name\", \"status\": \"failed\"}, {\"name\": \"spaces only\", \"status\": \"failed\"}]}"
+    },
+    {
+      "check_id": "3891a36a-37f8-44e4-8eea-c9cc5feb4624",
+      "sha256": "233376b4e17808d6b0750ada79c949b643b8816ca4b668d3903a6e70f46c6f2c",
+      "text": "{\"schema\": 1, \"complete\": true, \"tests\": [{\"name\": \"load greeting.py\", \"status\": \"failed\"}]}"
+    }
+  ],
+  "check_specs": [
+    {
+      "argv": [
+        "python3",
+        "{assertion}"
+      ],
+      "contract": {
+        "assertion": {
+          "path": "/workspace/.alt-pc-ready/pc-recorder-raw-1791411803103771800/report-openaiFalse/repair-state/practice/13fc5e50-28b1-4c64-9145-c1dd820500e8/assertion.py",
+          "sha256": "3c9eac5fa3ab0d867a8889284eb02ddebf2daace4376522b0d1a66e598a24d50"
+        },
+        "kind": "tests",
+        "report": {
+          "format": "json",
+          "path": ".alt-practice-report.json"
+        }
+      },
+      "name": "Practice behavior",
+      "timeout_secs": 30
+    }
+  ],
+  "checks": [
+    {
+      "argv": [
+        "python3",
+        "{assertion}"
+      ],
+      "cancelled": false,
+      "contract": {
+        "assertion": {
+          "path": "/workspace/.alt-pc-ready/pc-recorder-raw-1791411803103771800/report-openaiFalse/repair-state/practice/13fc5e50-28b1-4c64-9145-c1dd820500e8/assertion.py",
+          "sha256": "3c9eac5fa3ab0d867a8889284eb02ddebf2daace4376522b0d1a66e598a24d50"
+        },
+        "kind": "tests",
+        "report": {
+          "format": "json",
+          "path": ".alt-practice-report.json"
+        }
+      },
+      "elapsed_ms": 30,
+      "environment": {
+        "argv_sha256": "fd191caee3474762a5cba4ad402cdab68fb54cce92d46320cbee96924d1502bc",
+        "environment_CARGO_HOME_sha256": "bb3697b7e2f100f938095f2b7ea8462fe2b35e55056e1d82417c00d4bebd312e",
+        "environment_PATH_sha256": "7ec45148c409cf936098db80bf6d73123dc7b40560bb3df1c20305635d3a0648",
+        "environment_RUSTUP_HOME_sha256": "72d16099e33213d03f8e9e7f9ffc59bf053ef5251247c12e2b525dfa6894dfac",
+        "executable": "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python3.12",
+        "executable_metadata": "30894944:Ok(SystemTime { tv_sec: 1788486252, tv_nsec: 0 })",
+        "installed_dependencies": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "observed_version_python3": "Python 3.12.14",
+        "verification_contract": "3"
+      },
+      "error": "Structured report contains 3 failing tests",
+      "exit_code": 1,
+      "id": "4ddb37d4-942b-4a9e-ad3a-5f9e62e1d05a",
+      "isolation": "Unisolated: trusted command in disposable source copy",
+      "name": "Practice behavior",
+      "output": "stdout:\nordinary name: expected 'Hello, Cedar!', got 'Hello, Cedar!'\ntrim spaces: expected 'Hello, Cedar!', got 'Hello,   Cedar  !'\nempty name: expected 'Hello, friend!', got 'Hello, !'\nspaces only: expected 'Hello, friend!', got 'Hello,    !'\n\nstderr:\n",
+      "output_truncated": false,
+      "snapshot": "bc858f92f772b6aeb9aab3578895786f26856b9611ecc006b62c18f3fc99aa71",
+      "structured": {
+        "assertion_verified": true,
+        "complete": true,
+        "executed": 4,
+        "failed": 3,
+        "format": "json",
+        "passed": 1,
+        "report_sha256": "f1b94028c4c883cbb8d96ad0aeb7c50fbd928a7083760ec606e3a22eeba1cea1",
+        "skipped": 0
+      },
+      "task": "practice-13fc5e50-28b1-4c64-9145-c1dd820500e8",
+      "tests_run": 4,
+      "timed_out": false
+    },
+    {
+      "argv": [
+        "python3",
+        "{assertion}"
+      ],
+      "cancelled": false,
+      "contract": {
+        "assertion": {
+          "path": "/workspace/.alt-pc-ready/pc-recorder-raw-1791411803103771800/report-openaiFalse/repair-state/practice/13fc5e50-28b1-4c64-9145-c1dd820500e8/assertion.py",
+          "sha256": "3c9eac5fa3ab0d867a8889284eb02ddebf2daace4376522b0d1a66e598a24d50"
+        },
+        "kind": "tests",
+        "report": {
+          "format": "json",
+          "path": ".alt-practice-report.json"
+        }
+      },
+      "elapsed_ms": 30,
+      "environment": {
+        "argv_sha256": "fd191caee3474762a5cba4ad402cdab68fb54cce92d46320cbee96924d1502bc",
+        "environment_CARGO_HOME_sha256": "bb3697b7e2f100f938095f2b7ea8462fe2b35e55056e1d82417c00d4bebd312e",
+        "environment_PATH_sha256": "7ec45148c409cf936098db80bf6d73123dc7b40560bb3df1c20305635d3a0648",
+        "environment_RUSTUP_HOME_sha256": "72d16099e33213d03f8e9e7f9ffc59bf053ef5251247c12e2b525dfa6894dfac",
+        "executable": "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python3.12",
+        "executable_metadata": "30894944:Ok(SystemTime { tv_sec: 1788486252, tv_nsec: 0 })",
+        "installed_dependencies": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "observed_version_python3": "Python 3.12.14",
+        "verification_contract": "3"
+      },
+      "error": "Structured report contains 1 failing tests",
+      "exit_code": 1,
+      "id": "3891a36a-37f8-44e4-8eea-c9cc5feb4624",
+      "isolation": "Unisolated: trusted command in disposable source copy",
+      "name": "Practice behavior",
+      "output": "stdout:\nCannot load greeting.py: expected an indented block after function definition on line 1 (greeting.py, line 2)\n\nstderr:\n",
+      "output_truncated": false,
+      "snapshot": "8db3ff9c3b7eb3c8f77738514c6e55cfceda4230cd53f306296b9c0ff3ed3f7a",
+      "structured": {
+        "assertion_verified": true,
+        "complete": true,
+        "executed": 1,
+        "failed": 1,
+        "format": "json",
+        "passed": 0,
+        "report_sha256": "233376b4e17808d6b0750ada79c949b643b8816ca4b668d3903a6e70f46c6f2c",
+        "skipped": 0
+      },
+      "task": "40e8b204-bf43-481b-a5f9-66aed8541edb",
+      "tests_run": 1,
+      "timed_out": false
+    }
+  ],
+  "notes": [
+    {
+      "body": "Repair greeting.py so greet(name) trims spaces and returns Hello, NAME!, using friend for an empty name. Preserve the function interface. Read the file, apply an edit, and run the configured Practice behavior check. Explain the actual result.",
+      "created": "2026-10-07 22:23:23",
+      "kind": "request",
+      "source": "user",
+      "task": "practice-13fc5e50-28b1-4c64-9145-c1dd820500e8"
+    },
+    {
+      "body": "Read greeting.py, reproduce the failed check, repair the greeting, rerun all four cases, then try undo.",
+      "created": "2026-10-07 22:23:23",
+      "kind": "plan",
+      "source": "practice setup",
+      "task": "practice-13fc5e50-28b1-4c64-9145-c1dd820500e8"
+    },
+    {
+      "body": "Check Practice behavior: exit Some(1), timeout false, cancelled false, isolation Unisolated: trusted command in disposable source copy, snapshot bc858f92f772b6aeb9aab3578895786f26856b9611ecc006b62c18f3fc99aa71, evidence 4ddb37d4-942b-4a9e-ad3a-5f9e62e1d05a. Structured report contains 3 failing tests",
+      "created": "2026-10-07 22:23:23",
+      "kind": "failure",
+      "source": "4ddb37d4-942b-4a9e-ad3a-5f9e62e1d05a",
+      "task": "practice-13fc5e50-28b1-4c64-9145-c1dd820500e8"
+    },
+    {
+      "body": "Repair greeting.py so greet(name) trims spaces and returns Hello, NAME!, using friend for an empty name. Preserve the function interface. Read the file, apply an edit, and run the configured Practice behavior check. Explain the actual result.",
+      "created": "2026-10-07 22:23:23",
+      "kind": "request",
+      "source": "user",
+      "task": "40e8b204-bf43-481b-a5f9-66aed8541edb"
+    },
+    {
+      "body": "Host workflow: inspect current source; reproduce with configured checks; patch using revision-bound handles; rerun required checks; recover from actual diagnostics.",
+      "created": "2026-10-07 22:23:23",
+      "kind": "plan",
+      "source": "host workflow (not a model-authored plan)",
+      "task": "40e8b204-bf43-481b-a5f9-66aed8541edb"
+    },
+    {
+      "body": "Applied 5cc0fa9e-f54e-45a2-9aa4-e059fb807c78 to greeting.py; check results are now stale",
+      "created": "2026-10-07 22:23:23",
+      "kind": "observation",
+      "source": "5cc0fa9e-f54e-45a2-9aa4-e059fb807c78",
+      "task": "40e8b204-bf43-481b-a5f9-66aed8541edb"
+    },
+    {
+      "body": "Applied d0aa75e0-9fed-4d6b-85d1-f9031e9186b6 to greeting.py; check results are now stale",
+      "created": "2026-10-07 22:23:23",
+      "kind": "observation",
+      "source": "d0aa75e0-9fed-4d6b-85d1-f9031e9186b6",
+      "task": "40e8b204-bf43-481b-a5f9-66aed8541edb"
+    },
+    {
+      "body": "Check Practice behavior: exit Some(1), timeout false, cancelled false, isolation Unisolated: trusted command in disposable source copy, snapshot 8db3ff9c3b7eb3c8f77738514c6e55cfceda4230cd53f306296b9c0ff3ed3f7a, evidence 3891a36a-37f8-44e4-8eea-c9cc5feb4624. Structured report contains 1 failing tests",
+      "created": "2026-10-07 22:23:24",
+      "kind": "failure",
+      "source": "3891a36a-37f8-44e4-8eea-c9cc5feb4624",
+      "task": "40e8b204-bf43-481b-a5f9-66aed8541edb"
+    }
+  ],
+  "project": "/workspace/.alt-pc-ready/pc-recorder-raw-1791411803103771800/report-openaiFalse/repair-state/practice/13fc5e50-28b1-4c64-9145-c1dd820500e8/project",
+  "tasks": [
+    {
+      "goal": "Repair greeting.py so greet(name) trims spaces and returns Hello, NAME!, using friend for an empty name. Preserve the function interface. Read the file, apply an edit, and run the configured Practice behavior check. Explain the actual result.",
+      "id": "practice-13fc5e50-28b1-4c64-9145-c1dd820500e8",
+      "next": "Read the actual failed cases and current implementation. Make a focused change, then rerun the original checks; a longer response does not establish a repair.",
+      "phase": "Results",
+      "plan": "Read greeting.py, reproduce the failed check, repair the greeting, rerun all four cases, then try undo."
+    },
+    {
+      "goal": "Repair greeting.py so greet(name) trims spaces and returns Hello, NAME!, using friend for an empty name. Preserve the function interface. Read the file, apply an edit, and run the configured Practice behavior check. Explain the actual result.",
+      "id": "40e8b204-bf43-481b-a5f9-66aed8541edb",
+      "next": "Read the actual failed cases and current implementation. Make a focused change, then rerun the original checks; a longer response does not establish a repair.",
+      "phase": "Results",
+      "plan": "Host workflow: inspect current source; reproduce with configured checks; patch using revision-bound handles; rerun required checks; recover from actual diagnostics."
+    }
+  ],
+  "verification": {
+    "behavioral_acceptance": false,
+    "complete": false,
+    "requirements": [
+      {
+        "check_kind": "tests",
+        "coverage": "independent behavioral assertion",
+        "evidence": "3891a36a-37f8-44e4-8eea-c9cc5feb4624",
+        "requirement": {
+          "check_name": "Practice behavior",
+          "description": "Repair greeting.py so greet(name) trims spaces and returns Hello, NAME!, using friend for an empty name. Preserve the function interface. Read the file, apply an edit, and run the configured Practice behavior check. Explain the actual result.",
+          "name": "Greeting works for all four cases"
+        },
+        "status": "could not complete"
+      }
+    ],
+    "scope": "Required checks are incomplete",
+    "source_snapshot": "8db3ff9c3b7eb3c8f77738514c6e55cfceda4230cd53f306296b9c0ff3ed3f7a"
+  }
+}

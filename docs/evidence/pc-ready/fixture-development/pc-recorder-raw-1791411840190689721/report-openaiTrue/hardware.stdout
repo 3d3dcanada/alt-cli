@@ -1,0 +1,50 @@
+{
+  "os": "linux",
+  "architecture": "x86_64",
+  "libc": "2.41",
+  "ram": 34359738368,
+  "available_ram": 6716850176,
+  "cpu_threads": 4,
+  "cpu_flags": [
+    "sse2",
+    "sse4_2",
+    "avx",
+    "avx2",
+    "avx512f"
+  ],
+  "gpu": "No NVIDIA GPU detected; CPU mode is available",
+  "driver": "Driver/free VRAM/compute capability unavailable",
+  "isolation": {
+    "available": false,
+    "detail": "Isolation is unavailable: bwrap: setting up uid map: Read-only file system\n"
+  },
+  "profiles": [
+    {
+      "name": "Low memory",
+      "context": 4096,
+      "model_hint": "1.7–3B Q4 GGUF; verify an uncensored derivative",
+      "estimated_weight_budget": 2147483648,
+      "explanation": "One loaded model, small context, leave RAM for the desktop and tools"
+    },
+    {
+      "name": "Balanced",
+      "context": 8192,
+      "model_hint": "3–4B Q4 GGUF; first evaluation target for 16 GB RAM",
+      "estimated_weight_budget": 2284683264,
+      "explanation": "A starting estimate. Weight size excludes KV cache, runtime and process memory"
+    },
+    {
+      "name": "More context",
+      "context": 16384,
+      "model_hint": "Use a model whose native context supports this size",
+      "estimated_weight_budget": 1210941440,
+      "explanation": "Run the capability check, then measure memory and latency. Reduce context on allocation failure"
+    }
+  ],
+  "notes": [
+    "RAM and discrete VRAM are separate budgets. Estimates do not guarantee fit or tool quality.",
+    "GTX 1070 is Pascal sm_61. Use a compatible CUDA 12 build or CPU runtime; CUDA 13-only binaries do not cover it.",
+    "Spark-X2.5 and MiMo are discoverable through arbitrary Hub search/compatible endpoints; publisher uncensored labels require separate verification.",
+    "The managed download defaults to CPU. Select a compatible GPU runtime and configure layers in Settings, or use an external Ollama/llama.cpp/LM Studio/ORA endpoint."
+  ]
+}

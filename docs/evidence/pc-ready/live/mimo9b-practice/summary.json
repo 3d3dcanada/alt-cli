@@ -1,0 +1,416 @@
+{
+  "schema": 2,
+  "created_utc": "2026-10-07T22:31:44.298150+00:00",
+  "os": "Linux-6.18.44-x86_64-with-glibc2.41",
+  "machine": "x86_64",
+  "binary_sha256": "74c03179c6bb1546fe7b3105d1d7ae697e14d075ab3d8453ce6c02e4df538f64",
+  "live_requested": true,
+  "checks": [
+    {
+      "name": "build",
+      "passed": true,
+      "category": "application",
+      "command_arguments": [
+        "build-info"
+      ],
+      "exit": 0,
+      "seconds": 0.004
+    },
+    {
+      "name": "hardware",
+      "passed": true,
+      "category": "application",
+      "command_arguments": [
+        "hardware"
+      ],
+      "exit": 0,
+      "seconds": 0.008
+    },
+    {
+      "name": "repair-prepare",
+      "passed": true,
+      "category": "application",
+      "command_arguments": [
+        "practice",
+        "--isolated-state",
+        "/workspace/.alt-pc-ready/live/mimo9b-practice/repair-state"
+      ],
+      "exit": 0,
+      "seconds": 0.016
+    },
+    {
+      "name": "seed-check",
+      "passed": true,
+      "category": "application",
+      "command_arguments": [
+        "task",
+        "check",
+        "Practice behavior"
+      ],
+      "exit": 1,
+      "seconds": 0.064
+    },
+    {
+      "name": "seed-independent",
+      "passed": true,
+      "category": "application",
+      "command_arguments": [
+        "/workspace/.alt-pc-ready/live/mimo9b-practice/independent-assertion.py"
+      ],
+      "exit": 1,
+      "seconds": 0.032
+    },
+    {
+      "name": "seed-independent-four-cases",
+      "passed": true,
+      "category": "application",
+      "executed": 4,
+      "failed": 3
+    },
+    {
+      "name": "repair-turn",
+      "passed": true,
+      "category": "native_transport",
+      "command_arguments": [
+        "run",
+        "Repair greeting.py so greet(name) trims spaces and returns Hello, NAME!, using friend for an empty name. Preserve the function interface. Read the file, apply an edit, and run the configured Practice behavior check. Explain the actual result.",
+        "--allow-tools",
+        "--json",
+        "--timeout",
+        "600"
+      ],
+      "exit": 0,
+      "normal_turn": true,
+      "seconds": 251.351
+    },
+    {
+      "name": "repair-independent",
+      "passed": true,
+      "category": "model_correctness",
+      "command_arguments": [
+        "/workspace/.alt-pc-ready/live/mimo9b-practice/independent-assertion.py"
+      ],
+      "exit": 0,
+      "seconds": 0.032
+    },
+    {
+      "name": "repair-independent-four-cases",
+      "passed": true,
+      "category": "model_correctness",
+      "executed": 4,
+      "failed": 0
+    },
+    {
+      "name": "repair-verification",
+      "passed": true,
+      "category": "model_correctness",
+      "command_arguments": [
+        "task",
+        "verify",
+        "--run"
+      ],
+      "exit": 0,
+      "seconds": 0.064
+    },
+    {
+      "name": "repair-export",
+      "passed": true,
+      "category": "application",
+      "command_arguments": [
+        "task",
+        "export"
+      ],
+      "exit": 0,
+      "seconds": 0.008
+    },
+    {
+      "name": "native-tracked-repair",
+      "passed": true,
+      "category": "native_transport"
+    },
+    {
+      "name": "followup-turn",
+      "passed": true,
+      "category": "native_transport",
+      "command_arguments": [
+        "run",
+        "Continue the original greeting repair. Read the current file and run Practice behavior again. Preserve the original interface and requirements. Report the actual check result and remaining failures.",
+        "--resume",
+        "23f1729e-48df-40d7-9a68-1071d0910267",
+        "--allow-tools",
+        "--json",
+        "--timeout",
+        "600"
+      ],
+      "exit": 0,
+      "normal_turn": true,
+      "seconds": 193.791
+    },
+    {
+      "name": "original-goal-forwarded",
+      "passed": true,
+      "category": "application",
+      "requests": 2
+    },
+    {
+      "name": "followup-independent",
+      "passed": true,
+      "category": "model_correctness",
+      "command_arguments": [
+        "/workspace/.alt-pc-ready/live/mimo9b-practice/independent-assertion.py"
+      ],
+      "exit": 0,
+      "seconds": 0.032
+    },
+    {
+      "name": "followup-independent-four-cases",
+      "passed": true,
+      "category": "model_correctness",
+      "executed": 4,
+      "failed": 0
+    },
+    {
+      "name": "followup-verification",
+      "passed": true,
+      "category": "model_correctness",
+      "command_arguments": [
+        "task",
+        "verify",
+        "--run"
+      ],
+      "exit": 0,
+      "seconds": 0.064
+    },
+    {
+      "name": "cancel-turn",
+      "passed": true,
+      "category": "recovery",
+      "command_arguments": [
+        "run",
+        "Inspect the current greeting implementation and explain its behavior in detail. Do not edit files or execute commands for this message.",
+        "--resume",
+        "23f1729e-48df-40d7-9a68-1071d0910267",
+        "--json",
+        "--timeout",
+        "600"
+      ],
+      "interrupt_after_issued_request": true,
+      "exit": 1,
+      "seconds": 10.851
+    },
+    {
+      "name": "cancel-preserves-files",
+      "passed": true,
+      "category": "recovery"
+    },
+    {
+      "name": "resume-after-cancel",
+      "passed": true,
+      "category": "recovery",
+      "command_arguments": [
+        "run",
+        "Continue the original greeting repair. Read the current file and run Practice behavior again. Preserve the original interface and requirements. Report the actual check result and remaining failures.",
+        "--resume",
+        "23f1729e-48df-40d7-9a68-1071d0910267",
+        "--allow-tools",
+        "--json",
+        "--timeout",
+        "600"
+      ],
+      "exit": 0,
+      "normal_turn": true,
+      "seconds": 210.17
+    },
+    {
+      "name": "resumed-independent",
+      "passed": true,
+      "category": "model_correctness",
+      "command_arguments": [
+        "/workspace/.alt-pc-ready/live/mimo9b-practice/independent-assertion.py"
+      ],
+      "exit": 0,
+      "seconds": 0.032
+    },
+    {
+      "name": "resumed-independent-four-cases",
+      "passed": true,
+      "category": "model_correctness",
+      "executed": 4,
+      "failed": 0
+    },
+    {
+      "name": "resumed-verification",
+      "passed": true,
+      "category": "model_correctness",
+      "command_arguments": [
+        "task",
+        "verify",
+        "--run"
+      ],
+      "exit": 0,
+      "seconds": 0.064
+    },
+    {
+      "name": "saved-session",
+      "passed": true,
+      "category": "application",
+      "command_arguments": [
+        "export",
+        "23f1729e-48df-40d7-9a68-1071d0910267"
+      ],
+      "exit": 0,
+      "seconds": 0.008
+    },
+    {
+      "name": "persisted-original-goal",
+      "passed": true,
+      "category": "recovery"
+    },
+    {
+      "name": "final-task-export",
+      "passed": true,
+      "category": "application",
+      "command_arguments": [
+        "task",
+        "export"
+      ],
+      "exit": 0,
+      "seconds": 0.008
+    },
+    {
+      "name": "undo-1",
+      "passed": true,
+      "category": "recovery",
+      "command_arguments": [
+        "task",
+        "undo-all",
+        "23f1729e-48df-40d7-9a68-1071d0910267"
+      ],
+      "exit": 0,
+      "seconds": 0.008
+    },
+    {
+      "name": "undo-restores-seed",
+      "passed": true,
+      "category": "recovery"
+    },
+    {
+      "name": "undo-verification",
+      "passed": true,
+      "category": "recovery",
+      "command_arguments": [
+        "task",
+        "verify"
+      ],
+      "exit": 1,
+      "seconds": 0.004
+    },
+    {
+      "name": "undo-independent",
+      "passed": true,
+      "category": "application",
+      "command_arguments": [
+        "/workspace/.alt-pc-ready/live/mimo9b-practice/independent-assertion.py"
+      ],
+      "exit": 1,
+      "seconds": 0.032
+    },
+    {
+      "name": "undo-independent-four-cases",
+      "passed": true,
+      "category": "application",
+      "executed": 4,
+      "failed": 3
+    },
+    {
+      "name": "original-assertions-unchanged",
+      "passed": true,
+      "category": "application"
+    },
+    {
+      "name": "normal-settings-unchanged",
+      "passed": true,
+      "category": "application"
+    }
+  ],
+  "gpu_measurement_status": "Unqualified by inventory alone; inspect sampled per-runtime VRAM in model-qualification.stdout when performed",
+  "scope": "Local application, hardware, transport, repair correctness and recovery evidence. Reports are not uploaded; the selected endpoint receives prompts/tool results. Full access keeps host permissions. Review raw reports before sharing.",
+  "selection": {
+    "active_skill": null,
+    "artifact": {
+      "bytes": 5629106560,
+      "id": "00877ff79174b79f72c5ec704901fc958400a0b0d390fb61a068281618116dd1",
+      "license": "Imported file \u2014 check its publisher's license",
+      "name": "MiMo-V2.6-Distill-Qwen-9B-heretic.Q4_K_M.gguf",
+      "path": "/tmp/alt-native-requalification/MiMo-V2.6-Distill-Qwen-9B-heretic.Q4_K_M.gguf",
+      "pieces": [],
+      "sha256": "00877ff79174b79f72c5ec704901fc958400a0b0d390fb61a068281618116dd1",
+      "source": null,
+      "uncensored_claim": true
+    },
+    "engine_path": "/workspace/.alt-tools/goose",
+    "instruction_version": null,
+    "profile": {
+      "api_key_env": null,
+      "context_tokens": 8192,
+      "endpoint": "http://127.0.0.1:8080/v1",
+      "inference": {
+        "action_headroom": 256,
+        "llama_extensions": false,
+        "max_requests": 12,
+        "min_p": null,
+        "output_parameter": "max_tokens",
+        "output_tokens": 1024,
+        "reasoning_tokens": 128,
+        "temperature": 0.0,
+        "top_k": null,
+        "top_p": null,
+        "total_generated_tokens": 8192,
+        "version": 1
+      },
+      "local_model": "00877ff79174b79f72c5ec704901fc958400a0b0d390fb61a068281618116dd1",
+      "max_turns": 12,
+      "model": "MiMo-V2.6-Distill-Qwen-9B-heretic.Q4_K_M.gguf",
+      "provider": "openai",
+      "uncensored": true
+    },
+    "runtime": {
+      "batch": 128,
+      "cache_k": "f16",
+      "cache_v": "f16",
+      "flash_attention": false,
+      "gpu_layers": 0,
+      "thinking": null,
+      "threads": 2
+    },
+    "runtime_path": "/workspace/.alt-tools/llama-b11429/llama-b11429/llama-server",
+    "scope": "Copied selection; weights are reused in place and still integrity-checked by the runtime. External weight identity remains unqualified.",
+    "tool_profile": "compact",
+    "workflow": "host"
+  },
+  "repair_outcomes": {
+    "first": true,
+    "followup": true,
+    "after_cancel": true
+  },
+  "repair_status": "Performed in disposable state; inspect separate correctness, transport and recovery outcomes",
+  "outcomes": {
+    "application": {
+      "passed": true,
+      "checks": 14
+    },
+    "model_correctness": {
+      "passed": true,
+      "checks": 9
+    },
+    "native_transport": {
+      "passed": true,
+      "checks": 3
+    },
+    "recovery": {
+      "passed": true,
+      "checks": 7
+    }
+  },
+  "passed": true
+}

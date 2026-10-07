@@ -1,0 +1,251 @@
+{
+  "configuration": {
+    "oracle_version": 5,
+    "context_scope": "Managed runtime native window and engine budget",
+    "model_file": "MiMo-V2.6-Distill-Qwen-9B-heretic.Q4_K_M.gguf",
+    "sha256": "00877ff79174b79f72c5ec704901fc958400a0b0d390fb61a068281618116dd1",
+    "bytes": 5629106560,
+    "uncensored": "Explicit user-selected publisher-labelled uncensored/abliterated artifact; no fallback",
+    "provider": "openai",
+    "endpoint": null,
+    "model_id": null,
+    "runtime": "/workspace/.alt-tools/llama-b11429/llama-b11429/llama-server",
+    "contexts": [
+      8192
+    ],
+    "repeats": 1,
+    "timeout_seconds": 600,
+    "binary_sha256": "74c03179c6bb1546fe7b3105d1d7ae697e14d075ab3d8453ce6c02e4df538f64",
+    "physical_gpu_tested": false,
+    "verification_plan": true,
+    "history_notes": 0,
+    "cases": [
+      "rust-feature"
+    ],
+    "partition": "development",
+    "tool_profile": "compact",
+    "threads": 2,
+    "batch": 128,
+    "engine_sha256": "59655719cd9b098dab59b6e2c50f1e565a935992fae2e539f52018a960e0512a",
+    "runtime_sha256": "5faf410bbbc00a1b94b09ee01623699f255365628dfa73b1ee552d9e52a2231d",
+    "fixture_sha256": "751f2b8b514b3d62a854f88f7978a1b6867c4ffad403a40ce3da47b0e274f172",
+    "suite": "v5",
+    "interface": "cli",
+    "instruction_sha256": null,
+    "inference": {
+      "output_tokens": 1024,
+      "reasoning_tokens": 128,
+      "temperature": 0.0,
+      "top_p": null,
+      "workflow": "host",
+      "skill": null,
+      "generated_tokens": 8192,
+      "requests": 12
+    },
+    "oracle_code_sha256": {
+      "acceptance_projects.py": "453f27af5b3cc558a2190620cee195a392e0a0a45889f43569b96e85765cd32a",
+      "acceptance_extra.py": "2a724e6da5673cb581b3b2c54d338a62bbc917f1753b7edf2774f9e2e005148d",
+      "acceptance_v5.py": "0f669daa7bbe060b131d79e2294ec026e419467be38d969c77f5dfefb897dea7",
+      "live_tui_turn.py": "ff284fbffaaaccdd7d597590cf447e76b18757247b14678b63c332e11b8a0425"
+    }
+  },
+  "attempts": [
+    {
+      "case": "rust-feature",
+      "context": 8192,
+      "repeat": 1,
+      "passed": false,
+      "cli_exit": 1,
+      "process_exit": 1,
+      "interface": "cli",
+      "wall_seconds": 611.19,
+      "outer_timeout": false,
+      "sampled_alt_tree_peak_rss_bytes": 11237408768,
+      "rss_scope": "Alt, Goose and managed inference runtime",
+      "vram": null,
+      "oracle_unchanged": true,
+      "failed_tool_updates": 4,
+      "prose_accuracy": "Retained for manual assessment; not inferred from process exit",
+      "inference_cost": {
+        "requests": 12,
+        "charged_generated_tokens": 2136,
+        "known_generated_tokens": null
+      },
+      "runtime_timings": {
+        "scope": "Actual server-reported timings for completed responses, not inferred elapsed time",
+        "measured_responses": 11,
+        "responses": [
+          {
+            "response": "state/inference/43b8bcc7-ff96-403c-b422-ec97a3134f39/942be581-2049-4847-b8b1-23cae9cdfbd3-response.raw",
+            "timings": {
+              "cache_n": 0,
+              "prompt_n": 2050,
+              "prompt_ms": 113746.82,
+              "prompt_per_token_ms": 55.48625365853659,
+              "prompt_per_second": 18.022481859273075,
+              "predicted_n": 33,
+              "predicted_ms": 6218.955,
+              "predicted_per_token_ms": 194.34234375,
+              "predicted_per_second": 5.1455590207679585
+            }
+          },
+          {
+            "response": "state/inference/43b8bcc7-ff96-403c-b422-ec97a3134f39/3e991f2a-f63e-482e-8cb8-98e6a08755a9-response.raw",
+            "timings": {
+              "cache_n": 2082,
+              "prompt_n": 62,
+              "prompt_ms": 4841.685,
+              "prompt_per_token_ms": 78.0916935483871,
+              "prompt_per_second": 12.80545925643655,
+              "predicted_n": 365,
+              "predicted_ms": 69197.66,
+              "predicted_per_token_ms": 190.10346153846154,
+              "predicted_per_second": 5.260293483912606
+            }
+          },
+          {
+            "response": "state/inference/43b8bcc7-ff96-403c-b422-ec97a3134f39/0e10ff60-53b4-47b5-bb11-d7721b69c478-response.raw",
+            "timings": {
+              "cache_n": 2508,
+              "prompt_n": 311,
+              "prompt_ms": 18326.585,
+              "prompt_per_token_ms": 58.92792604501607,
+              "prompt_per_second": 16.969882823231934,
+              "predicted_n": 23,
+              "predicted_ms": 4537.911,
+              "predicted_per_token_ms": 206.26868181818182,
+              "predicted_per_second": 4.848045719715525
+            }
+          },
+          {
+            "response": "state/inference/43b8bcc7-ff96-403c-b422-ec97a3134f39/c7d900d3-290d-49fa-a9a1-4d47115213a1-response.raw",
+            "timings": {
+              "cache_n": 2841,
+              "prompt_n": 317,
+              "prompt_ms": 25569.843,
+              "prompt_per_token_ms": 80.66196529968454,
+              "prompt_per_second": 12.397416753790782,
+              "predicted_n": 94,
+              "predicted_ms": 19921.884,
+              "predicted_per_token_ms": 214.2138064516129,
+              "predicted_per_second": 4.668233185174656
+            }
+          },
+          {
+            "response": "state/inference/43b8bcc7-ff96-403c-b422-ec97a3134f39/e8f952b8-180b-41db-9135-9c94d713e18d-response.raw",
+            "timings": {
+              "cache_n": 3251,
+              "prompt_n": 93,
+              "prompt_ms": 6419.172,
+              "prompt_per_token_ms": 69.02335483870968,
+              "prompt_per_second": 14.487849834838514,
+              "predicted_n": 93,
+              "predicted_ms": 20345.646,
+              "predicted_per_token_ms": 221.14832608695653,
+              "predicted_per_second": 4.521851997228301
+            }
+          },
+          {
+            "response": "state/inference/43b8bcc7-ff96-403c-b422-ec97a3134f39/a702a065-b61a-4239-b3a5-710fb75a5aa6-response.raw",
+            "timings": {
+              "cache_n": 3436,
+              "prompt_n": 133,
+              "prompt_ms": 8559.034,
+              "prompt_per_token_ms": 64.35363909774436,
+              "prompt_per_second": 15.53913677641659,
+              "predicted_n": 64,
+              "predicted_ms": 12413.842,
+              "predicted_per_token_ms": 197.0451111111111,
+              "predicted_per_second": 5.074980010217626
+            }
+          },
+          {
+            "response": "state/inference/43b8bcc7-ff96-403c-b422-ec97a3134f39/2a0bbc23-f1e2-49ce-b705-d2f65d269f27-response.raw",
+            "timings": {
+              "cache_n": 3632,
+              "prompt_n": 177,
+              "prompt_ms": 11105.396,
+              "prompt_per_token_ms": 62.74235028248588,
+              "prompt_per_second": 15.938197971508623,
+              "predicted_n": 78,
+              "predicted_ms": 15609.973,
+              "predicted_per_token_ms": 202.72692207792207,
+              "predicted_per_second": 4.932743957981221
+            }
+          },
+          {
+            "response": "state/inference/43b8bcc7-ff96-403c-b422-ec97a3134f39/22fefbf1-39ce-4312-bd89-e2e35266e667-response.raw",
+            "timings": {
+              "cache_n": 3886,
+              "prompt_n": 82,
+              "prompt_ms": 5600.843,
+              "prompt_per_token_ms": 68.30296341463415,
+              "prompt_per_second": 14.64065320166982,
+              "predicted_n": 79,
+              "predicted_ms": 15712.881,
+              "predicted_per_token_ms": 201.4471923076923,
+              "predicted_per_second": 4.964080107269953
+            }
+          },
+          {
+            "response": "state/inference/43b8bcc7-ff96-403c-b422-ec97a3134f39/a7f9db77-d7f3-4e17-883e-857a43af7db2-response.raw",
+            "timings": {
+              "cache_n": 4046,
+              "prompt_n": 569,
+              "prompt_ms": 43006.024,
+              "prompt_per_token_ms": 75.58176449912126,
+              "prompt_per_second": 13.230704610126246,
+              "predicted_n": 131,
+              "predicted_ms": 28726.374,
+              "predicted_per_token_ms": 220.9721076923077,
+              "predicted_per_second": 4.525458033791526
+            }
+          },
+          {
+            "response": "state/inference/43b8bcc7-ff96-403c-b422-ec97a3134f39/63005bb8-1104-418e-b72e-fdd55b56bbfa-response.raw",
+            "timings": {
+              "cache_n": 4745,
+              "prompt_n": 167,
+              "prompt_ms": 11603.631,
+              "prompt_per_token_ms": 69.48282035928143,
+              "prompt_per_second": 14.392046765361636,
+              "predicted_n": 95,
+              "predicted_ms": 19118.198,
+              "predicted_per_token_ms": 203.38508510638297,
+              "predicted_per_second": 4.916781382847902
+            }
+          },
+          {
+            "response": "state/inference/43b8bcc7-ff96-403c-b422-ec97a3134f39/d96c7a3b-f97d-417d-919c-847a2234fbda-response.raw",
+            "timings": {
+              "cache_n": 5006,
+              "prompt_n": 136,
+              "prompt_ms": 9604.024,
+              "prompt_per_token_ms": 70.61782352941177,
+              "prompt_per_second": 14.160730960272486,
+              "predicted_n": 57,
+              "predicted_ms": 11778.746,
+              "predicted_per_token_ms": 210.33474999999999,
+              "predicted_per_second": 4.754326139641691
+            }
+          }
+        ],
+        "prefill_ms": 258383.057,
+        "generation_ms": 223582.07
+      },
+      "task_group": "rust-feature",
+      "source_sha256": "a667bd1e29bce6c30427a80396cb13bafcd3066548f93dd66e7ac70b10ca9463",
+      "inference_requests": 12,
+      "scores": {
+        "source_behavior_passed": false,
+        "turn_completed": false,
+        "transport_turn_ended": false,
+        "stop_reason": "cancelled",
+        "claim_accuracy": "unassessed: use retained prose and evidence; no automatic success-claim inference"
+      }
+    }
+  ],
+  "passed": 0,
+  "total": 1,
+  "scope": "Seeded small projects; every attempt retained. These measurements do not establish arbitrary task reliability or GPU performance."
+}

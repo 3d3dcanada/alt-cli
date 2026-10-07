@@ -1,0 +1,80 @@
+{
+  "schema": 1,
+  "binary_sha256": "1017658ccff02ea2a8d4ae7135c63f98e101257e61f21d51d7bb4f957f512428",
+  "passed": true,
+  "attempts": [
+    {
+      "provider": "openai",
+      "incorrect_fixture": false,
+      "expected_outcome_observed": true,
+      "recorder_passed": true,
+      "outcomes": {
+        "application": {
+          "passed": true,
+          "checks": 14
+        },
+        "model_correctness": {
+          "passed": true,
+          "checks": 9
+        },
+        "native_transport": {
+          "passed": true,
+          "checks": 3
+        },
+        "recovery": {
+          "passed": true,
+          "checks": 7
+        }
+      }
+    },
+    {
+      "provider": "ollama",
+      "incorrect_fixture": false,
+      "expected_outcome_observed": true,
+      "recorder_passed": true,
+      "outcomes": {
+        "application": {
+          "passed": true,
+          "checks": 14
+        },
+        "model_correctness": {
+          "passed": true,
+          "checks": 9
+        },
+        "native_transport": {
+          "passed": true,
+          "checks": 3
+        },
+        "recovery": {
+          "passed": true,
+          "checks": 7
+        }
+      }
+    },
+    {
+      "provider": "openai",
+      "incorrect_fixture": true,
+      "expected_outcome_observed": true,
+      "recorder_passed": false,
+      "outcomes": {
+        "application": {
+          "passed": true,
+          "checks": 14
+        },
+        "model_correctness": {
+          "passed": false,
+          "checks": 9
+        },
+        "native_transport": {
+          "passed": true,
+          "checks": 3
+        },
+        "recovery": {
+          "passed": true,
+          "checks": 7
+        }
+      }
+    }
+  ],
+  "scope": "Weight-free fixtures with actual Alt/Goose and PC recorder; no measured model intelligence"
+}

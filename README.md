@@ -17,16 +17,15 @@ installation and external tools with your normal account permissions.
 
 ![Alt's actual 80×24 TUI after a MiMo 9B Q4 model repair and independent checks](docs/screenshots/v6/native-model-repair-80x24.png)
 
-**Status: 0.6.0 beta · Linux x86_64 · Apache-2.0.** The screenshot shows an actual
+**Status: 0.6.0 beta 2 · Linux x86_64 · Apache-2.0.** The screenshot shows an actual
 CPU MiMo 9B Q4 repair through the TUI, after the unchanged independent checks passed.
 Model reliability and hardware support are measured separately from
 application tests. [Read the results and remaining gaps](docs/IMPLEMENTATION.md).
 
-**New on `main`:** explicit inference allocation, host task workflows, bounded
+**Included in beta 2:** explicit inference allocation, host task workflows, bounded
 skills, source handles, serial checked candidates, reviewed instruction trials
 and offline training tools. Compact text/line-array tool choices reduce repeated
-context and provide updated source handles after edits. Build from source to use these additions; the older
-published archive predates them. See [the usage guide](docs/SMALL_MODEL_USAGE.md)
+context and provide updated source handles after edits. The current beta includes these additions. See [the usage guide](docs/SMALL_MODEL_USAGE.md)
 and [work-order delivery and evidence](docs/SMALL_MODEL_DELIVERY.md). No weights
 have been trained or new quality presets promoted.
 
@@ -40,9 +39,18 @@ The longer CPU allowance differs from the earlier 22 failures.
 The current continuation fix also passed a separate real two-turn MiMo TUI trial;
 the earlier failed continuation attempt is retained in that evidence.
 
+The [PC completion work orders](docs/PC_READY_WORK_ORDERS.md) add observed
+request stages, remaining connection allowances, explicit finite additions and
+reviewed allocation recovery without changing the model. Failed checks return
+actual failed cases and fresh source handles; repeated failures/source cycles
+produce advisory recovery feedback. The PC recorder now verifies a real repair,
+continuation, cancellation/reconnect and undo in disposable state. See the
+[current compatibility evidence](docs/COMPATIBILITY.md) for separate application
+and model-quality outcomes.
+
 ## Try it on your computer
 
-Download [Alt v0.6.0-beta.1](https://github.com/3d3dcanada/alt-cli/releases/tag/v0.6.0-beta.1)
+Download [Alt v0.6.0-beta.2](https://github.com/3d3dcanada/alt-cli/releases/tag/v0.6.0-beta.2)
 for Linux x86_64. See [Installation](docs/INSTALLATION.md) for archive and GitHub
 provenance verification, then follow [PC testing](docs/PC_TESTING.md). You can also
 build from source below.
@@ -160,7 +168,7 @@ Keys are referenced by environment-variable name, not saved in model profiles.
 - [Implementation and evidence](docs/IMPLEMENTATION.md) · [Current work orders](docs/WORK_ORDERS_0.6.md) · [PC test guide](docs/PC_TESTING.md)
 - [Research and project history](docs/research/README.md) · [Documentation index](docs/README.md)
 
-Current source validation includes **119 Rust tests**, strict Clippy, both adapter
+Current source validation includes **123 Rust tests**, strict Clippy, both adapter
 fixtures for both compact edit formats, and actual small-terminal permission,
 edit/check/undo and conversation-continuation journeys. Compact follow-ups retain
 the complete original request as context, with the latest user message taking

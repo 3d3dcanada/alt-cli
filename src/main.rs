@@ -34,7 +34,11 @@ struct Args {
 #[derive(Subcommand)]
 enum Action {
     /// Create a fresh practice project with a failing seed, real checks and undo.
-    Practice,
+    Practice {
+        /// Prepare a new test state using the exact selected profile, without copying weights or changing normal settings.
+        #[arg(long)]
+        isolated_state: Option<PathBuf>,
+    },
     /// Embedded source, compiler and target provenance; does not open saved state.
     BuildInfo,
     /// Optional language-server references or reviewable identifier rename.
@@ -567,7 +571,19 @@ async fn run() -> Result<()> {
     let root = root.canonicalize()?;
     let command = args.command.unwrap_or(Action::Tui { resume: None });
     match command {
-        Action::Practice => {
+        Action::Practice { isolated_state } => {
+            if let Some(destination) = isolated_state {
+                println!(
+                    "{}",
+                    serde_json::to_string_pretty(&alt_cli::practice::prepare_test(
+                        &root,
+                        &destination,
+                        args.profile.as_deref(),
+                        &args.engine
+                    )?)?
+                );
+                return Ok(());
+            }
             println!(
                 "{}",
                 serde_json::to_string_pretty(&alt_cli::practice::create(&root)?)?

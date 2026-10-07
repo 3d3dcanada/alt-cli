@@ -337,6 +337,7 @@ pub struct App {
     pub trust_session: bool,
     pub context_used: Option<u64>,
     pub context_size: Option<u64>,
+    pub inference_status: Option<crate::inference::Status>,
     pub brief: String,
     pub job: Option<Job>,
     pub job_tx: mpsc::Sender<ScopedJobEvent>,
@@ -452,6 +453,7 @@ impl App {
             trust_session: false,
             context_used: None,
             context_size: None,
+            inference_status: None,
             brief,
             job: None,
             job_tx: tx,
@@ -723,6 +725,7 @@ impl App {
         self.trust_session = false;
         self.context_used = None;
         self.context_size = None;
+        self.inference_status = None;
         self.chat_scroll = 0;
         if options.resume.is_some() {
             for event in history {
@@ -891,6 +894,7 @@ impl App {
                 self.error(error);
             }
             workspace::Update::Progress(progress) => self.notify(progress.stage),
+            workspace::Update::Inference(status) => self.inference_status = Some(status),
             workspace::Update::Closed => {
                 self.connected = false;
                 self.connecting = false;

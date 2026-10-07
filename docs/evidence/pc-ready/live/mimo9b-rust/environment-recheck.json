@@ -1,0 +1,15 @@
+{
+  "scope": "Post-environment check of exact retained source; no new model output, no oracle/source edits. Original failed run remains unchanged.",
+  "CARGO_HOME": "/workspace/.cargo",
+  "RUSTUP_HOME": "/workspace/.rustup",
+  "exit": 1,
+  "stdout": "\nrunning 1 test\ntest behavior ... FAILED\n\nfailures:\n\n---- behavior stdout ----\n\nthread 'behavior' (396354) panicked at src/lib.rs:2:23:\nassertion `left == right` failed\n  left: Some(0.0)\n right: Some(-0.5)\nnote: run with `RUST_BACKTRACE=1` environment variable to display a backtrace\n\n\nfailures:\n    behavior\n\ntest result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s\n\n",
+  "stderr": "     Locking 1 package to highest compatible version\n   Compiling fixture_stats v0.1.0 (/workspace/.alt-pc-ready/live/mimo9b-rust/8192-rust-feature-1/project)\n   Compiling independent_oracle v0.1.0 (/tmp/alt-rust-oracle-mh95np7v/independent)\nwarning: unused import: `fixture_stats::median`\n --> src/lib.rs:1:5\n  |\n1 | use fixture_stats::median;\n  |     ^^^^^^^^^^^^^^^^^^^^^\n  |\n  = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default\n\nwarning: `independent_oracle` (lib) generated 1 warning (run `cargo fix --lib -p independent_oracle` to apply 1 suggestion)\n    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.35s\n     Running unittests src/lib.rs (/tmp/alt-rust-oracle-mh95np7v/target/debug/deps/independent_oracle-c1a437ea92f77e00)\nerror: test failed, to rerun pass `--lib`\n",
+  "seconds": 0.4254242150054779,
+  "oracle_sha256": {
+    "completion.json": "356e512bc031a1ef132c4aeb57fe2989f1ade2df8b5719fcaf4548491152dca8",
+    "check.py": "ec5c3d7076ec7a606135cc9445a4932802db73d50f8d13c641bae714a2f5085d",
+    "src/lib.rs": "942eeda306422d082f001ee4a730b80bbc753cf5f1f67d2e3f16fe938be4ca5a"
+  },
+  "source": "a667bd1e29bce6c30427a80396cb13bafcd3066548f93dd66e7ac70b10ca9463"
+}

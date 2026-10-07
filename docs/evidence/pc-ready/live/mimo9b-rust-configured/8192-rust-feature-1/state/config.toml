@@ -1,0 +1,21 @@
+default_profile = "Local: MiMo-V2.6-Distill-Qwen-9B-heretic.Q4_K_M.gguf"
+
+[profiles."Local: MiMo-V2.6-Distill-Qwen-9B-heretic.Q4_K_M.gguf"]
+provider = "openai"
+endpoint = "http://127.0.0.1:8080/v1"
+model = "MiMo-V2.6-Distill-Qwen-9B-heretic.Q4_K_M.gguf"
+context_tokens = 8192
+max_turns = 12
+uncensored = true
+local_model = "00877ff79174b79f72c5ec704901fc958400a0b0d390fb61a068281618116dd1"
+
+[profiles."Local: MiMo-V2.6-Distill-Qwen-9B-heretic.Q4_K_M.gguf".inference]
+version = 1
+output_tokens = 1024
+action_headroom = 256
+reasoning_tokens = 128
+temperature = 0.0
+llama_extensions = false
+total_generated_tokens = 8192
+max_requests = 12
+output_parameter = "max_tokens"

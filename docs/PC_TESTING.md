@@ -5,24 +5,12 @@ the exact model you choose; Alt does not need to switch providers to run them.
 
 ## Install and check the application
 
-The new small-model work orders are in the current `main` source. Older published
-0.6 packages predate them. To test these additions, build the current checkout:
-
-```bash
-git clone https://github.com/3d3dcanada/alt-cli.git
-cd alt-cli
-cargo build --locked --release
-python3 scripts/test-my-pc.py --alt target/release/alt
-```
-
-Rust is required for this source build. The [small-model guide](SMALL_MODEL_USAGE.md)
-explains the new labelled settings and workflows; use that build in the commands
-below by substituting `target/release/alt` for the installed executable.
-
-Download the Linux x86_64 package from the project's GitHub Releases page,
+Download the Linux x86_64 package from
+[v0.6.0-beta.2](https://github.com/3d3dcanada/alt-cli/releases/tag/v0.6.0-beta.2),
 verify it as described in [Installation](INSTALLATION.md), extract it, and run
-`bash install.sh`. No Rust compiler is needed for a packaged release. Python 3
-is required for the installer, practice checks and the test recorder.
+`bash install.sh`. No Rust compiler is needed. Python 3.8+ is required for the
+installer, practice checks and test recorder. Beta 1 predates the latest harness
+and recorder work.
 
 From the extracted package, run:
 
@@ -33,6 +21,18 @@ python3 test-my-pc.py --alt "$HOME/.local/bin/alt"
 This records the exact build, operating system and hardware without inference.
 The new `alt-pc-results-*` folder contains a summary and raw results. An error
 stays in the report; the recorder does not change settings to make a check pass.
+
+You can also build the current source with Rust 1.99.0:
+
+```bash
+git clone https://github.com/3d3dcanada/alt-cli.git
+cd alt-cli
+cargo build --locked --release
+python3 scripts/test-my-pc.py --alt target/release/alt
+```
+
+For source builds, substitute `scripts/test-my-pc.py` and `target/release/alt`
+for the packaged recorder/executable in the commands below.
 
 ## Complete the practice task
 
@@ -66,9 +66,40 @@ python3 test-my-pc.py --alt "$HOME/.local/bin/alt" --live --contexts 2048,4096,8
 
 Use `--data-dir /your/alt/state` or `--profile NAME` if you use a custom setup.
 The live run measures load/generation and cancellation/restart where Alt owns the
-runtime, then probes native tool use. External runtime lifecycle is explicitly
-unmeasured. A failed connection or inadequate memory remains a failed attempt.
+runtime, probes native tool use, then creates a new test state using your exact
+selection. It reproduces the practice failure, asks for a real repair, checks all
+four cases independently, sends a follow-up, interrupts an issued request,
+reconnects to the saved task, and undoes tracked edits. Your normal settings and
+project source are preserved. No weights are downloaded or copied. External
+runtime lifecycle is explicitly unmeasured. A failed connection or inadequate memory remains a failed attempt.
 These commands can take several minutes per context on an older CPU.
+
+For the shorter repair/recovery trial:
+
+```bash
+python3 test-my-pc.py --alt "$HOME/.local/bin/alt" --live --repair-only
+```
+
+`--repair-timeout 600` is the default per model turn, with a separate startup
+margin. The full recorder can take tens of minutes on an older CPU. Reports
+separate application, hardware/runtime, native transport, model correctness and
+recovery. A normal response with incorrect source remains a failed repair.
+Inspect `summary.json`, independent case reports and raw output. Reports are not
+uploaded; your selected endpoint receives the model requests and tool results.
+Full access keeps normal host permissions during the disposable test.
+
+In Chat, the observed waiting stage includes server queueing and prompt processing;
+it does not claim measured reasoning. Prompt counts can be unknown for external
+servers. Remaining tokens exclude reservations for requests still running. The
+allowance is shared across messages on the same connection. After exhaustion,
+choose **Allowance → Add a finite allowance**, enter extra calls/tokens, and
+confirm. Nothing runs until you send a message. Spent costs remain charged.
+
+For an input-reserve error, save a smaller output allocation or a larger measured
+native context in Settings/Connections. Then choose **Allowance → Apply saved
+allocation and reconnect**, review the changes, and confirm. This keeps the saved
+task and model and records a new connection; older receipts remain available.
+Source builds show their commit in the TUI header; beta builds show their exact tag.
 
 Keep your normal 7B/9B Q4 checkpoint. In **Settings → Model and runtime settings**,
 record the output allowance, reasoning budget, temperature, context and runtime

@@ -1133,10 +1133,17 @@ impl Project {
             && !result.timed_out
             && !result.cancelled
             && result.error.is_none();
+        let recovery = if passed {
+            None
+        } else {
+            crate::workflow::recovery(self, &result.task)?
+        };
         self.phase(
             &result.task,
             "Results",
-            if passed {
+            if let Some(hint) = recovery.as_ref().and_then(|r| r["hint"].as_str()) {
+                hint
+            } else if passed {
                 "Review the changes and what this check covers"
             } else {
                 "Inspect the failed check before making another change"

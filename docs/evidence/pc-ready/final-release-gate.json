@@ -1,0 +1,73 @@
+{
+  "schema": 1,
+  "archive": "alt-0.6.0-linux-x86_64.tar.gz",
+  "archive_sha256": "8beb53888c0b890ee870639a8331c3a2b615726bbcc3065fd5f5ae2c7e631134",
+  "previous_sha256": "f61dc2b54059b6b1c185540f24ca5480804c7d3253c5eb600510026eec7f1b90",
+  "upgrade_gate": "measured",
+  "checks": [
+    {
+      "name": "installed-integrity-upgrade-rollback",
+      "passed": true,
+      "exit": 0,
+      "seconds": 21.1557068109978,
+      "stdout": "PASS: file creation/edit/preview/undo, empty filtered list, empty-file edit, pinned context, MCP setup/tool selection, diagnostics, PTY input/persistence/reconnect/stop, narrow terminal and restored terminal settings\nPASS: archive, every-file integrity including PYTHONOPTIMIZE=0/1/2, isolated repeated install, failed update preserves binary, state backup/restore, docs/licenses; actual previous-version upgrade/rollback/re-upgrade; installed TUI\n",
+      "stderr": ""
+    },
+    {
+      "name": "official-cyclonedx-schema",
+      "passed": true,
+      "exit": 0,
+      "seconds": 1.736567259998992,
+      "stdout": "{\n  \"schema\": \"CycloneDX 1.6\",\n  \"components\": 314,\n  \"schema_sha256\": {\n    \"bom-1.6.schema.json\": \"3e92dddbc30cf7f6a02b80f0942b1a4cfd4fb1c26f1dfc4310afa9d613cafb93\",\n    \"spdx.schema.json\": \"baa9d3bd1ed57b6751b0887edead6b5063ff53ff7429cf85d476c6c94af0166e\",\n    \"jsf-0.82.schema.json\": \"8bae002c25e723db7ee1f26afde680ae1a2b1a8f6b4b4b0fd65dc3becb090aae\"\n  },\n  \"passed\": true\n}\n",
+      "stderr": ""
+    },
+    {
+      "name": "container-rust:1.85.1-bullseye@sha256:033a8da97a1e4d53d51fcef8f8eefaba69ff2208fbee583c4ea84f704b307db2",
+      "passed": true,
+      "exit": 0,
+      "seconds": 2.8494552670163102,
+      "stdout": "{\n  \"os\": \"linux\",\n  \"architecture\": \"x86_64\",\n  \"libc\": \"2.31\",\n  \"ram\": 35743784960,\n  \"available_ram\": 22345519104,\n  \"cpu_threads\": 5,\n  \"cpu_flags\": [\n    \"sse2\",\n    \"sse4_2\",\n    \"avx\",\n    \"avx2\",\n    \"avx512f\"\n  ],\n  \"gpu\": \"No NVIDIA GPU detected; CPU mode is available\",\n  \"driver\": \"Driver/free VRAM/compute capability unavailable\",\n  \"isolation\": {\n    \"available\": false,\n    \"detail\": \"Install bubblewrap to enable isolated checks: No such file or directory (os error 2)\"\n  },\n  \"profiles\": [\n    {\n      \"name\": \"Low memory\",\n      \"context\": 4096,\n      \"model_hint\": \"1.7\u20133B Q4 GGUF; verify an uncensored derivative\",\n      \"estimated_weight_budget\": 2147483648,\n      \"explanation\": \"One loaded model, small context, leave RAM for the desktop and tools\"\n    },\n    {\n      \"name\": \"Balanced\",\n      \"context\": 8192,\n      \"model_hint\": \"3\u20134B Q4 GGUF; first evaluation target for 16 GB RAM\",\n      \"estimated_weight_budget\": 10099017728,\n      \"explanation\": \"A starting estimate. Weight size excludes KV cache, runtime and process memory\"\n    },\n    {\n      \"name\": \"More context\",\n      \"context\": 16384,\n      \"model_hint\": \"Use a model whose native context supports this size\",\n      \"estimated_weight_budget\": 9025275904,\n      \"explanation\": \"Run the capability check, then measure memory and latency. Reduce context on allocation failure\"\n    }\n  ],\n  \"notes\": [\n    \"RAM and discrete VRAM are separate budgets. Estimates do not guarantee fit or tool quality.\",\n    \"GTX 1070 is Pascal sm_61. Use a compatible CUDA 12 build or CPU runtime; CUDA 13-only binaries do not cover it.\",\n    \"Spark-X2.5 and MiMo are discoverable through arbitrary Hub search/compatible endpoints; publisher uncensored labels require separate verification.\",\n    \"The managed download defaults to CPU. Select a compatible GPU runtime and configure layers in Settings, or use an external Ollama/llama.cpp/LM Studio/ORA endpoint.\"\n  ]\n}\n",
+      "stderr": "",
+      "image_id": "sha256:defeb9e0903d3757d4a92f5d77de1ecca8a17fd7097428f259f08ce5d6691a3e"
+    },
+    {
+      "name": "container-ubuntu:24.04",
+      "passed": true,
+      "exit": 0,
+      "seconds": 0.5287974179955199,
+      "stdout": "{\n  \"os\": \"linux\",\n  \"architecture\": \"x86_64\",\n  \"libc\": \"2.39\",\n  \"ram\": 35743784960,\n  \"available_ram\": 22292008960,\n  \"cpu_threads\": 5,\n  \"cpu_flags\": [\n    \"sse2\",\n    \"sse4_2\",\n    \"avx\",\n    \"avx2\",\n    \"avx512f\"\n  ],\n  \"gpu\": \"No NVIDIA GPU detected; CPU mode is available\",\n  \"driver\": \"Driver/free VRAM/compute capability unavailable\",\n  \"isolation\": {\n    \"available\": false,\n    \"detail\": \"Install bubblewrap to enable isolated checks: No such file or directory (os error 2)\"\n  },\n  \"profiles\": [\n    {\n      \"name\": \"Low memory\",\n      \"context\": 4096,\n      \"model_hint\": \"1.7\u20133B Q4 GGUF; verify an uncensored derivative\",\n      \"estimated_weight_budget\": 2147483648,\n      \"explanation\": \"One loaded model, small context, leave RAM for the desktop and tools\"\n    },\n    {\n      \"name\": \"Balanced\",\n      \"context\": 8192,\n      \"model_hint\": \"3\u20134B Q4 GGUF; first evaluation target for 16 GB RAM\",\n      \"estimated_weight_budget\": 10072262656,\n      \"explanation\": \"A starting estimate. Weight size excludes KV cache, runtime and process memory\"\n    },\n    {\n      \"name\": \"More context\",\n      \"context\": 16384,\n      \"model_hint\": \"Use a model whose native context supports this size\",\n      \"estimated_weight_budget\": 8998520832,\n      \"explanation\": \"Run the capability check, then measure memory and latency. Reduce context on allocation failure\"\n    }\n  ],\n  \"notes\": [\n    \"RAM and discrete VRAM are separate budgets. Estimates do not guarantee fit or tool quality.\",\n    \"GTX 1070 is Pascal sm_61. Use a compatible CUDA 12 build or CPU runtime; CUDA 13-only binaries do not cover it.\",\n    \"Spark-X2.5 and MiMo are discoverable through arbitrary Hub search/compatible endpoints; publisher uncensored labels require separate verification.\",\n    \"The managed download defaults to CPU. Select a compatible GPU runtime and configure layers in Settings, or use an external Ollama/llama.cpp/LM Studio/ORA endpoint.\"\n  ]\n}\n",
+      "stderr": "",
+      "image_id": "sha256:69f919497cada9a8611f3de61df902d9f94bf20f84552ef5bd93125c38608ef9"
+    },
+    {
+      "name": "prepare-current-install-host",
+      "passed": true,
+      "exit": 0,
+      "seconds": 0.1788503470015712,
+      "stdout": "",
+      "stderr": "#0 building with \"default\" instance using docker driver\n\n#1 [internal] load build definition from Dockerfile\n#1 transferring dockerfile: 332B done\n#1 DONE 0.0s\n\n#2 [internal] load metadata for docker.io/library/ubuntu:24.04@sha256:534baea6a22c03a63003dbc8dbe78fe34bc0d7e595d9a9dc9834884ff530eb55\n#2 DONE 0.0s\n\n#3 [internal] load .dockerignore\n#3 transferring context: 2B done\n#3 DONE 0.0s\n\n#4 [1/2] FROM docker.io/library/ubuntu:24.04@sha256:534baea6a22c03a63003dbc8dbe78fe34bc0d7e595d9a9dc9834884ff530eb55\n#4 DONE 0.0s\n\n#5 [2/2] RUN apt-get update && apt-get install -y --no-install-recommends python3 ca-certificates openssl && rm -rf /var/lib/apt/lists/*\n#5 CACHED\n\n#6 exporting to image\n#6 exporting layers done\n#6 writing image sha256:7f8bd62e31e895a71663df6da151d1b026d011118e63e45ec6d1891b97d103c2 done\n#6 naming to docker.io/library/alt-release-current done\n#6 DONE 0.0s\n"
+    },
+    {
+      "name": "installed-container-rust:1.85.1-bullseye@sha256:033a8da97a1e4d53d51fcef8f8eefaba69ff2208fbee583c4ea84f704b307db2",
+      "passed": true,
+      "exit": 0,
+      "seconds": 19.812073698005406,
+      "stdout": "PASS: file creation/edit/preview/undo, empty filtered list, empty-file edit, pinned context, MCP setup/tool selection, diagnostics, PTY input/persistence/reconnect/stop, narrow terminal and restored terminal settings\n{\"passed\": true, \"installed_sha256\": \"8f189f45323aa212f1201ed015f0b944080377b0272c32a980686b714d8db72f\", \"previous_recovery_measured\": true, \"libc\": \"ldd (Debian GLIBC 2.31-13+deb11u11) 2.31\", \"scope\": \"Exact installed binary, repeated install, current checks, actual prior-version state restore, rollback/re-upgrade and real installed TUI\"}\n",
+      "stderr": "",
+      "image_id": "sha256:defeb9e0903d3757d4a92f5d77de1ecca8a17fd7097428f259f08ce5d6691a3e"
+    },
+    {
+      "name": "installed-container-alt-release-current",
+      "passed": true,
+      "exit": 0,
+      "seconds": 15.681792370014591,
+      "stdout": "PASS: file creation/edit/preview/undo, empty filtered list, empty-file edit, pinned context, MCP setup/tool selection, diagnostics, PTY input/persistence/reconnect/stop, narrow terminal and restored terminal settings\n{\"passed\": true, \"installed_sha256\": \"8f189f45323aa212f1201ed015f0b944080377b0272c32a980686b714d8db72f\", \"previous_recovery_measured\": true, \"libc\": \"ldd (Ubuntu GLIBC 2.39-0ubuntu8.9) 2.39\", \"scope\": \"Exact installed binary, repeated install, current checks, actual prior-version state restore, rollback/re-upgrade and real installed TUI\"}\n",
+      "stderr": "",
+      "image_id": "sha256:7f8bd62e31e895a71663df6da151d1b026d011118e63e45ec6d1891b97d103c2"
+    }
+  ],
+  "passed": true,
+  "published": false,
+  "signed": false,
+  "signature_verified": false
+}

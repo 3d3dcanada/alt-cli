@@ -19,6 +19,7 @@ pub mod toolbox;
 pub mod tui;
 pub mod verification;
 pub const BUILD_INFO: &str = include_str!(concat!(env!("OUT_DIR"), "/build-info.json"));
+pub const BUILD_LABEL: &str = env!("ALT_BUILD_LABEL");
 pub mod workspace;
 
 /// Remove terminal control characters from untrusted model/tool text.

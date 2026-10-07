@@ -37,10 +37,14 @@ with artifact.open('rb') as f:
  for b in iter(lambda:f.read(8*1024*1024),b''):h.update(b)
 assert h.hexdigest()==a.sha256,'Wrong model artifact'
 root=a.output.resolve();root.mkdir(parents=True,exist_ok=a.resume)
+from evaluation_preflight import inspect
+preflight=inspect([CASES[name] for name in a.cases.split(',')])
+(root/('environment-preflight-'+str(time.time_ns())+'.json' if a.resume else 'environment-preflight.json')).write_text(json.dumps(preflight,indent=2)+'\n')
+if not preflight['passed']:raise SystemExit('Language tool preflight failed. No model requests were issued; inspect environment-preflight.json and activate the documented toolchain environment.')
 frozen=root/'alt-under-test'
 if frozen.exists():assert a.resume and hashlib.sha256(binary.read_bytes()).hexdigest()==hashlib.sha256(frozen.read_bytes()).hexdigest(),'Resume needs identical binary'
 else:shutil.copy2(binary,frozen)
-for source in ['live_acceptance.py','live_tui_turn.py','acceptance_projects.py','acceptance_extra.py','acceptance_v5.py']:
+for source in ['live_acceptance.py','live_tui_turn.py','acceptance_projects.py','acceptance_extra.py','acceptance_v5.py','evaluation_preflight.py']:
  target=root/source
  if not target.exists():shutil.copy2(Path(__file__).parent/source,target)
  else:assert hashlib.sha256(target.read_bytes()).hexdigest()==hashlib.sha256((Path(__file__).parent/source).read_bytes()).hexdigest(), "Resume evaluator source changed"

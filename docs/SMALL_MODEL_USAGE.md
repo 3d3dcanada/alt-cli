@@ -1,7 +1,8 @@
 # Using the small-model harness
 
-These additions are on `main`. Build from source to use them; the previously
-published v0.6.0-beta.1 archive predates this work. Read the
+These additions are included in
+[v0.6.0-beta.2](https://github.com/3d3dcanada/alt-cli/releases/tag/v0.6.0-beta.2).
+Read the [compatibility record](COMPATIBILITY.md) and
 [delivery record](SMALL_MODEL_DELIVERY.md) for what was tested and what remains
 unqualified. A useful tool harness does not guarantee that every model can solve
 every task.
@@ -92,6 +93,26 @@ Owned inference records the full rendered chat/tools token count when the
 selected runtime exposes its template and tokenizer endpoints. Requests exceeding
 the selected input reserve are rejected before inference. External tokenization
 stays unknown; configure and inspect that server's native window separately.
+
+Chat shows observed waiting/receiving stages, input counts when measured, output
+reserve and remaining connection allowances. Waiting includes server queueing
+and prompt processing; it is not a reasoning measurement. Interrupted requests
+remain charged when final usage is unknown. **Allowance → Add a finite
+allowance** requires confirmation and preserves spent costs. It neither changes
+the model nor sends another request. Limits span messages on that connection;
+an explicit reconnect starts a new connection allowance.
+
+After changing output/context settings, use **Allowance → Apply saved allocation
+and reconnect** to update the existing task's saved allocation. Review the
+changes before confirming. The model, provider, original goal and transcript
+remain the same; old receipts remain evidence. This is useful when an old saved
+session still has the previous input/output reserves.
+
+Failed checks supply observed case names, diagnostic locations and fresh source
+handles. Repeated failures on unchanged source and revisited failed revisions
+produce a different recovery hint. These are bounded observations, not a proven
+diagnosis or an automatically supplied solution. Full-access commands remain
+available. A passing build still does not replace the task's behavioral checks.
 
 Ask for a concrete change and prepare the project's real check command from Home.
 Use **Task** to describe its evidence contract and pin an independent assertion

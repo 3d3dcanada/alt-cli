@@ -11,7 +11,9 @@ Python PTY-test and release-schema dependencies into `/workspace/.alt-tools/pyth
 Rust/build/lint, terminal walkthroughs, both historical and new independent
 project oracles, training/schema/adapter boundaries, executable skill helpers,
 bounded analysis and real-Goose provider/candidate fixtures, including both compact
-edit formats through both adapters. It downloads no model weights. Package and
+edit formats through both adapters, twelve-turn Git projects preserving dirty
+user files, allowance/reconnect UI journeys and the disposable PC recorder's
+correct/incorrect model-response fixtures. It downloads no model weights. Package and
 model-quality tests are separate because they take longer and need specific tools.
 
 To retain raw compact protocol and TUI receipts, choose a fresh output directory:
@@ -77,6 +79,10 @@ For the optional Docker release gate, use
 
 All real model tests require an explicitly selected uncensored/abliterated artifact
 and its exact SHA256. See `LIVE_EVALUATION.md` for commands and actual failures.
+Activate the shell variables above before each trial. The runner checks required
+language tools before issuing a model request and retains a preflight report;
+an installed Rust proxy can still fail if `RUSTUP_HOME` points at this read-only
+home directory. That is an environment failure, not a measured model repair.
 No standard/cloud fallback is authorized. Saved GGUF/runtime files live outside
 the repository; they are not included in the Alt package. A CPU cloud test cannot
 validate the reference GTX 1070/8 GiB VRAM/16 GiB RAM machine.

@@ -1,0 +1,20 @@
+default_profile = "Local: Josiefied-Qwen2.5-7B-Instruct-abliterated.Q4_K_M.gguf"
+
+[profiles."Local: Josiefied-Qwen2.5-7B-Instruct-abliterated.Q4_K_M.gguf"]
+provider = "openai"
+endpoint = "http://127.0.0.1:8080/v1"
+model = "Josiefied-Qwen2.5-7B-Instruct-abliterated.Q4_K_M.gguf"
+context_tokens = 8192
+max_turns = 12
+uncensored = true
+local_model = "d7d626d96cc2d3567e8266101b4211b17634012dd99a0c9b28f475ce4eb620b6"
+
+[profiles."Local: Josiefied-Qwen2.5-7B-Instruct-abliterated.Q4_K_M.gguf".inference]
+version = 1
+output_tokens = 1024
+action_headroom = 256
+temperature = 0.0
+llama_extensions = false
+total_generated_tokens = 8192
+max_requests = 12
+output_parameter = "max_tokens"
