@@ -120,8 +120,8 @@ impl App {
         }
         match self.page {
             Page::Home => match key.code {
-                KeyCode::Down => self.home_selected = (self.home_selected + 1) % 6,
-                KeyCode::Up => self.home_selected = (self.home_selected + 5) % 6,
+                KeyCode::Down => self.home_selected = (self.home_selected + 1) % 8,
+                KeyCode::Up => self.home_selected = (self.home_selected + 7) % 8,
                 KeyCode::Enter => self.home_action(self.home_selected)?,
                 _ => {}
             },
@@ -327,6 +327,19 @@ impl App {
                 }
             }
             5 => self.edit_brief(),
+            6 => {
+                if self
+                    .preferences
+                    .project
+                    .parent()
+                    .is_some_and(|p| p.join("lesson.json").is_file())
+                {
+                    self.practice_guide();
+                } else {
+                    self.new_practice()?;
+                }
+            }
+            7 => self.task_action("task-configure")?,
             _ => {}
         }
         Ok(())

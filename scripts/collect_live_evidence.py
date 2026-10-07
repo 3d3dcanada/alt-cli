@@ -10,7 +10,7 @@ manifest={}
 for run in sorted(a.source.iterdir()):
  if not run.is_dir() or not (run/'turn.jsonl').exists():continue
  dest=a.destination/run.name;dest.mkdir(exist_ok=True)
- for name in ['report.json','turn.jsonl','turn.stderr','setup.stdout','setup.stderr','fixture.json']:
+ for name in ['report.json','turn.jsonl','turn.stderr','setup.stdout','setup.stderr','fixture.json','assertion.py']:
   source=run/name
   if source.exists():
    assert source.stat().st_size<32*1024*1024,'Inspect unexpectedly large evidence before copying'

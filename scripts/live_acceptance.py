@@ -64,8 +64,19 @@ for context in config['contexts']:
    init=subprocess.run(base+arguments,cwd=project,capture_output=True,text=True,timeout=180);(run_dir/'setup.stdout').write_text(init.stdout);(run_dir/'setup.stderr').write_text(init.stderr);assert init.returncode==0,init.stderr
    before=check(project,oracle);assert not before['passed'],(name,'broken seed unexpectedly passed')
    if a.verification_plan:
-    check_command=['env','ALT_PROJECT_URL='+project.as_uri(),'CARGO_TARGET_DIR='+str(run_dir/'oracle-target'),'PYTHONDONTWRITEBYTECODE=1',*oracle]
-    subprocess.run(base+['task','configure-check','acceptance','--',*check_command],cwd=project,check=True,capture_output=True)
+    # A pinned wrapper invokes the actual oracle, emits structured evidence and
+    # hashes every external oracle input before execution. It never embeds a repair.
+    assertion=run_dir/'assertion.py'
+    oracle_files={str(f):hashlib.sha256(f.read_bytes()).hexdigest() for f in (run_dir/'independent').rglob('*') if f.is_file()}
+    script="import hashlib,json,os,subprocess,sys\nfrom pathlib import Path\n"
+    script+=f"hashes={oracle_files!r}\ncommand={oracle!r}\n"
+    script+="assert all(Path(p).is_file() and hashlib.sha256(Path(p).read_bytes()).hexdigest()==h for p,h in hashes.items()), 'Oracle inputs changed'\n"
+    script+="env={**os.environ,'ALT_PROJECT_URL':Path.cwd().as_uri(),'PYTHONDONTWRITEBYTECODE':'1'}\n"
+    script+="r=subprocess.run(command,env=env,timeout=60)\n"
+    script+="Path(os.environ['ALT_CHECK_REPORT']).write_text(json.dumps({'schema':1,'complete':True,'tests':[{'name':'requested behavior assertions','status':'passed' if r.returncode==0 else 'failed'}]}))\nsys.exit(r.returncode)\n"
+    assertion.write_text(script)
+    subprocess.run(base+['task','configure-check','acceptance','--','python3',str(assertion)],cwd=project,check=True,capture_output=True)
+    subprocess.run(base+['task','contract','acceptance','--kind','tests','--format','json','--report','.alt-acceptance.json','--assertion',str(assertion)],cwd=project,check=True,capture_output=True)
     subprocess.run(base+['task','require','requested-behavior','--check','acceptance','--description',CASES[name]['goal']],cwd=project,check=True,capture_output=True)
    if a.history_notes:
     subprocess.run(base+['task','remember','Cedar requirement: preserve the original public API and use the bundled helper when fixing dependency imports.'],cwd=project,check=True,capture_output=True)
@@ -111,6 +122,7 @@ for context in config['contexts']:
    result['scores']={'source_behavior_passed':result['passed'],'turn_completed':proc.returncode==0 and bool(endings) and endings[-1].get('stopReason')=='end_turn','transport_turn_ended':proc.returncode==0 and bool(endings),'stop_reason':endings[-1].get('stopReason') if endings else None,'claim_accuracy':'unassessed: use retained prose and evidence; no automatic success-claim inference'}
    (run_dir/'report.json').write_text(json.dumps(result,indent=2)+'\n')
    retained=['report.json','fixture.json','turn.jsonl','turn.stderr','setup.stdout','setup.stderr']
+   if (run_dir/'assertion.py').exists():retained.append('assertion.py')
    retained += [str(f.relative_to(run_dir)) for f in (run_dir/'independent').rglob('*') if f.is_file()]
    (run_dir/'evidence-sha256.json').write_text(json.dumps({f:hashlib.sha256((run_dir/f).read_bytes()).hexdigest() for f in retained},sort_keys=True,indent=2)+'\n');results.append(result)
    summary={'configuration':config,'attempts':[{k:v for k,v in r.items()if k not in ['tool_calls','before','after','resulting_source','final_prose','context_views','independent_alt_verification']}for r in results],'passed':sum(r['passed']for r in results),'total':len(results),'scope':'Seeded small projects; every attempt retained. These measurements do not establish arbitrary task reliability or GPU performance.'};(root/'summary.json').write_text(json.dumps(summary,indent=2)+'\n');print(label,'PASS'if result['passed']else'FAIL',result['wall_seconds'],'seconds',flush=True)

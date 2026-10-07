@@ -1,0 +1,42 @@
+#!/usr/bin/env python3
+"""A beginner's complete repair/check/undo journey via real terminal input."""
+import json, os, subprocess, tempfile, tomllib
+from pathlib import Path
+from terminal_harness import Terminal
+
+repo = Path(__file__).resolve().parents[1]
+binary = Path(os.environ.get('ALT_TEST_BINARY', repo/'target/debug/alt')).resolve()
+for width, height in [(120, 40), (80, 24), (60, 18)]:
+    with tempfile.TemporaryDirectory(prefix='alt-practice-tui-') as d:
+        root = Path(d); state = root/'state'; state.mkdir()
+        original = root/'original'; original.mkdir(); (original/'keep.txt').write_text('unchanged')
+        (state/'preferences.toml').write_text(f'project={json.dumps(str(original))}\naccess_policy="trusted"\n')
+        t = Terminal(binary, state, original, width, height)
+        try:
+            t.wait('Connect your first model')
+            t.send(b'\x1b[B'*6+b'\r'); t.wait('Your first repair')
+            project = Path(tomllib.loads((state/'preferences.toml').read_text())['project'])
+            assert project != original and (original/'keep.txt').read_text() == 'unchanged'
+            base = [str(binary), '--data-dir', str(state)]
+            def verify():
+                r = subprocess.run(base+['task','verify'], cwd=project, capture_output=True, text=True)
+                return json.loads(r.stdout)
+            t.send(b'\r'); t.wait('Structured report contains 3 failing tests'); assert not verify()['complete']
+            t.send(b'\x1b9'); t.wait('Project files'); t.send(b'/'); t.wait('Filter project files')
+            t.paste('greeting.py'); t.send(b'\r'); t.send(b'e'); t.wait('Edit greeting.py')
+            # Replace through the editor; Alt still records a real checkpoint.
+            t.send(b'\x15')
+            t.paste("def greet(name):\n    return 'Hello, ' + (name.strip() or 'friend') + '!'\n")
+            t.send(b'\x13'); t.wait('Save greeting.py?'); t.send(b'\t\r'); t.wait('File saved')
+            assert "name.strip()" in (project/'greeting.py').read_text()
+            t.send(b'\x1b8'); t.wait('What happened'); t.send(b'r'); t.wait('Run checks again'); t.send(b'\r')
+            t.wait('Independent assertion passed'); assert verify()['behavioral_acceptance']
+            t.close(); t = Terminal(binary, state, original, width, height)
+            t.wait('Connect your first model'); t.send(b'\x1b8'); t.wait('What happened')
+            t.send(b'U'); t.wait("Undo this task's file edits?"); t.send(b'\t\r'); t.wait('Tracked file edits restored')
+            t.send(b'r'); t.wait('Run checks again'); t.send(b'\r'); t.wait('Structured report contains 3 failing tests')
+            assert not verify()['complete']
+            assert (project/'greeting.py').read_text() == "def greet(name):\n    return 'Hello, ' + name + '!'\n"
+            print(f'PASS: practice creation, failing seed, edit, four-case independent verification, restart and undo at {width}x{height}', flush=True)
+        finally:
+            t.close()

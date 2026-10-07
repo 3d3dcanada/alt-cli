@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.6.0 beta
+
+- Added a four-case practice project with independent checks, tracked repair and undo.
+- Matched model instructions to selected tools and configured checks; surfaced evidence errors as failed calls.
+- Improved check discovery, small-terminal evidence display and bounded retrieval.
+- Fixed partial-download write completion and Goose synthetic network-error handling.
+- Added sustained stream recovery, complete model matrix tooling, automatic pre-upgrade backups, GitHub-attested release publication and a local PC test kit.
+
+
 ## 0.5.0 beta — 2026-10-06
 
 First full source publication. Earlier 0.2–0.4.1 versions in the research/evidence

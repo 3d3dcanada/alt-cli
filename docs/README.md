@@ -36,3 +36,10 @@ paths and unpublished artifacts. Their raw evidence is retained rather than
 rewritten to match today's checkout. Current setup instructions live in Installation;
 current feature/test status lives in Implementation. Neither source publication
 nor a passing CI run automatically closes model, hardware or human acceptance gates.
+
+## Alt 0.6
+
+- [Current implementation and acceptance](IMPLEMENTATION_0.6.md)
+- [Work orders](WORK_ORDERS_0.6.md)
+- [PC test guide](PC_TESTING.md)
+- [Beta release notes](releases/0.6.0-beta.1.md)

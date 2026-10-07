@@ -416,9 +416,17 @@ fn home(frame: &mut Frame, app: &mut App, area: Rect) {
             "Keep a project brief",
             "Save goals, decisions, and next steps for future messages.",
         ),
+        (
+            "Try a practice project",
+            "Learn repair, real checks and undo in a fresh example folder.",
+        ),
+        (
+            "Prepare project checks",
+            "Choose how to test changes before asking your model to work.",
+        ),
     ];
     let (choices, guidance) = if parts[1].height >= 22 {
-        let areas = Layout::vertical([Constraint::Length(14), Constraint::Min(6)]).split(parts[1]);
+        let areas = Layout::vertical([Constraint::Length(18), Constraint::Min(4)]).split(parts[1]);
         (areas[0], Some(areas[1]))
     } else {
         (parts[1], None)
@@ -438,7 +446,7 @@ fn home(frame: &mut Frame, app: &mut App, area: Rect) {
     );
     let list = inset(choices, 1, 1);
     let offset = state.offset();
-    for i in offset..6 {
+    for i in offset..labels.len() {
         let y = list.y + (i - offset) as u16 * 2;
         if y >= list.bottom() {
             break;
@@ -1773,6 +1781,7 @@ fn permission_modal(frame: &mut Frame, app: &mut App, area: Rect) {
 }
 
 fn task(frame: &mut Frame, app: &mut App, area: Rect) {
+    let compact = area.height < 16;
     let rows = Layout::vertical([
         Constraint::Length(8),
         Constraint::Min(3),
@@ -1780,26 +1789,22 @@ fn task(frame: &mut Frame, app: &mut App, area: Rect) {
         Constraint::Length(2),
     ])
     .split(area);
-    let mut summary = vec![
-        line("Inspect → Plan → Edit → Test → Results", ACCENT),
-        line(
-            format!(
-                "Access: {} · {} configured check(s)",
-                app.preferences.access_policy.label(),
-                app.task_view.checks.len()
+    let mut summary = if compact {
+        vec![]
+    } else {
+        vec![
+            line("Inspect → Plan → Edit → Test → Results", ACCENT),
+            line(
+                format!(
+                    "Access: {} · {} configured check(s)",
+                    app.preferences.access_policy.label(),
+                    app.task_view.checks.len()
+                ),
+                MUTED,
             ),
-            MUTED,
-        ),
-    ];
+        ]
+    };
     if let Some(t) = &app.task_view.task {
-        summary.push(line(
-            format!("Goal: {}", crate::project::bounded(&t.goal, 180)),
-            TEXT,
-        ));
-        summary.push(line(
-            format!("Now: {} · {} tracked edit(s)", t.phase, t.changes),
-            TEXT,
-        ));
         let verification = app.task_view.verification.as_ref();
         let evidence = verification
             .map(|v| {
@@ -1810,19 +1815,19 @@ fn task(frame: &mut Frame, app: &mut App, area: Rect) {
                     )
                 } else {
                     format!(
-                        "{}/{} required checks current · {}",
-                        v.requirements
-                            .iter()
-                            .filter(|r| r.status == "passed on current files")
-                            .count(),
-                        v.requirements.len(),
+                        "{} · {}/{} required checks current",
                         if v.behavioral_acceptance {
                             "Independent assertion passed"
                         } else if v.complete {
                             "Commands passed; behavioral coverage unknown"
                         } else {
                             "Work remains; press V for details"
-                        }
+                        },
+                        v.requirements
+                            .iter()
+                            .filter(|r| r.status == "passed on current files")
+                            .count(),
+                        v.requirements.len(),
                     )
                 }
             })
@@ -1836,6 +1841,14 @@ fn task(frame: &mut Frame, app: &mut App, area: Rect) {
             },
         ));
         summary.push(line(format!("Next: {}", t.next), TEXT));
+        summary.push(line(
+            format!("Now: {} · {} tracked edit(s)", t.phase, t.changes),
+            TEXT,
+        ));
+        summary.push(line(
+            format!("Goal: {}", crate::project::bounded(&t.goal, 180)),
+            TEXT,
+        ));
     } else {
         summary.push(line(
             "Your model's file changes and check results appear here.",

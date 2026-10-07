@@ -1,0 +1,74 @@
+name: Publish attested beta release
+on:
+  push:
+    tags: ['v*-beta.*']
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing beta tag to build and publish
+        required: true
+        type: string
+permissions:
+  contents: read
+concurrency:
+  group: beta-release-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  publish:
+    runs-on: ubuntu-24.04
+    environment: release
+    timeout-minutes: 60
+    permissions:
+      contents: write
+      actions: read
+      id-token: write
+      attestations: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ inputs.tag || github.ref }}
+      - name: Validate tag and prepare workspace
+        run: |
+          python3 - <<'PY'
+          import os,re,tomllib
+          version=tomllib.load(open('Cargo.toml','rb'))['package']['version']
+          assert re.fullmatch(r'v'+re.escape(version)+r'-beta\.\d+',os.environ['RELEASE_TAG'])
+          assert os.environ['GITHUB_REF']=='refs/tags/'+os.environ['RELEASE_TAG'], 'Dispatch the workflow using the release tag as its ref'
+          PY
+          sudo mkdir -p /workspace
+          sudo chown "$USER" /workspace
+          ln -s "$GITHUB_WORKSPACE" /workspace/alt-cli
+          bash scripts/setup-cloud.sh
+      - name: Build and validate exact package including prior CI upgrade
+        run: |
+          export CARGO_HOME=/workspace/.cargo RUSTUP_HOME=/workspace/.rustup
+          export PATH="/workspace/.cargo/bin:/workspace/.alt-tools:$PATH"
+          export PYTHONPATH=/workspace/.alt-tools/python
+          bash scripts/build-portable.sh
+          python3 scripts/fetch_ci_previous.py --output "$RUNNER_TEMP/previous.tar.gz"
+          python3 scripts/release_gate.py dist/alt-*.tar.gz --previous "$RUNNER_TEMP/previous.tar.gz" --require-upgrade --output dist/release-gate.json
+          cargo install cargo-audit --version 0.22.2 --locked --root /workspace/.alt-tools/audit
+          /workspace/.alt-tools/audit/bin/cargo-audit audit --db /workspace/.alt-tools/advisory-db --deny warnings --json > dist/dependency-audit.json
+      - name: Sign provenance using GitHub's short-lived workflow identity
+        id: attest
+        uses: actions/attest-build-provenance@43d14bc2b83dec42d39ecae14e916627a18bb661
+        with:
+          subject-path: dist/alt-*.tar.gz
+      - name: Verify attestation and publish the tested beta
+        env:
+          BUNDLE_PATH: ${{ steps.attest.outputs.bundle-path }}
+        run: |
+          set -euo pipefail
+          package=(dist/alt-*.tar.gz)
+          test "${#package[@]}" -eq 1
+          gh attestation verify "${package[0]}" --repo "$GITHUB_REPOSITORY" --bundle "$BUNDLE_PATH" --signer-workflow "$GITHUB_REPOSITORY/.github/workflows/publish.yml" --source-ref "refs/tags/$RELEASE_TAG" --format json > dist/attestation-verification.json
+          cp "$BUNDLE_PATH" "${package[0]}.sigstore.jsonl"
+          gh release create "$RELEASE_TAG" --verify-tag --prerelease --title "Alt $RELEASE_TAG" --notes-file docs/releases/0.6.0-beta.1.md "${package[0]}" "${package[0]}.sha256" "${package[0]}.sigstore.jsonl" dist/release-gate.json dist/dependency-audit.json dist/attestation-verification.json
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: beta-release-evidence
+          path: dist/

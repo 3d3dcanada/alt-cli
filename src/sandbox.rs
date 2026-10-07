@@ -497,25 +497,81 @@ pub fn suggested(cwd: &Path) -> Vec<CheckSpec> {
             contract: Default::default(),
         });
     }
-    if cwd.join("package.json").is_file() {
-        specs.push(CheckSpec {
-            name: "JavaScript tests".into(),
-            argv: vec!["npm".into(), "test".into(), "--".into()],
-            timeout_secs: 120,
-            contract: Default::default(),
-        });
+    // A manifest is not evidence that a test script or a Python suite exists.
+    if let Ok(file) = std::fs::File::open(cwd.join("package.json")) {
+        use std::io::Read;
+        let mut body = String::new();
+        if file.take(256 * 1024).read_to_string(&mut body).is_ok()
+            && let Ok(manifest) = serde_json::from_str::<serde_json::Value>(&body)
+            && manifest["scripts"]["test"]
+                .as_str()
+                .is_some_and(|s| !s.trim().is_empty())
+        {
+            let manager = manifest["packageManager"]
+                .as_str()
+                .unwrap_or("npm")
+                .split('@')
+                .next()
+                .unwrap_or("npm");
+            let program = if matches!(manager, "yarn" | "pnpm") {
+                manager
+            } else {
+                "npm"
+            };
+            specs.push(CheckSpec {
+                name: "JavaScript tests".into(),
+                argv: vec![program.into(), "test".into()],
+                timeout_secs: 120,
+                contract: Default::default(),
+            });
+        }
     }
-    if cwd.join("pyproject.toml").is_file() || cwd.join("tests").is_dir() {
+    let python_suite = cwd.join("pyproject.toml").is_file()
+        || cwd.join("test.py").is_file()
+        || std::fs::read_dir(cwd.join("tests")).is_ok_and(|items| {
+            items
+                .flatten()
+                .any(|e| e.path().extension().is_some_and(|ext| ext == "py"))
+        });
+    if python_suite {
+        let pyproject = std::fs::read_to_string(cwd.join("pyproject.toml")).unwrap_or_default();
+        let pytest = cwd.join("pytest.ini").is_file() || pyproject.contains("[tool.pytest.");
         specs.push(CheckSpec {
-            name: "Python tests".into(),
-            argv: vec![
-                "python3".into(),
-                "-m".into(),
-                "unittest".into(),
-                "discover".into(),
-            ],
+            name: if pytest {
+                "Python pytest"
+            } else {
+                "Python tests"
+            }
+            .into(),
+            argv: if pytest {
+                vec![
+                    "python3".into(),
+                    "-m".into(),
+                    "pytest".into(),
+                    "--junitxml".into(),
+                    "{report}".into(),
+                ]
+            } else {
+                vec![
+                    "python3".into(),
+                    "-m".into(),
+                    "unittest".into(),
+                    "discover".into(),
+                ]
+            },
             timeout_secs: 120,
-            contract: Default::default(),
+            contract: if pytest {
+                crate::verification::Contract {
+                    kind: crate::verification::Kind::Tests,
+                    report: Some(crate::verification::ReportSpec {
+                        format: crate::verification::Format::Junit,
+                        path: ".alt-pytest.xml".into(),
+                    }),
+                    assertion: None,
+                }
+            } else {
+                Default::default()
+            },
         });
     }
     specs

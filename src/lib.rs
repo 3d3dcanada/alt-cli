@@ -4,6 +4,7 @@ pub mod extensions;
 pub mod hardware;
 pub mod jobs;
 pub mod models;
+pub mod practice;
 pub mod process;
 pub mod project;
 pub mod project_services;

@@ -793,39 +793,50 @@ pub async fn download_verified(
             .await?;
         let mut stream = response.bytes_stream();
         let mut last = Instant::now();
-        loop {
-            ensure!(
-                !cancel.load(Ordering::Relaxed),
-                "Download paused. Select the same file to resume"
-            );
-            let next = tokio::select! {
-                _=cancelled(&cancel)=>bail!("Download paused. Select the same file to resume"),
-                result=tokio::time::timeout(Duration::from_secs(30),stream.next())=>result,
+        let transfer: Result<()> = async {
+            loop {
+                ensure!(
+                    !cancel.load(Ordering::Relaxed),
+                    "Download paused. Select the same file to resume"
+                );
+                let next = tokio::select! {
+                    _=cancelled(&cancel)=>bail!("Download paused. Select the same file to resume"),
+                    result=tokio::time::timeout(Duration::from_secs(30),stream.next())=>result,
+                }
+                .context("Download stalled. Select this file again to resume")?;
+                let Some(chunk) = next else {
+                    break;
+                };
+                let chunk =
+                    chunk.context("Download interrupted. Select this file again to resume")?;
+                ensure!(
+                    offset + chunk.len() as u64 <= size,
+                    "The file host sent more data than expected"
+                );
+                output.write_all(&chunk).await.context(
+                    "Could not write the download. Check free disk space and permissions",
+                )?;
+                offset += chunk.len() as u64;
+                if last.elapsed() > Duration::from_millis(150) {
+                    progress(Progress {
+                        received: offset,
+                        total: size,
+                        stage: "Downloading".into(),
+                    });
+                    last = Instant::now();
+                }
             }
-            .context("Download stalled. Select this file again to resume")?;
-            let Some(chunk) = next else {
-                break;
-            };
-            let chunk = chunk.context("Download interrupted. Select this file again to resume")?;
-            ensure!(
-                offset + chunk.len() as u64 <= size,
-                "The file host sent more data than expected"
-            );
-            output
-                .write_all(&chunk)
-                .await
-                .context("Could not write the download. Check free disk space and permissions")?;
-            offset += chunk.len() as u64;
-            if last.elapsed() > Duration::from_millis(150) {
-                progress(Progress {
-                    received: offset,
-                    total: size,
-                    stage: "Downloading".into(),
-                });
-                last = Instant::now();
-            }
+            Ok(())
         }
+        .await;
+        // Tokio may still have a blocking write in flight when a stream fails.
+        // Finish it before reporting a resumable offset or allowing another attempt.
+        output
+            .flush()
+            .await
+            .context("Could not flush partial download; check disk space before retrying")?;
         output.sync_all().await?;
+        transfer?;
         ensure!(
             offset == size,
             "The file is incomplete. Select it again to resume"

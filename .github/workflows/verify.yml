@@ -36,6 +36,7 @@ jobs:
           python3 scripts/acceptance_projects.py > dist/oracle-self-test.json
           python3 scripts/soak.py --rounds 30 --output dist/soak.json
           python3 scripts/smoke_pressure_tui.py --rounds 30 --output dist/ui-pressure.json
+          python3 scripts/smoke_stream_recovery.py --binary target/portable-glibc231/release/alt --engine /workspace/.alt-tools/goose --rounds 12 --output dist/stream-recovery.json
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()
         with:
