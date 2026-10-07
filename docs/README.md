@@ -19,6 +19,8 @@
   harness/reasoning work orders and 7B/9B Q4 qualification.
 - [Small-model delivery](SMALL_MODEL_DELIVERY.md): implemented work orders,
   retained checks and live failures, and outstanding training/quality gates.
+- [Repair reliability work orders](REPAIR_WORK_ORDERS.md): compact context,
+  scalar/line-array edits, current-source feedback and matched CPU qualification.
 - [Training handoff](../training/README.md): reviewed data, SFT starter and export gates.
 - [Contributing](../CONTRIBUTING.md) and [architecture](ARCHITECTURE.md).
 - [Cloud setup](CLOUD_SETUP.md) for the prepared `/workspace` environment.

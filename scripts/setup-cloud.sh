@@ -73,5 +73,20 @@ python3 scripts/smoke_native.py
 python3 scripts/smoke_acceptance_collection.py
 python3 scripts/smoke_goose.py --goose /workspace/.alt-tools/goose
 python3 scripts/smoke_goose.py --goose /workspace/.alt-tools/goose --provider ollama
+compact_probe() {
+  local probe_name="$1"
+  shift
+  local evidence_flags=()
+  if [[ -n "${ALT_SETUP_EVIDENCE_DIR:-}" ]]; then
+    mkdir -p "$ALT_SETUP_EVIDENCE_DIR"
+    evidence_flags=(--output "$ALT_SETUP_EVIDENCE_DIR/$probe_name.json")
+  fi
+  python3 scripts/smoke_compact.py --goose /workspace/.alt-tools/goose "$@" "${evidence_flags[@]}"
+}
+compact_probe compact-openai
+compact_probe compact-ollama --provider ollama
+compact_probe compact-lines-openai --tool-profile compact-lines
+compact_probe compact-lines-ollama --provider ollama --tool-profile compact-lines
+compact_probe compact-tui --interface tui
 python3 scripts/smoke_candidates.py --goose /workspace/.alt-tools/goose
 python3 scripts/smoke_stream_recovery.py --engine /workspace/.alt-tools/goose --rounds 2 --output /workspace/.alt-tools/stream-recovery.json

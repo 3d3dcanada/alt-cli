@@ -19,7 +19,7 @@ pub const FILE_COUNT: usize = 4096;
 pub fn digest(bytes: &[u8]) -> String {
     format!("{:x}", Sha256::digest(bytes))
 }
-fn retrieval_terms(query: &str) -> Vec<String> {
+pub(crate) fn retrieval_terms(query: &str) -> Vec<String> {
     const STOP: &[&str] = &[
         "a", "an", "and", "are", "as", "at", "be", "by", "can", "do", "for", "from", "help", "i",
         "in", "is", "it", "me", "my", "of", "on", "please", "so", "that", "the", "this", "to",
@@ -183,13 +183,14 @@ impl Project {
             .open(state.join("project.lock"))?;
         lock.try_lock_exclusive()
             .context("Another Alt action is using this project; wait for it to finish")?;
-        crate::schema::compatible(&state.join("project.db"), 3)?;
+        crate::schema::compatible(&state.join("project.db"), 4)?;
         let mut db = Connection::open(state.join("project.db"))?;
         db.busy_timeout(Duration::from_secs(5))?;
         db.execute_batch("PRAGMA journal_mode=WAL; PRAGMA synchronous=FULL;")?;
-        crate::schema::migrate(&mut db, &state.join("project.db"), 3, concat!("
+        crate::schema::migrate(&mut db, &state.join("project.db"), 4, concat!("
           CREATE TABLE IF NOT EXISTS tasks(id TEXT PRIMARY KEY,goal TEXT NOT NULL,plan TEXT NOT NULL DEFAULT '',phase TEXT NOT NULL DEFAULT 'Inspect',next TEXT NOT NULL DEFAULT 'Inspect the relevant files',created TEXT DEFAULT CURRENT_TIMESTAMP);
           CREATE TABLE IF NOT EXISTS reads(task TEXT,path TEXT,hash TEXT,PRIMARY KEY(task,path));
+          CREATE TABLE IF NOT EXISTS edit_handles(seq INTEGER PRIMARY KEY,task TEXT NOT NULL,path TEXT NOT NULL,hash TEXT NOT NULL,start INTEGER NOT NULL,end INTEGER NOT NULL,UNIQUE(task,path,hash,start,end));
           CREATE TABLE IF NOT EXISTS changes(seq INTEGER PRIMARY KEY, id TEXT UNIQUE,task TEXT,status TEXT,payload TEXT);
           CREATE TABLE IF NOT EXISTS notes(seq INTEGER PRIMARY KEY,task TEXT,kind TEXT,body TEXT,source TEXT,created TEXT DEFAULT CURRENT_TIMESTAMP);
           CREATE TABLE IF NOT EXISTS checks(id TEXT PRIMARY KEY,payload TEXT,created TEXT DEFAULT CURRENT_TIMESTAMP);
@@ -433,7 +434,11 @@ impl Project {
             .collect::<Vec<_>>()
             .join("\n");
         let mut offset = 0;
-        let mut range_start = None;
+        let mut range_start = if body.is_empty() && start == 1 {
+            Some(0)
+        } else {
+            None
+        };
         let mut range_end = 0;
         for (i, line) in body.split_inclusive('\n').enumerate() {
             if i + 1 == start {
@@ -451,18 +456,92 @@ impl Project {
                         .lines()
                         .all(|l| l.chars().count() <= 2000)
             })
-            .map(|begin| self.edit_handle(task, path, &hash, begin, range_end));
+            .map(|begin| self.edit_handle(task, path, &hash, begin, range_end))
+            .transpose()?;
+        let source = range
+            .as_ref()
+            .and_then(|_| range_start.map(|begin| &body[begin..range_end]));
         let syntax = crate::syntax::chunks(path, &body)?;
-        let symbols: Vec<_> = syntax.chunks.iter().filter(|c| c.start_line>=start && c.end_line<start.saturating_add(lines))
-            .take(16).map(|c| serde_json::json!({"name":c.name,"kind":c.kind,"start_line":c.start_line,"end_line":c.end_line,"handle":self.edit_handle(task,path,&hash,c.start_byte,c.end_byte)})).collect();
+        let symbols = syntax.chunks.iter().filter(|c| range.is_some() && c.start_line>=start && c.end_line<start.saturating_add(lines))
+            .take(16).map(|c| Ok(serde_json::json!({"name":c.name,"kind":c.kind,"start_line":c.start_line,"end_line":c.end_line,"handle":self.edit_handle(task,path,&hash,c.start_byte,c.end_byte)?}))).collect::<Result<Vec<_>>>()?;
         Ok(
-            serde_json::json!({"path":path,"sha256":hash,"total_lines":body.lines().count(),"start_line":start,"text":bounded(&text,24000),"range_handle":range,"symbols":symbols,"handle_scope":"Exact UTF-8 byte span at this file revision; line spans include their original newline. Replace with edit(operation=handle,handle=...,new_text=...)."}),
+            serde_json::json!({"path":path,"sha256":hash,"total_lines":body.lines().count(),"start_line":start,"text":bounded(&text,24000),"source":source,"range_handle":range,"symbols":symbols,"handle_scope":"Exact UTF-8 byte span at this file revision; line spans include their original newline. Replace with edit(operation=handle,handle=...,new_text=...) or edit_lines(handle=...,lines=[...]) when enabled."}),
         )
     }
-    fn edit_handle(&self, task: &str, path: &str, hash: &str, start: usize, end: usize) -> String {
+    fn legacy_handle(task: &str, path: &str, hash: &str, start: usize, end: usize) -> String {
         // Task/path binding prevents a handle from being replayed against another file.
         let binding = digest(format!("{task}\0{path}\0{hash}\0{start}\0{end}").as_bytes());
         format!("v1:{hash}:{start}:{end}:{binding}")
+    }
+    fn edit_handle(
+        &self,
+        task: &str,
+        path: &str,
+        hash: &str,
+        start: usize,
+        end: usize,
+    ) -> Result<String> {
+        self.db.execute(
+            "INSERT OR IGNORE INTO edit_handles(task,path,hash,start,end) VALUES(?1,?2,?3,?4,?5)",
+            params![task, path, hash, start, end],
+        )?;
+        let seq: i64 = self.db.query_row("SELECT seq FROM edit_handles WHERE task=?1 AND path=?2 AND hash=?3 AND start=?4 AND end=?5", params![task,path,hash,start,end], |r| r.get(0))?;
+        // The short label is only a lookup key. Full task/path/hash/span checks
+        // remain authoritative in the private project database.
+        Ok(format!(
+            "h{seq}-{}",
+            &digest(self.root.to_string_lossy().as_bytes())[..8]
+        ))
+    }
+    fn handle_span(&self, task: &str, path: &str, handle: &str) -> Result<(String, usize, usize)> {
+        let bytes = self
+            .bytes(path)?
+            .context("Handle file was deleted; inspect again")?;
+        let hash = digest(&bytes);
+        let (start, end) = if handle.starts_with("v1:") {
+            let fields: Vec<_> = handle.split(':').collect();
+            ensure!(fields.len() == 5, "Invalid handle; read the file again");
+            let start: usize = fields[2].parse()?;
+            let end: usize = fields[3].parse()?;
+            ensure!(
+                hash == fields[1] && Self::legacy_handle(task, path, &hash, start, end) == handle,
+                "Stale or mismatched handle; read the current file again. No change applied."
+            );
+            (start, end)
+        } else {
+            let (id, tag) = handle
+                .split_once('-')
+                .context("Invalid handle; read the file again")?;
+            ensure!(
+                tag == &digest(self.root.to_string_lossy().as_bytes())[..8],
+                "Handle belongs to another project; read the current file again"
+            );
+            let seq: i64 = id.strip_prefix('h').context("Invalid handle")?.parse()?;
+            let record: Option<(String, String, String, usize, usize)> = self
+                .db
+                .query_row(
+                    "SELECT task,path,hash,start,end FROM edit_handles WHERE seq=?1",
+                    [seq],
+                    |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?, r.get(3)?, r.get(4)?)),
+                )
+                .optional()?;
+            let (owner, file, revision, start, end) =
+                record.context("Unknown handle; read the file again")?;
+            ensure!(
+                owner == task && file == path && revision == hash,
+                "Stale or mismatched handle; read the current file again. No change applied."
+            );
+            (start, end)
+        };
+        let body = String::from_utf8(bytes)?;
+        ensure!(
+            start <= end
+                && end <= body.len()
+                && body.is_char_boundary(start)
+                && body.is_char_boundary(end),
+            "Handle is not a valid UTF-8 span"
+        );
+        Ok((body, start, end))
     }
     pub fn prepare_handle_edit(
         &self,
@@ -472,33 +551,102 @@ impl Project {
         replacement: &str,
         reason: &str,
     ) -> Result<Change> {
-        let fields: Vec<_> = handle.split(':').collect();
-        ensure!(
-            fields.len() == 5 && fields[0] == "v1",
-            "Invalid handle; read the file again"
-        );
-        let start: usize = fields[2].parse()?;
-        let end: usize = fields[3].parse()?;
-        let bytes = self
-            .bytes(path)?
-            .context("Handle file was deleted; inspect again")?;
-        let hash = digest(&bytes);
-        ensure!(
-            hash == fields[1] && self.edit_handle(task, path, &hash, start, end) == handle,
-            "Stale or mismatched handle; read the current file again. No change applied."
-        );
-        let body = String::from_utf8(bytes)?;
-        ensure!(
-            start <= end
-                && end <= body.len()
-                && body.is_char_boundary(start)
-                && body.is_char_boundary(end),
-            "Handle is not a valid UTF-8 span"
-        );
+        let (body, start, end) = self.handle_span(task, path, handle)?;
+        let hash = digest(body.as_bytes());
         let mut after = body.clone();
         after.replace_range(start..end, replacement);
         // Reuse the authoritative plan/read checks, atomic checkpoint and stale-write checks.
         self.prepare_edit(task, path, Some(&hash), &body, &after, "replace", reason)
+    }
+    /// Literal lines avoid asking a small model to double-escape an entire file.
+    /// Preserve the selected span's newline style and final-newline convention.
+    pub fn prepare_lines_edit(
+        &self,
+        task: &str,
+        path: &str,
+        handle: Option<&str>,
+        lines: &[String],
+        operation: &str,
+        reason: &str,
+    ) -> Result<Change> {
+        ensure!(
+            lines.len() <= 1000
+                && lines.iter().map(String::len).sum::<usize>() <= FILE_LIMIT as usize,
+            "Replacement exceeds the file edit limit"
+        );
+        ensure!(
+            lines.iter().all(|s| !s.contains(['\n', '\r'])),
+            "Each lines item must contain one literal source line, without newline characters"
+        );
+        match operation {
+            "handle" => {
+                let handle = handle.context("Use the handle from a current read of this path")?;
+                let (body, start, end) = self.handle_span(task, path, handle)?;
+                let span = &body[start..end];
+                let newline = if span.contains("\r\n") { "\r\n" } else { "\n" };
+                let mut replacement = lines.join(newline);
+                if !lines.is_empty() && span.ends_with('\n') {
+                    replacement.push_str(newline);
+                }
+                self.prepare_handle_edit(task, path, handle, &replacement, reason)
+            }
+            "create" => {
+                ensure!(
+                    handle.is_none(),
+                    "Creation does not use an existing-file handle"
+                );
+                let mut body = lines.join("\n");
+                if !lines.is_empty() {
+                    body.push('\n');
+                }
+                self.prepare_edit(task, path, None, "", &body, "create", reason)
+            }
+            "delete" => {
+                ensure!(lines.is_empty(), "Delete requires an empty lines array");
+                let (body, start, end) = self.handle_span(
+                    task,
+                    path,
+                    handle.context("Read the complete file before deleting it")?,
+                )?;
+                ensure!(
+                    start == 0 && end == body.len(),
+                    "Delete requires a complete-file read handle"
+                );
+                self.prepare_edit(
+                    task,
+                    path,
+                    Some(&digest(body.as_bytes())),
+                    "",
+                    "",
+                    "delete",
+                    reason,
+                )
+            }
+            _ => bail!("Use handle, create or delete for edit_lines"),
+        }
+    }
+    /// Scalar text avoids nested-array parsing. Literal backslash sequences
+    /// remain source data. Only real newline characters are normalized.
+    pub fn prepare_text_edit(
+        &self,
+        task: &str,
+        path: &str,
+        handle: &str,
+        replacement: &str,
+        reason: &str,
+    ) -> Result<Change> {
+        let (body, start, end) = self.handle_span(task, path, handle)?;
+        let span = &body[start..end];
+        let crlf = span.contains("\r\n") && !span.replace("\r\n", "").contains('\n');
+        let mut text = if crlf {
+            replacement.replace("\r\n", "\n").replace('\n', "\r\n")
+        } else {
+            replacement.to_owned()
+        };
+        if !text.is_empty() && span.ends_with('\n') && !text.ends_with('\n') {
+            text.push_str(if span.ends_with("\r\n") { "\r\n" } else { "\n" });
+        }
+        self.prepare_handle_edit(task, path, handle, &text, reason)
     }
     pub fn list(&self) -> Result<Vec<String>> {
         Ok(self.scan()?.into_keys().collect())

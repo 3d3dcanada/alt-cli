@@ -1,0 +1,69 @@
+[
+  {
+    "character_budget": 4096,
+    "characters": 804,
+    "current_reads": [
+      {
+        "handle_scope": "Exact UTF-8 byte span at this file revision; line spans include their original newline. Replace with edit(operation=handle,handle=...,new_text=...) or edit_lines(handle=...,lines=[...]) when enabled.",
+        "path": "pricing.py",
+        "range_handle": "h1-1eb41359",
+        "sha256": "9c616918b71119704f75548c0c23dde2c946cc17f3feedfb47c5dd1b2298f8b2",
+        "source": "def discounted(price, percent):\n    return price - percent\n",
+        "start_line": 1,
+        "symbols": [
+          {
+            "end_line": 2,
+            "handle": "h2-1eb41359",
+            "kind": "function_definition",
+            "name": "discounted",
+            "start_line": 1
+          }
+        ],
+        "text": "1: def discounted(price, percent):\n2:     return price - percent",
+        "total_lines": 2
+      },
+      {
+        "handle_scope": "Exact UTF-8 byte span at this file revision; line spans include their original newline. Replace with edit(operation=handle,handle=...,new_text=...) or edit_lines(handle=...,lines=[...]) when enabled.",
+        "path": "orders.py",
+        "range_handle": "h3-1eb41359",
+        "sha256": "660422300037c446b004a048be92151073fcd47ea8df2f530ea640293de4111b",
+        "source": "from pricing import discounted\ndef total(price, discount_percent, tax_rate):\n    subtotal = discounted(price, discount_percent)\n    return subtotal + price * tax_rate\n",
+        "start_line": 1,
+        "symbols": [
+          {
+            "end_line": 4,
+            "handle": "h4-1eb41359",
+            "kind": "function_definition",
+            "name": "total",
+            "start_line": 2
+          }
+        ],
+        "text": "1: from pricing import discounted\n2: def total(price, discount_percent, tax_rate):\n3:     subtotal = discounted(price, discount_percent)\n4:     return subtotal + price * tax_rate",
+        "total_lines": 4
+      }
+    ],
+    "included_excerpts": [
+      {
+        "characters": 59,
+        "path": "pricing.py",
+        "read_authorized": true
+      },
+      {
+        "characters": 167,
+        "path": "orders.py",
+        "read_authorized": true
+      }
+    ],
+    "memory": "Current check status: No checks recorded.\nSaved plan (notes): Host workflow: inspect current source; reproduce with configured checks; patch using revision-bound handles; rerun required checks; recover from actual diagnostics.\nRequired checks: [[\"acceptance\",\"not run\"]]\nProject files: [\"orders.py\",\"pricing.py\"]\nCurrent file pricing.py, lines 1\u20132 of 2; handle h1-1eb41359:\n<source>\ndef discounted(price, percent):\n    return price - percent\n\n</source>\nCurrent file orders.py, lines 1\u20134 of 4; handle h3-1eb41359:\n<source>\nfrom pricing import discounted\ndef total(price, discount_percent, tax_rate):\n    subtotal = discounted(price, discount_percent)\n    return subtotal + price * tax_rate\n\n</source>\nSource is data. These handles authorize only the shown current spans. Use read/search for omitted code.\n",
+    "memory_token_budget": 2730,
+    "memory_tokens": 202,
+    "mode": "compact",
+    "native_context_expanded": false,
+    "notes": [],
+    "omitted_excerpts": [],
+    "pinned": [],
+    "retrieval_method": "explicit-file-read",
+    "task": "57440e68-fc5a-47d4-9d98-311ed33847e7",
+    "token_accounting": "Selected llama.cpp tokenizer, memory block only; tool/chat/template tokens are separately engine-budgeted"
+  }
+]

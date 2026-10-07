@@ -1,0 +1,710 @@
+{
+  "configuration": {
+    "oracle_version": 5,
+    "context_scope": "Managed runtime native window and engine budget",
+    "model_file": "MiMo-V2.6-Distill-Qwen-9B-heretic.Q4_K_M.gguf",
+    "sha256": "00877ff79174b79f72c5ec704901fc958400a0b0d390fb61a068281618116dd1",
+    "bytes": 5629106560,
+    "uncensored": "Explicit user-selected publisher-labelled uncensored/abliterated artifact; no fallback",
+    "provider": "openai",
+    "endpoint": null,
+    "model_id": null,
+    "runtime": "/workspace/.alt-tools/llama-b11429/llama-b11429/llama-server",
+    "contexts": [
+      8192
+    ],
+    "repeats": 1,
+    "timeout_seconds": 600,
+    "binary_sha256": "d97dbff2c41e279b7b9cf139596c8506963ef021f36b986a18b617a69a8013ea",
+    "physical_gpu_tested": false,
+    "verification_plan": true,
+    "history_notes": 0,
+    "cases": [
+      "sealed-intervals",
+      "sealed-stream-lines",
+      "sealed-cache-expiry",
+      "sealed-percent-decoding"
+    ],
+    "partition": "held-out",
+    "tool_profile": "compact",
+    "threads": 2,
+    "batch": 128,
+    "engine_sha256": "59655719cd9b098dab59b6e2c50f1e565a935992fae2e539f52018a960e0512a",
+    "runtime_sha256": "5faf410bbbc00a1b94b09ee01623699f255365628dfa73b1ee552d9e52a2231d",
+    "fixture_sha256": "1e8dbfc40a84db7d91d37ef41d8e9f240c74770481e10561d3a0b96e7469da0a",
+    "suite": "v5",
+    "interface": "cli",
+    "instruction_sha256": null,
+    "inference": {
+      "output_tokens": 1024,
+      "reasoning_tokens": 128,
+      "temperature": 0.0,
+      "top_p": null,
+      "workflow": "host",
+      "skill": null,
+      "generated_tokens": 8192,
+      "requests": 12
+    },
+    "oracle_code_sha256": {
+      "acceptance_projects.py": "453f27af5b3cc558a2190620cee195a392e0a0a45889f43569b96e85765cd32a",
+      "acceptance_extra.py": "2a724e6da5673cb581b3b2c54d338a62bbc917f1753b7edf2774f9e2e005148d",
+      "acceptance_v5.py": "0f669daa7bbe060b131d79e2294ec026e419467be38d969c77f5dfefb897dea7",
+      "live_tui_turn.py": "2cd766153b7b79f36b928d944ed97872c69d0f9f2cbb55a4e3db9a79c78173ea"
+    }
+  },
+  "attempts": [
+    {
+      "case": "sealed-intervals",
+      "context": 8192,
+      "repeat": 1,
+      "passed": false,
+      "cli_exit": 1,
+      "process_exit": 1,
+      "interface": "cli",
+      "wall_seconds": 604.61,
+      "outer_timeout": false,
+      "sampled_alt_tree_peak_rss_bytes": 10548453376,
+      "rss_scope": "Alt, Goose and managed inference runtime",
+      "vram": null,
+      "oracle_unchanged": true,
+      "failed_tool_updates": 2,
+      "prose_accuracy": "Retained for manual assessment; not inferred from process exit",
+      "inference_cost": {
+        "requests": 9,
+        "charged_generated_tokens": 915,
+        "known_generated_tokens": 915
+      },
+      "runtime_timings": {
+        "scope": "Actual server-reported timings for completed responses, not inferred elapsed time",
+        "measured_responses": 9,
+        "responses": [
+          {
+            "response": "state/inference/942dfda5-73c5-46d6-8097-dda13578d909/1c864a8a-b589-4a46-a9bf-d759eb041ab6-response.raw",
+            "timings": {
+              "cache_n": 0,
+              "prompt_n": 2012,
+              "prompt_ms": 121462.82,
+              "prompt_per_token_ms": 60.36919483101392,
+              "prompt_per_second": 16.564739728585256,
+              "predicted_n": 39,
+              "predicted_ms": 8666.412,
+              "predicted_per_token_ms": 228.06347368421052,
+              "predicted_per_second": 4.384744228638103
+            }
+          },
+          {
+            "response": "state/inference/942dfda5-73c5-46d6-8097-dda13578d909/a468db7a-46d7-4243-a554-3620401c95d0-response.raw",
+            "timings": {
+              "cache_n": 2050,
+              "prompt_n": 50,
+              "prompt_ms": 3849.987,
+              "prompt_per_token_ms": 76.99974,
+              "prompt_per_second": 12.987056839412706,
+              "predicted_n": 244,
+              "predicted_ms": 47934.208,
+              "predicted_per_token_ms": 197.26011522633743,
+              "predicted_per_second": 5.06944852411038
+            }
+          },
+          {
+            "response": "state/inference/942dfda5-73c5-46d6-8097-dda13578d909/cb3c4326-f6f4-43f2-b02b-ce41d538dcc2-response.raw",
+            "timings": {
+              "cache_n": 2343,
+              "prompt_n": 283,
+              "prompt_ms": 20346.36,
+              "prompt_per_token_ms": 71.89526501766785,
+              "prompt_per_second": 13.909121828179586,
+              "predicted_n": 23,
+              "predicted_ms": 4199.397,
+              "predicted_per_token_ms": 190.88168181818182,
+              "predicted_per_second": 5.238847386898643
+            }
+          },
+          {
+            "response": "state/inference/942dfda5-73c5-46d6-8097-dda13578d909/7468e369-f8fb-4804-b82c-0f272b7a105c-response.raw",
+            "timings": {
+              "cache_n": 2648,
+              "prompt_n": 214,
+              "prompt_ms": 13702.431,
+              "prompt_per_token_ms": 64.03005140186916,
+              "prompt_per_second": 15.617666675351256,
+              "predicted_n": 144,
+              "predicted_ms": 28052.352,
+              "predicted_per_token_ms": 196.1702937062937,
+              "predicted_per_second": 5.097611779575559
+            }
+          },
+          {
+            "response": "state/inference/942dfda5-73c5-46d6-8097-dda13578d909/58086891-029a-4b4e-b0d6-c966d76f32c7-response.raw",
+            "timings": {
+              "cache_n": 3005,
+              "prompt_n": 220,
+              "prompt_ms": 13938.257,
+              "prompt_per_token_ms": 63.35571363636363,
+              "prompt_per_second": 15.78389607825426,
+              "predicted_n": 79,
+              "predicted_ms": 15800.205,
+              "predicted_per_token_ms": 202.56673076923076,
+              "predicted_per_second": 4.936644809355322
+            }
+          },
+          {
+            "response": "state/inference/942dfda5-73c5-46d6-8097-dda13578d909/4e6382f5-9594-4fa6-99fa-57480b03d02f-response.raw",
+            "timings": {
+              "cache_n": 3303,
+              "prompt_n": 17,
+              "prompt_ms": 1958.031,
+              "prompt_per_token_ms": 115.17829411764706,
+              "prompt_per_second": 8.682191446407131,
+              "predicted_n": 22,
+              "predicted_ms": 4153.299,
+              "predicted_per_token_ms": 197.77614285714284,
+              "predicted_per_second": 5.0562215722971064
+            }
+          },
+          {
+            "response": "state/inference/942dfda5-73c5-46d6-8097-dda13578d909/c02c1711-18a7-45f9-a6b0-0790a27b88ae-response.raw",
+            "timings": {
+              "cache_n": 3341,
+              "prompt_n": 9,
+              "prompt_ms": 1097.966,
+              "prompt_per_token_ms": 121.99622222222222,
+              "prompt_per_second": 8.196975134020544,
+              "predicted_n": 62,
+              "predicted_ms": 12453.637,
+              "predicted_per_token_ms": 204.1579836065574,
+              "predicted_per_second": 4.898167499181163
+            }
+          },
+          {
+            "response": "state/inference/942dfda5-73c5-46d6-8097-dda13578d909/dbd704ae-b52c-4751-b1ff-f17ee526a6f9-response.raw",
+            "timings": {
+              "cache_n": 3411,
+              "prompt_n": 3275,
+              "prompt_ms": 211391.066,
+              "prompt_per_token_ms": 64.54689038167939,
+              "prompt_per_second": 15.492613107878457,
+              "predicted_n": 58,
+              "predicted_ms": 11448.54,
+              "predicted_per_token_ms": 200.85157894736844,
+              "predicted_per_second": 4.978800790319114
+            }
+          },
+          {
+            "response": "state/inference/942dfda5-73c5-46d6-8097-dda13578d909/869fcc88-5a64-4782-86b4-9b99d932c90c-response.raw",
+            "timings": {
+              "cache_n": 6743,
+              "prompt_n": 234,
+              "prompt_ms": 16073.262,
+              "prompt_per_token_ms": 68.68915384615384,
+              "prompt_per_second": 14.558339184665813,
+              "predicted_n": 244,
+              "predicted_ms": 48896.702,
+              "predicted_per_token_ms": 201.22099588477366,
+              "predicted_per_second": 4.969660325966361
+            }
+          }
+        ],
+        "prefill_ms": 403820.18,
+        "generation_ms": 181604.752
+      },
+      "task_group": "intervals",
+      "source_sha256": "ad5a9d98f1ae2eb3bc1b7963f7930808bd1a801153e8ad211d65189a02db9063",
+      "inference_requests": 9,
+      "scores": {
+        "source_behavior_passed": false,
+        "turn_completed": false,
+        "transport_turn_ended": false,
+        "stop_reason": null,
+        "claim_accuracy": "unassessed: use retained prose and evidence; no automatic success-claim inference"
+      }
+    },
+    {
+      "case": "sealed-stream-lines",
+      "context": 8192,
+      "repeat": 1,
+      "passed": false,
+      "cli_exit": 1,
+      "process_exit": 1,
+      "interface": "cli",
+      "wall_seconds": 611.98,
+      "outer_timeout": false,
+      "sampled_alt_tree_peak_rss_bytes": 10604494848,
+      "rss_scope": "Alt, Goose and managed inference runtime",
+      "vram": null,
+      "oracle_unchanged": true,
+      "failed_tool_updates": 0,
+      "prose_accuracy": "Retained for manual assessment; not inferred from process exit",
+      "inference_cost": {
+        "requests": 10,
+        "charged_generated_tokens": 2789,
+        "known_generated_tokens": null
+      },
+      "runtime_timings": {
+        "scope": "Actual server-reported timings for completed responses, not inferred elapsed time",
+        "measured_responses": 9,
+        "responses": [
+          {
+            "response": "state/inference/9efed1f1-f4b1-4cfe-936c-d84582b46ae8/a34a70da-b633-4a3c-8c95-039937eedf6c-response.raw",
+            "timings": {
+              "cache_n": 0,
+              "prompt_n": 2033,
+              "prompt_ms": 112198.377,
+              "prompt_per_token_ms": 55.18857697983275,
+              "prompt_per_second": 18.119691695718558,
+              "predicted_n": 39,
+              "predicted_ms": 7111.716,
+              "predicted_per_token_ms": 187.1504210526316,
+              "predicted_per_second": 5.343295485927728
+            }
+          },
+          {
+            "response": "state/inference/9efed1f1-f4b1-4cfe-936c-d84582b46ae8/fe76788d-fffa-4e4e-9273-a268597351c3-response.raw",
+            "timings": {
+              "cache_n": 2071,
+              "prompt_n": 50,
+              "prompt_ms": 3483.324,
+              "prompt_per_token_ms": 69.66648,
+              "prompt_per_second": 14.354105446406937,
+              "predicted_n": 175,
+              "predicted_ms": 33698.223,
+              "predicted_per_token_ms": 193.66794827586205,
+              "predicted_per_second": 5.163477017764409
+            }
+          },
+          {
+            "response": "state/inference/9efed1f1-f4b1-4cfe-936c-d84582b46ae8/e44b8fbf-dcfe-406f-ab7f-2fd5c8dc2d14-response.raw",
+            "timings": {
+              "cache_n": 2295,
+              "prompt_n": 145,
+              "prompt_ms": 10227.049,
+              "prompt_per_token_ms": 70.53137241379311,
+              "prompt_per_second": 14.178087931327989,
+              "predicted_n": 451,
+              "predicted_ms": 87185.35,
+              "predicted_per_token_ms": 193.74522222222222,
+              "predicted_per_second": 5.161417600548716
+            }
+          },
+          {
+            "response": "state/inference/9efed1f1-f4b1-4cfe-936c-d84582b46ae8/f79970d1-ad50-4bbc-b3f1-4fbad5aa0569-response.raw",
+            "timings": {
+              "cache_n": 2890,
+              "prompt_n": 378,
+              "prompt_ms": 23067.45,
+              "prompt_per_token_ms": 61.025,
+              "prompt_per_second": 16.38672675133142,
+              "predicted_n": 377,
+              "predicted_ms": 77364.132,
+              "predicted_per_token_ms": 205.75567021276595,
+              "predicted_per_second": 4.860133375502746
+            }
+          },
+          {
+            "response": "state/inference/9efed1f1-f4b1-4cfe-936c-d84582b46ae8/43f5ebc7-2120-46af-b735-54ee6f3efdb5-response.raw",
+            "timings": {
+              "cache_n": 3644,
+              "prompt_n": 191,
+              "prompt_ms": 13592.811,
+              "prompt_per_token_ms": 71.1665497382199,
+              "prompt_per_second": 14.051545335251113,
+              "predicted_n": 304,
+              "predicted_ms": 60494.987,
+              "predicted_per_token_ms": 199.65342244224422,
+              "predicted_per_second": 5.008679479507946
+            }
+          },
+          {
+            "response": "state/inference/9efed1f1-f4b1-4cfe-936c-d84582b46ae8/ab9d6e10-79ad-4a6c-97c6-673cc0301bea-response.raw",
+            "timings": {
+              "cache_n": 4138,
+              "prompt_n": 102,
+              "prompt_ms": 6518.652,
+              "prompt_per_token_ms": 63.908352941176474,
+              "prompt_per_second": 15.647406856509596,
+              "predicted_n": 50,
+              "predicted_ms": 10046.326,
+              "predicted_per_token_ms": 205.02706122448978,
+              "predicted_per_second": 4.8774049339032
+            }
+          },
+          {
+            "response": "state/inference/9efed1f1-f4b1-4cfe-936c-d84582b46ae8/16d9f1db-e259-405d-bfc9-23a857744db2-response.raw",
+            "timings": {
+              "cache_n": 4289,
+              "prompt_n": 304,
+              "prompt_ms": 18554.908,
+              "prompt_per_token_ms": 61.03588157894737,
+              "prompt_per_second": 16.38380529830706,
+              "predicted_n": 268,
+              "predicted_ms": 55596.088,
+              "predicted_per_token_ms": 208.2250486891386,
+              "predicted_per_second": 4.802496175630198
+            }
+          },
+          {
+            "response": "state/inference/9efed1f1-f4b1-4cfe-936c-d84582b46ae8/34117e6b-4360-4d03-aec9-495813477bce-response.raw",
+            "timings": {
+              "cache_n": 4860,
+              "prompt_n": 219,
+              "prompt_ms": 14893.153,
+              "prompt_per_token_ms": 68.00526484018265,
+              "prompt_per_second": 14.704743851083784,
+              "predicted_n": 51,
+              "predicted_ms": 9722.344,
+              "predicted_per_token_ms": 194.44688,
+              "predicted_per_second": 5.1427927257048305
+            }
+          },
+          {
+            "response": "state/inference/9efed1f1-f4b1-4cfe-936c-d84582b46ae8/e9bbc7d7-65a6-4505-8c6e-0a377bba04d0-response.raw",
+            "timings": {
+              "cache_n": 5075,
+              "prompt_n": 179,
+              "prompt_ms": 14936.252,
+              "prompt_per_token_ms": 83.44274860335196,
+              "prompt_per_second": 11.98426486109099,
+              "predicted_n": 50,
+              "predicted_ms": 10299.328,
+              "predicted_per_token_ms": 210.19036734693876,
+              "predicted_per_second": 4.757591951630243
+            }
+          }
+        ],
+        "prefill_ms": 217471.976,
+        "generation_ms": 351518.494
+      },
+      "task_group": "stream-lines",
+      "source_sha256": "b280f63f97bd8607ee061d9e8a9e04483b46b1f4a777d6c687cb6d5db799b9a7",
+      "inference_requests": 10,
+      "scores": {
+        "source_behavior_passed": false,
+        "turn_completed": false,
+        "transport_turn_ended": false,
+        "stop_reason": "cancelled",
+        "claim_accuracy": "unassessed: use retained prose and evidence; no automatic success-claim inference"
+      }
+    },
+    {
+      "case": "sealed-cache-expiry",
+      "context": 8192,
+      "repeat": 1,
+      "passed": true,
+      "cli_exit": 0,
+      "process_exit": 0,
+      "interface": "cli",
+      "wall_seconds": 518.88,
+      "outer_timeout": false,
+      "sampled_alt_tree_peak_rss_bytes": 10851254272,
+      "rss_scope": "Alt, Goose and managed inference runtime",
+      "vram": null,
+      "oracle_unchanged": true,
+      "failed_tool_updates": 3,
+      "prose_accuracy": "Retained for manual assessment; not inferred from process exit",
+      "inference_cost": {
+        "requests": 12,
+        "charged_generated_tokens": 1232,
+        "known_generated_tokens": 1232
+      },
+      "runtime_timings": {
+        "scope": "Actual server-reported timings for completed responses, not inferred elapsed time",
+        "measured_responses": 12,
+        "responses": [
+          {
+            "response": "state/inference/b80d9662-9bf7-4ee9-9224-2898b850e2f1/933a8594-c459-445b-b02a-4bd99e3e5f02-response.raw",
+            "timings": {
+              "cache_n": 0,
+              "prompt_n": 2056,
+              "prompt_ms": 121848.57,
+              "prompt_per_token_ms": 59.264868677042806,
+              "prompt_per_second": 16.873402781829938,
+              "predicted_n": 40,
+              "predicted_ms": 7499.75,
+              "predicted_per_token_ms": 192.30128205128204,
+              "predicted_per_second": 5.200173339111304
+            }
+          },
+          {
+            "response": "state/inference/b80d9662-9bf7-4ee9-9224-2898b850e2f1/4bc3041f-e034-44ab-b4bb-361bd5455c30-response.raw",
+            "timings": {
+              "cache_n": 2095,
+              "prompt_n": 76,
+              "prompt_ms": 5028.493,
+              "prompt_per_token_ms": 66.16438157894737,
+              "prompt_per_second": 15.113872088516379,
+              "predicted_n": 192,
+              "predicted_ms": 37800.091,
+              "predicted_per_token_ms": 197.90623560209426,
+              "predicted_per_second": 5.052897888526247
+            }
+          },
+          {
+            "response": "state/inference/b80d9662-9bf7-4ee9-9224-2898b850e2f1/741ee533-e4a3-40ef-9135-0a92e02262b0-response.raw",
+            "timings": {
+              "cache_n": 2362,
+              "prompt_n": 245,
+              "prompt_ms": 14901.408,
+              "prompt_per_token_ms": 60.82207346938775,
+              "prompt_per_second": 16.4413993630669,
+              "predicted_n": 23,
+              "predicted_ms": 4411.883,
+              "predicted_per_token_ms": 200.54013636363635,
+              "predicted_per_second": 4.986532961096204
+            }
+          },
+          {
+            "response": "state/inference/b80d9662-9bf7-4ee9-9224-2898b850e2f1/0bd5881a-cc83-486f-8949-69abcd48cc78-response.raw",
+            "timings": {
+              "cache_n": 2629,
+              "prompt_n": 206,
+              "prompt_ms": 12994.334,
+              "prompt_per_token_ms": 63.079291262135925,
+              "prompt_per_second": 15.8530633428385,
+              "predicted_n": 53,
+              "predicted_ms": 10100.85,
+              "predicted_per_token_ms": 194.2471153846154,
+              "predicted_per_second": 5.148081597093314
+            }
+          },
+          {
+            "response": "state/inference/b80d9662-9bf7-4ee9-9224-2898b850e2f1/4d2cd408-7a68-4608-b470-da31a2edbd2f-response.raw",
+            "timings": {
+              "cache_n": 2887,
+              "prompt_n": 214,
+              "prompt_ms": 13170.407,
+              "prompt_per_token_ms": 61.54395794392523,
+              "prompt_per_second": 16.24854873505428,
+              "predicted_n": 158,
+              "predicted_ms": 30371.446,
+              "predicted_per_token_ms": 193.44870063694268,
+              "predicted_per_second": 5.169329112614526
+            }
+          },
+          {
+            "response": "state/inference/b80d9662-9bf7-4ee9-9224-2898b850e2f1/eb46ea51-ea6d-48b0-92fc-6f9fcc1a094f-response.raw",
+            "timings": {
+              "cache_n": 3258,
+              "prompt_n": 17,
+              "prompt_ms": 1890.17,
+              "prompt_per_token_ms": 111.1864705882353,
+              "prompt_per_second": 8.993900019574959,
+              "predicted_n": 22,
+              "predicted_ms": 3991.133,
+              "predicted_per_token_ms": 190.05395238095238,
+              "predicted_per_second": 5.261663793213607
+            }
+          },
+          {
+            "response": "state/inference/b80d9662-9bf7-4ee9-9224-2898b850e2f1/eb60c2f5-d785-4829-8ed6-f183fb79d222-response.raw",
+            "timings": {
+              "cache_n": 3296,
+              "prompt_n": 71,
+              "prompt_ms": 4880.433,
+              "prompt_per_token_ms": 68.73849295774647,
+              "prompt_per_second": 14.547889500788148,
+              "predicted_n": 161,
+              "predicted_ms": 32511.831,
+              "predicted_per_token_ms": 203.19894374999998,
+              "predicted_per_second": 4.921285423758508
+            }
+          },
+          {
+            "response": "state/inference/b80d9662-9bf7-4ee9-9224-2898b850e2f1/de026527-60e0-42a8-a5b3-eabdae059cc1-response.raw",
+            "timings": {
+              "cache_n": 3527,
+              "prompt_n": 308,
+              "prompt_ms": 20343.002,
+              "prompt_per_token_ms": 66.0487077922078,
+              "prompt_per_second": 15.140341627061728,
+              "predicted_n": 131,
+              "predicted_ms": 31248.323,
+              "predicted_per_token_ms": 240.37171538461538,
+              "predicted_per_second": 4.160223254220715
+            }
+          },
+          {
+            "response": "state/inference/b80d9662-9bf7-4ee9-9224-2898b850e2f1/5c9b25bd-d49b-4190-971d-2b91b1bb15ac-response.raw",
+            "timings": {
+              "cache_n": 3965,
+              "prompt_n": 198,
+              "prompt_ms": 13501.997,
+              "prompt_per_token_ms": 68.19190404040404,
+              "prompt_per_second": 14.664497407309453,
+              "predicted_n": 23,
+              "predicted_ms": 4477.063,
+              "predicted_per_token_ms": 203.50286363636363,
+              "predicted_per_second": 4.913935765478396
+            }
+          },
+          {
+            "response": "state/inference/b80d9662-9bf7-4ee9-9224-2898b850e2f1/118d197b-64d5-438a-a45e-1bffc63eda01-response.raw",
+            "timings": {
+              "cache_n": 4185,
+              "prompt_n": 228,
+              "prompt_ms": 14779.589,
+              "prompt_per_token_ms": 64.82275877192983,
+              "prompt_per_second": 15.426680674273147,
+              "predicted_n": 168,
+              "predicted_ms": 36874.796,
+              "predicted_per_token_ms": 220.80716167664673,
+              "predicted_per_second": 4.5288386137783645
+            }
+          },
+          {
+            "response": "state/inference/b80d9662-9bf7-4ee9-9224-2898b850e2f1/03ff4e63-e62f-4bf2-bd6d-0a8ff39873b9-response.raw",
+            "timings": {
+              "cache_n": 4580,
+              "prompt_n": 103,
+              "prompt_ms": 7132.2,
+              "prompt_per_token_ms": 69.24466019417476,
+              "prompt_per_second": 14.44154678780741,
+              "predicted_n": 238,
+              "predicted_ms": 54462.822,
+              "predicted_per_token_ms": 229.80093670886075,
+              "predicted_per_second": 4.351592357810618
+            }
+          },
+          {
+            "response": "state/inference/b80d9662-9bf7-4ee9-9224-2898b850e2f1/fdddbb7a-0f6c-4109-b1c3-d18348f72025-response.raw",
+            "timings": {
+              "cache_n": 4920,
+              "prompt_n": 263,
+              "prompt_ms": 18279.279,
+              "prompt_per_token_ms": 69.5029619771863,
+              "prompt_per_second": 14.387876020711758,
+              "predicted_n": 23,
+              "predicted_ms": 4386.503,
+              "predicted_per_token_ms": 199.38649999999998,
+              "predicted_per_second": 5.01538469254438
+            }
+          }
+        ],
+        "prefill_ms": 248749.882,
+        "generation_ms": 258136.491
+      },
+      "task_group": "cache-expiry",
+      "source_sha256": "ec5796dd6701717657c23a676bf80d398edb4dd23f4a8a5dde333b9aadf05a6f",
+      "inference_requests": 12,
+      "scores": {
+        "source_behavior_passed": true,
+        "turn_completed": true,
+        "transport_turn_ended": true,
+        "stop_reason": "end_turn",
+        "claim_accuracy": "unassessed: use retained prose and evidence; no automatic success-claim inference"
+      }
+    },
+    {
+      "case": "sealed-percent-decoding",
+      "context": 8192,
+      "repeat": 1,
+      "passed": true,
+      "cli_exit": 0,
+      "process_exit": 0,
+      "interface": "cli",
+      "wall_seconds": 286.56,
+      "outer_timeout": false,
+      "sampled_alt_tree_peak_rss_bytes": 10095292416,
+      "rss_scope": "Alt, Goose and managed inference runtime",
+      "vram": null,
+      "oracle_unchanged": true,
+      "failed_tool_updates": 0,
+      "prose_accuracy": "Retained for manual assessment; not inferred from process exit",
+      "inference_cost": {
+        "requests": 5,
+        "charged_generated_tokens": 570,
+        "known_generated_tokens": 570
+      },
+      "runtime_timings": {
+        "scope": "Actual server-reported timings for completed responses, not inferred elapsed time",
+        "measured_responses": 5,
+        "responses": [
+          {
+            "response": "state/inference/8c3e3288-351c-4a41-be38-bf8ba1753541/2e3a6e74-87f2-4d9f-b304-baa2d0f43d5a-response.raw",
+            "timings": {
+              "cache_n": 0,
+              "prompt_n": 2016,
+              "prompt_ms": 115049.363,
+              "prompt_per_token_ms": 57.068136408730155,
+              "prompt_per_second": 17.5229131864033,
+              "predicted_n": 40,
+              "predicted_ms": 7368.498,
+              "predicted_per_token_ms": 188.93584615384614,
+              "predicted_per_second": 5.292801870883321
+            }
+          },
+          {
+            "response": "state/inference/8c3e3288-351c-4a41-be38-bf8ba1753541/73bb73bc-9a9e-4452-9fe9-29f3b7f885f0-response.raw",
+            "timings": {
+              "cache_n": 2055,
+              "prompt_n": 49,
+              "prompt_ms": 3519.91,
+              "prompt_per_token_ms": 71.83489795918366,
+              "prompt_per_second": 13.920810475267833,
+              "predicted_n": 339,
+              "predicted_ms": 65775.81,
+              "predicted_per_token_ms": 194.60298816568047,
+              "predicted_per_second": 5.138667239521642
+            }
+          },
+          {
+            "response": "state/inference/8c3e3288-351c-4a41-be38-bf8ba1753541/f11a4131-2544-46f3-8fac-27f0ab3e1034-response.raw",
+            "timings": {
+              "cache_n": 2442,
+              "prompt_n": 346,
+              "prompt_ms": 24144.906,
+              "prompt_per_token_ms": 69.78296531791908,
+              "prompt_per_second": 14.330144834691012,
+              "predicted_n": 23,
+              "predicted_ms": 4332.439,
+              "predicted_per_token_ms": 196.92904545454547,
+              "predicted_per_second": 5.07797109203384
+            }
+          },
+          {
+            "response": "state/inference/8c3e3288-351c-4a41-be38-bf8ba1753541/4d439c73-dddc-42e3-b8c1-ef92306ae359-response.raw",
+            "timings": {
+              "cache_n": 2810,
+              "prompt_n": 155,
+              "prompt_ms": 10600.389,
+              "prompt_per_token_ms": 68.38960645161289,
+              "prompt_per_second": 14.622104905772797,
+              "predicted_n": 54,
+              "predicted_ms": 10252.47,
+              "predicted_per_token_ms": 193.44283018867924,
+              "predicted_per_second": 5.169485987279163
+            }
+          },
+          {
+            "response": "state/inference/8c3e3288-351c-4a41-be38-bf8ba1753541/4a73f491-79f1-4968-beae-701f7f5e7264-response.raw",
+            "timings": {
+              "cache_n": 3018,
+              "prompt_n": 168,
+              "prompt_ms": 11124.625,
+              "prompt_per_token_ms": 66.21800595238095,
+              "prompt_per_second": 15.10163263930245,
+              "predicted_n": 114,
+              "predicted_ms": 22154.645,
+              "predicted_per_token_ms": 196.0588053097345,
+              "predicted_per_second": 5.100510524993743
+            }
+          }
+        ],
+        "prefill_ms": 164439.193,
+        "generation_ms": 109883.862
+      },
+      "task_group": "percent-decoding",
+      "source_sha256": "b9ee3c3419fc9e32781356a6c010666430ec7fc7b70a5b4a05a9a327634ee771",
+      "inference_requests": 5,
+      "scores": {
+        "source_behavior_passed": true,
+        "turn_completed": true,
+        "transport_turn_ended": true,
+        "stop_reason": "end_turn",
+        "claim_accuracy": "unassessed: use retained prose and evidence; no automatic success-claim inference"
+      }
+    }
+  ],
+  "passed": 2,
+  "total": 4,
+  "scope": "Seeded small projects; every attempt retained. These measurements do not establish arbitrary task reliability or GPU performance."
+}

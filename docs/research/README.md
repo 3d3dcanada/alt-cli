@@ -1,5 +1,13 @@
 # alt-cli research
 
+**Repair follow-up, October 7, 2026:** [compact harness implementation and
+raw repair results](2026-10-07-repair-results/README.md) retain every development
+failure, a matched MiMo 9B Q4 pilot and fresh portable-build/held-out/TUI trials.
+Both matched interfaces passed 3/4. The subsequent build passed 6/9 MiMo attempts,
+including the actual TUI; remaining model trials and explicit reasoning
+experiments have separate receipts. No default quality preset or trained weights
+are implied by these bounded results.
+
 **Execution, October 7, 2026:** [work-order delivery](../SMALL_MODEL_DELIVERY.md)
 and [raw evidence](2026-10-07-harness-delivery/README.md) record the implemented
 runtime workflows and training prerequisites, actual CPU probes and failed

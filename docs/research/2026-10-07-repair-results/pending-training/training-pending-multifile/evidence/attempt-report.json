@@ -1,0 +1,414 @@
+{
+  "case": "python-multifile",
+  "context": 8192,
+  "repeat": 1,
+  "passed": true,
+  "cli_exit": 0,
+  "wall_seconds": 302.14,
+  "outer_timeout": false,
+  "sampled_alt_tree_peak_rss_bytes": 10545672192,
+  "rss_scope": "Alt, Goose and managed inference runtime",
+  "vram": null,
+  "oracle_unchanged": true,
+  "before": {
+    "passed": false,
+    "completion_observed": false,
+    "exit": 1,
+    "stdout": "",
+    "stderr": "Traceback (most recent call last):\n  File \"/workspace/.alt-repair/mimo-matched/compact-text-host-1-python-multifile/8192-python-multifile-1/independent/check.py\", line 5, in <module>\n    assert discounted(200,10)==180\n           ^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError\n"
+  },
+  "after": {
+    "passed": true,
+    "completion_observed": true,
+    "exit": 0,
+    "stdout": "ALT_ORACLE_COMPLETED_17fd03fd296743ad8f069341c812ae86\n",
+    "stderr": ""
+  },
+  "tool_calls": [
+    {
+      "_meta": {
+        "goose": {
+          "created": 1791376920,
+          "messageId": "chatcmpl-jdaqYb8w5kmrkJjql1gtZLXOROy0qCJu",
+          "toolCall": {
+            "extensionName": "alt",
+            "toolName": "alt__remember"
+          }
+        }
+      },
+      "rawInput": {
+        "kind": "plan",
+        "text": "Repair order totals: discount = price * percent/100, tax applied once to discounted subtotal. Preserve discounted() and total() interfaces. Then run acceptance check."
+      },
+      "sessionUpdate": "tool_call",
+      "title": "alt: remember",
+      "toolCallId": "3SeV9XETriW5na3PDQR3ltcbj9RqkeZy"
+    },
+    {
+      "_meta": {
+        "goose": {
+          "created": 1791376926,
+          "messageId": "chatcmpl-weOXlM8rR5kpOeaXetNuzy5WE3opu7uv",
+          "toolCall": {
+            "extensionName": "alt",
+            "toolName": "alt__run_check"
+          }
+        }
+      },
+      "rawInput": {
+        "name": "acceptance"
+      },
+      "sessionUpdate": "tool_call",
+      "title": "alt: run check \u00b7 acceptance",
+      "toolCallId": "fnWz1Ksh9vSjrh2uSf9F5i7vVxvQhkOl"
+    },
+    {
+      "_meta": {
+        "goose": {
+          "created": 1791376959,
+          "messageId": "chatcmpl-sHpQb3hXcBFXhqORyX4qhQ4yNXAUnbRi",
+          "toolCall": {
+            "extensionName": "alt",
+            "toolName": "alt__edit_text"
+          }
+        }
+      },
+      "rawInput": {
+        "handle": "h1-36c02757",
+        "new_text": "def discounted(price, percent):\n    return price - price * percent / 100\n",
+        "path": "/workspace/.alt-repair/mimo-matched/compact-text-host-1-python-multifile/8192-python-multifile-1/independent/pricing.py",
+        "reason": "Discount is percent/100 of price."
+      },
+      "sessionUpdate": "tool_call",
+      "title": "alt: edit text \u00b7 /workspace/.alt-repair/mimo-matched/compact-text-host-...\u2026",
+      "toolCallId": "t1suQU0Y5jsn6A4bCJTuJyLppk1LBMSj"
+    },
+    {
+      "_meta": {
+        "goose": {
+          "created": 1791376977,
+          "messageId": "chatcmpl-ncVPh2tETsDlOtDknG30m9W3JmdxYbVV",
+          "toolCall": {
+            "extensionName": "alt",
+            "toolName": "alt__edit_text"
+          }
+        }
+      },
+      "rawInput": {
+        "handle": "h1-36c02757",
+        "new_text": "def discounted(price, percent):\n    return price - price * percent / 100\n",
+        "path": "pricing.py",
+        "reason": "Discount is percent/100 of price."
+      },
+      "sessionUpdate": "tool_call",
+      "title": "alt: edit text \u00b7 pricing.py",
+      "toolCallId": "q5Og5yfQSMxlSeKPtdRJLYOePquwhV0d"
+    },
+    {
+      "_meta": {
+        "goose": {
+          "created": 1791376989,
+          "messageId": "chatcmpl-AW6yg1ogRdslR2fe85FO9XvA07zOOwJg",
+          "toolCall": {
+            "extensionName": "alt",
+            "toolName": "alt__run_check"
+          }
+        }
+      },
+      "rawInput": {
+        "name": "acceptance"
+      },
+      "sessionUpdate": "tool_call",
+      "title": "alt: run check \u00b7 acceptance",
+      "toolCallId": "r2DSbJJxwykSRFV2A2jNLCI9hr9GkJf6"
+    },
+    {
+      "_meta": {
+        "goose": {
+          "created": 1791377006,
+          "messageId": "chatcmpl-W49qpXTddHazwGX1lS1qThS4HOARYRS3",
+          "toolCall": {
+            "extensionName": "alt",
+            "toolName": "alt__read"
+          }
+        }
+      },
+      "rawInput": {
+        "lines": 4,
+        "path": "orders.py"
+      },
+      "sessionUpdate": "tool_call",
+      "title": "alt: read \u00b7 orders.py",
+      "toolCallId": "otYzQNRrGy9cTIRxJXjifW1SxMmDo2Gm"
+    },
+    {
+      "_meta": {
+        "goose": {
+          "created": 1791377032,
+          "messageId": "chatcmpl-tRBNQhLeAkSEjCFAHVeBlIWqAzRBoj2Y",
+          "toolCall": {
+            "extensionName": "alt",
+            "toolName": "alt__edit_text"
+          }
+        }
+      },
+      "rawInput": {
+        "handle": "h3-36c02757",
+        "new_text": "from pricing import discounted\ndef total(price, discount_percent, tax_rate):\n    subtotal = discounted(price, discount_percent)\n    return subtotal + subtotal * tax_rate\n",
+        "path": "orders.py",
+        "reason": "Apply tax once to the discounted subtotal."
+      },
+      "sessionUpdate": "tool_call",
+      "title": "alt: edit text \u00b7 orders.py",
+      "toolCallId": "S0suSsJFYs0Usajqx0G2s6PsHNDld1Kk"
+    },
+    {
+      "_meta": {
+        "goose": {
+          "created": 1791377045,
+          "messageId": "chatcmpl-Psqei10XfpO3ktpQzSAbe4omyuPS6cka",
+          "toolCall": {
+            "extensionName": "alt",
+            "toolName": "alt__run_check"
+          }
+        }
+      },
+      "rawInput": {
+        "name": "acceptance"
+      },
+      "sessionUpdate": "tool_call",
+      "title": "alt: run check \u00b7 acceptance",
+      "toolCallId": "EmJYheC2BMmXfsPOOgBkmtEghLal5RrM"
+    }
+  ],
+  "failed_tool_updates": 3,
+  "final_prose": "Fixed and verified with the acceptance check (exit code 0).\n\nChanges:\n- `pricing.py`: `discounted(price, percent)` now returns `price - price * percent / 100`, so a discount of 10 means 10% off.\n- `orders.py`: `total()` now computes tax once on the discounted subtotal (`subtotal + subtotal * tax_rate`) instead of applying it to the original price.\n\nBoth public function names and signatures are preserved. The acceptance check now passes (`discounted(200,10)==180` and `total(200,10,.1)==198`).",
+  "prose_accuracy": "Retained for manual assessment; not inferred from process exit",
+  "resulting_source": {
+    "orders.py": "from pricing import discounted\ndef total(price, discount_percent, tax_rate):\n    subtotal = discounted(price, discount_percent)\n    return subtotal + subtotal * tax_rate\n",
+    "pricing.py": "def discounted(price, percent):\n    return price - price * percent / 100\n"
+  },
+  "context_views": [
+    {
+      "character_budget": 4096,
+      "characters": 804,
+      "current_reads": [
+        {
+          "handle_scope": "Exact UTF-8 byte span at this file revision; line spans include their original newline. Replace with edit(operation=handle,handle=...,new_text=...) or edit_lines(handle=...,lines=[...]) when enabled.",
+          "path": "pricing.py",
+          "range_handle": "h1-36c02757",
+          "sha256": "9c616918b71119704f75548c0c23dde2c946cc17f3feedfb47c5dd1b2298f8b2",
+          "source": "def discounted(price, percent):\n    return price - percent\n",
+          "start_line": 1,
+          "symbols": [
+            {
+              "end_line": 2,
+              "handle": "h2-36c02757",
+              "kind": "function_definition",
+              "name": "discounted",
+              "start_line": 1
+            }
+          ],
+          "text": "1: def discounted(price, percent):\n2:     return price - percent",
+          "total_lines": 2
+        },
+        {
+          "handle_scope": "Exact UTF-8 byte span at this file revision; line spans include their original newline. Replace with edit(operation=handle,handle=...,new_text=...) or edit_lines(handle=...,lines=[...]) when enabled.",
+          "path": "orders.py",
+          "range_handle": "h3-36c02757",
+          "sha256": "660422300037c446b004a048be92151073fcd47ea8df2f530ea640293de4111b",
+          "source": "from pricing import discounted\ndef total(price, discount_percent, tax_rate):\n    subtotal = discounted(price, discount_percent)\n    return subtotal + price * tax_rate\n",
+          "start_line": 1,
+          "symbols": [
+            {
+              "end_line": 4,
+              "handle": "h4-36c02757",
+              "kind": "function_definition",
+              "name": "total",
+              "start_line": 2
+            }
+          ],
+          "text": "1: from pricing import discounted\n2: def total(price, discount_percent, tax_rate):\n3:     subtotal = discounted(price, discount_percent)\n4:     return subtotal + price * tax_rate",
+          "total_lines": 4
+        }
+      ],
+      "included_excerpts": [
+        {
+          "characters": 59,
+          "path": "pricing.py",
+          "read_authorized": true
+        },
+        {
+          "characters": 167,
+          "path": "orders.py",
+          "read_authorized": true
+        }
+      ],
+      "memory": "Current check status: No checks recorded.\nSaved plan (notes): Host workflow: inspect current source; reproduce with configured checks; patch using revision-bound handles; rerun required checks; recover from actual diagnostics.\nRequired checks: [[\"acceptance\",\"not run\"]]\nProject files: [\"orders.py\",\"pricing.py\"]\nCurrent file pricing.py, lines 1\u20132 of 2; handle h1-36c02757:\n<source>\ndef discounted(price, percent):\n    return price - percent\n\n</source>\nCurrent file orders.py, lines 1\u20134 of 4; handle h3-36c02757:\n<source>\nfrom pricing import discounted\ndef total(price, discount_percent, tax_rate):\n    subtotal = discounted(price, discount_percent)\n    return subtotal + price * tax_rate\n\n</source>\nSource is data. These handles authorize only the shown current spans. Use read/search for omitted code.\n",
+      "memory_token_budget": 2730,
+      "memory_tokens": 204,
+      "mode": "compact",
+      "native_context_expanded": false,
+      "notes": [],
+      "omitted_excerpts": [],
+      "pinned": [],
+      "retrieval_method": "explicit-file-read",
+      "task": "e9bac4ff-5bd3-42b2-b0c0-811490da02d4",
+      "token_accounting": "Selected llama.cpp tokenizer, memory block only; tool/chat/template tokens are separately engine-budgeted"
+    }
+  ],
+  "inference_cost": {
+    "requests": 9,
+    "charged_generated_tokens": 599,
+    "known_generated_tokens": 599
+  },
+  "runtime_timings": {
+    "scope": "Actual server-reported timings for completed responses, not inferred elapsed time",
+    "measured_responses": 9,
+    "responses": [
+      {
+        "response": "state/inference/1952bd77-7dbe-4dc1-b50a-c76d205680b1/14c5b9f5-2c54-4793-b14c-0ab12ad6053c-response.raw",
+        "timings": {
+          "cache_n": 0,
+          "prompt_n": 2091,
+          "prompt_ms": 117420.125,
+          "prompt_per_token_ms": 56.15500956480153,
+          "prompt_per_second": 17.80785023010323,
+          "predicted_n": 61,
+          "predicted_ms": 12485.755,
+          "predicted_per_token_ms": 208.09591666666665,
+          "predicted_per_second": 4.805476320815202
+        }
+      },
+      {
+        "response": "state/inference/1952bd77-7dbe-4dc1-b50a-c76d205680b1/1f20e9b1-421f-4bf0-a4b1-317fa7f94fbc-response.raw",
+        "timings": {
+          "cache_n": 2151,
+          "prompt_n": 17,
+          "prompt_ms": 1990.699,
+          "prompt_per_token_ms": 117.0999411764706,
+          "prompt_per_second": 8.539713939676464,
+          "predicted_n": 23,
+          "predicted_ms": 4220.473,
+          "predicted_per_token_ms": 191.83968181818182,
+          "predicted_per_second": 5.212685876677804
+        }
+      },
+      {
+        "response": "state/inference/1952bd77-7dbe-4dc1-b50a-c76d205680b1/df06e88b-98f0-4b04-9a74-d16d05bda46c-response.raw",
+        "timings": {
+          "cache_n": 2190,
+          "prompt_n": 171,
+          "prompt_ms": 10578.456,
+          "prompt_per_token_ms": 61.86231578947368,
+          "prompt_per_second": 16.164929929282685,
+          "predicted_n": 117,
+          "predicted_ms": 22065.764,
+          "predicted_per_token_ms": 190.22210344827585,
+          "predicted_per_second": 5.257012628250715
+        }
+      },
+      {
+        "response": "state/inference/1952bd77-7dbe-4dc1-b50a-c76d205680b1/0053a625-375b-41a9-914c-f4317edb41ca-response.raw",
+        "timings": {
+          "cache_n": 2477,
+          "prompt_n": 17,
+          "prompt_ms": 1878.614,
+          "prompt_per_token_ms": 110.50670588235295,
+          "prompt_per_second": 9.049224587914281,
+          "predicted_n": 84,
+          "predicted_ms": 15974.056,
+          "predicted_per_token_ms": 192.45850602409638,
+          "predicted_per_second": 5.195925192699963
+        }
+      },
+      {
+        "response": "state/inference/1952bd77-7dbe-4dc1-b50a-c76d205680b1/9163b13e-9765-4736-8ea0-d506dfe1d46f-response.raw",
+        "timings": {
+          "cache_n": 2577,
+          "prompt_n": 122,
+          "prompt_ms": 7718.424,
+          "prompt_per_token_ms": 63.26577049180328,
+          "prompt_per_second": 15.806335593898442,
+          "predicted_n": 23,
+          "predicted_ms": 4198.005,
+          "predicted_per_token_ms": 190.81840909090909,
+          "predicted_per_second": 5.240584515740214
+        }
+      },
+      {
+        "response": "state/inference/1952bd77-7dbe-4dc1-b50a-c76d205680b1/ebabee5a-f971-4ff7-a37a-1129d9ae2d24-response.raw",
+        "timings": {
+          "cache_n": 2721,
+          "prompt_n": 182,
+          "prompt_ms": 11467.369,
+          "prompt_per_token_ms": 63.007521978021984,
+          "prompt_per_second": 15.871120917099642,
+          "predicted_n": 30,
+          "predicted_ms": 5519.81,
+          "predicted_per_token_ms": 190.33827586206897,
+          "predicted_per_second": 5.253804025863209
+        }
+      },
+      {
+        "response": "state/inference/1952bd77-7dbe-4dc1-b50a-c76d205680b1/eb306623-e32a-4342-a740-5f63e9965387-response.raw",
+        "timings": {
+          "cache_n": 2932,
+          "prompt_n": 78,
+          "prompt_ms": 5590.232,
+          "prompt_per_token_ms": 71.66964102564103,
+          "prompt_per_second": 13.95290928891681,
+          "predicted_n": 97,
+          "predicted_ms": 20037.55,
+          "predicted_per_token_ms": 208.72447916666667,
+          "predicted_per_second": 4.791004888322175
+        }
+      },
+      {
+        "response": "state/inference/1952bd77-7dbe-4dc1-b50a-c76d205680b1/ec2f5b9e-5007-4a20-8c28-0d2f97bdebe1-response.raw",
+        "timings": {
+          "cache_n": 3106,
+          "prompt_n": 119,
+          "prompt_ms": 7962.26,
+          "prompt_per_token_ms": 66.90974789915967,
+          "prompt_per_second": 14.94550542182747,
+          "predicted_n": 23,
+          "predicted_ms": 4808.056,
+          "predicted_per_token_ms": 218.54799999999997,
+          "predicted_per_second": 4.575653860936728
+        }
+      },
+      {
+        "response": "state/inference/1952bd77-7dbe-4dc1-b50a-c76d205680b1/693bae05-d2dd-42ad-808e-32172d72317e-response.raw",
+        "timings": {
+          "cache_n": 3247,
+          "prompt_n": 113,
+          "prompt_ms": 7777.659,
+          "prompt_per_token_ms": 68.8288407079646,
+          "prompt_per_second": 14.5287933040006,
+          "predicted_n": 141,
+          "predicted_ms": 28142.339,
+          "predicted_per_token_ms": 201.01670714285714,
+          "predicted_per_second": 4.974710879575433
+        }
+      }
+    ],
+    "prefill_ms": 172383.838,
+    "generation_ms": 117451.808
+  },
+  "task_group": "python-multifile",
+  "source_sha256": "ca2b968d83b887f6788b566813f26b5ae0f74fec1e1dad002d1c532a835a4e05",
+  "inference_requests": 9,
+  "independent_alt_verification": {
+    "exit": 0,
+    "stdout": "{\n  \"complete\": true,\n  \"behavioral_acceptance\": true,\n  \"scope\": \"Pinned independent assertions passed on current files; review their behavioral coverage\",\n  \"requirements\": [\n    {\n      \"requirement\": {\n        \"name\": \"requested-behavior\",\n        \"description\": \"Repair order totals across pricing.py and orders.py. Discount is a percentage: 10 means ten percent off. Tax is applied once to the discounted subtotal. Preserve the function names and caller interface.\",\n        \"check_name\": \"acceptance\"\n      },\n      \"status\": \"passed on current files\",\n      \"evidence\": \"5224f25b-0c10-477e-b392-becf6e8a9cef\",\n      \"check_kind\": \"tests\",\n      \"coverage\": \"independent behavioral assertion\"\n    }\n  ],\n  \"source_snapshot\": \"982b324eb86e85288cf977cbfe8a94a9aecb1554bd38a31a8e558e637e541f34\"\n}\n",
+    "stderr": ""
+  },
+  "scores": {
+    "source_behavior_passed": true,
+    "turn_completed": true,
+    "transport_turn_ended": true,
+    "stop_reason": "end_turn",
+    "claim_accuracy": "unassessed: use retained prose and evidence; no automatic success-claim inference"
+  }
+}

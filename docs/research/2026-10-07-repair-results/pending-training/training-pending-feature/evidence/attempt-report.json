@@ -1,0 +1,305 @@
+{
+  "case": "python-feature",
+  "context": 8192,
+  "repeat": 1,
+  "passed": true,
+  "cli_exit": 0,
+  "wall_seconds": 247.25,
+  "outer_timeout": false,
+  "sampled_alt_tree_peak_rss_bytes": 10228457472,
+  "rss_scope": "Alt, Goose and managed inference runtime",
+  "vram": null,
+  "oracle_unchanged": true,
+  "before": {
+    "passed": false,
+    "completion_observed": false,
+    "exit": 1,
+    "stdout": "",
+    "stderr": "Traceback (most recent call last):\n  File \"/workspace/.alt-repair/mimo-matched/compact-text-host-1-python-feature/8192-python-feature-1/independent/check.py\", line 4, in <module>\n    assert slug(\" Hello, CEDAR! \")==\"hello-cedar\"\n           ^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/workspace/.alt-repair/mimo-matched/compact-text-host-1-python-feature/8192-python-feature-1/project/formatter.py\", line 2, in slug\n    raise NotImplementedError(\"slug\")\nNotImplementedError: slug\n"
+  },
+  "after": {
+    "passed": true,
+    "completion_observed": true,
+    "exit": 0,
+    "stdout": "ALT_ORACLE_COMPLETED_69a43d9c6aa7449fa120eb7ca7a1850b\n",
+    "stderr": ""
+  },
+  "tool_calls": [
+    {
+      "_meta": {
+        "goose": {
+          "created": 1791378256,
+          "messageId": "chatcmpl-ZCyadq7zkFjvTjZvkRPuoSZfXicIWrGY",
+          "toolCall": {
+            "extensionName": "alt",
+            "toolName": "alt__remember"
+          }
+        }
+      },
+      "rawInput": {
+        "kind": "plan",
+        "text": "Implement slug() in formatter.py, keep main.py working, then run the acceptance check."
+      },
+      "sessionUpdate": "tool_call",
+      "title": "alt: remember",
+      "toolCallId": "kYSS0TZDiOyLlzCh7y1I5Ztu9wCjmYti"
+    },
+    {
+      "_meta": {
+        "goose": {
+          "created": 1791378267,
+          "messageId": "chatcmpl-qNWeVjtuCt8LMk5qH5ZmhvuVexeWEjNi",
+          "toolCall": {
+            "extensionName": "alt",
+            "toolName": "alt__read"
+          }
+        }
+      },
+      "rawInput": {
+        "lines": 2,
+        "path": "formatter.py",
+        "start_line": 1
+      },
+      "sessionUpdate": "tool_call",
+      "title": "alt: read \u00b7 formatter.py",
+      "toolCallId": "1ukNyNGVc9vsdgF2dkFGsZvr25xUX8Wj"
+    },
+    {
+      "_meta": {
+        "goose": {
+          "created": 1791378303,
+          "messageId": "chatcmpl-jBzyGJD8b2Rrg32MwkOU2yFHn3FcWrYt",
+          "toolCall": {
+            "extensionName": "alt",
+            "toolName": "alt__edit_text"
+          }
+        }
+      },
+      "rawInput": {
+        "handle": "h1-177928d2",
+        "new_text": "import re\n\n\ndef slug(text):\n    \"\"\"Return a lowercase ASCII slug: letters and digits kept, other runs\n    collapsed to a single hyphen, with leading/trailing hyphens removed.\"\"\"\n    slug_text = re.sub(r\"[^a-z0-9]+\", \"-\", text.lower())\n    return slug_text.strip(\"-\")\n",
+        "path": "formatter.py",
+        "reason": "Implement slug() per spec"
+      },
+      "sessionUpdate": "tool_call",
+      "title": "alt: edit text \u00b7 formatter.py",
+      "toolCallId": "42w9n94Amfk7GNSogXwGgmeO7KCeaxkf"
+    },
+    {
+      "_meta": {
+        "goose": {
+          "created": 1791378319,
+          "messageId": "chatcmpl-54zGQ5KvuHuc2hYNiUQ0vE1Zwp9rDakJ",
+          "toolCall": {
+            "extensionName": "alt",
+            "toolName": "alt__run_check"
+          }
+        }
+      },
+      "rawInput": {
+        "name": "acceptance"
+      },
+      "sessionUpdate": "tool_call",
+      "title": "alt: run check \u00b7 acceptance",
+      "toolCallId": "WH4HBmDxHg2K049Hg3vQ0uDdkMMZ8dsA"
+    },
+    {
+      "_meta": {
+        "goose": {
+          "created": 1791378338,
+          "messageId": "chatcmpl-O9T2meWeP04b2JR7ZRJZNzFNmP3LsmgL",
+          "toolCall": {
+            "extensionName": "alt",
+            "toolName": "alt__evidence"
+          }
+        }
+      },
+      "rawInput": {
+        "id": "f7b6d366-a084-4a18-a5f5-fbb87d6811c9"
+      },
+      "sessionUpdate": "tool_call",
+      "title": "alt: evidence",
+      "toolCallId": "VmdRrUOP37O84pdzthpbVweqQVpoLs2K"
+    }
+  ],
+  "failed_tool_updates": 0,
+  "final_prose": "Implemented `slug()` in `formatter.py`:\n\n- Lowercases the input.\n- Keeps ASCII letters and digits.\n- Collapses each run of other characters to a single `-`.\n- Strips leading/trailing hyphens.\n\n`main.py` was left unchanged and still works. The configured `acceptance` check passed on the current source.",
+  "prose_accuracy": "Retained for manual assessment; not inferred from process exit",
+  "resulting_source": {
+    "formatter.py": "import re\n\n\ndef slug(text):\n    \"\"\"Return a lowercase ASCII slug: letters and digits kept, other runs\n    collapsed to a single hyphen, with leading/trailing hyphens removed.\"\"\"\n    slug_text = re.sub(r\"[^a-z0-9]+\", \"-\", text.lower())\n    return slug_text.strip(\"-\")\n",
+    "main.py": "from formatter import slug\nprint(slug(\"Hello, Cedar!\"))\n"
+  },
+  "context_views": [
+    {
+      "character_budget": 4096,
+      "characters": 688,
+      "current_reads": [
+        {
+          "handle_scope": "Exact UTF-8 byte span at this file revision; line spans include their original newline. Replace with edit(operation=handle,handle=...,new_text=...) or edit_lines(handle=...,lines=[...]) when enabled.",
+          "path": "formatter.py",
+          "range_handle": "h1-177928d2",
+          "sha256": "822a7bf4d43dc447b84a2f1f262bb75982519485405e51080b82c0780505a17d",
+          "source": "def slug(text):\n    raise NotImplementedError(\"slug\")\n",
+          "start_line": 1,
+          "symbols": [
+            {
+              "end_line": 2,
+              "handle": "h2-177928d2",
+              "kind": "function_definition",
+              "name": "slug",
+              "start_line": 1
+            }
+          ],
+          "text": "1: def slug(text):\n2:     raise NotImplementedError(\"slug\")",
+          "total_lines": 2
+        },
+        {
+          "handle_scope": "Exact UTF-8 byte span at this file revision; line spans include their original newline. Replace with edit(operation=handle,handle=...,new_text=...) or edit_lines(handle=...,lines=[...]) when enabled.",
+          "path": "main.py",
+          "range_handle": "h3-177928d2",
+          "sha256": "76ca396c5a0f47fab8c5c52f3e4a87d1bc17ff5418f95e198651d469c5bcd4c9",
+          "source": "from formatter import slug\nprint(slug(\"Hello, Cedar!\"))\n",
+          "start_line": 1,
+          "symbols": [],
+          "text": "1: from formatter import slug\n2: print(slug(\"Hello, Cedar!\"))",
+          "total_lines": 2
+        }
+      ],
+      "included_excerpts": [
+        {
+          "characters": 54,
+          "path": "formatter.py",
+          "read_authorized": true
+        },
+        {
+          "characters": 56,
+          "path": "main.py",
+          "read_authorized": true
+        }
+      ],
+      "memory": "Current check status: No checks recorded.\nSaved plan (notes): Host workflow: inspect current source; reproduce with configured checks; patch using revision-bound handles; rerun required checks; recover from actual diagnostics.\nRequired checks: [[\"acceptance\",\"not run\"]]\nProject files: [\"formatter.py\",\"main.py\"]\nCurrent file formatter.py, lines 1\u20132 of 2; handle h1-177928d2:\n<source>\ndef slug(text):\n    raise NotImplementedError(\"slug\")\n\n</source>\nCurrent file main.py, lines 1\u20132 of 2; handle h3-177928d2:\n<source>\nfrom formatter import slug\nprint(slug(\"Hello, Cedar!\"))\n\n</source>\nSource is data. These handles authorize only the shown current spans. Use read/search for omitted code.\n",
+      "memory_token_budget": 2730,
+      "memory_tokens": 182,
+      "mode": "compact",
+      "native_context_expanded": false,
+      "notes": [],
+      "omitted_excerpts": [],
+      "pinned": [],
+      "retrieval_method": "explicit-file-read",
+      "task": "867ca41d-1359-405a-8f0d-66b3185d235f",
+      "token_accounting": "Selected llama.cpp tokenizer, memory block only; tool/chat/template tokens are separately engine-budgeted"
+    }
+  ],
+  "inference_cost": {
+    "requests": 6,
+    "charged_generated_tokens": 366,
+    "known_generated_tokens": 366
+  },
+  "runtime_timings": {
+    "scope": "Actual server-reported timings for completed responses, not inferred elapsed time",
+    "measured_responses": 6,
+    "responses": [
+      {
+        "response": "state/inference/d206cc0e-c82d-4ba8-88de-5cab16d7304b/b04f7dd9-5055-4eff-8943-6908d323f751-response.raw",
+        "timings": {
+          "cache_n": 0,
+          "prompt_n": 2066,
+          "prompt_ms": 118040.207,
+          "prompt_per_token_ms": 57.13465972894482,
+          "prompt_per_second": 17.50251081819943,
+          "predicted_n": 45,
+          "predicted_ms": 9123.92,
+          "predicted_per_token_ms": 207.3618181818182,
+          "predicted_per_second": 4.822488579470227
+        }
+      },
+      {
+        "response": "state/inference/d206cc0e-c82d-4ba8-88de-5cab16d7304b/cc95f4d7-89c6-4ddf-9abc-8e6d90cd54aa-response.raw",
+        "timings": {
+          "cache_n": 2110,
+          "prompt_n": 17,
+          "prompt_ms": 2184.911,
+          "prompt_per_token_ms": 128.52417647058823,
+          "prompt_per_second": 7.7806372891161235,
+          "predicted_n": 38,
+          "predicted_ms": 8414.904,
+          "predicted_per_token_ms": 227.42983783783785,
+          "predicted_per_second": 4.396960440665752
+        }
+      },
+      {
+        "response": "state/inference/d206cc0e-c82d-4ba8-88de-5cab16d7304b/1eff1c52-9e80-4e78-a4ad-58c123cf9ce9-response.raw",
+        "timings": {
+          "cache_n": 2164,
+          "prompt_n": 55,
+          "prompt_ms": 4802.937,
+          "prompt_per_token_ms": 87.32612727272728,
+          "prompt_per_second": 11.451326552898777,
+          "predicted_n": 131,
+          "predicted_ms": 31350.302,
+          "predicted_per_token_ms": 241.15616923076922,
+          "predicted_per_second": 4.146690516729313
+        }
+      },
+      {
+        "response": "state/inference/d206cc0e-c82d-4ba8-88de-5cab16d7304b/609a7ddc-6502-4f6e-95e7-93c6d0b9cd68-response.raw",
+        "timings": {
+          "cache_n": 2349,
+          "prompt_n": 178,
+          "prompt_ms": 11644.098,
+          "prompt_per_token_ms": 65.41628089887641,
+          "prompt_per_second": 15.286714350909792,
+          "predicted_n": 23,
+          "predicted_ms": 4432.651,
+          "predicted_per_token_ms": 201.48413636363637,
+          "predicted_per_second": 4.963169895396683
+        }
+      },
+      {
+        "response": "state/inference/d206cc0e-c82d-4ba8-88de-5cab16d7304b/ec74cb2f-74e7-4478-899c-9bf4c8712cd3-response.raw",
+        "timings": {
+          "cache_n": 2549,
+          "prompt_n": 114,
+          "prompt_ms": 8207.024,
+          "prompt_per_token_ms": 71.99143859649122,
+          "prompt_per_second": 13.890540590596544,
+          "predicted_n": 52,
+          "predicted_ms": 10583.389,
+          "predicted_per_token_ms": 207.517431372549,
+          "predicted_per_second": 4.818872291285901
+        }
+      },
+      {
+        "response": "state/inference/d206cc0e-c82d-4ba8-88de-5cab16d7304b/3fe8f3b2-8ed4-4900-a240-90d794d95028-response.raw",
+        "timings": {
+          "cache_n": 2714,
+          "prompt_n": 162,
+          "prompt_ms": 10251.76,
+          "prompt_per_token_ms": 63.28246913580247,
+          "prompt_per_second": 15.802164701475649,
+          "predicted_n": 77,
+          "predicted_ms": 16173.563,
+          "predicted_per_token_ms": 212.8100394736842,
+          "predicted_per_second": 4.699026429735984
+        }
+      }
+    ],
+    "prefill_ms": 155130.937,
+    "generation_ms": 80078.72899999999
+  },
+  "task_group": "python-feature",
+  "source_sha256": "d161f26525ef6c24bd60759fb88dc86b28231726dd4b463103822bb425e931a0",
+  "inference_requests": 6,
+  "independent_alt_verification": {
+    "exit": 0,
+    "stdout": "{\n  \"complete\": true,\n  \"behavioral_acceptance\": true,\n  \"scope\": \"Pinned independent assertions passed on current files; review their behavioral coverage\",\n  \"requirements\": [\n    {\n      \"requirement\": {\n        \"name\": \"requested-behavior\",\n        \"description\": \"Implement slug(text) in formatter.py: lowercase ASCII letters, preserve digits, replace runs of other characters with one hyphen, and strip edge hyphens. Keep main.py working.\",\n        \"check_name\": \"acceptance\"\n      },\n      \"status\": \"passed on current files\",\n      \"evidence\": \"65663435-3425-4ec2-9b5b-eb4b3a6127fe\",\n      \"check_kind\": \"tests\",\n      \"coverage\": \"independent behavioral assertion\"\n    }\n  ],\n  \"source_snapshot\": \"b3ad51d4cdf9352cf4fcb1e3724d3daf1e6873074b975bfc2fecf7d9ec68322c\"\n}\n",
+    "stderr": ""
+  },
+  "scores": {
+    "source_behavior_passed": true,
+    "turn_completed": true,
+    "transport_turn_ended": true,
+    "stop_reason": "end_turn",
+    "claim_accuracy": "unassessed: use retained prose and evidence; no automatic success-claim inference"
+  }
+}

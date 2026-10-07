@@ -33,9 +33,12 @@ with tempfile.TemporaryDirectory(prefix='alt-oracle-collection-') as d:
     (run/'fixture.json').write_text(json.dumps({'oracle_sha256_before':inputs}))
     (run/'report.json').write_text(json.dumps({'scope':'Deterministic harness validation; no model weights','oracle_unchanged':True}))
     (run/'turn.jsonl').write_text('')
+    unfinished=campaign/'unfinished'; unfinished.mkdir()
+    (unfinished/'turn.jsonl').write_text('{"stream":"still changing"}\n')
     destination=root/'retained'
     subprocess.run([sys.executable,str(repo/'scripts/collect_live_evidence.py'),str(campaign),str(destination)],check=True)
     manifest=json.loads((destination/'RAW-SHA256.json').read_text())
+    assert not (destination/'unfinished').exists(), 'A changing attempt without a completed report must stay outside immutable evidence'
     assert all('/target/' not in name for name in manifest)
     assert all(hashlib.sha256((destination/name).read_bytes()).hexdigest()==digest for name,digest in manifest.items())
     for name in inputs: assert 'rust-probe/independent/'+name in manifest
@@ -53,4 +56,4 @@ with tempfile.TemporaryDirectory(prefix='alt-oracle-collection-') as d:
         subprocess.run(base+args,cwd=python_project,check=True,capture_output=True)
     early=subprocess.run(base+['task','verify','--run'],cwd=python_project,capture_output=True,text=True)
     assert early.returncode!=0, 'Zero exit before assertion completion must not produce a passing structured check'
-    print(json.dumps({'passed':True,'snapshot_repair_accepted':True,'original_defect_rejected':True,'repeated_pinned_checks':2,'generated_outputs_excluded':True,'changed_oracle_rejected':True,'early_zero_exit_rejected_by_structured_check':True,'model_weights_used':False}))
+    print(json.dumps({'passed':True,'snapshot_repair_accepted':True,'original_defect_rejected':True,'repeated_pinned_checks':2,'generated_outputs_excluded':True,'unfinished_attempt_excluded':True,'changed_oracle_rejected':True,'early_zero_exit_rejected_by_structured_check':True,'model_weights_used':False}))

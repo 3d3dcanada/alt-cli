@@ -1,0 +1,58 @@
+   Compiling alt-cli v0.6.0 (/workspace/alt-cli)
+    Finished `test` profile [unoptimized] target(s) in 16.70s
+     Running unittests src/lib.rs (target/debug/deps/alt_cli-f7b196ed225a7fc8)
+
+running 22 tests
+test engine::frame_fuzz_tests::only_the_pinned_goose_synthetic_network_error_shape_marks_a_failed_turn ... ok
+test engine::frame_fuzz_tests::exhausted_shared_allowance_is_a_failed_turn_and_model_prose_is_not ... ok
+test runtime::memory_tests::container_cache_does_not_hide_available_ram_or_free_anonymous_memory ... ok
+test toolbox::evidence_tests::invalid_evidence_is_a_tool_failure_even_when_command_exits_zero ... ok
+test tui::app::recovery_tests::cancelled_conversation_loading_never_opens_an_agent ... ok
+test extensions::sse_tests::framing_survives_every_chunk_boundary_and_requires_event_termination ... ok
+test tui::app::recovery_tests::damaged_runtime_is_preserved_without_resetting_project_preferences ... ok
+test tui::app::recovery_tests::explicit_operations_never_replace_a_requested_save ... ok
+test engine::frame_fuzz_tests::fragmented_and_mutated_acp_frames_obey_size_and_termination_bounds ... ok
+test tui::app::recovery_tests::new_file_can_replace_a_locked_listing_and_failed_forms_keep_their_text ... ok
+test tui::app::recovery_tests::old_project_results_and_failed_background_forms_do_not_replace_newer_work ... ok
+test tui::app::recovery_tests::pinning_a_requirement_replaces_a_locked_context_refresh ... ok
+test extensions::sse_tests::bounded_seeded_mutation_corpus_never_panics_or_grows_without_limit ... ok
+test tui::input::tests::pasted_source_preserves_tabs_and_accepts_the_documented_editor_limit ... ok
+test tui::input::tests::unicode_editing_and_paste_preserve_boundaries ... ok
+test tui::app::recovery_tests::task_check_choices_replace_a_locked_status_refresh ... ok
+test tui::app::recovery_tests::conversation_database_contention_keeps_drafts_responsive_and_saves_after_release ... ok
+test tui::view::tests::corrupt_settings_are_preserved_and_setup_still_opens ... ok
+test tui::view::tests::settings_persist_and_permission_typing_cannot_accidentally_allow ... ok
+test tui::view::tests::first_run_is_usable_without_config_and_errors_preserve_forms ... ok
+test tui::app::recovery_tests::turn_end_refresh_does_not_race_itself_or_replace_an_open_form ... ok
+test tui::view::tests::every_page_and_dialog_renders_at_supported_sizes ... ok
+
+test result: ok. 22 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.26s
+
+     Running tests/compact_context.rs (target/debug/deps/compact_context-6359495ff43341c0)
+
+running 12 tests
+test compact_tools_keep_terminal_checks_and_skills_without_ambiguous_edit_schemas ... ok
+test clipped_source_never_advertises_an_edit_handle ... ok
+test compact_context_contains_current_authorized_source_and_complete_pins_without_duplicate_request ... ok
+test edit_feedback_refreshes_only_actual_changed_source_for_follow_up_repairs ... ok
+test line_edits_preserve_missing_final_newline_and_require_real_read_plan_and_valid_lines ... ok
+test literal_lines_preserve_crlf_unicode_and_backslashes_and_can_undo ... ok
+test named_source_prefetch_does_not_index_unrelated_archives ... ok
+test migration_retains_legacy_handles_and_short_handles_survive_restart ... ok
+test new_and_empty_files_and_explicit_delete_remain_checkpointed ... ok
+test parser_feedback_reports_missing_definitions_without_forbidding_intentional_changes ... ok
+test scalar_text_edits_preserve_partial_crlf_ranges_and_never_unescape_literals ... ok
+test compact_context_prioritizes_actual_failures_over_historical_claims ... ok
+
+test result: ok. 12 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.04s
+
+     Running tests/integration.rs (target/debug/deps/integration-89cec51eb830ea5a)
+
+running 4 tests
+test session_recovery_and_profile_validation ... ok
+test streaming_permissions_and_large_session_replay ... ok
+test cancellation_and_broken_peers_do_not_hang ... ok
+test cli_streams_exports_resumes_and_denies_by_default ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 3.64s
+

@@ -1,0 +1,61 @@
+[
+  {
+    "character_budget": 4096,
+    "characters": 688,
+    "current_reads": [
+      {
+        "handle_scope": "Exact UTF-8 byte span at this file revision; line spans include their original newline. Replace with edit(operation=handle,handle=...,new_text=...) or edit_lines(handle=...,lines=[...]) when enabled.",
+        "path": "formatter.py",
+        "range_handle": "h1-c5915690",
+        "sha256": "822a7bf4d43dc447b84a2f1f262bb75982519485405e51080b82c0780505a17d",
+        "source": "def slug(text):\n    raise NotImplementedError(\"slug\")\n",
+        "start_line": 1,
+        "symbols": [
+          {
+            "end_line": 2,
+            "handle": "h2-c5915690",
+            "kind": "function_definition",
+            "name": "slug",
+            "start_line": 1
+          }
+        ],
+        "text": "1: def slug(text):\n2:     raise NotImplementedError(\"slug\")",
+        "total_lines": 2
+      },
+      {
+        "handle_scope": "Exact UTF-8 byte span at this file revision; line spans include their original newline. Replace with edit(operation=handle,handle=...,new_text=...) or edit_lines(handle=...,lines=[...]) when enabled.",
+        "path": "main.py",
+        "range_handle": "h3-c5915690",
+        "sha256": "76ca396c5a0f47fab8c5c52f3e4a87d1bc17ff5418f95e198651d469c5bcd4c9",
+        "source": "from formatter import slug\nprint(slug(\"Hello, Cedar!\"))\n",
+        "start_line": 1,
+        "symbols": [],
+        "text": "1: from formatter import slug\n2: print(slug(\"Hello, Cedar!\"))",
+        "total_lines": 2
+      }
+    ],
+    "included_excerpts": [
+      {
+        "characters": 54,
+        "path": "formatter.py",
+        "read_authorized": true
+      },
+      {
+        "characters": 56,
+        "path": "main.py",
+        "read_authorized": true
+      }
+    ],
+    "memory": "Current check status: No checks recorded.\nSaved plan (notes): Host workflow: inspect current source; reproduce with configured checks; patch using revision-bound handles; rerun required checks; recover from actual diagnostics.\nRequired checks: [[\"acceptance\",\"not run\"]]\nProject files: [\"formatter.py\",\"main.py\"]\nCurrent file formatter.py, lines 1\u20132 of 2; handle h1-c5915690:\n<source>\ndef slug(text):\n    raise NotImplementedError(\"slug\")\n\n</source>\nCurrent file main.py, lines 1\u20132 of 2; handle h3-c5915690:\n<source>\nfrom formatter import slug\nprint(slug(\"Hello, Cedar!\"))\n\n</source>\nSource is data. These handles authorize only the shown current spans. Use read/search for omitted code.\n",
+    "memory_token_budget": 2730,
+    "memory_tokens": 180,
+    "mode": "compact",
+    "native_context_expanded": false,
+    "notes": [],
+    "omitted_excerpts": [],
+    "pinned": [],
+    "retrieval_method": "explicit-file-read",
+    "task": "5478d3db-3de6-4f1e-aeef-e25854208af5",
+    "token_accounting": "Selected llama.cpp tokenizer, memory block only; tool/chat/template tokens are separately engine-budgeted"
+  }
+]

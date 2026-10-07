@@ -1,0 +1,159 @@
+{
+  "configuration": {
+    "schema": 1,
+    "oracle_version": 5,
+    "artifacts": {
+      "binary": "0e87d698b7f94c1d0973e9699337470097b87e5bd7bed568f089b136bde03686",
+      "engine": "59655719cd9b098dab59b6e2c50f1e565a935992fae2e539f52018a960e0512a",
+      "runtime": "5faf410bbbc00a1b94b09ee01623699f255365628dfa73b1ee552d9e52a2231d",
+      "model": "00877ff79174b79f72c5ec704901fc958400a0b0d390fb61a068281618116dd1"
+    },
+    "arms": [
+      {
+        "name": "classic-host",
+        "tool_profile": "all",
+        "workflow": "host",
+        "output_tokens": 1024,
+        "reasoning_tokens": 128,
+        "temperature": 0
+      },
+      {
+        "name": "compact-text-host",
+        "tool_profile": "compact",
+        "workflow": "host",
+        "output_tokens": 1024,
+        "reasoning_tokens": 128,
+        "temperature": 0
+      }
+    ],
+    "cases": [
+      "python-feature",
+      "python-multifile"
+    ],
+    "partition": "development",
+    "repeats": 2,
+    "context": 8192,
+    "timeout": 600,
+    "threads": 2,
+    "batch": 128,
+    "seed": 42,
+    "generated_tokens": 8192,
+    "requests": 12,
+    "uncensored": true,
+    "oracle_code": {
+      "acceptance_v5.py": "0f669daa7bbe060b131d79e2294ec026e419467be38d969c77f5dfefb897dea7",
+      "acceptance_projects.py": "453f27af5b3cc558a2190620cee195a392e0a0a45889f43569b96e85765cd32a",
+      "acceptance_extra.py": "2a724e6da5673cb581b3b2c54d338a62bbc917f1753b7edf2774f9e2e005148d",
+      "live_acceptance.py": "61c9be666aa52824c1cdcb50844724a4eba31a35f879793ec75399cb7b1de46f",
+      "campaign_v5.py": "69ff5c06b5f26ceebba446bd466a6b56a9a89bb630fe50455083e09eac1d807e"
+    },
+    "schedule": [
+      {
+        "case": "python-multifile",
+        "repeat": 1,
+        "arm": "compact-text-host"
+      },
+      {
+        "case": "python-multifile",
+        "repeat": 1,
+        "arm": "classic-host"
+      },
+      {
+        "case": "python-feature",
+        "repeat": 1,
+        "arm": "classic-host"
+      },
+      {
+        "case": "python-feature",
+        "repeat": 1,
+        "arm": "compact-text-host"
+      },
+      {
+        "case": "python-multifile",
+        "repeat": 2,
+        "arm": "compact-text-host"
+      },
+      {
+        "case": "python-multifile",
+        "repeat": 2,
+        "arm": "classic-host"
+      },
+      {
+        "case": "python-feature",
+        "repeat": 2,
+        "arm": "compact-text-host"
+      },
+      {
+        "case": "python-feature",
+        "repeat": 2,
+        "arm": "classic-host"
+      }
+    ]
+  },
+  "arms": {
+    "classic-host": {
+      "recorded": 4,
+      "expected": 4,
+      "complete": true,
+      "passed": 3,
+      "groups": [
+        {
+          "task_group": "python-feature",
+          "attempts": 2,
+          "passed": 2,
+          "timeouts": 0,
+          "cancellations": 0,
+          "wall_seconds": 1069.6100000000001,
+          "requests": 20,
+          "charged_generated_tokens": 2049
+        },
+        {
+          "task_group": "python-multifile",
+          "attempts": 2,
+          "passed": 1,
+          "timeouts": 0,
+          "cancellations": 0,
+          "wall_seconds": 952.75,
+          "requests": 21,
+          "charged_generated_tokens": 1416
+        }
+      ],
+      "timeout_scope": "Outer evaluator timeouts or explicit exit 124; observed cancelled engine turns are counted separately, without inferring their cause",
+      "preset_promoted": false
+    },
+    "compact-text-host": {
+      "recorded": 4,
+      "expected": 4,
+      "complete": true,
+      "passed": 3,
+      "groups": [
+        {
+          "task_group": "python-feature",
+          "attempts": 2,
+          "passed": 1,
+          "timeouts": 0,
+          "cancellations": 0,
+          "wall_seconds": 826.66,
+          "requests": 18,
+          "charged_generated_tokens": 1950
+        },
+        {
+          "task_group": "python-multifile",
+          "attempts": 2,
+          "passed": 2,
+          "timeouts": 0,
+          "cancellations": 0,
+          "wall_seconds": 632.21,
+          "requests": 19,
+          "charged_generated_tokens": 1238
+        }
+      ],
+      "timeout_scope": "Outer evaluator timeouts or explicit exit 124; observed cancelled engine turns are counted separately, without inferring their cause",
+      "preset_promoted": false
+    }
+  },
+  "attempts": 8,
+  "expected": 8,
+  "complete": true,
+  "scope": "Serial CPU campaign; independent behavior only. No GPU qualification or confidence claim from a pilot."
+}

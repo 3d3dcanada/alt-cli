@@ -1,0 +1,559 @@
+{
+  "case": "python-multifile",
+  "context": 8192,
+  "repeat": 1,
+  "passed": false,
+  "cli_exit": 0,
+  "wall_seconds": 474.63,
+  "outer_timeout": false,
+  "sampled_alt_tree_peak_rss_bytes": 10904363008,
+  "rss_scope": "Alt, Goose and managed inference runtime",
+  "vram": null,
+  "oracle_unchanged": true,
+  "before": {
+    "passed": false,
+    "completion_observed": false,
+    "exit": 1,
+    "stdout": "",
+    "stderr": "Traceback (most recent call last):\n  File \"/workspace/.alt-repair/mimo-matched/classic-host-1-python-multifile/8192-python-multifile-1/independent/check.py\", line 5, in <module>\n    assert discounted(200,10)==180\n           ^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError\n"
+  },
+  "after": {
+    "passed": false,
+    "completion_observed": false,
+    "exit": 1,
+    "stdout": "",
+    "stderr": "Traceback (most recent call last):\n  File \"/workspace/.alt-repair/mimo-matched/classic-host-1-python-multifile/8192-python-multifile-1/independent/check.py\", line 4, in <module>\n    from orders import total\n  File \"/workspace/.alt-repair/mimo-matched/classic-host-1-python-multifile/8192-python-multifile-1/project/orders.py\", line 2\n    def total(price, discount_percent, tax_rate):\n                                                 ^\nIndentationError: expected an indented block after function definition on line 2\n"
+  },
+  "tool_calls": [
+    {
+      "_meta": {
+        "goose": {
+          "created": 1791377304,
+          "messageId": "chatcmpl-aawYeXcwOEZn3pT2ZYAQejSTtmFZQkY1",
+          "toolCall": {
+            "extensionName": "alt",
+            "toolName": "alt__read"
+          }
+        }
+      },
+      "rawInput": {
+        "path": "pricing.py"
+      },
+      "sessionUpdate": "tool_call",
+      "title": "alt: read \u00b7 pricing.py",
+      "toolCallId": "0SPQLt1IDBCt8U00bcmytnZ22ATAdnA8"
+    },
+    {
+      "_meta": {
+        "goose": {
+          "created": 1791377304,
+          "messageId": "chatcmpl-aawYeXcwOEZn3pT2ZYAQejSTtmFZQkY1",
+          "toolCall": {
+            "extensionName": "alt",
+            "toolName": "alt__read"
+          }
+        }
+      },
+      "rawInput": {
+        "path": "orders.py"
+      },
+      "sessionUpdate": "tool_call",
+      "title": "alt: read \u00b7 orders.py",
+      "toolCallId": "3KAX7jyG3PP8nz8aUiM27B2YfqM3jrTU"
+    },
+    {
+      "_meta": {
+        "goose": {
+          "created": 1791377338,
+          "messageId": "chatcmpl-4cFNkQ200yZH4FPW5YDNxSKZZawC1IJw",
+          "toolCall": {
+            "extensionName": "alt",
+            "toolName": "alt__remember"
+          }
+        }
+      },
+      "rawInput": {
+        "kind": "plan",
+        "text": "Fix discounted() to apply percent/100, and total() to tax the discounted subtotal once. Then run the acceptance check."
+      },
+      "sessionUpdate": "tool_call",
+      "title": "alt: remember",
+      "toolCallId": "RPfe2Bw2u21kY6egv3ABkaXXK9hyRMkL"
+    },
+    {
+      "_meta": {
+        "goose": {
+          "created": 1791377359,
+          "messageId": "chatcmpl-axkq9CH4U4xQOtAIQsGmpW8iPRiZSXkc",
+          "toolCall": {
+            "extensionName": "alt",
+            "toolName": "alt__edit"
+          }
+        }
+      },
+      "rawInput": {
+        "handle": "h4-501915d4",
+        "new_text": "def discounted(price, percent):\n    return price - price * percent / 100",
+        "operation": "handle",
+        "path": "pricing.py",
+        "reason": "Discount is a percentage: 10 means ten percent off."
+      },
+      "sessionUpdate": "tool_call",
+      "title": "alt: edit \u00b7 pricing.py",
+      "toolCallId": "rsGF1X8P2gZqFWTOoU604LGifS7hOqku"
+    },
+    {
+      "_meta": {
+        "goose": {
+          "created": 1791377389,
+          "messageId": "chatcmpl-oTGIxhpeGND1lAcv3keuixGv8TTwQEe8",
+          "toolCall": {
+            "extensionName": "alt",
+            "toolName": "alt__edit"
+          }
+        }
+      },
+      "rawInput": {
+        "handle": "h2-501915d4",
+        "new_text": "    subtotal = discounted(price, discount_percent)\n    return subtotal * (1 + tax_rate)",
+        "operation": "handle",
+        "path": "orders.py",
+        "reason": "Tax is applied once to the discounted subtotal."
+      },
+      "sessionUpdate": "tool_call",
+      "title": "alt: edit \u00b7 orders.py",
+      "toolCallId": "nUxnUwLhuvBpFoG5aOjOhogFq5hu062C"
+    },
+    {
+      "_meta": {
+        "goose": {
+          "created": 1791377405,
+          "messageId": "chatcmpl-oAWd081eshacYlpXRUit4nwzArhNXi8D",
+          "toolCall": {
+            "extensionName": "alt",
+            "toolName": "alt__run_check"
+          }
+        }
+      },
+      "rawInput": {
+        "name": "acceptance"
+      },
+      "sessionUpdate": "tool_call",
+      "title": "alt: run check \u00b7 acceptance",
+      "toolCallId": "WbHU7JerzcJz0YgSPnAFzkdEUuHGeekr"
+    },
+    {
+      "_meta": {
+        "goose": {
+          "created": 1791377421,
+          "messageId": "chatcmpl-salMDCSqk4uxaTMUA1hLxvT10VLpgdRI",
+          "toolCall": {
+            "extensionName": "alt",
+            "toolName": "alt__read"
+          }
+        }
+      },
+      "rawInput": {
+        "path": "orders.py"
+      },
+      "sessionUpdate": "tool_call",
+      "title": "alt: read \u00b7 orders.py",
+      "toolCallId": "ZGK2JuzIXVFnK3zexgJwIZXzBqtEAu27"
+    },
+    {
+      "_meta": {
+        "goose": {
+          "created": 1791377451,
+          "messageId": "chatcmpl-QHegqZouinkV57NYeQxn3VySVTROYIi3",
+          "toolCall": {
+            "extensionName": "alt",
+            "toolName": "alt__edit"
+          }
+        }
+      },
+      "rawInput": {
+        "handle": "h5-501915d4",
+        "new_text": "def total(price, discount_percent, tax_rate):\n    subtotal = discounted(price, discount_percent)\n    return subtotal * (1 + tax_rate)",
+        "operation": "handle",
+        "path": "orders.py",
+        "reason": "Restore the def line removed by the prior edit."
+      },
+      "sessionUpdate": "tool_call",
+      "title": "alt: edit \u00b7 orders.py",
+      "toolCallId": "EGFKDAG0CieDniIebEYABs0JyrRFICM2"
+    },
+    {
+      "_meta": {
+        "goose": {
+          "created": 1791377474,
+          "messageId": "chatcmpl-jCKtcoyGZx44lUbmqDrzo2tiRpPXrDPT",
+          "toolCall": {
+            "extensionName": "alt",
+            "toolName": "alt__run_check"
+          }
+        }
+      },
+      "rawInput": {
+        "name": "acceptance"
+      },
+      "sessionUpdate": "tool_call",
+      "title": "alt: run check \u00b7 acceptance",
+      "toolCallId": "EQeIi43EdjIk9PgiJTvt69Zus8Kil0Ej"
+    },
+    {
+      "_meta": {
+        "goose": {
+          "created": 1791377494,
+          "messageId": "chatcmpl-4sK4uXMD9KPPELGuJFAPUADMnjBSDkLf",
+          "toolCall": {
+            "extensionName": "alt",
+            "toolName": "alt__read"
+          }
+        }
+      },
+      "rawInput": {
+        "path": "orders.py"
+      },
+      "sessionUpdate": "tool_call",
+      "title": "alt: read \u00b7 orders.py",
+      "toolCallId": "AU0uuUC3MnXSPdSX7qVth4MPNj5YI5JV"
+    },
+    {
+      "_meta": {
+        "goose": {
+          "created": 1791377522,
+          "messageId": "chatcmpl-emCr5Bz26UF7ysooLAaqHFbLAeaFbKHm",
+          "toolCall": {
+            "extensionName": "alt",
+            "toolName": "alt__edit"
+          }
+        }
+      },
+      "rawInput": {
+        "handle": "h6-501915d4",
+        "new_text": "from pricing import discounted\ndef total(price, discount_percent, tax_rate):",
+        "operation": "handle",
+        "path": "orders.py",
+        "reason": "Restore the import line removed by the prior edit."
+      },
+      "sessionUpdate": "tool_call",
+      "title": "alt: edit \u00b7 orders.py",
+      "toolCallId": "4rQHrcV3xYu91ljDLCiYP7HpVvt0dhTz"
+    },
+    {
+      "_meta": {
+        "goose": {
+          "created": 1791377546,
+          "messageId": "chatcmpl-I0cE6dpN1NmWZ1w0LkJcPhZYa2SwQt2N",
+          "toolCall": {
+            "extensionName": "alt",
+            "toolName": "alt__run_check"
+          }
+        }
+      },
+      "rawInput": {
+        "name": "acceptance"
+      },
+      "sessionUpdate": "tool_call",
+      "title": "alt: run check \u00b7 acceptance",
+      "toolCallId": "PdKuyXclwDSBhKDbZbGBgNAVGohAV86S"
+    },
+    {
+      "_meta": {
+        "goose": {
+          "created": 1791377565,
+          "messageId": "chatcmpl-CCXdhubK6Arxt5Vk30wM2kA2leTFEHBY",
+          "toolCall": {
+            "extensionName": "alt",
+            "toolName": "alt__read"
+          }
+        }
+      },
+      "rawInput": {
+        "path": "orders.py"
+      },
+      "sessionUpdate": "tool_call",
+      "title": "alt: read \u00b7 orders.py",
+      "toolCallId": "a1vfTdSI1OEd80fF7zVk7XepW1iS8SGt"
+    }
+  ],
+  "failed_tool_updates": 3,
+  "final_prose": "I've reached the maximum number of actions I can do without user input. Would you like me to continue?",
+  "prose_accuracy": "Retained for manual assessment; not inferred from process exit",
+  "resulting_source": {
+    "orders.py": "from pricing import discounted\ndef total(price, discount_percent, tax_rate):",
+    "pricing.py": "def discounted(price, percent):\n    return price - price * percent / 100\n"
+  },
+  "context_views": [
+    {
+      "character_budget": 8192,
+      "characters": 3954,
+      "included_excerpts": [
+        {
+          "excerpt": "def discounted(price, percent):\n    return price - percent\n",
+          "path": "pricing.py",
+          "retrieval": "explicit file name"
+        },
+        {
+          "excerpt": "from pricing import discounted\ndef total(price, discount_percent, tax_rate):\n    subtotal = discounted(price, discount_percent)\n    return subtotal + price * tax_rate\n",
+          "path": "orders.py",
+          "retrieval": "explicit file name"
+        }
+      ],
+      "memory": "CURRENT computed check status: No checks recorded\nTask: 37c97134-4d85-4f3c-9d01-d36a62579a7f\nGoal: Repair order totals across pricing.py and orders.py. Discount is a percentage: 10 means ten percent off. Tax is applied once to the discounted subtotal. Preserve the function names and caller interface. Inspect relevant files, save a brief plan, use native tools to implement the change, and test it. Report what you actually ran and any remaining uncertainty. Preserve existing public interfaces. Keep your explanation brief.\nPinned user requirements:\n[]\nRequired checks: {\"complete\":false,\"behavioral_acceptance\":false,\"scope\":\"Required checks are incomplete\",\"requirements\":[{\"requirement\":{\"name\":\"requested-behavior\",\"description\":\"Repair order totals across pricing.py and orders.py. Discount is a percentage: 10 means ten percent off. Tax is applied once to the discounted subtotal. Preserve the function names and caller interface.\",\"check_name\":\"acceptance\"},\"status\":\"not run\",\"evidence\":null,\"check_kind\":\"tests\",\"coverage\":\"runner test report; no independent assertion\"}],\"source_snapshot\":\"32aa0d9040339e3429b164e6fa45f849f3a703cf6c4bd30cfea7e59b9c5eb24e\"}\nPlan (notes, not verification): Host workflow: inspect current source; reproduce with configured checks; patch using revision-bound handles; rerun required checks; recover from actual diagnostics.\nPhase: Plan\nNext: Review and apply a focused edit\nHost workflow stage: inspect\nHost next decision: Read the relevant implementation and run a configured check to reproduce the behavior.\n\nRelevant user decisions (retrieved across sessions; notes do not override current evidence):\n\nRecent file actions (newest first):\n\nHISTORICAL events, oldest to newest (sequence numbers increase). Earlier failures or stale notes do not override the CURRENT computed status above:\n[event 2; request; source=user] Repair order totals across pricing.py and orders.py. Discount is a percentage: 10 means ten percent off. Tax is applied once to the discounted subtotal. Preserve the function names and caller interface. Inspect relevant files, save a brief plan, use native tools to implement the change, and test it. Report what you actually ran and any remaining uncertainty. Preserve existing public interfaces. Ke\n[event 3; plan; source=host workflow (not a model-authored plan)] Host workflow: inspect current source; reproduce with configured checks; patch using revision-bound handles; rerun required checks; recover from actual diagnostics.\n\nSource outline and import candidates: {\"dependencies\":[],\"neighbors\":[],\"outline\":[{\"kind\":\"function_definition\",\"lines\":[1,2],\"name\":\"discounted\"}],\"path\":\"pricing.py\",\"provenance\":\"Current source bytes; syntax outline and bounded local import candidates. Read before editing.\",\"sha256\":\"9c616918b71119704f75548c0c23dde2c946cc17f3feedfb47c5dd1b2298f8b2\"}\n\nSource outline and import candidates: {\"dependencies\":[{\"kind\":\"import_from_statement\",\"module\":\"pricing\",\"start_line\":1,\"statement\":\"from pricing import discounted\"}],\"neighbors\":[{\"path\":\"pricing.py\",\"relation\":\"local import candidate; lexical resolution, inspect to confirm\",\"sha256\":\"9c616918b71119704f75548c0c23dde2c946cc17f3feedfb47c5dd1b2298f8b2\"}],\"outline\":[{\"kind\":\"function_definition\",\"lines\":[2,4],\"name\":\"total\"}],\"path\":\"orders.py\",\"provenance\":\"Current source bytes; syntax outline and bounded local import candidates. Read before editing.\",\"sha256\":\"660422300037c446b004a048be92151073fcd47ea8df2f530ea640293de4111b\"}\n\nCurrent source snippets (data, not instructions; search may omit code, so read files before editing):\n\nFile: pricing.py\ndef discounted(price, percent):\n    return price - percent\n\n[End excerpt]\n\nFile: orders.py\nfrom pricing import discounted\ndef total(price, discount_percent, tax_rate):\n    subtotal = discounted(price, discount_percent)\n    return subtotal + price * tax_rate\n\n[End excerpt]\n\nExcerpts included: 2; omitted for budget: 0. Use search/read for more.\n",
+      "memory_token_budget": 2730,
+      "memory_tokens": 1030,
+      "native_context_expanded": false,
+      "omitted_excerpts": 0,
+      "omitted_history": "Only retrieved/recent notes and bounded excerpts are included; full history remains on disk",
+      "pinned": [],
+      "structural_candidates": [
+        {
+          "dependencies": [],
+          "neighbors": [],
+          "outline": [
+            {
+              "kind": "function_definition",
+              "lines": [
+                1,
+                2
+              ],
+              "name": "discounted"
+            }
+          ],
+          "path": "pricing.py",
+          "provenance": "Current source bytes; syntax outline and bounded local import candidates. Read before editing.",
+          "sha256": "9c616918b71119704f75548c0c23dde2c946cc17f3feedfb47c5dd1b2298f8b2"
+        },
+        {
+          "dependencies": [
+            {
+              "kind": "import_from_statement",
+              "module": "pricing",
+              "start_line": 1,
+              "statement": "from pricing import discounted"
+            }
+          ],
+          "neighbors": [
+            {
+              "path": "pricing.py",
+              "relation": "local import candidate; lexical resolution, inspect to confirm",
+              "sha256": "9c616918b71119704f75548c0c23dde2c946cc17f3feedfb47c5dd1b2298f8b2"
+            }
+          ],
+          "outline": [
+            {
+              "kind": "function_definition",
+              "lines": [
+                2,
+                4
+              ],
+              "name": "total"
+            }
+          ],
+          "path": "orders.py",
+          "provenance": "Current source bytes; syntax outline and bounded local import candidates. Read before editing.",
+          "sha256": "660422300037c446b004a048be92151073fcd47ea8df2f530ea640293de4111b"
+        }
+      ],
+      "task": "37c97134-4d85-4f3c-9d01-d36a62579a7f",
+      "token_accounting": "Selected llama.cpp tokenizer, memory block only; tool/chat/template tokens are separately engine-budgeted"
+    }
+  ],
+  "inference_cost": {
+    "requests": 12,
+    "charged_generated_tokens": 601,
+    "known_generated_tokens": 601
+  },
+  "runtime_timings": {
+    "scope": "Actual server-reported timings for completed responses, not inferred elapsed time",
+    "measured_responses": 12,
+    "responses": [
+      {
+        "response": "state/inference/ed39fde4-4dc1-4e5e-ab77-f5570c43c23f/32523ec7-a257-4ee6-9863-4fbd4836ed93-response.raw",
+        "timings": {
+          "cache_n": 0,
+          "prompt_n": 3375,
+          "prompt_ms": 192590.937,
+          "prompt_per_token_ms": 57.06398133333334,
+          "prompt_per_second": 17.524189105534077,
+          "predicted_n": 41,
+          "predicted_ms": 9710.421,
+          "predicted_per_token_ms": 242.760525,
+          "predicted_per_second": 4.119285868244024
+        }
+      },
+      {
+        "response": "state/inference/ed39fde4-4dc1-4e5e-ab77-f5570c43c23f/6bb0a92f-0726-4fcd-8d3b-2803c7b66201-response.raw",
+        "timings": {
+          "cache_n": 3371,
+          "prompt_n": 367,
+          "prompt_ms": 23704.441,
+          "prompt_per_token_ms": 64.589757493188,
+          "prompt_per_second": 15.482330926934747,
+          "predicted_n": 54,
+          "predicted_ms": 10320.368,
+          "predicted_per_token_ms": 194.7239245283019,
+          "predicted_per_second": 5.135475789235422
+        }
+      },
+      {
+        "response": "state/inference/ed39fde4-4dc1-4e5e-ab77-f5570c43c23f/3c033270-ed08-4237-b02a-f9604f790635-response.raw",
+        "timings": {
+          "cache_n": 3791,
+          "prompt_n": 17,
+          "prompt_ms": 2165.604,
+          "prompt_per_token_ms": 127.38847058823528,
+          "prompt_per_second": 7.85000397117848,
+          "predicted_n": 93,
+          "predicted_ms": 18166.857,
+          "predicted_per_token_ms": 197.46583695652174,
+          "predicted_per_second": 5.064167125882038
+        }
+      },
+      {
+        "response": "state/inference/ed39fde4-4dc1-4e5e-ab77-f5570c43c23f/1830cb78-24d8-4037-bea0-3609306b27b8-response.raw",
+        "timings": {
+          "cache_n": 3900,
+          "prompt_n": 178,
+          "prompt_ms": 11983.713,
+          "prompt_per_token_ms": 67.32423033707865,
+          "prompt_per_second": 14.853493237029292,
+          "predicted_n": 89,
+          "predicted_ms": 18264.493,
+          "predicted_per_token_ms": 207.5510568181818,
+          "predicted_per_second": 4.818091583489343
+        }
+      },
+      {
+        "response": "state/inference/ed39fde4-4dc1-4e5e-ab77-f5570c43c23f/7f567914-d03c-4b0d-94a7-18c83ce41ba9-response.raw",
+        "timings": {
+          "cache_n": 4166,
+          "prompt_n": 180,
+          "prompt_ms": 11664.119,
+          "prompt_per_token_ms": 64.80066111111111,
+          "prompt_per_second": 15.431941323643903,
+          "predicted_n": 23,
+          "predicted_ms": 4333.69,
+          "predicted_per_token_ms": 196.98590909090908,
+          "predicted_per_second": 5.076505241491662
+        }
+      },
+      {
+        "response": "state/inference/ed39fde4-4dc1-4e5e-ab77-f5570c43c23f/81103b52-4d9d-4b83-98a1-de0fe227c4fc-response.raw",
+        "timings": {
+          "cache_n": 4368,
+          "prompt_n": 184,
+          "prompt_ms": 12085.547,
+          "prompt_per_token_ms": 65.68232065217391,
+          "prompt_per_second": 15.22479702408174,
+          "predicted_n": 22,
+          "predicted_ms": 4112.164,
+          "predicted_per_token_ms": 195.81733333333332,
+          "predicted_per_second": 5.1068002151665155
+        }
+      },
+      {
+        "response": "state/inference/ed39fde4-4dc1-4e5e-ab77-f5570c43c23f/c6d22ea4-3fff-4e21-a79a-01dc374099bf-response.raw",
+        "timings": {
+          "cache_n": 4573,
+          "prompt_n": 130,
+          "prompt_ms": 9266.272,
+          "prompt_per_token_ms": 71.27901538461539,
+          "prompt_per_second": 14.029374488467422,
+          "predicted_n": 102,
+          "predicted_ms": 20348.85,
+          "predicted_per_token_ms": 201.4737623762376,
+          "predicted_per_second": 4.963425451561146
+        }
+      },
+      {
+        "response": "state/inference/ed39fde4-4dc1-4e5e-ab77-f5570c43c23f/7a0cd86a-43d6-445f-b991-bde3377bca93-response.raw",
+        "timings": {
+          "cache_n": 4699,
+          "prompt_n": 284,
+          "prompt_ms": 18752.166,
+          "prompt_per_token_ms": 66.02875352112676,
+          "prompt_per_second": 15.144917125840289,
+          "predicted_n": 23,
+          "predicted_ms": 4334.064,
+          "predicted_per_token_ms": 197.0029090909091,
+          "predicted_per_second": 5.076067173904216
+        }
+      },
+      {
+        "response": "state/inference/ed39fde4-4dc1-4e5e-ab77-f5570c43c23f/9e512c33-821e-479b-a8f8-b512774f44e4-response.raw",
+        "timings": {
+          "cache_n": 5005,
+          "prompt_n": 227,
+          "prompt_ms": 14901.103,
+          "prompt_per_token_ms": 65.64362555066079,
+          "prompt_per_second": 15.233771620798809,
+          "predicted_n": 22,
+          "predicted_ms": 4344.722,
+          "predicted_per_token_ms": 206.8915238095238,
+          "predicted_per_second": 4.833450793859769
+        }
+      },
+      {
+        "response": "state/inference/ed39fde4-4dc1-4e5e-ab77-f5570c43c23f/266d0be9-1da1-4ff2-96a1-29fc5a512f5c-response.raw",
+        "timings": {
+          "cache_n": 5253,
+          "prompt_n": 170,
+          "prompt_ms": 11632.997,
+          "prompt_per_token_ms": 68.42939411764705,
+          "prompt_per_second": 14.61360301219024,
+          "predicted_n": 87,
+          "predicted_ms": 16973.438,
+          "predicted_per_token_ms": 197.36555813953487,
+          "predicted_per_second": 5.0667401618929535
+        }
+      },
+      {
+        "response": "state/inference/ed39fde4-4dc1-4e5e-ab77-f5570c43c23f/921da3d0-7fde-47c1-861a-b2df312132f7-response.raw",
+        "timings": {
+          "cache_n": 5419,
+          "prompt_n": 259,
+          "prompt_ms": 18582.646,
+          "prompt_per_token_ms": 71.74766795366796,
+          "prompt_per_second": 13.937735239642405,
+          "predicted_n": 23,
+          "predicted_ms": 4964.308,
+          "predicted_per_token_ms": 225.65036363636364,
+          "predicted_per_second": 4.431634781725872
+        }
+      },
+      {
+        "response": "state/inference/ed39fde4-4dc1-4e5e-ab77-f5570c43c23f/1d8800cc-9728-4a25-be10-07a4fb28c6fa-response.raw",
+        "timings": {
+          "cache_n": 5700,
+          "prompt_n": 202,
+          "prompt_ms": 14536.945,
+          "prompt_per_token_ms": 71.96507425742574,
+          "prompt_per_second": 13.895629377424212,
+          "predicted_n": 22,
+          "predicted_ms": 4299.942,
+          "predicted_per_token_ms": 204.75914285714285,
+          "predicted_per_second": 4.883786804566201
+        }
+      }
+    ],
+    "prefill_ms": 341866.49,
+    "generation_ms": 120173.317
+  },
+  "task_group": "python-multifile",
+  "source_sha256": "53e49baa9b119b6fd3b83ce6fded59c140e665db4911031e97803c68817e3c38",
+  "inference_requests": 12,
+  "independent_alt_verification": {
+    "exit": 1,
+    "stdout": "{\n  \"complete\": false,\n  \"behavioral_acceptance\": false,\n  \"scope\": \"Required checks are incomplete\",\n  \"requirements\": [\n    {\n      \"requirement\": {\n        \"name\": \"requested-behavior\",\n        \"description\": \"Repair order totals across pricing.py and orders.py. Discount is a percentage: 10 means ten percent off. Tax is applied once to the discounted subtotal. Preserve the function names and caller interface.\",\n        \"check_name\": \"acceptance\"\n      },\n      \"status\": \"could not complete\",\n      \"evidence\": \"c6aa9bae-c322-4aa4-9969-3b36d9f91086\",\n      \"check_kind\": \"tests\",\n      \"coverage\": \"independent behavioral assertion\"\n    }\n  ],\n  \"source_snapshot\": \"a757b39001d710a727f1b8c84c369fe3d6b6d611e1de1361170669035165f12b\"\n}\n",
+    "stderr": "alt: Required checks are incomplete; inspect the verification report\n"
+  },
+  "scores": {
+    "source_behavior_passed": false,
+    "turn_completed": true,
+    "transport_turn_ended": true,
+    "stop_reason": "end_turn",
+    "claim_accuracy": "unassessed: use retained prose and evidence; no automatic success-claim inference"
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "created_utc": "2026-10-07T15:39:54.898504+00:00",
+  "name": "mimo-rust-16k-followup",
+  "scope": "One development-only native-window follow-up after the 8K Rust combination exceeded its measured input reserve at 10 issued requests",
+  "model": "same pinned MiMo 9B Q4 Heretic artifact",
+  "source_sha256": "6c00a2957ed3a723ec29746fd41153b42414263050cc6985d948597f96d4d2b9",
+  "case": "rust-feature",
+  "context": 16384,
+  "output_tokens": 2048,
+  "reasoning_tokens": 512,
+  "skill": "rust-diagnostics",
+  "tool_profile": "compact",
+  "workflow": "host",
+  "generated_tokens": 8192,
+  "requests": 12,
+  "timeout_seconds": 900,
+  "threads": 2,
+  "batch": 128,
+  "temperature": 0,
+  "policy": "Explicit larger native window, not a retrieval-based window expansion; no sealed feedback, model fallback or default promotion. Record actual memory and every failure; PC fit remains unmeasured."
+}

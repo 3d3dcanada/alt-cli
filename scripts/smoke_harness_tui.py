@@ -21,6 +21,8 @@ def main():
             settings();choose(5);term.wait('Model output and sampling');choose(3);term.wait('Set Temperature');term.send(b'\x15\r');term.wait('Model allocation saved');assert 'temperature' not in allocation()
             settings();choose(4);term.wait('Task workflow');choose(1);term.wait('Task workflow saved');assert preferences()['workflow']=='host'
             settings();choose(3);term.wait('Choose a task skill');choose(1);term.wait('Skill choice saved');assert preferences()['active_skill']=='python-repair'
+            term.send(b'\x1b6');term.wait('Preferences');term.send(b'\x1b[A'*30);choose(15);term.wait('Which tools fit this task?');choose(5);term.wait('Tool focus saved');assert preferences()['tool_profile']=='compact-lines'
+            term.send(b'\x1b6');term.wait('Preferences');term.send(b'\x1b[A'*30);choose(15);term.wait('Which tools fit this task?');choose(4);term.wait('Tool focus saved');assert preferences()['tool_profile']=='compact'
             settings();choose(0);term.wait('Reviewed instruction improvements');term.wait('Activation requires');term.send(b'\x1b')
             settings();choose(1);term.wait('Explore independently checked candidates');term.paste('Repair the behavior');term.send(b'\r');term.wait('Choose effort');term.wait('Thorough');choose(2);term.wait('Shared candidate allowance');term.wait('Standard');term.wait('Extended');choose(3);term.wait('Shared time in seconds');term.send(b'\x15');term.paste('120');term.send(b'\r');term.wait('Shared generated tokens');term.send(b'\x1b');assert not (state/'candidates').exists()
             term.close()

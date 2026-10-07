@@ -22,7 +22,7 @@ class Provider(BaseHTTPRequestHandler):
         elif step==1:name='remember';arguments={'kind':'plan','text':'Replace the current range; run unchanged behavior check'}
         elif step==2:
             content=prior[0]['content'];content=json.dumps(content) if not isinstance(content,str) else content
-            match=re.search(r'Range handle: (v1:[a-f0-9]+:\d+:\d+:[a-f0-9]+)',content);assert match,content
+            match=re.search(r'Range handle: (h\d+-[a-f0-9]+|v1:[a-f0-9]+:\d+:\d+:[a-f0-9]+)',content);assert match,content
             name='edit';arguments={'path':'value.txt','operation':'handle','handle':match[1],'new_text':'fixed ☃\n','reason':'Repair fixture value'}
         elif step==3:name='run_check';arguments={'name':'acceptance'}
         else:name=None

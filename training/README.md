@@ -190,6 +190,16 @@ receipts; arbitrary database conversations and compacted historical ACP logs
 are not automatically converted into HF-ready demonstrations. `prepare.py` still
 requires explicitly reviewed records.
 
+The later repair follow-up now includes
+[two actual pending native trajectories](../docs/research/2026-10-07-repair-results/pending-training/),
+one each from independently successful Python feature and two-file repairs by
+the pinned MiMo 9B Q4 Heretic model. Their actor, exact template/runtime, original
+oracle, source snapshots and raw provider exchanges are retained. Both are
+synthetic acceptance projects; all rights/privacy/correctness/split review flags
+remain false. They are examples to inspect and review, not an approved dataset.
+Two families cannot meet the 32-train/eight-validation pilot floor. Nothing has
+been trained or exported from them.
+
 ## 4. Prepare and validate data
 
 From the repository root, after creating the records/evidence:

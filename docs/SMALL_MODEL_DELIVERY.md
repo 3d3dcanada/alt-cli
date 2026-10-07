@@ -62,12 +62,31 @@ allowance unchanged; it passed **0/4**. Different completion styles and costs di
 not produce correct source behavior. A final MiMo 9B comparison on one repair
 family, with/without the Python skill, passed **0/2** under equal 8K context and
 five-minute CPU deadlines. It made native reading calls but timed out before a
-verified repair. All 22 failures are retained, and no preset or training trajectory
-is promoted. One repeat on these families cannot establish
+verified repair. All 22 failures are retained, and no quality preset is promoted.
+The subsequent [repair work orders](REPAIR_WORK_ORDERS.md) and
+[repair evidence](research/2026-10-07-repair-results/README.md) add compact context,
+short required handles, explicit scalar/line-array formats, refreshed source,
+parser/definition feedback and truthful synthetic provider errors. A separate
+ten-minute matched MiMo pilot passed **3/4 with each interface**; compact reduced
+initial input and its passing attempts were faster. The later portable build
+passed six of nine MiMo attempts, including an actual 80×24 TUI repair and two
+of four held-out families; Rust and the remaining two held-out tasks failed.
+The current source then passed a separately planned two-turn MiMo TUI trial,
+retaining the complete original request on the follow-up. A failed earlier
+continuation attempt and the other checkpoint/settings failures remain recorded.
+Two successful development trajectories are
+retained as pending training review, not an approved corpus. One repeat on the earlier families cannot establish
 statistical gains or nominate a default. The older v0.6 counts (7/120 Spark and
 16/120 Qwen) used different
 settings and weaker oracles, so these new runs are not a like-for-like improvement
 claim over those totals.
+
+The follow-up application checks passed 119 Rust tests, strict Clippy/formatting,
+both Goose adapters with both compact formats, 80×24 permission/edit/check/undo
+journeys, ten stream-recovery scenarios and the independent-oracle collector.
+Fresh language, held-out and live TUI outcomes are recorded separately in the
+repair evidence. Native transport, source behavior and normal turn completion
+are scored separately.
 
 ## Reproduce cloud checks
 

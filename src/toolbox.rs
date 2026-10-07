@@ -42,6 +42,8 @@ pub enum ToolProfile {
     Inspect,
     Coding,
     Terminal,
+    Compact,
+    CompactLines,
 }
 impl ToolProfile {
     pub fn label(self) -> &'static str {
@@ -50,14 +52,39 @@ impl ToolProfile {
             Self::Inspect => "inspect",
             Self::Coding => "coding",
             Self::Terminal => "terminal",
+            Self::Compact => "compact",
+            Self::CompactLines => "compact-lines",
+        }
+    }
+    pub fn is_compact(self) -> bool {
+        matches!(self, Self::Compact | Self::CompactLines)
+    }
+    pub fn operator(self) -> &'static str {
+        match self {
+            Self::Compact => include_str!("../prompts/compact.md"),
+            Self::CompactLines => include_str!("../prompts/compact-lines.md"),
+            _ => include_str!("../prompts/operator.md"),
         }
     }
     fn includes(self, name: &str) -> bool {
         match self {
-            Self::All => true,
+            Self::All => !matches!(
+                name,
+                "edit_text" | "edit_lines" | "create_file" | "create_lines" | "delete_file"
+            ),
             Self::Inspect => matches!(name, "list" | "read" | "search" | "remember" | "evidence"),
-            Self::Coding => name != "terminal",
+            Self::Coding => !matches!(
+                name,
+                "terminal"
+                    | "edit_text"
+                    | "edit_lines"
+                    | "create_file"
+                    | "create_lines"
+                    | "delete_file"
+            ),
             Self::Terminal => matches!(name, "list" | "read" | "remember" | "terminal"),
+            Self::Compact => !matches!(name, "edit" | "edit_lines" | "create_lines"),
+            Self::CompactLines => !matches!(name, "edit" | "edit_text" | "create_file"),
         }
     }
 }
@@ -67,12 +94,37 @@ pub fn focused_tools(profile: ToolProfile) -> Value {
         .as_array_mut()
         .expect("tool schema")
         .retain(|t| profile.includes(t["name"].as_str().unwrap_or("")));
+    if profile.is_compact() {
+        for tool in list["tools"].as_array_mut().expect("tool schema") {
+            if tool["name"] == "read" {
+                tool["description"] = json!(
+                    "Read additional current source and its edit handle when needed. Current file packets in the initial context already count as reads."
+                );
+                tool["inputSchema"]["properties"]["lines"]["description"] = json!(
+                    "Number of source lines to read; omit to read 100 lines. One line does not read a whole file."
+                );
+            }
+        }
+    }
     list
 }
 
 /// Kept separate from retrieved memory so trimming history cannot remove the
 /// actual capability contract or send a small model after unavailable tools.
 pub fn guidance(profile: ToolProfile, policy: Policy, checks: &[project::CheckSpec]) -> String {
+    if profile.is_compact() {
+        let names = serde_json::to_string(&checks.iter().map(|c| &c.name).collect::<Vec<_>>())
+            .expect("check names");
+        return format!(
+            "Available actions: native tools listed in this connection. Compact focus; {}.\nrun_check exact configured names: {names}. {}\n",
+            policy.label(),
+            if policy == Policy::Trusted {
+                "terminal accepts arbitrary commands, including actual tests, dependencies and network access. list provides Alt CLI/data paths for further tools."
+            } else {
+                "terminal execution requires Full access; use configured checks with permission in Guided mode."
+            }
+        );
+    }
     let names = focused_tools(profile)["tools"]
         .as_array()
         .expect("tool schema")
@@ -256,6 +308,59 @@ async fn serve_connection(stream: UnixStream, s: &Service) -> Result<()> {
             // Plain excerpts avoid forcing small models to copy JSON-escaped
             // newlines out of a tool result. Structured evidence remains in SQLite.
             let text = match request.name.as_str() {
+                "list" if s.tool_profile.is_compact() => format!(
+                    "Project files ({} total; {} omitted): {}\nrun_check names: {}\nCurrent required check status: {}\nAccess: {}\nAlt CLI: {}\nData directory: {}\n",
+                    v["total_files"],
+                    v["files_omitted"],
+                    v["files"],
+                    v["checks"]
+                        .as_array()
+                        .map(Vec::as_slice)
+                        .unwrap_or(&[])
+                        .iter()
+                        .filter_map(|c| c["name"].as_str())
+                        .collect::<Vec<_>>()
+                        .join(", "),
+                    v["verification"]["requirements"]
+                        .as_array()
+                        .map(Vec::as_slice)
+                        .unwrap_or(&[])
+                        .iter()
+                        .map(|r| format!(
+                            "{}: {}",
+                            r["requirement"]["check_name"].as_str().unwrap_or(""),
+                            r["status"].as_str().unwrap_or("unknown")
+                        ))
+                        .collect::<Vec<_>>()
+                        .join("; "),
+                    v["access"].as_str().unwrap_or(""),
+                    v["alt_cli"].as_str().unwrap_or(""),
+                    v["data_directory"].as_str().unwrap_or("")
+                ),
+                "read" if s.tool_profile.is_compact() => crate::compact_context::read_packet(&v),
+                "edit_text" | "edit_lines" | "create_file" | "create_lines" | "delete_file" => {
+                    format!(
+                        "Applied checkpoint {} to {}. Syntax parser: {} · parse errors: {} (parser only).\n{}{}\nrun_check names: {}. Run a fresh check; earlier results are stale.\n",
+                        v["checkpoint"].as_str().unwrap_or(""),
+                        v["path"].as_str().unwrap_or(""),
+                        v["syntax"]["parser"].as_str().unwrap_or("unavailable"),
+                        v["syntax"]["contains_parse_errors"].as_bool().map(|b| if b { "yes" } else { "no" }).unwrap_or("unknown"),
+                        if v["syntax"]["missing_previous_definitions"].as_array().is_some_and(|a| !a.is_empty()) {
+                            format!("Previous extracted definitions missing from current source: {}. Compare the checkpoint diff with your intended change.\n",v["syntax"]["missing_previous_definitions"])
+                        } else {String::new()},
+                        v.get("current_read")
+                            .filter(|r| r.is_object())
+                            .map(crate::compact_context::read_packet)
+                            .unwrap_or_else(|| {
+                                if request.name == "delete_file" {
+                                    format!("File deleted. The checkpoint preserves the original for undo; use {} to create a new file when needed.", if s.tool_profile == ToolProfile::CompactLines { "create_lines" } else { "create_file" })
+                                } else {
+                                    "Use read for additional current source before editing again.".into()
+                                }
+                            }),
+                        v["configured_checks"]
+                    )
+                }
                 "read" => format!(
                     "File: {} · read version: {} · {} lines\nRange handle: {}\nSymbols: {}\n{}",
                     v["path"].as_str().unwrap_or(""),
@@ -266,7 +371,7 @@ async fn serve_connection(stream: UnixStream, s: &Service) -> Result<()> {
                     v["text"].as_str().unwrap_or("")
                 ),
                 "run_check" | "terminal" => format!(
-                    "Evidence ID: {}\nExit code: {} · timeout: {} · cancelled: {}\n{}\n{}\n{}",
+                    "Evidence ID: {}\nExit code: {} · timeout: {} · cancelled: {}\n{}\n{}\n{}{}",
                     v["id"].as_str().unwrap_or(""),
                     v["exit_code"],
                     v["timed_out"],
@@ -282,7 +387,12 @@ async fn serve_connection(stream: UnixStream, s: &Service) -> Result<()> {
                     v["workflow"]["next_decision"]
                         .as_str()
                         .or_else(|| v["next_action"].as_str())
-                        .unwrap_or("")
+                        .unwrap_or(""),
+                    if request.name == "run_check" {
+                        "\nChecks run on disposable project copies. Traceback paths under /tmp refer to that completed snapshot, not the working project. Use project-relative read/edit paths; preserve raw traceback evidence."
+                    } else {
+                        ""
+                    }
                 ),
                 _ => serde_json::to_string(&v)?,
             };
@@ -397,6 +507,51 @@ struct EditArgs {
 }
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
+struct LinesEditArgs {
+    path: String,
+    handle: String,
+    lines: Vec<String>,
+    #[serde(default = "edit_reason")]
+    reason: String,
+}
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct CreateFileArgs {
+    path: String,
+    lines: Vec<String>,
+    #[serde(default = "edit_reason")]
+    reason: String,
+}
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct TextEditArgs {
+    path: String,
+    handle: String,
+    new_text: String,
+    #[serde(default = "edit_reason")]
+    reason: String,
+}
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct TextCreateArgs {
+    path: String,
+    new_text: String,
+    #[serde(default = "edit_reason")]
+    reason: String,
+}
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct DeleteFileArgs {
+    path: String,
+    handle: String,
+    #[serde(default = "edit_reason")]
+    reason: String,
+}
+fn edit_reason() -> String {
+    "Implement the requested change".into()
+}
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
 struct NoteArgs {
     kind: String,
     text: String,
@@ -425,6 +580,12 @@ async fn execute(
 ) -> Result<Value> {
     ensure!(!c.task.is_empty(), "No active task");
     ensure!(!s.cancel.load(Ordering::Relaxed), "Task was stopped");
+    ensure!(
+        r.name == "extension" || s.tool_profile.includes(&r.name),
+        "Tool {} is unavailable in {} focus; explicitly change tool focus before using it",
+        r.name,
+        s.tool_profile.label()
+    );
     Project::open(&s.data, &s.cwd)?.attempt(&c.task, signature, None)?;
     match r.name.as_str() {
         "extension" => {
@@ -460,9 +621,14 @@ async fn execute(
         "skill" => {
             let action = r.arguments["action"].as_str().unwrap_or("list");
             match action {
-                "list" => Ok(json!(crate::skills::shortlist(
-                    r.arguments["query"].as_str().unwrap_or("")
-                ))),
+                "list" => {
+                    let query = r.arguments["query"].as_str().unwrap_or("");
+                    Ok(json!(if query.trim().is_empty() {
+                        crate::skills::catalog()
+                    } else {
+                        crate::skills::shortlist(query)
+                    }))
+                }
                 "read" => {
                     let skill = crate::skills::get(
                         r.arguments["id"].as_str().context("Skill id is required")?,
@@ -533,43 +699,95 @@ async fn execute(
             )?;
             Ok(json!({"saved":true,"verified":false}))
         }
-        "edit" => {
+        "edit" | "edit_text" | "edit_lines" | "create_file" | "create_lines" | "delete_file" => {
             ensure!(
                 s.policy != Policy::ReviewOnly,
                 "Review only is selected; propose changes in your response or ask the user to choose Guided changes"
             );
-            let a: EditArgs = serde_json::from_value(r.arguments.clone())?;
-            ensure!(
-                a.operation == "delete" || r.arguments.get("new_text").is_some(),
-                "new_text is required for create/replace. Send old_text and new_text as separate native tool arguments, not a JSON example inside a string."
-            );
-            let change = {
-                let project = Project::open(&s.data, &s.cwd)?;
-                if a.operation == "handle" {
-                    project.prepare_handle_edit(
-                        &c.task,
-                        &a.path,
-                        a.handle
-                            .as_deref()
-                            .context("handle is required for operation=handle")?,
-                        &a.new_text,
-                        &a.reason,
-                    )?
-                } else {
-                    project.prepare_edit(
-                        &c.task,
-                        &a.path,
-                        a.expected_sha256.as_deref(),
-                        &a.old_text,
-                        &a.new_text,
-                        &a.operation,
-                        &a.reason,
-                    )?
-                }
+            let (change, path, operation, reason) = if r.name == "edit_text" {
+                let a: TextEditArgs = serde_json::from_value(r.arguments.clone())?;
+                let change = Project::open(&s.data, &s.cwd)?.prepare_text_edit(
+                    &c.task,
+                    &a.path,
+                    &a.handle,
+                    &a.new_text,
+                    &a.reason,
+                )?;
+                (change, a.path, "handle".into(), a.reason)
+            } else if r.name == "create_file" {
+                let a: TextCreateArgs = serde_json::from_value(r.arguments.clone())?;
+                let change = Project::open(&s.data, &s.cwd)?.prepare_edit(
+                    &c.task,
+                    &a.path,
+                    None,
+                    "",
+                    &a.new_text,
+                    "create",
+                    &a.reason,
+                )?;
+                (change, a.path, "create".into(), a.reason)
+            } else if r.name == "edit_lines" {
+                let a: LinesEditArgs = serde_json::from_value(r.arguments.clone())?;
+                let change = Project::open(&s.data, &s.cwd)?.prepare_lines_edit(
+                    &c.task,
+                    &a.path,
+                    Some(&a.handle),
+                    &a.lines,
+                    "handle",
+                    &a.reason,
+                )?;
+                (change, a.path, "handle".into(), a.reason)
+            } else if r.name == "create_lines" {
+                let a: CreateFileArgs = serde_json::from_value(r.arguments.clone())?;
+                let change = Project::open(&s.data, &s.cwd)?
+                    .prepare_lines_edit(&c.task, &a.path, None, &a.lines, "create", &a.reason)?;
+                (change, a.path, "create".into(), a.reason)
+            } else if r.name == "delete_file" {
+                let a: DeleteFileArgs = serde_json::from_value(r.arguments.clone())?;
+                let change = Project::open(&s.data, &s.cwd)?.prepare_lines_edit(
+                    &c.task,
+                    &a.path,
+                    Some(&a.handle),
+                    &[],
+                    "delete",
+                    &a.reason,
+                )?;
+                (change, a.path, "delete".into(), a.reason)
+            } else {
+                let a: EditArgs = serde_json::from_value(r.arguments.clone())?;
+                ensure!(
+                    a.operation == "delete" || r.arguments.get("new_text").is_some(),
+                    "new_text is required for create/replace. Send old_text and new_text as separate native tool arguments, not a JSON example inside a string."
+                );
+                let change = {
+                    let project = Project::open(&s.data, &s.cwd)?;
+                    if a.operation == "handle" {
+                        project.prepare_handle_edit(
+                            &c.task,
+                            &a.path,
+                            a.handle
+                                .as_deref()
+                                .context("handle is required for operation=handle")?,
+                            &a.new_text,
+                            &a.reason,
+                        )?
+                    } else {
+                        project.prepare_edit(
+                            &c.task,
+                            &a.path,
+                            a.expected_sha256.as_deref(),
+                            &a.old_text,
+                            &a.new_text,
+                            &a.operation,
+                            &a.reason,
+                        )?
+                    }
+                };
+                (change, a.path, a.operation, a.reason)
             };
             let detail = format!(
                 "{}\n{}\n{}\nCheckpoint: {}\n{}",
-                a.reason,
+                reason,
                 s.policy.label(),
                 if change.test_change {
                     "TEST/ASSERTION CHANGE: passing changed checks does not prove the original bug is fixed."
@@ -583,7 +801,7 @@ async fn execute(
                 s,
                 c,
                 id,
-                &format!("{} {}", a.operation, a.path),
+                &format!("{} {}", operation, path),
                 &r.arguments,
                 &detail,
             )
@@ -594,11 +812,24 @@ async fn execute(
             }
             let applied = Project::open(&s.data, &s.cwd)?.apply(&change.id, s.policy)?;
             let p = Project::open(&s.data, &s.cwd)?;
-            let syntax = p.bytes(&applied.path)?.and_then(|bytes| String::from_utf8(bytes).ok())
-                .map(|body| crate::syntax::chunks(&applied.path, &body)).transpose()?
-                .map(|syntax| json!({"parser":syntax.parser,"contains_parse_errors":syntax.contains_parse_errors,"scope":"Syntax only; run independent behavioral checks"}));
+            let syntax = p
+                .bytes(&applied.path)?
+                .and_then(|bytes| String::from_utf8(bytes).ok())
+                .map(|body| {
+                    crate::compact_context::syntax_delta(
+                        &applied.path,
+                        applied.before.as_deref(),
+                        &body,
+                    )
+                })
+                .transpose()?;
+            let current_read = if s.tool_profile.is_compact() {
+                p.changed_read(&c.task, &applied, 2400)?
+            } else {
+                None
+            };
             Ok(
-                json!({"checkpoint":applied.id,"path":applied.path,"sha256":applied.after_hash,"syntax":syntax,"configured_checks":p.checks()?.iter().map(|c|&c.name).collect::<Vec<_>>(),"next":"Inspect any syntax errors, then run a fresh configured check. File changed; previous results are stale. Do not invent a check name."}),
+                json!({"checkpoint":applied.id,"path":applied.path,"sha256":applied.after_hash,"syntax":syntax,"current_read":current_read,"configured_checks":p.checks()?.iter().map(|c|&c.name).collect::<Vec<_>>(),"next":"Inspect any syntax errors, then run a fresh configured check. File changed; previous results are stale. Do not invent a check name."}),
             )
         }
         "run_check" => {
@@ -629,8 +860,10 @@ async fn execute(
             value["workflow"] = crate::workflow::packet(&Project::open(&s.data, &s.cwd)?, &c.task)?;
             if result.exit_code != Some(0) || result.error.is_some() {
                 let changes = Project::open(&s.data, &s.cwd)?.task(&c.task)?.changes;
-                value["next_action"] = json!(if changes == 0 {
-                    "No tracked edit has been applied. Invoke edit as a NATIVE TOOL CALL. Printing a JSON code block does not change a file. Read the file, then call edit with path, operation=replace, old_text, new_text, reason. Alt remembers the read hash; expected_sha256 is optional."
+                value["next_action"] = json!(if changes == 0 && s.tool_profile.is_compact() {
+                    "No tracked edit has been applied. Use the enabled editor as a native tool call with a current read handle and actual replacement source, then rerun this check."
+                } else if changes == 0 {
+                    "No tracked edit has been applied. Invoke edit as a native tool call using a current read handle and new_text, then rerun this check."
                 } else {
                     "Inspect the actual failed output and current files; adjust the implementation before repeating this check."
                 });
@@ -674,6 +907,11 @@ pub fn tool_list() -> Value {
         tool("evidence","Read another bounded page of actual captured check output by evidence id. Does not rerun or verify anything.",json!({"id":{"type":"string"},"offset":{"type":"integer","minimum":0}}),vec!["id"]),
         tool("remember","Persist a plan, decision, next step or explicitly unverified hypothesis. Notes never certify success.",json!({"kind":{"type":"string","enum":["plan","decision","next","hypothesis"]},"text":{"type":"string"}}),vec!["kind","text"]),
         tool("edit","Apply a focused change with checkpoint/undo. Prefer operation=handle with a range or symbol handle from read and new_text. Exact unique old_text replacement remains available. Approval follows selected access mode.",json!({"path":{"type":"string"},"handle":{"type":"string","description":"Exact revision-bound handle returned by read; required for handle operation."},"old_text":{"type":"string","description":"Exact unique substring for replace only; no line numbers."},"new_text":{"type":"string","description":"Replacement text for handle/replace/create."},"operation":{"type":"string","enum":["handle","replace","create","delete"]},"reason":{"type":"string"}}),vec!["path","operation","reason"]),
+        tool("edit_lines","Replace exactly the current read span. Copy its handle; preserve indentation. Checkpoint/undo and selected access approval apply.",json!({"path":{"type":"string"},"handle":{"type":"string","description":"Copy the handle from the current read of this path."},"lines":{"type":"array","items":{"type":"string"},"description":"One literal source line per item, without newline characters. [] removes the span."},"reason":{"type":"string"}}),vec!["path","handle","lines"]),
+        tool("create_lines","Create a missing file with a checkpoint. Use edit_lines for an existing file.",json!({"path":{"type":"string"},"lines":{"type":"array","items":{"type":"string"},"description":"One literal source line per item."},"reason":{"type":"string"}}),vec!["path","lines"]),
+        tool("edit_text","Replace exactly the current read span with source text. Copy its handle; no old_text needed. Checkpoint/undo and access approval apply. Original newline style and span-ending newline are preserved.",json!({"path":{"type":"string"},"handle":{"type":"string","description":"Copy the handle from the current read of this path."},"new_text":{"type":"string","description":"Actual replacement source with real line breaks and indentation."},"reason":{"type":"string"}}),vec!["path","handle","new_text"]),
+        tool("create_file","Create a missing file with source text and a checkpoint. Use edit_text for an existing file.",json!({"path":{"type":"string"},"new_text":{"type":"string"},"reason":{"type":"string"}}),vec!["path","new_text"]),
+        tool("delete_file","Delete an existing file using a complete current read handle. Checkpoint/undo and selected access approval apply.",json!({"path":{"type":"string"},"handle":{"type":"string"},"reason":{"type":"string"}}),vec!["path","handle"]),
         tool("run_check","Run a user-configured named check after approval. list shows names; argv cannot be set by this tool.",json!({"name":{"type":"string"}}),vec!["name"]),
         tool("terminal","Arbitrary shell command in the real project, including networking, installs and external tools. Only available in user-selected Full access mode. External side effects are not undoable.",json!({"command":{"type":"string"},"timeout_secs":{"type":"integer","minimum":1,"maximum":600}}),vec!["command"])
     ]})

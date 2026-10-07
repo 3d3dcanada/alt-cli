@@ -68,6 +68,13 @@ alt run 'Continue checking the project' --resume SESSION_ID
 alt export SESSION_ID > conversation.jsonl
 ```
 
+For the compact small-model interface, choose `alt tools compact` (scalar text)
+or `alt tools compact-lines` (one source line per array item). `alt tools all`
+restores the original tool/context interface. These choices are independent of
+Full/Guided access. Set workflow with `alt workflow host` and output allocation
+with `alt inference --output-tokens 1024`; use the
+[usage guide](SMALL_MODEL_USAGE.md) for model-specific reasoning and context settings.
+
 Headless requests deny tool permission unless `--allow-tools` is supplied. Access
 policy is separate: `--access trusted` selects Full access; other values are
 `guided` and `review-only`. The TUI uses its saved Settings choice. Full access

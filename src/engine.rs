@@ -67,7 +67,7 @@ async fn frame<R: AsyncBufRead + Unpin>(reader: &mut R) -> Result<Option<Vec<u8>
     }
 }
 
-/// Goose 1.53 converts provider transport failures into an engine-generated
+/// Goose 1.53 converts provider transport and allowance failures into an engine-generated
 /// message followed by end_turn. Recognize its exact synthetic-message shape;
 /// ordinary model text and tool errors must not be classified by keywords.
 fn goose_provider_error(params: &Value) -> Option<String> {
@@ -87,6 +87,18 @@ fn goose_provider_error(params: &Value) -> Option<String> {
             "Model connection interrupted. Your conversation was saved; reconnect and resend. {}",
             text.trim_end_matches("\n\nPlease resend your message to try again.")
         ))
+    } else if let Some(issue) = text.strip_prefix("Ran into this error: ").and_then(|s| {
+        s.strip_suffix("\n\nPlease retry if you think this is a transient or recoverable error.")
+    }) {
+        if issue
+            == "Rate limit exceeded: Selected shared effort allowance exhausted; no extra model call was sent."
+        {
+            Some("Model call allowance exhausted. Your conversation and source were saved; adjust the allowance or continue in a new turn.".into())
+        } else {
+            Some(format!(
+                "Model request failed. Your conversation and source were saved. {issue}"
+            ))
+        }
     } else {
         None
     }
@@ -465,6 +477,7 @@ impl Engine {
             let cancel = bridge.cancel.clone();
             cancel.store(false, std::sync::atomic::Ordering::Relaxed);
             let focus = bridge.tool_profile;
+            let compact = focus.is_compact();
             let policy = bridge.policy;
             let workflow = crate::config::Preferences::load(&data)?.workflow;
             let active_skill = crate::config::Preferences::load(&data)?.active_skill;
@@ -473,15 +486,21 @@ impl Engine {
                     Ok(crate::toolbox::guidance(focus, policy, &p.checks()?))
                 })
                 .await?;
-            available_actions.push_str(&format!(
-                "\n{}",
-                crate::skills::prompt(active_skill.as_deref(), text)?
-            ));
+            if compact && active_skill.is_none() {
+                available_actions.push_str("\nUse skill(action=list/read/helper) for optional executable procedures when needed.\n");
+            } else {
+                available_actions.push_str(&format!(
+                    "\n{}",
+                    crate::skills::prompt(active_skill.as_deref(), text)?
+                ));
+            }
             memory = crate::project_worker::run(data.clone(), cwd.clone(), cancel.clone(), move |project| {
                 project.start_task(&task_copy, &request)?;
                 crate::workflow::begin(project,&task_copy,workflow)?;
-                let mut memory = project.memory(&task_copy, &request, (context as usize).min(16000))?;
-                if let Some(check) = project.latest_check(&task_copy)? {
+                let mut memory = if compact {
+                    project.compact_memory(&task_copy, &request, (context as usize / 2).clamp(512,6000))?
+                } else { project.memory(&task_copy, &request, (context as usize).min(16000))? };
+                if !compact && let Some(check) = project.latest_check(&task_copy)? {
                     memory.push_str(&format!("\nLast check observation (may be stale; use list for current verification): {} exit={:?}, error={:?}, tests={:?}.\n", check.name, check.exit_code, check.error, check.tests_run));
                 }
                 Ok(memory)
@@ -502,7 +521,13 @@ impl Engine {
                             data.clone(),
                             cwd.clone(),
                             cancel.clone(),
-                            move |p| p.memory(&task_copy, &request, size),
+                            move |p| {
+                                if compact {
+                                    p.compact_memory(&task_copy, &request, size)
+                                } else {
+                                    p.memory(&task_copy, &request, size)
+                                }
+                            },
                         )
                         .await?;
                         tokens = crate::benchmark::token_count(profile, &memory)
@@ -537,7 +562,13 @@ impl Engine {
                 .expect("bridge")
                 .context(&task, session);
         }
-        let mut prompt = vec![json!({"type":"text","text":include_str!("../prompts/operator.md")})];
+        let operator = self
+            .bridge
+            .as_ref()
+            .map(|b| b.tool_profile)
+            .unwrap_or_default()
+            .operator();
+        let mut prompt = vec![json!({"type":"text","text":operator})];
         if let Some(body) = &self.instruction_draft {
             let id = crate::project::digest(body.as_bytes());
             prompt.push(json!({"type":"text","text":format!("Experimental operator supplement {id} (this invocation only; unpromoted):\n{body}")}));
@@ -694,6 +725,32 @@ mod frame_fuzz_tests {
         event["update"]["_meta"]["goose"]["messageId"] = json!("msg_failure");
         event["update"]["content"]["text"] =
             json!("Network error: an example string in your source");
+        assert!(goose_provider_error(&event).is_none());
+    }
+    #[test]
+    fn exhausted_shared_allowance_is_a_failed_turn_and_model_prose_is_not() {
+        use super::*;
+        let text = "Ran into this error: Rate limit exceeded: Selected shared effort allowance exhausted; no extra model call was sent.\n\nPlease retry if you think this is a transient or recoverable error.";
+        let mut event = json!({"update":{"sessionUpdate":"agent_message_chunk","_meta":{"goose":{"messageId":"msg_failure"}},"content":{"text":text}}});
+        assert!(
+            goose_provider_error(&event)
+                .unwrap()
+                .contains("allowance exhausted")
+        );
+        event["update"]["_meta"]["goose"]["messageId"] = json!("chatcmpl-model-content");
+        assert!(goose_provider_error(&event).is_none());
+        event["update"]["_meta"]["goose"]["messageId"] = json!("msg_failure");
+        event["update"]["content"]["text"] = json!("Selected shared effort allowance exhausted");
+        assert!(goose_provider_error(&event).is_none());
+        event["update"]["content"]["text"] = json!(
+            "Ran into this error: Request failed with status: 400 Bad Request\n\nPlease retry if you think this is a transient or recoverable error."
+        );
+        assert!(
+            goose_provider_error(&event)
+                .unwrap()
+                .contains("400 Bad Request")
+        );
+        event["update"]["_meta"]["goose"]["messageId"] = json!("chatcmpl-model-content");
         assert!(goose_provider_error(&event).is_none());
     }
     #[tokio::test]

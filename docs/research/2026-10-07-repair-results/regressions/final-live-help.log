@@ -1,0 +1,69 @@
+usage: live_acceptance.py [-h] [--suite {v4,v5}]
+                          [--output-tokens OUTPUT_TOKENS]
+                          [--reasoning-tokens REASONING_TOKENS]
+                          [--temperature TEMPERATURE] [--top-p TOP_P]
+                          [--workflow {model-plan,host}] [--skill SKILL]
+                          [--thinking {default,on,off}]
+                          [--stop-after STOP_AFTER] [--resume]
+                          [--tool-profile {all,inspect,coding,terminal,compact,compact-lines}]
+                          [--partition {development,held-out,all}]
+                          [--threads THREADS] [--batch BATCH]
+                          [--verification-plan]
+                          [--history-notes HISTORY_NOTES] [--binary BINARY]
+                          --engine ENGINE --model MODEL --sha256 SHA256
+                          --uncensored [--runtime RUNTIME]
+                          [--provider {openai,ollama}] [--endpoint ENDPOINT]
+                          [--model-id MODEL_ID] [--contexts CONTEXTS]
+                          [--repeats REPEATS] [--cases CASES]
+                          [--timeout TIMEOUT] --output OUTPUT
+                          [--generated-tokens GENERATED_TOKENS]
+                          [--requests REQUESTS]
+                          [--instruction-draft INSTRUCTION_DRAFT]
+                          [--interface {cli,tui}] [--width WIDTH]
+                          [--height HEIGHT]
+
+Opt-in repeatable project evaluations; requires an exact uncensored artifact.
+Every attempt, timeout, independent oracle and source diff is retained.
+
+options:
+  -h, --help            show this help message and exit
+  --suite {v4,v5}
+  --output-tokens OUTPUT_TOKENS
+  --reasoning-tokens REASONING_TOKENS
+  --temperature TEMPERATURE
+  --top-p TOP_P
+  --workflow {model-plan,host}
+  --skill SKILL
+  --thinking {default,on,off}
+  --stop-after STOP_AFTER
+                        Retain a bounded pilot and leave remaining matrix
+                        cells explicitly unmeasured
+  --resume
+  --tool-profile {all,inspect,coding,terminal,compact,compact-lines}
+  --partition {development,held-out,all}
+  --threads THREADS
+  --batch BATCH
+  --verification-plan
+  --history-notes HISTORY_NOTES
+  --binary BINARY
+  --engine ENGINE
+  --model MODEL
+  --sha256 SHA256
+  --uncensored
+  --runtime RUNTIME
+  --provider {openai,ollama}
+  --endpoint ENDPOINT
+  --model-id MODEL_ID
+  --contexts CONTEXTS
+  --repeats REPEATS
+  --cases CASES
+  --timeout TIMEOUT
+  --output OUTPUT
+  --generated-tokens GENERATED_TOKENS
+  --requests REQUESTS
+  --instruction-draft INSTRUCTION_DRAFT
+                        Trial this bounded offline supplement for this
+                        campaign only
+  --interface {cli,tui}
+  --width WIDTH
+  --height HEIGHT

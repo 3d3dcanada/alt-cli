@@ -148,12 +148,15 @@ fn session_recovery_and_profile_validation() {
 #[test]
 fn cli_streams_exports_resumes_and_denies_by_default() {
     let dir = tempfile::tempdir().unwrap();
+    let project = dir.path().join("project");
+    std::fs::create_dir(&project).unwrap();
     let cli = || {
         let mut c = Command::new(env!("CARGO_BIN_EXE_alt"));
         c.arg("--data-dir")
             .arg(dir.path())
             .arg("--engine")
             .arg(fixture());
+        c.current_dir(&project);
         c
     };
     assert!(

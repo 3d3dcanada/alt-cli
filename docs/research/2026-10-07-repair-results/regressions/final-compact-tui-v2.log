@@ -1,0 +1,10 @@
+Traceback (most recent call last):
+  File "/workspace/alt-cli/scripts/smoke_compact.py", line 230, in <module>
+    main()
+  File "/workspace/alt-cli/scripts/smoke_compact.py", line 159, in main
+    events = [json.loads(line) for line in run('run', 'Repair scaled(x) in repair.py so it multiplies x by three. Preserve its interface.', '--json', *(['--allow-tools'] if scenario != 'denied' else [])).splitlines()]
+                                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/alt-cli/scripts/smoke_compact.py", line 140, in run
+    assert receipt['error'] is None and receipt['terminal_restored'], receipt
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: {'interface': 'tui', 'width': 80, 'height': 24, 'sent_prompt': False, 'permissions_approved': 0, 'permissions_denied': 0, 'terminal_restored': True, 'error': 'TUI exited before the model turn ended', 'timed_out': False, 'response_ready_visible': False, 'quit_signal_fallback': False, 'process_exit': 1, 'sampled_alt_tree_peak_rss_bytes': 0, 'wall_seconds': 0.1}
