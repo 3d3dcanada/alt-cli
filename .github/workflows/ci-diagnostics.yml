@@ -1,0 +1,48 @@
+name: Retain failed CI diagnostics
+on:
+  workflow_dispatch:
+    inputs:
+      run_id:
+        description: Failed run in this repository to inspect
+        type: string
+        required: true
+permissions:
+  contents: read
+jobs:
+  diagnose:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: write
+      actions: read
+    env:
+      GH_TOKEN: ${{ github.token }}
+      TARGET_RUN: ${{ inputs.run_id }}
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - name: Retrieve failed-job output using the repository workflow identity
+        run: |
+          set -euo pipefail
+          [[ "$TARGET_RUN" =~ ^[0-9]+$ ]]
+          mkdir diagnostics
+          gh run view "$TARGET_RUN" --repo "$GITHUB_REPOSITORY" --json databaseId,headSha,status,conclusion,jobs > diagnostics/run.json
+          gh run view "$TARGET_RUN" --repo "$GITHUB_REPOSITORY" --log-failed > diagnostics/failed-jobs.log
+          python3 - <<'PY'
+          import pathlib,re
+          p=pathlib.Path('diagnostics/failed-jobs.log')
+          # Logs are already secret-masked by Actions. Also remove signed URL
+          # query strings so transient download credentials are not retained.
+          p.write_text(re.sub(r'(https?://[^\s?"<>]+)\?[^\s"<>]+',r'\1?[query omitted]',p.read_text()))
+          PY
+      - name: Retain diagnostics in a dedicated evidence branch
+        run: |
+          set -euo pipefail
+          destination="docs/evidence/ci-diagnostics/$TARGET_RUN"
+          mkdir -p "$destination"
+          cp diagnostics/* "$destination/"
+          git switch -c "evidence/ci-diagnostics-$GITHUB_RUN_ID"
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add "$destination"
+          git commit -m "Retain failed CI diagnostics for $TARGET_RUN"
+          git push origin HEAD

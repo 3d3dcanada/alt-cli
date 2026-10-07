@@ -22,13 +22,19 @@ jobs:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
       - name: Prepare and validate the candidate
         run: |
+          set -euo pipefail
           sudo mkdir -p /workspace
           sudo chown "$USER" /workspace
           ln -s "$GITHUB_WORKSPACE" /workspace/alt-cli
-          bash scripts/setup-cloud.sh
-          bash scripts/build-portable.sh
+          bash scripts/setup-cloud.sh 2>&1 | tee candidate-build.log
+          bash scripts/build-portable.sh 2>&1 | tee -a candidate-build.log
           mkdir candidate
           cp target/portable-glibc231/release/alt candidate/alt
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: candidate-build-log
+          path: candidate-build.log
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: frozen-model-candidate
@@ -76,7 +82,9 @@ jobs:
           pattern: uncensored-matrix-*
           path: collected
       - name: Check every matrix cell and summarize
-        run: python3 scripts/summarize_matrix.py collected --output matrix-summary.json --model "$MATRIX_MODEL"
+        run: |
+          mkdir -p collected
+          python3 scripts/summarize_matrix.py collected --output matrix-summary.json --model "$MATRIX_MODEL"
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()
         with:
