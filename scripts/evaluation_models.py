@@ -16,4 +16,20 @@ MODELS = {
         'sha256': '5d38e532cf33a5b56760bc7803aaabffb240d0604f1e389e4db148830c2bb747',
         'thinking': 'default', 'timeout': 360,
     },
+    'josie7': {
+        'repository': 'QuantFactory/Josiefied-Qwen2.5-7B-Instruct-abliterated-GGUF',
+        'revision': '21401ad3fb6d1c6de9d6e078b0d83b7c7a792caf',
+        'filename': 'Josiefied-Qwen2.5-7B-Instruct-abliterated.Q4_K_M.gguf',
+        'bytes': 4683074176,
+        'sha256': 'd7d626d96cc2d3567e8266101b4211b17634012dd99a0c9b28f475ce4eb620b6',
+        'thinking': 'default', 'timeout': 600,
+    },
+    'mimo9': {
+        'repository': 'mradermacher/MiMo-V2.6-Distill-Qwen-9B-heretic-GGUF',
+        'revision': '4e642ce6d23ee0130bdf57cfe64d644008c042ee',
+        'filename': 'MiMo-V2.6-Distill-Qwen-9B-heretic.Q4_K_M.gguf',
+        'bytes': 5629106560,
+        'sha256': '00877ff79174b79f72c5ec704901fc958400a0b0d390fb61a068281618116dd1',
+        'thinking': 'default', 'timeout': 600,
+    },
 }

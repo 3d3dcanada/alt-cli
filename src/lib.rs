@@ -35,5 +35,12 @@ pub mod benchmark;
 
 pub mod language;
 
+pub mod analysis;
+pub mod candidates;
 pub mod capability;
+pub mod inference;
+pub mod instructions;
+pub mod native;
 pub mod qualification;
+pub mod skills;
+pub mod workflow;

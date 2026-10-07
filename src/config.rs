@@ -28,6 +28,9 @@ pub struct Profile {
     /// A verified/imported artifact identifier in the local model library.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub local_model: Option<String>,
+    /// Missing older settings are materialized on the next save, preserving their allocation.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub inference: Option<crate::inference::Settings>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, clap::ValueEnum)]
@@ -55,7 +58,13 @@ impl Profile {
         if self.context_tokens < 2048 || self.max_turns == 0 || self.max_turns > 100 {
             bail!("Use at least 2048 context tokens and between 1 and 100 turns");
         }
+        self.effective_inference().validate(self)?;
         Ok(())
+    }
+    pub fn effective_inference(&self) -> crate::inference::Settings {
+        self.inference
+            .clone()
+            .unwrap_or_else(|| crate::inference::Settings::legacy(self.context_tokens))
     }
 
     pub fn models_url(&self) -> String {
@@ -118,8 +127,11 @@ impl Config {
         let text = std::fs::read_to_string(root.join("config.toml")).context(
             "No Alt configuration. Open `alt` for guided setup, or run `alt init --model MODEL`",
         )?;
-        let config: Self = toml::from_str(&text).context("Invalid Alt configuration")?;
-        for profile in config.profiles.values() {
+        let mut config: Self = toml::from_str(&text).context("Invalid Alt configuration")?;
+        for profile in config.profiles.values_mut() {
+            if profile.inference.is_none() {
+                profile.inference = Some(profile.effective_inference());
+            }
             profile.validate()?;
         }
         if !config.profiles.is_empty() && !config.profiles.contains_key(&config.default_profile) {
@@ -166,6 +178,9 @@ pub struct Preferences {
     pub runtime_path: Option<PathBuf>,
     pub tool_profile: crate::toolbox::ToolProfile,
     pub runtime: crate::runtime::Settings,
+    pub workflow: crate::workflow::Mode,
+    pub active_skill: Option<String>,
+    pub instruction_version: Option<String>,
 }
 
 impl Default for Preferences {
@@ -181,6 +196,9 @@ impl Default for Preferences {
             runtime_path: None,
             runtime: crate::runtime::Settings::default(),
             tool_profile: crate::toolbox::ToolProfile::default(),
+            workflow: crate::workflow::Mode::default(),
+            active_skill: None,
+            instruction_version: None,
         }
     }
 }

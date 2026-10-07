@@ -47,8 +47,10 @@ run('build',['build-info'])
 run('hardware',['hardware'])
 if a.live:
     run('connection',['doctor'],120)
+    run('inference-settings',['inference'])
     run('model-qualification',['qualify','--contexts',','.join(map(str,contexts)),'--repeats','3'],max(900,len(contexts)*900))
     run('native-tool-use',['evaluate'],900)
+    run('native-streamed-roundtrip',['qualify-tools','--timeout','600'],660)
 else:
     report['live_status']='Unperformed. Select an uncensored model in Alt, then repeat with --live.'
 report['passed']=all(c['passed'] for c in report['checks']); save()

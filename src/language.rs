@@ -371,9 +371,24 @@ pub fn apply(data: &Path, cwd: &Path, ids: &[String], policy: Policy) -> Result<
         );
         changes.push(c);
     }
-    let mut done = Vec::new();
+    let mut done: Vec<crate::project::Change> = Vec::new();
     for c in changes {
-        done.push(p.apply(&c.id, policy)?);
+        match p.apply(&c.id, policy) {
+            Ok(value) => done.push(value),
+            Err(error) => {
+                let rollback: Vec<_> = done
+                    .iter()
+                    .rev()
+                    .map(|v| {
+                        let id = &v.id;
+                        json!({"checkpoint":id,"restored":p.undo(id).is_ok()})
+                    })
+                    .collect();
+                return Err(error.context(format!(
+                    "Multi-file rename stopped; rollback results {rollback:?}"
+                )));
+            }
+        }
     }
     Ok(json!({"applied":done}))
 }

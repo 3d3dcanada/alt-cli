@@ -724,6 +724,7 @@ impl App {
             uncensored: false,
             api_key_env: (!key.is_empty()).then(|| key.into()),
             local_model: None,
+            inference: None,
         };
         profile.validate()?;
         ensure!(
@@ -753,8 +754,10 @@ impl App {
         match &mut dialog {
             Dialog::Notice { scroll, .. } => {
                 match key.code {
-                    KeyCode::PageDown | KeyCode::Down => *scroll = scroll.saturating_add(4),
-                    KeyCode::PageUp | KeyCode::Up => *scroll = scroll.saturating_sub(4),
+                    KeyCode::PageDown => *scroll = scroll.saturating_add(8),
+                    KeyCode::PageUp => *scroll = scroll.saturating_sub(8),
+                    KeyCode::Down => *scroll = scroll.saturating_add(4),
+                    KeyCode::Up => *scroll = scroll.saturating_sub(4),
                     _ => {}
                 }
                 if key.code == KeyCode::Enter {

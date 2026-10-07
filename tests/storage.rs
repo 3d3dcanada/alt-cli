@@ -71,6 +71,7 @@ fn history_retention_archives_first_and_restores_without_overwriting() {
                     uncensored: false,
                     api_key_env: None,
                     local_model: None,
+                    inference: None,
                 },
             })
             .unwrap();
@@ -132,6 +133,7 @@ fn retention_never_deletes_a_conversation_that_exceeds_restore_limits() {
                 uncensored: false,
                 api_key_env: None,
                 local_model: None,
+                inference: None,
             },
         })
         .unwrap();

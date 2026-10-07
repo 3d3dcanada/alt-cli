@@ -103,9 +103,24 @@ def tokenize_dataset(config, partitions, tokenizer):
     return encoded, details
 
 
+def validate_resume(directory,receipt_path,config,dataset_sha):
+    require(receipt_path is not None,"Resume requires the prior receipt")
+    previous=strict_loads(Path(receipt_path).read_text())
+    require(previous.get("config")==config and previous.get("dataset_manifest_sha256")==dataset_sha,"Resume config or dataset changed")
+    manifest=previous.get("checkpoint_manifests",{}).get(str(Path(directory).resolve()))
+    require(isinstance(manifest,dict) and bool(manifest),"Checkpoint was not recorded by this training run")
+    require({str(p.relative_to(directory)):sha256_file(p) for p in Path(directory).rglob('*') if p.is_file()}==manifest,"Checkpoint files changed")
+    return previous
+
+
 def run(args):
     config = load_config(args.config)
     partitions, manifest = load_prepared(args.dataset, config)
+    resume=getattr(args,"resume_from",None)
+    if resume:
+        require(args.train,"Checkpoint resume is a training operation")
+        validate_resume(resume,args.resume_receipt,config,sha256_file(args.dataset / "manifest.json"))
+    else:require(getattr(args,"resume_receipt",None) is None,"A resume receipt needs its checkpoint directory")
     versions = installed_versions()
     if args.train:
         require(versions == REFERENCE_PACKAGES, "install the reference pins or explicitly revise/qualify the recipe; installed versions differ")
@@ -152,7 +167,7 @@ def run(args):
     require(args.output is not None, "--train requires a new --output directory")
     import torch
     from peft import LoraConfig, get_peft_model, prepare_model_for_kbit_training
-    from transformers import AutoModelForCausalLM, BitsAndBytesConfig, Trainer, TrainingArguments, set_seed
+    from transformers import AutoModelForCausalLM, BitsAndBytesConfig, Trainer, TrainerCallback, TrainingArguments, set_seed
     require(torch.cuda.is_available(), "no usable CUDA GPU; useful 7B/9B training is not qualified on this CPU environment")
     require(torch.cuda.device_count() == 1, "select one GPU with CUDA_VISIBLE_DEVICES; this starter is not a distributed recipe")
     train = config["training"]
@@ -203,7 +218,16 @@ def run(args):
         def collate(rows):
             return {key: torch.tensor(values, dtype=torch.long) for key, values in padded_batch(rows, tokenizer.pad_token_id).items()}
 
+        class CheckpointReceipt(TrainerCallback):
+            def on_save(self, args, state, control, **kwargs):
+                directory=Path(args.output_dir)/f"checkpoint-{state.global_step}"
+                if directory.is_dir():
+                    receipt.setdefault("checkpoint_manifests", {})[str(directory.resolve())]={str(p.relative_to(directory)):sha256_file(p) for p in directory.rglob('*') if p.is_file()}
+                    save_receipt()
+                return control
+
         trainer = Trainer(
+            callbacks=[CheckpointReceipt()],
             model=model, processing_class=tokenizer, data_collator=collate,
             train_dataset=encoded["train"], eval_dataset=encoded["validation"],
             args=TrainingArguments(
@@ -221,7 +245,11 @@ def run(args):
                 seed=train["seed"], data_seed=train["seed"], push_to_hub=False,
             ),
         )
-        result = trainer.train()
+        resume=getattr(args,"resume_from",None)
+        if resume:
+            validate_resume(resume,args.resume_receipt,config,receipt["dataset_manifest_sha256"])
+            receipt["resume_from"] = str(resume.resolve());save_receipt()
+        result = trainer.train(resume_from_checkpoint=str(resume.resolve()) if resume else None)
         trainer.save_model(str(args.output / "adapter"))
         tokenizer.save_pretrained(str(args.output / "adapter"))
         receipt.update({
@@ -244,6 +272,8 @@ def main():
     parser.add_argument("--config", type=Path, required=True)
     parser.add_argument("--dataset", type=Path, required=True)
     parser.add_argument("--cache-dir", type=Path, default=Path(".alt-training/cache"))
+    parser.add_argument("--resume-from",type=Path,help="Exact checkpoint directory from a recorded prior run")
+    parser.add_argument("--resume-receipt",type=Path,help="Prior run receipt with immutable checkpoint file hashes")
     parser.add_argument("--output", type=Path, help="New receipt file for tokenization; new run directory for training")
     mode = parser.add_mutually_exclusive_group(required=True)
     mode.add_argument("--tokenize-only", action="store_true")

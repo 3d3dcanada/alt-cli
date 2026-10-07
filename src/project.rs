@@ -256,7 +256,7 @@ impl Project {
         ensure!(
             matches!(
                 kind,
-                "request" | "plan" | "decision" | "observation" | "failure" | "next"
+                "request" | "plan" | "decision" | "observation" | "failure" | "next" | "hypothesis"
             ),
             "Unknown memory category"
         );
@@ -432,9 +432,73 @@ impl Project {
             .map(|(i, s)| format!("{}: {}", i + 1, bounded(s, 2000)))
             .collect::<Vec<_>>()
             .join("\n");
+        let mut offset = 0;
+        let mut range_start = None;
+        let mut range_end = 0;
+        for (i, line) in body.split_inclusive('\n').enumerate() {
+            if i + 1 == start {
+                range_start = Some(offset);
+            }
+            offset += line.len();
+            if i + 1 >= start && i + 1 < start.saturating_add(lines) {
+                range_end = offset;
+            }
+        }
+        let range = range_start
+            .filter(|begin| {
+                body[*begin..range_end].len() <= 20_000
+                    && body[*begin..range_end]
+                        .lines()
+                        .all(|l| l.chars().count() <= 2000)
+            })
+            .map(|begin| self.edit_handle(task, path, &hash, begin, range_end));
+        let syntax = crate::syntax::chunks(path, &body)?;
+        let symbols: Vec<_> = syntax.chunks.iter().filter(|c| c.start_line>=start && c.end_line<start.saturating_add(lines))
+            .take(16).map(|c| serde_json::json!({"name":c.name,"kind":c.kind,"start_line":c.start_line,"end_line":c.end_line,"handle":self.edit_handle(task,path,&hash,c.start_byte,c.end_byte)})).collect();
         Ok(
-            serde_json::json!({"path":path,"sha256":hash,"total_lines":body.lines().count(),"start_line":start,"text":bounded(&text,24000)}),
+            serde_json::json!({"path":path,"sha256":hash,"total_lines":body.lines().count(),"start_line":start,"text":bounded(&text,24000),"range_handle":range,"symbols":symbols,"handle_scope":"Exact UTF-8 byte span at this file revision; line spans include their original newline. Replace with edit(operation=handle,handle=...,new_text=...)."}),
         )
+    }
+    fn edit_handle(&self, task: &str, path: &str, hash: &str, start: usize, end: usize) -> String {
+        // Task/path binding prevents a handle from being replayed against another file.
+        let binding = digest(format!("{task}\0{path}\0{hash}\0{start}\0{end}").as_bytes());
+        format!("v1:{hash}:{start}:{end}:{binding}")
+    }
+    pub fn prepare_handle_edit(
+        &self,
+        task: &str,
+        path: &str,
+        handle: &str,
+        replacement: &str,
+        reason: &str,
+    ) -> Result<Change> {
+        let fields: Vec<_> = handle.split(':').collect();
+        ensure!(
+            fields.len() == 5 && fields[0] == "v1",
+            "Invalid handle; read the file again"
+        );
+        let start: usize = fields[2].parse()?;
+        let end: usize = fields[3].parse()?;
+        let bytes = self
+            .bytes(path)?
+            .context("Handle file was deleted; inspect again")?;
+        let hash = digest(&bytes);
+        ensure!(
+            hash == fields[1] && self.edit_handle(task, path, &hash, start, end) == handle,
+            "Stale or mismatched handle; read the current file again. No change applied."
+        );
+        let body = String::from_utf8(bytes)?;
+        ensure!(
+            start <= end
+                && end <= body.len()
+                && body.is_char_boundary(start)
+                && body.is_char_boundary(end),
+            "Handle is not a valid UTF-8 span"
+        );
+        let mut after = body.clone();
+        after.replace_range(start..end, replacement);
+        // Reuse the authoritative plan/read checks, atomic checkpoint and stale-write checks.
+        self.prepare_edit(task, path, Some(&hash), &body, &after, "replace", reason)
     }
     pub fn list(&self) -> Result<Vec<String>> {
         Ok(self.scan()?.into_keys().collect())
@@ -959,6 +1023,7 @@ impl Project {
     }
     pub fn memory(&mut self, task: &str, query: &str, max_chars: usize) -> Result<String> {
         let state = self.task(task)?;
+        let workflow = crate::workflow::packet(self, task)?;
         let pinned = self.pinned()?;
         let ledger_budget = max_chars * 2 / 3;
         // Reserve the start for current evidence. Historical notes must never push
@@ -992,6 +1057,13 @@ impl Project {
             bounded(&state.plan, max_chars / 16),
             state.phase,
             bounded(&state.next, max_chars / 32)
+        ));
+        out.push_str(&format!(
+            "Host workflow stage: {}\nHost next decision: {}\n",
+            workflow["stage"].as_str().unwrap_or("unknown"),
+            workflow["next_decision"]
+                .as_str()
+                .unwrap_or("Inspect current evidence")
         ));
         {
             let mut decisions = String::from(
@@ -1073,6 +1145,15 @@ impl Project {
             }
         }
         let mut result = bounded(&out, ledger_budget);
+        let structural = self.structural_context(query)?;
+        for entry in structural.iter().take(2) {
+            let text = format!("\nSource outline and import candidates: {entry}\n");
+            if text.chars().count() <= max_chars / 10
+                && result.chars().count() + text.chars().count() < max_chars * 4 / 5
+            {
+                result.push_str(&text);
+            }
+        }
         let mut included_excerpts = Vec::new();
         let mut omitted_excerpts = 0;
         match self.search(&query[..query.floor_char_boundary(1000)]) {
@@ -1101,7 +1182,7 @@ impl Project {
             Err(e) => result.push_str(&format!("\nProject retrieval unavailable: {e}")),
         }
         let result = bounded(&result, max_chars);
-        let context = serde_json::json!({"task":task,"memory":result,"characters":result.chars().count(),"character_budget":max_chars,"included_excerpts":included_excerpts,"omitted_excerpts":omitted_excerpts,"token_accounting":"Character estimate; tokenizer-specific usage is provided by the selected runtime when available","pinned":pinned,"omitted_history":"Only retrieved/recent notes and bounded excerpts are included; full history remains on disk","native_context_expanded":false});
+        let context = serde_json::json!({"task":task,"memory":result,"characters":result.chars().count(),"character_budget":max_chars,"included_excerpts":included_excerpts,"structural_candidates":structural,"omitted_excerpts":omitted_excerpts,"token_accounting":"Character estimate; tokenizer-specific usage is provided by the selected runtime when available","pinned":pinned,"omitted_history":"Only retrieved/recent notes and bounded excerpts are included; full history remains on disk","native_context_expanded":false});
         self.db.execute(
             "INSERT OR REPLACE INTO context_views VALUES(?1,?2)",
             params![task, context.to_string()],

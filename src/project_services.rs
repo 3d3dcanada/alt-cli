@@ -39,6 +39,12 @@ pub struct IndexReport {
     pub removed: usize,
     pub skipped: usize,
     pub method: String,
+    #[serde(default)]
+    pub elapsed_ms: u64,
+    #[serde(default)]
+    pub source_bytes_read: u64,
+    #[serde(default)]
+    pub sampled_process_rss_bytes: Option<u64>,
 }
 
 pub fn environment(cwd: &Path, argv: &[String]) -> BTreeMap<String, String> {
@@ -229,6 +235,55 @@ impl TestCounts {
     }
 }
 impl Project {
+    /// Bounded structural neighbors supplement lexical localization without extra models.
+    pub fn structural_context(&mut self, query: &str) -> Result<Vec<serde_json::Value>> {
+        let query = &query[..query.floor_char_boundary(1000)];
+        if query.trim().is_empty() {
+            return Ok(vec![]);
+        }
+        let hits = self.search(query)?;
+        let paths = self.browse()?;
+        let mut result = Vec::new();
+        let mut selected = BTreeSet::new();
+        for hit in hits.into_iter().take(4) {
+            let Some(path) = hit["path"].as_str() else {
+                continue;
+            };
+            if !selected.insert(path.to_owned()) {
+                continue;
+            }
+            if let Some(bytes) = self.bytes(path)?
+                && let Ok(body) = String::from_utf8(bytes)
+            {
+                let hash = digest(body.as_bytes());
+                let syntax = crate::syntax::chunks(path, &body)?;
+                let outline:Vec<_>=syntax.chunks.iter().take(8).map(|s|serde_json::json!({"name":s.name,"kind":s.kind,"lines":[s.start_line,s.end_line]})).collect();
+                let mut neighbors = Vec::new();
+                for dep in syntax.dependencies.iter().take(8) {
+                    if let Some(module) = &dep.module {
+                        let stem = module.trim_start_matches("./").replace('.', "/");
+                        for other in paths
+                            .iter()
+                            .filter(|other| {
+                                other.as_str() != path
+                                    && (other.ends_with(&format!("{stem}.py"))
+                                        || other.ends_with(&format!("{stem}/__init__.py"))
+                                        || other.ends_with(module.trim_start_matches("./")))
+                            })
+                            .take(2)
+                        {
+                            if let Some(bytes) = self.bytes(other)? {
+                                neighbors.push(serde_json::json!({"path":other,"sha256":digest(&bytes),"relation":"local import candidate; lexical resolution, inspect to confirm"}));
+                            }
+                        }
+                    }
+                }
+                neighbors.truncate(4);
+                result.push(serde_json::json!({"path":path,"sha256":hash,"outline":outline,"dependencies":syntax.dependencies.into_iter().take(8).collect::<Vec<_>>(),"neighbors":neighbors,"provenance":"Current source bytes; syntax outline and bounded local import candidates. Read before editing."}));
+            }
+        }
+        Ok(result)
+    }
     pub fn set_requirement(&self, r: &Requirement) -> Result<()> {
         ensure!(
             !r.name.trim().is_empty() && r.name.len() <= 120 && r.description.len() <= 4000,
@@ -477,6 +532,7 @@ impl Project {
         Ok(paths)
     }
     pub fn index_incremental(&mut self, cancel: Option<&AtomicBool>) -> Result<IndexReport> {
+        let started = std::time::Instant::now();
         let paths = self.browse_cancellable(cancel)?;
         let mut seen = BTreeSet::new();
         let mut report = IndexReport {
@@ -536,6 +592,7 @@ impl Project {
                 .open(&path)?
                 .take(4 * 1024 * 1024 + 1)
                 .read_to_end(&mut bytes)?;
+            report.source_bytes_read = report.source_bytes_read.saturating_add(bytes.len() as u64);
             let body = if bytes.len() <= 4 * 1024 * 1024 {
                 String::from_utf8(bytes).ok()
             } else {
@@ -588,6 +645,16 @@ impl Project {
             }
         }
         tx.commit()?;
+        report.elapsed_ms = started.elapsed().as_millis().min(u64::MAX as u128) as u64;
+        report.sampled_process_rss_bytes = std::fs::read_to_string("/proc/self/status")
+            .ok()
+            .and_then(|s| {
+                s.lines().find_map(|line| {
+                    line.strip_prefix("VmRSS:")
+                        .and_then(|s| s.split_whitespace().next()?.parse::<u64>().ok())
+                        .map(|n| n * 1024)
+                })
+            });
         Ok(report)
     }
     pub fn repository_map(&mut self) -> Result<serde_json::Value> {

@@ -96,5 +96,10 @@ if [[ -f "$package_dir/test-my-pc.py" ]]; then
   install -m 644 "$package_dir/test-my-pc.py" "$prefix/share/doc/alt/test-my-pc.py"
 fi
 cp -R "$package_dir/licenses" "$package_dir/docs" "$package_dir/prompts" "$prefix/share/doc/alt/"
+for directory in skills training; do
+  if [[ -d "$package_dir/$directory" ]]; then
+    cp -R "$package_dir/$directory" "$prefix/share/doc/alt/"
+  fi
+done
 printf 'Installed Alt. Start it with:\n  %s/bin/alt\n' "$prefix"
 printf 'The previous executable, if any, is retained as alt.previous.\n'
