@@ -173,6 +173,14 @@ Publication rebuilds from a clean tag, reruns the exact-package upgrade gate and
 verifies a GitHub workflow-identity attestation before creating the release. The
 published archive therefore has its own hash and attached gate report.
 
+**Publication completed:** [v0.6.0-beta.1](https://github.com/3d3dcanada/alt-cli/releases/tag/v0.6.0-beta.1).
+The clean-tag package passed all seven release gates. Main/tag CI also passed.
+The actual public download was independently checked against its GitHub asset
+digest, checksum, attested workflow/tag/source commit, then installed into a fresh
+temporary prefix. [The publication receipt](evidence/v6/published-beta/README.md)
+records exact hashes and the validated signed-metadata transport used when the
+cloud blocked Sigstore's CDN. The tagged archive is unchanged by these later receipts.
+
 ## Outside cloud acceptance
 
 The [older CPU emulation record](evidence/v6/old-cpu/README.md) includes the

@@ -23,7 +23,10 @@ application tests. [Read the results and remaining gaps](docs/IMPLEMENTATION.md)
 
 ## Try it on your computer
 
-Find versioned Linux packages on [GitHub Releases](https://github.com/3d3dcanada/alt-cli/releases). See [Installation](docs/INSTALLATION.md) for archive and GitHub provenance verification, or build from source below.
+Download [Alt v0.6.0-beta.1](https://github.com/3d3dcanada/alt-cli/releases/tag/v0.6.0-beta.1)
+for Linux x86_64. See [Installation](docs/INSTALLATION.md) for archive and GitHub
+provenance verification, then follow [PC testing](docs/PC_TESTING.md). You can also
+build from source below.
 
 Install [Rust with rustup](https://rustup.rs/), Git and a C compiler first. On
 Debian/Ubuntu, the usual prerequisites are `git build-essential pkg-config curl
