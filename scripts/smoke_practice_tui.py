@@ -43,6 +43,7 @@ for width, height in [(120, 40), (80, 24), (60, 18)]:
             assert "name.strip()" in (project/'greeting.py').read_text()
             t.send(b'\x1b8'); t.wait('What happened'); t.send(b'r'); t.wait('Run checks again'); t.send(b'\r')
             t.wait('Independent assertion passed'); assert verify()['behavioral_acceptance']
+            t.wait('greeting.py · applied')
             capture(t, 'verified', width, height)
             t.close(); t = Terminal(binary, state, original, width, height)
             t.wait('Connect your first model'); t.send(b'\x1b8'); t.wait('What happened')
