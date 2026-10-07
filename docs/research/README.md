@@ -1,5 +1,13 @@
 # alt-cli research
 
+**Reasoning follow-up, October 7, 2026:** [Strengthening reasoning in small local
+models](2026-10-07-small-model-reasoning.md), with
+[eight proposed reasoning work orders](2026-10-07-reasoning-experiments.md) and a
+[source ledger](2026-10-07-reasoning-sources.json). It covers bounded thinking,
+verified candidate search, decomposition, small-model distillation/RL and
+abliterated reasoning-model candidates. These are researched proposals, with
+published claims distinguished from Alt's measurements.
+
 **Latest research, October 7, 2026:** [Making small local models more capable in
 Alt](2026-10-07-small-model-harness.md), with an
 [experiment/work-order proposal](2026-10-07-small-model-experiments.md),
