@@ -133,10 +133,11 @@ with tempfile.TemporaryDirectory(prefix='alt-installed-') as temp:
         invoke('task', 'status')
         assert 'package-check' in invoke('task', 'checks').stdout
         invoke('--access', 'trusted', 'task', 'check', 'package-check')
+        previous_contract=json.loads(invoke('task','export').stdout)['checks'][-1].get('environment',{}).get('verification_contract')
         subprocess.run(installer, env=env, check=True, capture_output=True)
         invoke('task','require','behavior','--check','package-check')
-        # Pre-0.5 results lack the corrected verifier contract in their evidence.
-        assert json.loads(invoke('task', 'status').stdout)['verification']['complete'] is False
+        # 0.5-compatible evidence stays current; pre-0.5 evidence requires a rerun.
+        assert json.loads(invoke('task', 'status').stdout)['verification']['complete'] == (previous_contract=='3')
         invoke('--access', 'trusted', 'task', 'verify', '--run')
         assert json.loads(invoke('task', 'status').stdout)['verification']['complete']
     invoke('hardware')

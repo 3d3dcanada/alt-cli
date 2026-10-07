@@ -120,7 +120,7 @@ with tempfile.TemporaryDirectory(prefix="alt-tui-smoke-") as directory:
         wait_for(b"Connection saved")
         configuration = tomllib.loads((state / "config.toml").read_text())
         assert configuration["profiles"]["LM Studio"]["model"] == "fixture"
-        send(b"\x1b[B\r")
+        send(b"\x1b[B\x1b[B\r")
         wait_for(b"Choose a project folder")
         send(b"\x13")
         wait_for(b"Project folder selected")

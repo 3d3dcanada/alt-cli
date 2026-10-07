@@ -48,7 +48,7 @@ jobs:
           export PATH="/workspace/.cargo/bin:/workspace/.alt-tools:$PATH"
           export PYTHONPATH=/workspace/.alt-tools/python
           bash scripts/build-portable.sh
-          python3 scripts/fetch_ci_previous.py --output "$RUNNER_TEMP/previous.tar.gz"
+          python3 scripts/fetch_release_previous.py --exclude-tag "$RELEASE_TAG" --output "$RUNNER_TEMP/previous.tar.gz"
           python3 scripts/release_gate.py dist/alt-*.tar.gz --previous "$RUNNER_TEMP/previous.tar.gz" --require-upgrade --output dist/release-gate.json
           cargo install cargo-audit --version 0.22.2 --locked --root /workspace/.alt-tools/audit
           /workspace/.alt-tools/audit/bin/cargo-audit audit --db /workspace/.alt-tools/advisory-db --deny warnings --json > dist/dependency-audit.json
