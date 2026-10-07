@@ -3,16 +3,18 @@
 import argparse, hashlib, json, os, platform, subprocess, sys
 from pathlib import Path
 from acceptance_projects import DEVELOPMENT, HELD_OUT
+from evaluation_models import MODELS
 
 p=argparse.ArgumentParser(description=__doc__)
 p.add_argument('--binary',type=Path,required=True); p.add_argument('--root',type=Path,required=True)
 p.add_argument('--shard',type=int,required=True); p.add_argument('--output',type=Path,required=True)
+p.add_argument('--model',choices=MODELS,default='spark')
 a=p.parse_args(); assert 0<=a.shard<8
 cases=(DEVELOPMENT+HELD_OUT)[a.shard::8]; root=a.root.resolve()
 engine=next((root/'bootstrap').rglob('goose')); runtime=next((root/'bootstrap').rglob('llama-server'))
-model=root/'Spark-X2.5-1.7B-Abliterated-Q4_K_M.gguf'; campaign=root/'campaign'
+selected=MODELS[a.model]; model=root/selected['filename']; campaign=root/'campaign'
 scripts=Path(__file__).resolve().parent
-command=[sys.executable,str(scripts/'live_acceptance.py'),'--binary',str(a.binary.resolve()),'--engine',str(engine),'--runtime',str(runtime),'--model',str(model),'--sha256','1e4d920aaff1248b68751e49b16dae6104c5f4d3924a86a290e24b31db08113c','--uncensored','--contexts','8192','--repeats','5','--timeout','240','--threads','2','--tool-profile','coding','--thinking','off','--verification-plan','--partition','all','--cases',','.join(cases),'--output',str(campaign)]
+command=[sys.executable,str(scripts/'live_acceptance.py'),'--binary',str(a.binary.resolve()),'--engine',str(engine),'--runtime',str(runtime),'--model',str(model),'--sha256',selected['sha256'],'--uncensored','--contexts','8192','--repeats','5','--timeout',str(selected['timeout']),'--threads','2','--tool-profile','coding','--thinking',selected['thinking'],'--verification-plan','--partition','all','--cases',','.join(cases),'--output',str(campaign)]
 a.output.mkdir(parents=True,exist_ok=True)
 with (a.output/'campaign.log').open('w') as log:
     result=subprocess.run(command,stdout=log,stderr=subprocess.STDOUT)

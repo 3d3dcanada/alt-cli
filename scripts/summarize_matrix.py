@@ -3,8 +3,9 @@
 import argparse, hashlib, json, os
 from pathlib import Path
 from acceptance_projects import DEVELOPMENT, HELD_OUT
+from evaluation_models import MODELS
 
-p=argparse.ArgumentParser(description=__doc__); p.add_argument('source',type=Path); p.add_argument('--output',type=Path,required=True); a=p.parse_args()
+p=argparse.ArgumentParser(description=__doc__); p.add_argument('source',type=Path); p.add_argument('--output',type=Path,required=True); p.add_argument('--model',choices=MODELS,default='spark'); a=p.parse_args()
 expected={(name,repeat) for name in DEVELOPMENT+HELD_OUT for repeat in range(1,6)}
 seen=set(); rows=[]; identities=[]; errors=[]
 for shard in sorted(a.source.glob('*')):
@@ -14,7 +15,7 @@ for shard in sorted(a.source.glob('*')):
         identity={key:config.get(key) for key in ['binary_sha256','sha256','engine_sha256','runtime_sha256','contexts','repeats','timeout_seconds','tool_profile','thinking','verification_plan','threads','oracle_version']}
         host=json.loads((shard/'host.json').read_text()); identity['harness_inputs']=host['harness_inputs']; identities.append(identity)
         assert identity['contexts']==[8192] and identity['repeats']==5 and identity['verification_plan'] is True
-        assert identity['sha256']=='1e4d920aaff1248b68751e49b16dae6104c5f4d3924a86a290e24b31db08113c'
+        assert identity['sha256']==MODELS[a.model]['sha256']
         manifest=json.loads((shard/'RAW-SHA256.json').read_text())
         assert all(hashlib.sha256((shard/name).read_bytes()).hexdigest()==digest for name,digest in manifest.items()), 'Retained evidence changed'
         for path in sorted(shard.glob('*/report.json')):
