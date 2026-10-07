@@ -1,0 +1,18 @@
+{
+  "oracle_version": 4,
+  "goal": "Fix this ES-module package so node main.js runs and formats labels by trimming whitespace and uppercasing. Keep package.json type=module, the filenames, and named label export; main.js should print CEDAR.",
+  "prompt": "Fix this ES-module package so node main.js runs and formats labels by trimming whitespace and uppercasing. Keep package.json type=module, the filenames, and named label export; main.js should print CEDAR. Inspect relevant files, save a brief plan, use native tools to implement the change, and test it. Report what you actually ran and any remaining uncertainty. Preserve existing public interfaces. Keep your explanation brief.",
+  "original_files": {
+    "package.json": "{\"name\":\"fixture-labels\",\"version\":\"1.0.0\",\"type\":\"module\",\"scripts\":{\"start\":\"node main.js\"}}\n",
+    "labels.js": "module.exports.label = value => value.toUpperCase();\n",
+    "main.js": "import { label } from './labels.js';\nconsole.log(label(' Cedar '));\n"
+  },
+  "oracle_command": [
+    "node",
+    "/home/runner/work/_temp/campaign/8192-javascript-config-1/independent/check.mjs"
+  ],
+  "oracle_sha256_before": {
+    "completion.json": "b38989b7aa2017a8373fad13cf6b2c00df1556ca605a68598f5a1ae3f03ea03b",
+    "check.mjs": "98a3a104428cd52f3241b11ffc0393423a9722e6e2e86a4caeaa4e02ef1ae918"
+  }
+}

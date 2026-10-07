@@ -1,0 +1,16 @@
+{
+  "oracle_version": 4,
+  "goal": "Implement save(path,text) atomically replacing a UTF-8 text file using a temporary file in the same directory; on os.replace failure preserve the old file and remove the temp. Use fsync before replace.",
+  "prompt": "Implement save(path,text) atomically replacing a UTF-8 text file using a temporary file in the same directory; on os.replace failure preserve the old file and remove the temp. Use fsync before replace. Inspect relevant files, save a brief plan, use native tools to implement the change, and test it. Report what you actually ran and any remaining uncertainty. Preserve existing public interfaces. Keep your explanation brief.",
+  "original_files": {
+    "solution.py": "def save(path,text):\n open(path,\"w\").write(text)\n"
+  },
+  "oracle_command": [
+    "python3",
+    "/home/runner/work/_temp/campaign/8192-heldout-atomic-save-1/independent/check.py"
+  ],
+  "oracle_sha256_before": {
+    "completion.json": "e632814112250ef3dcfa74838a8fc1ac8912dbc8c720c130784b91550d8c299c",
+    "check.py": "2d020fe8fb194fbb960889ba81a0308456f8c0652c0f3477cd701b0a9d767e84"
+  }
+}

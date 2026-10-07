@@ -1,0 +1,1690 @@
+{
+  "schema": 1,
+  "summary_sha256": "f53069c3db6b2d2ea8198d2b028a2ff80b551e9d671ed3c5b43b24d4976bf182",
+  "script_sha256": "b55d917b3386004d93e0bb0e2ee4753e3386cc0aa37d99897e870aa017cf35a8",
+  "recorded": 120,
+  "matching_outcomes": 120,
+  "rows": [
+    {
+      "case": "python-csv",
+      "repeat": 1,
+      "original_report_sha256": "c887f02fb2b6b4752536f8a878431db98289b373180a8d8f31414fa914cec569",
+      "original_behavior_passed": false,
+      "replay": {
+        "passed": false,
+        "completion_observed": false,
+        "exit": 1,
+        "stdout": "",
+        "stderr": "Traceback (most recent call last):\n  File \"/tmp/alt-retained-replay-wfublyoz/independent/check.py\", line 4, in <module>\n    assert totals('name,amount\\n\"Cedar, Inc\",0.10\\n\"Cedar, Inc\",0.20\\nOak,-2.50\\n')=={\"Cedar, Inc\":\"0.30\",\"Oak\":\"-2.50\"}\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/tmp/alt-retained-replay-wfublyoz/project/solution.py\", line 17, in totals\n    total_amount = Decimal(amount_str)\n                   ^^^^^^^\nNameError: name 'Decimal' is not defined\n"
+      },
+      "matches": true
+    },
+    {
+      "case": "python-csv",
+      "repeat": 2,
+      "original_report_sha256": "a82e44f503c1bdc2eca31da75d08bf9065cf0ef47613b765c48e5c2d882d7261",
+      "original_behavior_passed": false,
+      "replay": {
+        "passed": false,
+        "completion_observed": false,
+        "exit": 1,
+        "stdout": "",
+        "stderr": "Traceback (most recent call last):\n  File \"/tmp/alt-retained-replay-2b_g68b7/independent/check.py\", line 4, in <module>\n    assert totals('name,amount\\n\"Cedar, Inc\",0.10\\n\"Cedar, Inc\",0.20\\nOak,-2.50\\n')=={\"Cedar, Inc\":\"0.30\",\"Oak\":\"-2.50\"}\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/tmp/alt-retained-replay-2b_g68b7/project/solution.py\", line 9, in totals\n    name, amount = row.split(\",\")\n    ^^^^^^^^^^^^\nValueError: too many values to unpack (expected 2)\n"
+      },
+      "matches": true
+    },
+    {
+      "case": "python-csv",
+      "repeat": 3,
+      "original_report_sha256": "73e18dda36886a253cf4f064197b052bf788039f1faad677a2bc0b57eff98e61",
+      "original_behavior_passed": false,
+      "replay": {
+        "passed": false,
+        "completion_observed": false,
+        "exit": 1,
+        "stdout": "",
+        "stderr": "Traceback (most recent call last):\n  File \"/tmp/alt-retained-replay-0s9jtsq2/independent/check.py\", line 4, in <module>\n    assert totals('name,amount\\n\"Cedar, Inc\",0.10\\n\"Cedar, Inc\",0.20\\nOak,-2.50\\n')=={\"Cedar, Inc\":\"0.30\",\"Oak\":\"-2.50\"}\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError\n"
+      },
+      "matches": true
+    },
+    {
+      "case": "python-csv",
+      "repeat": 4,
+      "original_report_sha256": "ab077eb60d459bede18e06bb4f70ba6b60c2b04d2820ec12b87b3c1fcb110e93",
+      "original_behavior_passed": false,
+      "replay": {
+        "passed": false,
+        "completion_observed": false,
+        "exit": 1,
+        "stdout": "",
+        "stderr": "Traceback (most recent call last):\n  File \"/tmp/alt-retained-replay-p8ll6mnw/independent/check.py\", line 4, in <module>\n    assert totals('name,amount\\n\"Cedar, Inc\",0.10\\n\"Cedar, Inc\",0.20\\nOak,-2.50\\n')=={\"Cedar, Inc\":\"0.30\",\"Oak\":\"-2.50\"}\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError\n"
+      },
+      "matches": true
+    },
+    {
+      "case": "python-csv",
+      "repeat": 5,
+      "original_report_sha256": "d1f1bc09dbb3da7077cbde56cece04853efc192ba9ee67cd3f5ef03d940444c5",
+      "original_behavior_passed": false,
+      "replay": {
+        "passed": false,
+        "completion_observed": false,
+        "exit": 1,
+        "stdout": "",
+        "stderr": "Traceback (most recent call last):\n  File \"/tmp/alt-retained-replay-vb79uw2_/independent/check.py\", line 4, in <module>\n    assert totals('name,amount\\n\"Cedar, Inc\",0.10\\n\"Cedar, Inc\",0.20\\nOak,-2.50\\n')=={\"Cedar, Inc\":\"0.30\",\"Oak\":\"-2.50\"}\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/tmp/alt-retained-replay-vb79uw2_/project/solution.py\", line 20, in totals\n    total = Decimal(parts[1])\n            ^^^^^^^\nNameError: name 'Decimal' is not defined\n"
+      },
+      "matches": true
+    },
+    {
+      "case": "python-feature",
+      "repeat": 1,
+      "original_report_sha256": "3ad5e075566e0b8a64b7fe7f8c00e9327a5a148ee26dc6f94c851a2bcb4382db",
+      "original_behavior_passed": false,
+      "replay": {
+        "passed": false,
+        "completion_observed": false,
+        "exit": 1,
+        "stdout": "",
+        "stderr": "Traceback (most recent call last):\n  File \"/tmp/alt-retained-replay-j9o7rs9e/independent/check.py\", line 4, in <module>\n    assert slug(\" Hello, CEDAR! \")==\"hello-cedar\"\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError\n"
+      },
+      "matches": true
+    },
+    {
+      "case": "python-feature",
+      "repeat": 2,
+      "original_report_sha256": "7fac69a822cf0d3f39be0b48a465368efc5926e2e14e5f13d59f65aec795fcb0",
+      "original_behavior_passed": false,
+      "replay": {
+        "passed": false,
+        "completion_observed": false,
+        "exit": 1,
+        "stdout": "",
+        "stderr": "Traceback (most recent call last):\n  File \"/tmp/alt-retained-replay-u_yzn7wm/independent/check.py\", line 4, in <module>\n    assert slug(\" Hello, CEDAR! \")==\"hello-cedar\"\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError\n"
+      },
+      "matches": true
+    },
+    {
+      "case": "python-feature",
+      "repeat": 3,
+      "original_report_sha256": "1f28f526e29b22a1b2116a88876d979df82d9987e43fe024b383f8dbfd0c2075",
+      "original_behavior_passed": false,
+      "replay": {
+        "passed": false,
+        "completion_observed": false,
+        "exit": 1,
+        "stdout": "",
+        "stderr": "Traceback (most recent call last):\n  File \"/tmp/alt-retained-replay-tryr7r_8/independent/check.py\", line 4, in <module>\n    assert slug(\" Hello, CEDAR! \")==\"hello-cedar\"\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError\n"
+      },
+      "matches": true
+    },
+    {
+      "case": "python-feature",
+      "repeat": 4,
+      "original_report_sha256": "26592056457daab26bddb0b4e332a3f65bd8738398cb979bf95ea82f7a6890fc",
+      "original_behavior_passed": false,
+      "replay": {
+        "passed": false,
+        "completion_observed": false,
+        "exit": 1,
+        "stdout": "",
+        "stderr": "Traceback (most recent call last):\n  File \"/tmp/alt-retained-replay-lca70n1b/independent/check.py\", line 4, in <module>\n    assert slug(\" Hello, CEDAR! \")==\"hello-cedar\"\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError\n"
+      },
+      "matches": true
+    },
+    {
+      "case": "python-feature",
+      "repeat": 5,
+      "original_report_sha256": "428a32cd99e228b6092de94fba45584e43da9a8a49ac57bdb508c8aed7346e61",
+      "original_behavior_passed": false,
+      "replay": {
+        "passed": false,
+        "completion_observed": false,
+        "exit": 1,
+        "stdout": "",
+        "stderr": "Traceback (most recent call last):\n  File \"/tmp/alt-retained-replay-g96dtcu9/independent/check.py\", line 4, in <module>\n    assert slug(\" Hello, CEDAR! \")==\"hello-cedar\"\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError\n"
+      },
+      "matches": true
+    },
+    {
+      "case": "python-jsonl",
+      "repeat": 1,
+      "original_report_sha256": "accf0845bc46197991f77535edc435d8b4008f5b022a59d81866bd74ebaa0fa3",
+      "original_behavior_passed": false,
+      "replay": {
+        "passed": false,
+        "completion_observed": false,
+        "exit": 1,
+        "stdout": "",
+        "stderr": "Traceback (most recent call last):\n  File \"/tmp/alt-retained-replay-rnmcv0_i/independent/check.py\", line 4, in <module>\n    assert records(' {\"a\":1}\\n\\n{\"b\":2}\\n')==[{\"a\":1},{\"b\":2}]\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/tmp/alt-retained-replay-rnmcv0_i/project/solution.py\", line 2, in records\n    return [parse_line(line) for line in text.splitlines() if line.strip()]\n            ^^^^^^^^^^\nNameError: name 'parse_line' is not defined. Did you mean: '_parse_line'?\n"
+      },
+      "matches": true
+    },
+    {
+      "case": "python-jsonl",
+      "repeat": 2,
+      "original_report_sha256": "fbec40be37184e9e89b5abde5b7d95ce07865ca68c4a62f0e97d573b63eb1830",
+      "original_behavior_passed": false,
+      "replay": {
+        "passed": false,
+        "completion_observed": false,
+        "exit": 1,
+        "stdout": "",
+        "stderr": "Traceback (most recent call last):\n  File \"/tmp/alt-retained-replay-x3niu53o/independent/check.py\", line 4, in <module>\n    assert records(' {\"a\":1}\\n\\n{\"b\":2}\\n')==[{\"a\":1},{\"b\":2}]\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError\n"
+      },
+      "matches": true
+    },
+    {
+      "case": "python-jsonl",
+      "repeat": 3,
+      "original_report_sha256": "a60dd7c4ac1f664119eed636e4f88419d82e1212d44eef31f5da1cc31a15ff71",
+      "original_behavior_passed": false,
+      "replay": {
+        "passed": false,
+        "completion_observed": false,
+        "exit": 1,
+        "stdout": "",
+        "stderr": "Traceback (most recent call last):\n  File \"/tmp/alt-retained-replay-m30cqnap/independent/check.py\", line 4, in <module>\n    assert records(' {\"a\":1}\\n\\n{\"b\":2}\\n')==[{\"a\":1},{\"b\":2}]\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError\n"
+      },
+      "matches": true
+    },
+    {
+      "case": "python-jsonl",
+      "repeat": 4,
+      "original_report_sha256": "380828b6f746d1d03973aac23f428dec1ac8066dda9f7d7b32c0d9806ca093f8",
+      "original_behavior_passed": false,
+      "replay": {
+        "passed": false,
+        "completion_observed": false,
+        "exit": 1,
+        "stdout": "",
+        "stderr": "Traceback (most recent call last):\n  File \"/tmp/alt-retained-replay-o7rc4zq9/independent/check.py\", line 4, in <module>\n    assert records(' {\"a\":1}\\n\\n{\"b\":2}\\n')==[{\"a\":1},{\"b\":2}]\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError\n"
+      },
+      "matches": true
+    },
+    {
+      "case": "python-jsonl",
+      "repeat": 5,
+      "original_report_sha256": "d1ced70e4bd9a846a9209d1fee10e3b56d770943d1c252c7bbc8f2ccfb8a0808",
+      "original_behavior_passed": false,
+      "replay": {
+        "passed": false,
+        "completion_observed": false,
+        "exit": 1,
+        "stdout": "",
+        "stderr": "Traceback (most recent call last):\n  File \"/tmp/alt-retained-replay-jpya1764/project/solution.py\", line 9, in records\n    result.append(json.loads(line))\n                  ^^^^^^^^^^^^^^^^\n  File \"/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/json/__init__.py\", line 346, in loads\n    return _default_decoder.decode(s)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/json/decoder.py\", line 338, in decode\n    obj, end = self.raw_decode(s, idx=_w(s, 0).end())\n               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/json/decoder.py\", line 356, in raw_decode\n    raise JSONDecodeError(\"Expecting value\", s, err.value) from None\njson.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)\n\nDuring handling of the above exception, another exception occurred:\n\nTraceback (most recent call last):\n  File \"/tmp/alt-retained-replay-jpya1764/independent/check.py\", line 6, in <module>\n    try:records(\"\\n\"+value)\n        ^^^^^^^^^^^^^^^^^^^\n  File \"/tmp/alt-retained-replay-jpya1764/project/solution.py\", line 11, in records\n    raise ValueError(f\"malformed line at line {line_number + 1}\")\n                                               ^^^^^^^^^^^\nNameError: name 'line_number' is not defined\n"
+      },
+      "matches": true
+    },
+    {
+      "case": "python-migration",
+      "repeat": 1,
+      "original_report_sha256": "6da174e5c834bfedb02bf162c2b23e29c69e7774c177080add64cead9fc702ae",
+      "original_behavior_passed": false,
+      "replay": {
+        "passed": false,
+        "completion_observed": false,
+        "exit": 1,
+        "stdout": "",
+        "stderr": "Traceback (most recent call last):\n  File \"/tmp/alt-retained-replay-i7j43lmi/independent/check.py\", line 6, in <module>\n    migrate(c);migrate(c);assert c.execute(\"select * from items\").fetchall()==[(7,\"Cedar\",1)]\n                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nsqlite3.OperationalError: no such table: items\n"
+      },
+      "matches": true
+    },
+    {
+      "case": "python-migration",
+      "repeat": 2,
+      "original_report_sha256": "5ad1b29c0cddfe52bc883791c9687b24f85a35146980cd53fa818e25e58061d3",
+      "original_behavior_passed": false,
+      "replay": {
+        "passed": false,
+        "completion_observed": false,
+        "exit": 1,
+        "stdout": "",
+        "stderr": "Traceback (most recent call last):\n  File \"/tmp/alt-retained-replay-y0h9kvbf/independent/check.py\", line 6, in <module>\n    migrate(c);migrate(c);assert c.execute(\"select * from items\").fetchall()==[(7,\"Cedar\",1)]\n                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nsqlite3.OperationalError: no such table: items\n"
+      },
+      "matches": true
+    },
+    {
+      "case": "python-migration",
+      "repeat": 3,
+      "original_report_sha256": "fd6e91a35721bfef475c18740bc2b37e44500bac214b116769fa24e0cfaa2bd0",
+      "original_behavior_passed": false,
+      "replay": {
+        "passed": false,
+        "completion_observed": false,
+        "exit": 1,
+        "stdout": "",
+        "stderr": "Traceback (most recent call last):\n  File \"/tmp/alt-retained-replay-7o_bnwk9/independent/check.py\", line 6, in <module>\n    migrate(c);migrate(c);assert c.execute(\"select * from items\").fetchall()==[(7,\"Cedar\",1)]\n                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nsqlite3.OperationalError: no such table: items\n"
+      },
+      "matches": true
+    },
+    {
+      "case": "python-migration",
+      "repeat": 4,
+      "original_report_sha256": "108eb7e84433d1bcdededcfc69d99fa1e2984274d749321c247dd974e6e52ca2",
+      "original_behavior_passed": false,
+      "replay": {
+        "passed": false,
+        "completion_observed": false,
+        "exit": 1,
+        "stdout": "",
+        "stderr": "Traceback (most recent call last):\n  File \"/tmp/alt-retained-replay-vh71ycqy/independent/check.py\", line 6, in <module>\n    migrate(c);migrate(c);assert c.execute(\"select * from items\").fetchall()==[(7,\"Cedar\",1)]\n                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nsqlite3.OperationalError: no such table: items\n"
+      },
+      "matches": true
+    },
+    {
+      "case": "python-migration",
+      "repeat": 5,
+      "original_report_sha256": "7205c4cc4476c35041b936ab14be6338222049e22ec122215b587b85a5d0fe53",
+      "original_behavior_passed": false,
+      "replay": {
+        "passed": false,
+        "completion_observed": false,
+        "exit": 1,
+        "stdout": "",
+        "stderr": "Traceback (most recent call last):\n  File \"/tmp/alt-retained-replay-x94aa2cu/independent/check.py\", line 6, in <module>\n    migrate(c);migrate(c);assert c.execute(\"select * from items\").fetchall()==[(7,\"Cedar\",1)]\n                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nsqlite3.OperationalError: no such table: items\n"
+      },
+      "matches": true
+    },
+    {
+      "case": "python-multifile",
+      "repeat": 1,
+      "original_report_sha256": "e04a2d8c7352336d782f54cc47b0cd265a353a69bd8a0455a79ef847a1307e61",
+      "original_behavior_passed": false,
+      "replay": {
+        "passed": false,
+        "completion_observed": false,
+        "exit": 1,
+        "stdout": "",
+        "stderr": "Traceback (most recent call last):\n  File \"/tmp/alt-retained-replay-s6f_n_dh/independent/check.py\", line 5, in <module>\n    assert discounted(200,10)==180\n           ^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError\n"
+      },
+      "matches": true
+    },
+    {
+      "case": "python-multifile",
+      "repeat": 2,
+      "original_report_sha256": "a026a51905c1c45926ec77e870a578ae35ab1020af6cfc93ef1a4cd6ce65620c",
+      "original_behavior_passed": false,
+      "replay": {
+        "passed": false,
+        "completion_observed": false,
+        "exit": 1,
+        "stdout": "",
+        "stderr": "Traceback (most recent call last):\n  File \"/tmp/alt-retained-replay-ba2h8u9f/independent/check.py\", line 5, in <module>\n    assert discounted(200,10)==180\n           ^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError\n"
+      },
+      "matches": true
+    },
+    {
+      "case": "python-multifile",
+      "repeat": 3,
+      "original_report_sha256": "633adf4de56acc8fce149564fd2ba1a8a342c4737c24b40033e013d3276a31a5",
+      "original_behavior_passed": false,
+      "replay": {
+        "passed": false,
+        "completion_observed": false,
+        "exit": 1,
+        "stdout": "",
+        "stderr": "Traceback (most recent call last):\n  File \"/tmp/alt-retained-replay-dli_o_qn/independent/check.py\", line 5, in <module>\n    assert discounted(200,10)==180\n           ^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError\n"
+      },
+      "matches": true
+    },
+    {
+      "case": "python-multifile",
+      "repeat": 4,
+      "original_report_sha256": "a95574ab51ea1b18c9f8f6307da2fa7798d5968ab6b907b3819a9ac43948d47e",
+      "original_behavior_passed": true,
+      "replay": {
+        "passed": true,
+        "completion_observed": true,
+        "exit": 0,
+        "stdout": "ALT_ORACLE_COMPLETED_0e28942bc9c44dccaf19015264685b2f\n",
+        "stderr": ""
+      },
+      "matches": true
+    },
+    {
+      "case": "python-multifile",
+      "repeat": 5,
+      "original_report_sha256": "f3f6436b50d21e1146d8e08ab424ec4104453dd178d8feacefe056e64ddf6dbf",
+      "original_behavior_passed": false,
+      "replay": {
+        "passed": false,
+        "completion_observed": false,
+        "exit": 1,
+        "stdout": "",
+        "stderr": "Traceback (most recent call last):\n  File \"/tmp/alt-retained-replay-rz4509_u/independent/check.py\", line 5, in <module>\n    assert discounted(200,10)==180\n           ^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError\n"
+      },
+      "matches": true
+    },
+    {
+      "case": "python-setup",
+      "repeat": 1,
+      "original_report_sha256": "c321175503b42de786dadb1894f44c798909e750076f9f35f42bd674a49892d8",
+      "original_behavior_passed": false,
+      "replay": {
+        "passed": false,
+        "completion_observed": false,
+        "exit": 1,
+        "stdout": "",
+        "stderr": "Traceback (most recent call last):\n  File \"/tmp/alt-retained-replay-rbo0y3wi/independent/check.py\", line 6, in <module>\n    try:os.chdir(d);assert solution.main()==\"Hello, Cedar\"\n                           ^^^^^^^^^^^^^^^\n  File \"/tmp/alt-retained-replay-rbo0y3wi/project/solution.py\", line 3, in main\n    return json.load(open(\"defaults.json\"))[\"greeting\"]\n                     ^^^^^^^^^^^^^^^^^^^^^\nFileNotFoundError: [Errno 2] No such file or directory: 'defaults.json'\n"
+      },
+      "matches": true
+    },
+    {
+      "case": "python-setup",
+      "repeat": 2,
+      "original_report_sha256": "6aba867def494b736d8f167346419b07338f5b48f51969ffecc73dfb5364c825",
+      "original_behavior_passed": false,
+      "replay": {
+        "passed": false,
+        "completion_observed": false,
+        "exit": 1,
+        "stdout": "",
+        "stderr": "Traceback (most recent call last):\n  File \"/tmp/alt-retained-replay-ez9dagwf/independent/check.py\", line 6, in <module>\n    try:os.chdir(d);assert solution.main()==\"Hello, Cedar\"\n                           ^^^^^^^^^^^^^^^\n  File \"/tmp/alt-retained-replay-ez9dagwf/project/solution.py\", line 6, in main\n    return json.load(Path(\"defaults.json\"))[\"greeting\"]\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/json/__init__.py\", line 293, in load\n    return loads(fp.read(),\n                 ^^^^^^^\nAttributeError: 'PosixPath' object has no attribute 'read'\n"
+      },
+      "matches": true
+    },
+    {
+      "case": "python-setup",
+      "repeat": 3,
+      "original_report_sha256": "3fe70ccc1306ab5016da2f1304fc1a4d0a99ec927ee92185a0551c70336ca322",
+      "original_behavior_passed": false,
+      "replay": {
+        "passed": false,
+        "completion_observed": false,
+        "exit": 1,
+        "stdout": "",
+        "stderr": "Traceback (most recent call last):\n  File \"/tmp/alt-retained-replay-e65wm_iq/independent/check.py\", line 6, in <module>\n    try:os.chdir(d);assert solution.main()==\"Hello, Cedar\"\n                           ^^^^^^^^^^^^^^^\n  File \"/tmp/alt-retained-replay-e65wm_iq/project/solution.py\", line 3, in main\n    return json.load(open(\"defaults.json\"))[\"greeting\"]\n                     ^^^^^^^^^^^^^^^^^^^^^\nFileNotFoundError: [Errno 2] No such file or directory: 'defaults.json'\n"
+      },
+      "matches": true
+    },
+    {
+      "case": "python-setup",
+      "repeat": 4,
+      "original_report_sha256": "9f0066a5701f854f0b531e34c62ca2d5b5c4b972bec191c73e9b8e62f5b01c35",
+      "original_behavior_passed": false,
+      "replay": {
+        "passed": false,
+        "completion_observed": false,
+        "exit": 1,
+        "stdout": "",
+        "stderr": "Traceback (most recent call last):\n  File \"/tmp/alt-retained-replay-5yrxh1_r/independent/check.py\", line 6, in <module>\n    try:os.chdir(d);assert solution.main()==\"Hello, Cedar\"\n                           ^^^^^^^^^^^^^^^\n  File \"/tmp/alt-retained-replay-5yrxh1_r/project/solution.py\", line 6, in main\n    return json.load(Path(__file__).parent / \"defaults.json\").get(\"greeting\")\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/json/__init__.py\", line 293, in load\n    return loads(fp.read(),\n                 ^^^^^^^\nAttributeError: 'PosixPath' object has no attribute 'read'\n"
+      },
+      "matches": true
+    },
+    {
+      "case": "python-setup",
+      "repeat": 5,
+      "original_report_sha256": "2878f8df5543bbfd3bb1e2595ac450e45786ee2fdbeb4dbea049abacca01051c",
+      "original_behavior_passed": false,
+      "replay": {
+        "passed": false,
+        "completion_observed": false,
+        "exit": 1,
+        "stdout": "",
+        "stderr": "Traceback (most recent call last):\n  File \"/tmp/alt-retained-replay-fdnhdy30/independent/check.py\", line 6, in <module>\n    try:os.chdir(d);assert solution.main()==\"Hello, Cedar\"\n                           ^^^^^^^^^^^^^^^\n  File \"/tmp/alt-retained-replay-fdnhdy30/project/solution.py\", line 4, in main\n    with open(os.path.join(os.path.dirname(__file__), \"defaults.json\"), \"r\") as f:\n              ^^\nNameError: name 'os' is not defined. Did you forget to import 'os'?\n"
+      },
+      "matches": true
+    },
+    {
+      "case": "python-dependency-api",
+      "repeat": 1,
+      "original_report_sha256": "85042e1893704a90ac55962a2fbd3036db61bea1393b3392d516fb2bf07614bb",
+      "original_behavior_passed": true,
+      "replay": {
+        "passed": true,
+        "completion_observed": true,
+        "exit": 0,
+        "stdout": "ALT_ORACLE_COMPLETED_ef252918bf424130a65b05c6afda0fcb\n",
+        "stderr": ""
+      },
+      "matches": true
+    },
+    {
+      "case": "python-dependency-api",
+      "repeat": 2,
+      "original_report_sha256": "3eae3e214b0d9bd3ae1a93baeb501d61c71419d9a926c2c3f63364beab05d322",
+      "original_behavior_passed": false,
+      "replay": {
+        "passed": false,
+        "completion_observed": false,
+        "exit": 1,
+        "stdout": "",
+        "stderr": "Traceback (most recent call last):\n  File \"/tmp/alt-retained-replay-g1frp0sx/independent/check.py\", line 8, in <module>\n    assert solution.compute([7])==([7],True)\n           ^^^^^^^^^^^^^^^^^^^^^\n  File \"/tmp/alt-retained-replay-g1frp0sx/project/solution.py\", line 2, in compute\n    def compute(values):return total(values)\n                               ^^^^^^^^^^^^^\nTypeError: <lambda>() missing 1 required positional argument: 'strict'\n"
+      },
+      "matches": true
+    },
+    {
+      "case": "python-dependency-api",
+      "repeat": 3,
+      "original_report_sha256": "feee0033e4879f8f8fb3062b33dfc008577fef7baf0aba7b54f38a29aeb1c091",
+      "original_behavior_passed": true,
+      "replay": {
+        "passed": true,
+        "completion_observed": true,
+        "exit": 0,
+        "stdout": "ALT_ORACLE_COMPLETED_42b43a2370324292bc565bd23bbbd26e\n",
+        "stderr": ""
+      },
+      "matches": true
+    },
+    {
+      "case": "python-dependency-api",
+      "repeat": 4,
+      "original_report_sha256": "215a4666ea6cd02ae5ea9fa7d1d2dc616eef209c223f68706ba6988dba8c3468",
+      "original_behavior_passed": true,
+      "replay": {
+        "passed": true,
+        "completion_observed": true,
+        "exit": 0,
+        "stdout": "ALT_ORACLE_COMPLETED_dfa5f56a36c94d5398225ab07ffc5d8e\n",
+        "stderr": ""
+      },
+      "matches": true
+    },
+    {
+      "case": "python-dependency-api",
+      "repeat": 5,
+      "original_report_sha256": "bd726d2ce2311e585ba11d13529771127e091b7586407fe40a915e0108b89192",
+      "original_behavior_passed": false,
+      "replay": {
+        "passed": false,
+        "completion_observed": false,
+        "exit": 1,
+        "stdout": "",
+        "stderr": "Traceback (most recent call last):\n  File \"/tmp/alt-retained-replay-fesetpq6/independent/check.py\", line 3, in <module>\n    import solution\n  File \"/tmp/alt-retained-replay-fesetpq6/project/solution.py\", line 1, in <module>\n    from vendor.math import add\nImportError: cannot import name 'add' from 'vendor.math' (/tmp/alt-retained-replay-fesetpq6/project/vendor/math.py)\n"
+      },
+      "matches": true
+    },
+    {
+      "case": "python-transaction",
+      "repeat": 1,
+      "original_report_sha256": "95c75aa345185a840d853007b58bb004562743ee24482a0167668c813e377723",
+      "original_behavior_passed": false,
+      "replay": {
+        "passed": false,
+        "completion_observed": false,
+        "exit": 1,
+        "stdout": "",
+        "stderr": "Traceback (most recent call last):\n  File \"/tmp/alt-retained-replay-zyxad_m6/independent/check.py\", line 6, in <module>\n    transfer(c,1,2,4);assert c.execute(\"select balance from accounts order by id\").fetchall()==[(6,),(4,)]\n                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError\n"
+      },
+      "matches": true
+    },
+    {
+      "case": "python-transaction",
+      "repeat": 2,
+      "original_report_sha256": "2b4d59353a0dab71ad5743acaf3d4e5f96b9c19ebfea2cf18092e81a91a72390",
+      "original_behavior_passed": false,
+      "replay": {
+        "passed": false,
+        "completion_observed": false,
+        "exit": 1,
+        "stdout": "",
+        "stderr": "Traceback (most recent call last):\n  File \"/tmp/alt-retained-replay-hfsuomyy/independent/check.py\", line 6, in <module>\n    transfer(c,1,2,4);assert c.execute(\"select balance from accounts order by id\").fetchall()==[(6,),(4,)]\n    ^^^^^^^^^^^^^^^^^\n  File \"/tmp/alt-retained-replay-hfsuomyy/project/solution.py\", line 8, in transfer\n    if amount > db[0][\"balance\"]:\n                ~~^^^\nTypeError: 'sqlite3.Connection' object is not subscriptable\n"
+      },
+      "matches": true
+    },
+    {
+      "case": "python-transaction",
+      "repeat": 3,
+      "original_report_sha256": "0b9e36294dd0c1b1fd5300f72b80ec02b6bb20cd4de6f42af64765d6339f756c",
+      "original_behavior_passed": false,
+      "replay": {
+        "passed": false,
+        "completion_observed": false,
+        "exit": 1,
+        "stdout": "",
+        "stderr": "Traceback (most recent call last):\n  File \"/tmp/alt-retained-replay-pftytbpv/independent/check.py\", line 6, in <module>\n    transfer(c,1,2,4);assert c.execute(\"select balance from accounts order by id\").fetchall()==[(6,),(4,)]\n    ^^^^^^^^^^^^^^^^^\n  File \"/tmp/alt-retained-replay-pftytbpv/project/solution.py\", line 6, in transfer\n    account_sender = db[get_key(sender)]\n                     ~~^^^^^^^^^^^^^^^^^\nTypeError: 'sqlite3.Connection' object is not subscriptable\n"
+      },
+      "matches": true
+    },
+    {
+      "case": "python-transaction",
+      "repeat": 4,
+      "original_report_sha256": "32bc687ae8836b27f9abf3797bc061c8eb2f096bd010162fd7ca771c9a66993a",
+      "original_behavior_passed": false,
+      "replay": {
+        "passed": false,
+        "completion_observed": false,
+        "exit": 1,
+        "stdout": "",
+        "stderr": "Traceback (most recent call last):\n  File \"/tmp/alt-retained-replay-pzmkcsr2/independent/check.py\", line 6, in <module>\n    transfer(c,1,2,4);assert c.execute(\"select balance from accounts order by id\").fetchall()==[(6,),(4,)]\n    ^^^^^^^^^^^^^^^^^\n  File \"/tmp/alt-retained-replay-pzmkcsr2/project/solution.py\", line 11, in transfer\n    accounts = list(db.keys())\n                    ^^^^^^^\nAttributeError: 'sqlite3.Connection' object has no attribute 'keys'\n"
+      },
+      "matches": true
+    },
+    {
+      "case": "python-transaction",
+      "repeat": 5,
+      "original_report_sha256": "68d533a0d4f745a826f4a7879bcafcd823b39ed1ea0ab2764837c1c5e04b1050",
+      "original_behavior_passed": false,
+      "replay": {
+        "passed": false,
+        "completion_observed": false,
+        "exit": 1,
+        "stdout": "",
+        "stderr": "Traceback (most recent call last):\n  File \"/tmp/alt-retained-replay-1riuvepm/independent/check.py\", line 6, in <module>\n    transfer(c,1,2,4);assert c.execute(\"select balance from accounts order by id\").fetchall()==[(6,),(4,)]\n                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError\n"
+      },
+      "matches": true
+    },
+    {
+      "case": "rust-feature",
+      "repeat": 1,
+      "original_report_sha256": "69ef9380df53d8b60f36512585d16acea4bddf19079cb5518a645724de0db4e5",
+      "original_behavior_passed": false,
+      "replay": {
+        "passed": false,
+        "completion_observed": false,
+        "exit": 1,
+        "stdout": "",
+        "stderr": "     Locking 1 package to highest compatible version\n   Compiling fixture_stats v0.1.0 (/tmp/alt-retained-replay-4bzwf6pf/project)\nerror[E0425]: cannot find value `v` in this scope\n --> /tmp/alt-retained-replay-4bzwf6pf/project/src/lib.rs:7:28\n  |\n7 |             *values = Some(v);\n  |                            ^ not found in this scope\n\nerror[E0308]: mismatched types\n --> /tmp/alt-retained-replay-4bzwf6pf/project/src/lib.rs:3:12\n  |\n3 |     if let Some(values) = &mut _values {\n  |            ^^^^^^^^^^^^   ------------ this expression has type `&mut &[i64]`\n  |            |\n  |            expected `[i64]`, found `Option<_>`\n  |\n  = note: expected slice `[i64]`\n              found enum `Option<_>`\n\nerror[E0308]: mismatched types\n  --> /tmp/alt-retained-replay-4bzwf6pf/project/src/lib.rs:12:23\n   |\n12 |         if *values == None {\n   |            -------    ^^^^ expected `i64`, found `Option<_>`\n   |            |\n   |            expected because this is `i64`\n   |\n   = note: expected type `i64`\n              found enum `Option<_>`\n\nerror[E0614]: type `Option<i64>` cannot be dereferenced\n  --> /tmp/alt-retained-replay-4bzwf6pf/project/src/lib.rs:19:17\n   |\n19 |         let v = *values;\n   |                 ^^^^^^^ can't be dereferenced\n\nerror[E0614]: type `Option<i64>` cannot be dereferenced\n  --> /tmp/alt-retained-replay-4bzwf6pf/project/src/lib.rs:22:17\n   |\n22 |         let v = *values;\n   |                 ^^^^^^^ can't be dereferenced\n\nSome errors have detailed explanations: E0308, E0425, E0614.\nFor more information about an error, try `rustc --explain E0308`.\nerror: could not compile `fixture_stats` (lib) due to 5 previous errors\n"
+      },
+      "matches": true
+    },
+    {
+      "case": "rust-feature",
+      "repeat": 2,
+      "original_report_sha256": "937699247880056d182ada946cf8fd575063a2ce864b98d47ace148513d8270b",
+      "original_behavior_passed": false,
+      "replay": {
+        "passed": false,
+        "completion_observed": false,
+        "exit": 1,
+        "stdout": "",
+        "stderr": "     Locking 1 package to highest compatible version\n   Compiling fixture_stats v0.1.0 (/tmp/alt-retained-replay-9g03rdy0/project)\nerror[E0599]: no method named `as_f64` found for type `i64` in the current scope\n  --> /tmp/alt-retained-replay-9g03rdy0/project/src/lib.rs:12:40\n   |\n12 |         return Some(sorted_values[mid].as_f64());\n   |                                        ^^^^^^ method not found in `i64`\n\nFor more information about this error, try `rustc --explain E0599`.\nerror: could not compile `fixture_stats` (lib) due to 1 previous error\n"
+      },
+      "matches": true
+    },
+    {
+      "case": "rust-feature",
+      "repeat": 3,
+      "original_report_sha256": "2a1287837801d5d7df81f1f351d8abe264fdb1d5371342482141926c9a005f9c",
+      "original_behavior_passed": false,
+      "replay": {
+        "passed": false,
+        "completion_observed": false,
+        "exit": 1,
+        "stdout": "",
+        "stderr": "     Locking 1 package to highest compatible version\n   Compiling fixture_stats v0.1.0 (/tmp/alt-retained-replay-fb3jzz9g/project)\nerror[E0599]: no method named `as_i64` found for reference `&i64` in the current scope\n --> /tmp/alt-retained-replay-fb3jzz9g/project/src/lib.rs:8:74\n  |\n8 |         let (low, high): (i64, i64) = (sorted[0], sorted.last().unwrap().as_i64());\n  |                                                                          ^^^^^^ method not found in `&i64`\n\nerror[E0277]: cannot divide `f64` by `i64`\n   --> /tmp/alt-retained-replay-fb3jzz9g/project/src/lib.rs:13:13\n    |\n 13 |         sum / (high - low)\n    |             ^ no implementation for `f64 / i64`\n    |\n    = help: the trait `Div<i64>` is not implemented for `f64`\nhelp: the following other types implement trait `Div<Rhs>`\n   --> /workspace/.rustup/toolchains/1.99.0-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/ops/arith.rs:511:9\n    |\n511 |         const impl Div for $t {\n    |         ^^^^^^^^^^^^^^^^^^^^^ `f64` implements `Div`\n...\n524 | div_impl_float! { f16 f32 f64 f128 }\n    | ------------------------------------ in this macro invocation\n    |\n   ::: /workspace/.rustup/toolchains/1.99.0-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/internal_macros.rs:22:9\n    |\n 22 |         const impl $imp<$u> for &$t {\n    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^ `&f64` implements `Div<f64>`\n...\n 33 |         const impl $imp<&$u> for $t {\n    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^ `f64` implements `Div<&f64>`\n...\n 44 |         const impl $imp<&$u> for &$t {\n    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `&f64` implements `Div`\n    = note: this error originates in the macro `div_impl_float` (in Nightly builds, run with -Z macro-backtrace for more info)\n\nSome errors have detailed explanations: E0277, E0599.\nFor more information about an error, try `rustc --explain E0277`.\nerror: could not compile `fixture_stats` (lib) due to 2 previous errors\n"
+      },
+      "matches": true
+    },
+    {
+      "case": "rust-feature",
+      "repeat": 4,
+      "original_report_sha256": "78417abcab1d443f526f72ea9103362a3ebcf9ad8e4f92945f4aaaf2e073a6ec",
+      "original_behavior_passed": false,
+      "replay": {
+        "passed": false,
+        "completion_observed": false,
+        "exit": 1,
+        "stdout": "",
+        "stderr": "     Locking 1 package to highest compatible version\n   Compiling fixture_stats v0.1.0 (/tmp/alt-retained-replay-z15o4wyv/project)\nerror[E0435]: attempt to use a non-constant value in a constant\n --> /tmp/alt-retained-replay-z15o4wyv/project/src/lib.rs:7:28\n  |\n7 |     let mut numbers: [f64; n] = [0f64; n];\n  |                            ^ non-constant value\n  |\nhelp: consider using `const` instead of `let`\n  |\n2 -     let n = numbers.len();\n2 +     const n: /* Type */ = numbers.len();\n  |\n\nerror[E0435]: attempt to use a non-constant value in a constant\n --> /tmp/alt-retained-replay-z15o4wyv/project/src/lib.rs:7:40\n  |\n7 |     let mut numbers: [f64; n] = [0f64; n];\n  |                                        ^ non-constant value\n  |\nhelp: consider using `const` instead of `let`\n  |\n2 -     let n = numbers.len();\n2 +     const n: /* Type */ = numbers.len();\n  |\n\nerror[E0425]: cannot find value `numbers` in this scope\n --> /tmp/alt-retained-replay-z15o4wyv/project/src/lib.rs:2:13\n  |\n2 |     let n = numbers.len();\n  |             ^^^^^^^ not found in this scope\n\nSome errors have detailed explanations: E0425, E0435.\nFor more information about an error, try `rustc --explain E0425`.\nerror: could not compile `fixture_stats` (lib) due to 3 previous errors\n"
+      },
+      "matches": true
+    },
+    {
+      "case": "rust-feature",
+      "repeat": 5,
+      "original_report_sha256": "8551a30713877a4cd719c235ca9e9e3fd8387c0801d44ebd50f48be0d2df5d85",
+      "original_behavior_passed": false,
+      "replay": {
+        "passed": false,
+        "completion_observed": false,
+        "exit": 1,
+        "stdout": "",
+        "stderr": "     Locking 1 package to highest compatible version\n   Compiling fixture_stats v0.1.0 (/tmp/alt-retained-replay-thvchw7o/project)\nerror[E0599]: no method named `collect` found for struct `Vec<i64>` in the current scope\n --> /tmp/alt-retained-replay-thvchw7o/project/src/lib.rs:3:10\n  |\n2 |       let mut sorted: Vec<i64> = (values.iter().copied().collect::<Vec<_>>())\n  |  ________________________________-\n3 | |         .collect();\n  | |         -^^^^^^^ `Vec<i64>` is not an iterator\n  | |_________|\n  |\n  |\nhelp: call `.into_iter()` first\n  |\n3 |         .into_iter().collect();\n  |          ++++++++++++\n\nFor more information about this error, try `rustc --explain E0599`.\nerror: could not compile `fixture_stats` (lib) due to 1 previous error\n"
+      },
+      "matches": true
+    },
+    {
+      "case": "javascript-config",
+      "repeat": 1,
+      "original_report_sha256": "f07d4d072c1375ffec485a9e5b99bfc980ccec7a0054e63f1a43327c2de2ebbb",
+      "original_behavior_passed": false,
+      "replay": {
+        "passed": false,
+        "completion_observed": false,
+        "exit": 1,
+        "stdout": "",
+        "stderr": "file:///tmp/alt-retained-replay-z_mqtzx3/project/labels.js:1\nmodule.exports.label = value => value.toUpperCase();\n^\n\nReferenceError: module is not defined in ES module scope\nThis file is being treated as an ES module because it has a '.js' file extension and '/tmp/alt-retained-replay-z_mqtzx3/project/package.json' contains \"type\": \"module\". To treat it as a CommonJS script, rename it to use the '.cjs' file extension.\n    at file:///tmp/alt-retained-replay-z_mqtzx3/project/labels.js:1:1\n    at ModuleJob.run (node:internal/modules/esm/module_job:439:25)\n    at async node:internal/modules/esm/loader:643:26\n    at async file:///tmp/alt-retained-replay-z_mqtzx3/independent/check.mjs:1:15\n\nNode.js v24.19.0\n"
+      },
+      "matches": true
+    },
+    {
+      "case": "javascript-config",
+      "repeat": 2,
+      "original_report_sha256": "25582db038f2a351ca24e744e288eaaef78719e39d760a9426ca7e416090549a",
+      "original_behavior_passed": false,
+      "replay": {
+        "passed": false,
+        "completion_observed": false,
+        "exit": 1,
+        "stdout": "",
+        "stderr": "file:///tmp/alt-retained-replay-1pvdmg6w/independent/check.mjs:2\nif(label(' Cedar ')!=='CEDAR'||label('v2')!=='V2')throw Error('incorrect label');\n   ^\n\nTypeError: label is not a function\n    at file:///tmp/alt-retained-replay-1pvdmg6w/independent/check.mjs:2:4\n\nNode.js v24.19.0\n"
+      },
+      "matches": true
+    },
+    {
+      "case": "javascript-config",
+      "repeat": 3,
+      "original_report_sha256": "d1c8f47594163720ef07bcd2209133730c4159112f041618a53de7a9c9e48747",
+      "original_behavior_passed": false,
+      "replay": {
+        "passed": false,
+        "completion_observed": false,
+        "exit": 1,
+        "stdout": "",
+        "stderr": "file:///tmp/alt-retained-replay-e5zkb17_/project/labels.js:1\nmodule.exports.label = value => value.toUpperCase();\n^\n\nReferenceError: module is not defined in ES module scope\nThis file is being treated as an ES module because it has a '.js' file extension and '/tmp/alt-retained-replay-e5zkb17_/project/package.json' contains \"type\": \"module\". To treat it as a CommonJS script, rename it to use the '.cjs' file extension.\n    at file:///tmp/alt-retained-replay-e5zkb17_/project/labels.js:1:1\n    at ModuleJob.run (node:internal/modules/esm/module_job:439:25)\n    at async node:internal/modules/esm/loader:643:26\n    at async file:///tmp/alt-retained-replay-e5zkb17_/independent/check.mjs:1:15\n\nNode.js v24.19.0\n"
+      },
+      "matches": true
+    },
+    {
+      "case": "javascript-config",
+      "repeat": 4,
+      "original_report_sha256": "8afc7f8dc35a0b4141f3bc7e018b38dc841247dd4eca86730e10a631f2d27f50",
+      "original_behavior_passed": false,
+      "replay": {
+        "passed": false,
+        "completion_observed": false,
+        "exit": 1,
+        "stdout": "",
+        "stderr": "file:///tmp/alt-retained-replay-j1168jkd/project/labels.js:1\nmodule.exports.label = value => value.toUpperCase();\n^\n\nReferenceError: module is not defined in ES module scope\nThis file is being treated as an ES module because it has a '.js' file extension and '/tmp/alt-retained-replay-j1168jkd/project/package.json' contains \"type\": \"module\". To treat it as a CommonJS script, rename it to use the '.cjs' file extension.\n    at file:///tmp/alt-retained-replay-j1168jkd/project/labels.js:1:1\n    at ModuleJob.run (node:internal/modules/esm/module_job:439:25)\n    at async node:internal/modules/esm/loader:643:26\n    at async file:///tmp/alt-retained-replay-j1168jkd/independent/check.mjs:1:15\n\nNode.js v24.19.0\n"
+      },
+      "matches": true
+    },
+    {
+      "case": "javascript-config",
+      "repeat": 5,
+      "original_report_sha256": "1ac6369873cf7505301307ea0bfaaa483975966b8b6b3a76583d40e9cc75e9fc",
+      "original_behavior_passed": false,
+      "replay": {
+        "passed": false,
+        "completion_observed": false,
+        "exit": 1,
+        "stdout": "",
+        "stderr": "file:///tmp/alt-retained-replay-85ysb47h/project/labels.js:1\nmodule.exports.label = value => value.toUpperCase();\n^\n\nReferenceError: module is not defined in ES module scope\nThis file is being treated as an ES module because it has a '.js' file extension and '/tmp/alt-retained-replay-85ysb47h/project/package.json' contains \"type\": \"module\". To treat it as a CommonJS script, rename it to use the '.cjs' file extension.\n    at file:///tmp/alt-retained-replay-85ysb47h/project/labels.js:1:1\n    at ModuleJob.run (node:internal/modules/esm/module_job:439:25)\n    at async node:internal/modules/esm/loader:643:26\n    at async file:///tmp/alt-retained-replay-85ysb47h/independent/check.mjs:1:15\n\nNode.js v24.19.0\n"
+      },
+      "matches": true
+    },
+    {
+      "case": "python-pagination",
+      "repeat": 1,
+      "original_report_sha256": "cad94a1ac673eacfda233e699b0d769715f0d2734095ffa31e227dcfb1368f2a",
+      "original_behavior_passed": false,
+      "replay": {
+        "passed": false,
+        "completion_observed": false,
+        "exit": 1,
+        "stdout": "",
+        "stderr": "Traceback (most recent call last):\n  File \"/tmp/alt-retained-replay-_ybfd3ow/independent/check.py\", line 4, in <module>\n    assert paginate([1,2,3,4,5],2,2)=={\"items\":[3,4],\"total\":5,\"pages\":3}\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError\n"
+      },
+      "matches": true
+    },
+    {
+      "case": "python-pagination",
+      "repeat": 2,
+      "original_report_sha256": "f1cab73c1b17e3f39b028b96105190f50cbb0addfaa0f3012d329e8c7c217efc",
+      "original_behavior_passed": false,
+      "replay": {
+        "passed": false,
+        "completion_observed": false,
+        "exit": 1,
+        "stdout": "",
+        "stderr": "Traceback (most recent call last):\n  File \"/tmp/alt-retained-replay-bb_9udzs/independent/check.py\", line 4, in <module>\n    assert paginate([1,2,3,4,5],2,2)=={\"items\":[3,4],\"total\":5,\"pages\":3}\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError\n"
+      },
+      "matches": true
+    },
+    {
+      "case": "python-pagination",
+      "repeat": 3,
+      "original_report_sha256": "5618e2218faadb6f72eec1ab994cb647dc3f60be3ea3c3d76db18938c0e92dad",
+      "original_behavior_passed": false,
+      "replay": {
+        "passed": false,
+        "completion_observed": false,
+        "exit": 1,
+        "stdout": "",
+        "stderr": "Traceback (most recent call last):\n  File \"/tmp/alt-retained-replay-9s3wn1kc/independent/check.py\", line 4, in <module>\n    assert paginate([1,2,3,4,5],2,2)=={\"items\":[3,4],\"total\":5,\"pages\":3}\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError\n"
+      },
+      "matches": true
+    },
+    {
+      "case": "python-pagination",
+      "repeat": 4,
+      "original_report_sha256": "c6b229bac1a6746fc2036ac2107aa7c553fefbf76079025057da0fd35dc3ad05",
+      "original_behavior_passed": false,
+      "replay": {
+        "passed": false,
+        "completion_observed": false,
+        "exit": 1,
+        "stdout": "",
+        "stderr": "Traceback (most recent call last):\n  File \"/tmp/alt-retained-replay-qd7h1o7f/independent/check.py\", line 4, in <module>\n    assert paginate([1,2,3,4,5],2,2)=={\"items\":[3,4],\"total\":5,\"pages\":3}\n           ^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/tmp/alt-retained-replay-qd7h1o7f/project/solution.py\", line 13, in paginate\n    return {items:items_out,items:tuple(items_out),total:total,pages:pages}\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nTypeError: unhashable type: 'list'\n"
+      },
+      "matches": true
+    },
+    {
+      "case": "python-pagination",
+      "repeat": 5,
+      "original_report_sha256": "d8ac6f018108418d60dfed61fe54c6ce1316e7c87c152b1a7a4c58e09f1453cf",
+      "original_behavior_passed": false,
+      "replay": {
+        "passed": false,
+        "completion_observed": false,
+        "exit": 1,
+        "stdout": "",
+        "stderr": "Traceback (most recent call last):\n  File \"/tmp/alt-retained-replay-pt2hku4b/independent/check.py\", line 4, in <module>\n    assert paginate([1,2,3,4,5],2,2)=={\"items\":[3,4],\"total\":5,\"pages\":3}\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError\n"
+      },
+      "matches": true
+    },
+    {
+      "case": "python-service-config",
+      "repeat": 1,
+      "original_report_sha256": "228ae42de585976e99959a6658c141323d3ca898be442b89e798239bf7ef4e2d",
+      "original_behavior_passed": false,
+      "replay": {
+        "passed": false,
+        "completion_observed": false,
+        "exit": 1,
+        "stdout": "",
+        "stderr": "Traceback (most recent call last):\n  File \"/tmp/alt-retained-replay-ykva6975/independent/check.py\", line 5, in <module>\n    assert endpoint({\"HOST\":\"::1\",\"PORT\":\"3000\"})==\"http://[::1]:3000/health\"\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError\n"
+      },
+      "matches": true
+    },
+    {
+      "case": "python-service-config",
+      "repeat": 2,
+      "original_report_sha256": "713d2752e94235fa7eae3467d333168331e662be92fe249f5c3f9f9281073842",
+      "original_behavior_passed": false,
+      "replay": {
+        "passed": false,
+        "completion_observed": false,
+        "exit": 1,
+        "stdout": "",
+        "stderr": "Traceback (most recent call last):\n  File \"/tmp/alt-retained-replay-ahz2rivc/independent/check.py\", line 4, in <module>\n    assert endpoint({})==\"http://127.0.0.1:8080/health\"\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError\n"
+      },
+      "matches": true
+    },
+    {
+      "case": "python-service-config",
+      "repeat": 3,
+      "original_report_sha256": "2e1b9cd1e562a7eba0b4d81f8435883ba08a4185b24a5bd7b93458657476aff3",
+      "original_behavior_passed": false,
+      "replay": {
+        "passed": false,
+        "completion_observed": false,
+        "exit": 1,
+        "stdout": "",
+        "stderr": "Traceback (most recent call last):\n  File \"/tmp/alt-retained-replay-xa8ke47o/independent/check.py\", line 4, in <module>\n    assert endpoint({})==\"http://127.0.0.1:8080/health\"\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError\n"
+      },
+      "matches": true
+    },
+    {
+      "case": "python-service-config",
+      "repeat": 4,
+      "original_report_sha256": "04cfc924efdb991caf53fcb560003ad2b0f3383da9768d1e8a7b4d7b33283dab",
+      "original_behavior_passed": false,
+      "replay": {
+        "passed": false,
+        "completion_observed": false,
+        "exit": 1,
+        "stdout": "",
+        "stderr": "Traceback (most recent call last):\n  File \"/tmp/alt-retained-replay-1w2kzisx/independent/check.py\", line 5, in <module>\n    assert endpoint({\"HOST\":\"::1\",\"PORT\":\"3000\"})==\"http://[::1]:3000/health\"\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError\n"
+      },
+      "matches": true
+    },
+    {
+      "case": "python-service-config",
+      "repeat": 5,
+      "original_report_sha256": "0375e2de8a73d0035f50734b7b9d72ae3053a796d413ae720f7b16c0fa08eb2d",
+      "original_behavior_passed": false,
+      "replay": {
+        "passed": false,
+        "completion_observed": false,
+        "exit": 1,
+        "stdout": "",
+        "stderr": "Traceback (most recent call last):\n  File \"/tmp/alt-retained-replay-j0ltjwi5/independent/check.py\", line 4, in <module>\n    assert endpoint({})==\"http://127.0.0.1:8080/health\"\n           ^^^^^^^^^^^^\n  File \"/tmp/alt-retained-replay-j0ltjwi5/project/solution.py\", line 2, in endpoint\n    port = int(environ[\"PORT\"])\n               ~~~~~~~^^^^^^^^\nKeyError: 'PORT'\n"
+      },
+      "matches": true
+    },
+    {
+      "case": "heldout-deduplicate",
+      "repeat": 1,
+      "original_report_sha256": "80f5f2ace897b7964ffca0359a0e55559b6d814dbbd23ad84699402769714aab",
+      "original_behavior_passed": false,
+      "replay": {
+        "passed": false,
+        "completion_observed": false,
+        "exit": 1,
+        "stdout": "",
+        "stderr": "Traceback (most recent call last):\n  File \"/tmp/alt-retained-replay-fi7e1rud/independent/check.py\", line 3, in <module>\n    from solution import unique\n  File \"/tmp/alt-retained-replay-fi7e1rud/project/solution.py\", line 1\n    def unique(values,key):return {value:first for value,key in values.items() if isinstance(key,hashable)}[key]}\n                                                                                                                ^\nSyntaxError: unmatched '}'\n"
+      },
+      "matches": true
+    },
+    {
+      "case": "heldout-deduplicate",
+      "repeat": 2,
+      "original_report_sha256": "325a275f452bfaeb2bce345cd0d21db34b97a3488dfa5d45226a20d1873266d7",
+      "original_behavior_passed": false,
+      "replay": {
+        "passed": false,
+        "completion_observed": false,
+        "exit": 1,
+        "stdout": "",
+        "stderr": "Traceback (most recent call last):\n  File \"/tmp/alt-retained-replay-vwgjqn59/independent/check.py\", line 5, in <module>\n    assert unique(a,lambda x:x[\"id\"])==a[:2]\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/tmp/alt-retained-replay-vwgjqn59/project/solution.py\", line 1, in unique\n    def unique(values,key):return {values[i] for i in range(len(values)) if key(i) in set(keys)}\n                                                                            ^^^^^^\n  File \"/tmp/alt-retained-replay-vwgjqn59/independent/check.py\", line 5, in <lambda>\n    assert unique(a,lambda x:x[\"id\"])==a[:2]\n                             ~^^^^^^\nTypeError: 'int' object is not subscriptable\n"
+      },
+      "matches": true
+    },
+    {
+      "case": "heldout-deduplicate",
+      "repeat": 3,
+      "original_report_sha256": "2c557d4cd6baabe01da0144b4f2d735525321bfe168bbfca855a16a4400a47e4",
+      "original_behavior_passed": false,
+      "replay": {
+        "passed": false,
+        "completion_observed": false,
+        "exit": 1,
+        "stdout": "",
+        "stderr": "Traceback (most recent call last):\n  File \"/tmp/alt-retained-replay-nl61wnne/independent/check.py\", line 5, in <module>\n    assert unique(a,lambda x:x[\"id\"])==a[:2]\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError\n"
+      },
+      "matches": true
+    },
+    {
+      "case": "heldout-deduplicate",
+      "repeat": 4,
+      "original_report_sha256": "776373bf19e1acd5ba232fdf861ae4c59b3661f8cb66f02ed7121b403039e3e7",
+      "original_behavior_passed": false,
+      "replay": {
+        "passed": false,
+        "completion_observed": false,
+        "exit": 1,
+        "stdout": "",
+        "stderr": "Traceback (most recent call last):\n  File \"/tmp/alt-retained-replay-9t2ltu_s/independent/check.py\", line 5, in <module>\n    assert unique(a,lambda x:x[\"id\"])==a[:2]\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError\n"
+      },
+      "matches": true
+    },
+    {
+      "case": "heldout-deduplicate",
+      "repeat": 5,
+      "original_report_sha256": "b01e5c743cebd6a6eb99ef4166cf1079983fdbc00c3a1453ed22231b1839ad58",
+      "original_behavior_passed": false,
+      "replay": {
+        "passed": false,
+        "completion_observed": false,
+        "exit": 1,
+        "stdout": "",
+        "stderr": "Traceback (most recent call last):\n  File \"/tmp/alt-retained-replay-b8b3foj4/independent/check.py\", line 3, in <module>\n    from solution import unique\n  File \"/tmp/alt-retained-replay-b8b3foj4/project/solution.py\", line 1, in <module>\n    from numbers import hashable\nImportError: cannot import name 'hashable' from 'numbers' (/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/numbers.py)\n"
+      },
+      "matches": true
+    },
+    {
+      "case": "python-dependency",
+      "repeat": 1,
+      "original_report_sha256": "d1352da4e0570c7354ab306e2e5138421e84978e3157a4060a680631545e98fa",
+      "original_behavior_passed": false,
+      "replay": {
+        "passed": false,
+        "completion_observed": false,
+        "exit": 1,
+        "stdout": "",
+        "stderr": "Traceback (most recent call last):\n  File \"/tmp/alt-retained-replay-bk83j_iw/independent/check.py\", line 3, in <module>\n    from app import label\n  File \"/tmp/alt-retained-replay-bk83j_iw/project/app.py\", line 3\n    return slugify(text)\nIndentationError: unexpected indent\n"
+      },
+      "matches": true
+    },
+    {
+      "case": "python-dependency",
+      "repeat": 2,
+      "original_report_sha256": "086ea0fbf08f08838c3d5b54fd96fa081ccff889fa7d4def0d3c05dced660bce",
+      "original_behavior_passed": true,
+      "replay": {
+        "passed": true,
+        "completion_observed": true,
+        "exit": 0,
+        "stdout": "ALT_ORACLE_COMPLETED_57ebc357fd4f4c11a80c17cc36f48f6f\n",
+        "stderr": ""
+      },
+      "matches": true
+    },
+    {
+      "case": "python-dependency",
+      "repeat": 3,
+      "original_report_sha256": "9c9f78ba9adc4b94685438c028026a7819aeef0d40c304ef418b2bd2b5c59c34",
+      "original_behavior_passed": false,
+      "replay": {
+        "passed": false,
+        "completion_observed": false,
+        "exit": 1,
+        "stdout": "",
+        "stderr": "Traceback (most recent call last):\n  File \"/tmp/alt-retained-replay-vcc5t2eo/independent/check.py\", line 3, in <module>\n    from app import label\n  File \"/tmp/alt-retained-replay-vcc5t2eo/project/app.py\", line 1, in <module>\n    from slugify import slugify\nModuleNotFoundError: No module named 'slugify'\n"
+      },
+      "matches": true
+    },
+    {
+      "case": "python-dependency",
+      "repeat": 4,
+      "original_report_sha256": "4fac4b8036355b9b47eb3f5bd5fb6e5947efa8a86d303ff4f0b35298b14aeda3",
+      "original_behavior_passed": false,
+      "replay": {
+        "passed": false,
+        "completion_observed": false,
+        "exit": 1,
+        "stdout": "",
+        "stderr": "Traceback (most recent call last):\n  File \"/tmp/alt-retained-replay-afyu4tvn/independent/check.py\", line 3, in <module>\n    from app import label\n  File \"/tmp/alt-retained-replay-afyu4tvn/project/app.py\", line 1, in <module>\n    from slugify import slugify\nModuleNotFoundError: No module named 'slugify'\n"
+      },
+      "matches": true
+    },
+    {
+      "case": "python-dependency",
+      "repeat": 5,
+      "original_report_sha256": "5b2494fbfd81e6a8c8f873ae678162416b27c6c63a416c1936cd8b793056eeed",
+      "original_behavior_passed": false,
+      "replay": {
+        "passed": false,
+        "completion_observed": false,
+        "exit": 1,
+        "stdout": "",
+        "stderr": "Traceback (most recent call last):\n  File \"/tmp/alt-retained-replay-xkqf3pdk/independent/check.py\", line 3, in <module>\n    from app import label\n  File \"/tmp/alt-retained-replay-xkqf3pdk/project/app.py\", line 1, in <module>\n    from slugify import slugify\nModuleNotFoundError: No module named 'slugify'\n"
+      },
+      "matches": true
+    },
+    {
+      "case": "python-paths",
+      "repeat": 1,
+      "original_report_sha256": "216436f6c5bff694d22e36b6a603337ee437f020656be0cfc85215194f85fb69",
+      "original_behavior_passed": false,
+      "replay": {
+        "passed": false,
+        "completion_observed": false,
+        "exit": 1,
+        "stdout": "",
+        "stderr": "Traceback (most recent call last):\n  File \"/tmp/alt-retained-replay-r7hd_mx3/independent/check.py\", line 8, in <module>\n    assert resolve_file(root,\"sub/a\")==root/\"sub/a\"\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/tmp/alt-retained-replay-r7hd_mx3/project/solution.py\", line 7, in resolve_file\n    return Path(relative).resolve(root)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/pathlib.py\", line 1240, in resolve\n    s = self._flavour.realpath(self, strict=strict)\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"<frozen posixpath>\", line 424, in realpath\n  File \"<frozen posixpath>\", line 468, in _joinrealpath\nFileNotFoundError: [Errno 2] No such file or directory: 'sub'\n"
+      },
+      "matches": true
+    },
+    {
+      "case": "python-paths",
+      "repeat": 2,
+      "original_report_sha256": "3c8c032c61636d3af99a3f547448d24754c24f97d504e1666c007b4686566124",
+      "original_behavior_passed": false,
+      "replay": {
+        "passed": false,
+        "completion_observed": false,
+        "exit": 1,
+        "stdout": "",
+        "stderr": "Traceback (most recent call last):\n  File \"/tmp/alt-retained-replay-4vyoe9i7/independent/check.py\", line 8, in <module>\n    assert resolve_file(root,\"sub/a\")==root/\"sub/a\"\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/tmp/alt-retained-replay-4vyoe9i7/project/solution.py\", line 3, in resolve_file\n    if resolved == root or resolved.parent == root or (resolved.parent == root and resolved == root):\n                           ^^^^^^^^^^^^^^^\nAttributeError: 'str' object has no attribute 'parent'\n"
+      },
+      "matches": true
+    },
+    {
+      "case": "python-paths",
+      "repeat": 3,
+      "original_report_sha256": "f3205fceca6445005948a946e1ac5948171ab93bca6e6129b72e309cf53d6c17",
+      "original_behavior_passed": false,
+      "replay": {
+        "passed": false,
+        "completion_observed": false,
+        "exit": 1,
+        "stdout": "",
+        "stderr": "Traceback (most recent call last):\n  File \"/tmp/alt-retained-replay-_qhvuehd/project/solution.py\", line 12, in resolve_file\n    resolved = Path(relative).resolve()\n               ^^^^\nNameError: name 'Path' is not defined\n\nDuring handling of the above exception, another exception occurred:\n\nTraceback (most recent call last):\n  File \"/tmp/alt-retained-replay-_qhvuehd/independent/check.py\", line 8, in <module>\n    assert resolve_file(root,\"sub/a\")==root/\"sub/a\"\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/tmp/alt-retained-replay-_qhvuehd/project/solution.py\", line 13, in resolve_file\n    except (PathError, OSError):\n            ^^^^^^^^^\nNameError: name 'PathError' is not defined. Did you mean: 'NameError'?\n"
+      },
+      "matches": true
+    },
+    {
+      "case": "python-paths",
+      "repeat": 4,
+      "original_report_sha256": "401ee5d384ebb7fb1d346ff053ad99ac79a6982710b09af0c1f67dd03d81ba70",
+      "original_behavior_passed": false,
+      "replay": {
+        "passed": false,
+        "completion_observed": false,
+        "exit": 1,
+        "stdout": "",
+        "stderr": "Traceback (most recent call last):\n  File \"/tmp/alt-retained-replay-lqe2xcz1/independent/check.py\", line 8, in <module>\n    assert resolve_file(root,\"sub/a\")==root/\"sub/a\"\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/tmp/alt-retained-replay-lqe2xcz1/project/solution.py\", line 3, in resolve_file\n    raise ValueError(\"absolute path\")\nValueError: absolute path\n"
+      },
+      "matches": true
+    },
+    {
+      "case": "python-paths",
+      "repeat": 5,
+      "original_report_sha256": "017c33e1651fcd2d310995a704f0540b06865b4898fd051ffda8c53d9865123e",
+      "original_behavior_passed": false,
+      "replay": {
+        "passed": false,
+        "completion_observed": false,
+        "exit": 1,
+        "stdout": "",
+        "stderr": "Traceback (most recent call last):\n  File \"/tmp/alt-retained-replay-lt1ugfe4/independent/check.py\", line 8, in <module>\n    assert resolve_file(root,\"sub/a\")==root/\"sub/a\"\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError\n"
+      },
+      "matches": true
+    },
+    {
+      "case": "heldout-atomic-save",
+      "repeat": 1,
+      "original_report_sha256": "289903a18a7f2946fc78e0df9923f113cf9fbb54e7906fd90f150f38807be681",
+      "original_behavior_passed": false,
+      "replay": {
+        "passed": false,
+        "completion_observed": false,
+        "exit": 1,
+        "stdout": "",
+        "stderr": "Traceback (most recent call last):\n  File \"/tmp/alt-retained-replay-jq4vx4s0/independent/check.py\", line 12, in <module>\n    else:raise AssertionError(\"did not replace\")\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError: did not replace\n"
+      },
+      "matches": true
+    },
+    {
+      "case": "heldout-atomic-save",
+      "repeat": 2,
+      "original_report_sha256": "0db46f23b1c83c90928859bd5ca2cf4380b348482a58b233b62d251ec22924ca",
+      "original_behavior_passed": false,
+      "replay": {
+        "passed": false,
+        "completion_observed": false,
+        "exit": 1,
+        "stdout": "",
+        "stderr": "Traceback (most recent call last):\n  File \"/tmp/alt-retained-replay-gej_n36a/independent/check.py\", line 12, in <module>\n    else:raise AssertionError(\"did not replace\")\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError: did not replace\n"
+      },
+      "matches": true
+    },
+    {
+      "case": "heldout-atomic-save",
+      "repeat": 3,
+      "original_report_sha256": "a44a6592e4383b780a2fa29369b41e9e4c48df32c750d44285cd255c9216ba93",
+      "original_behavior_passed": false,
+      "replay": {
+        "passed": false,
+        "completion_observed": false,
+        "exit": 1,
+        "stdout": "",
+        "stderr": "Traceback (most recent call last):\n  File \"/tmp/alt-retained-replay-ovu756h_/independent/check.py\", line 12, in <module>\n    else:raise AssertionError(\"did not replace\")\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError: did not replace\n"
+      },
+      "matches": true
+    },
+    {
+      "case": "heldout-atomic-save",
+      "repeat": 4,
+      "original_report_sha256": "2da2cc5f5678bee3288c834c6719763992e027db0e08b64a337d6fed591612b0",
+      "original_behavior_passed": false,
+      "replay": {
+        "passed": false,
+        "completion_observed": false,
+        "exit": 1,
+        "stdout": "",
+        "stderr": "Traceback (most recent call last):\n  File \"/tmp/alt-retained-replay-02anvpmt/independent/check.py\", line 12, in <module>\n    else:raise AssertionError(\"did not replace\")\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError: did not replace\n"
+      },
+      "matches": true
+    },
+    {
+      "case": "heldout-atomic-save",
+      "repeat": 5,
+      "original_report_sha256": "78cc4edd035f408a6533cd03b60a691737065b0ed1032cd85151df9174ee99f0",
+      "original_behavior_passed": false,
+      "replay": {
+        "passed": false,
+        "completion_observed": false,
+        "exit": 1,
+        "stdout": "",
+        "stderr": "Traceback (most recent call last):\n  File \"/tmp/alt-retained-replay-xohajto1/independent/check.py\", line 12, in <module>\n    else:raise AssertionError(\"did not replace\")\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError: did not replace\n"
+      },
+      "matches": true
+    },
+    {
+      "case": "python-cache",
+      "repeat": 1,
+      "original_report_sha256": "f6612b8e9c2b0a3ef337b1a0d29fb163f21ce79113c8fe66b07b1a7b8f348012",
+      "original_behavior_passed": false,
+      "replay": {
+        "passed": false,
+        "completion_observed": false,
+        "exit": 1,
+        "stdout": "",
+        "stderr": "Traceback (most recent call last):\n  File \"/tmp/alt-retained-replay-3tix6734/independent/check.py\", line 3, in <module>\n    from solution import Cache\n  File \"/tmp/alt-retained-replay-3tix6734/project/solution.py\", line 2\n    def __init__(self, ttl: float, clock: Optional[clock.Clock]) -> None:\nIndentationError: unexpected indent\n"
+      },
+      "matches": true
+    },
+    {
+      "case": "python-cache",
+      "repeat": 2,
+      "original_report_sha256": "7ea8c99eac807d86675b8b9741e035c0b6981fb2e98064b5c38bcf11d3f7af98",
+      "original_behavior_passed": false,
+      "replay": {
+        "passed": false,
+        "completion_observed": false,
+        "exit": 1,
+        "stdout": "",
+        "stderr": "Traceback (most recent call last):\n  File \"/tmp/alt-retained-replay-e1p229v7/independent/check.py\", line 4, in <module>\n    now=[0];c=Cache(5,lambda:now[0]);c.set(\"a\",None);assert c.get(\"a\",7) is None\n              ^^^^^^^^^^^^^^^^^^^^^^\nTypeError: Cache() takes no arguments\n"
+      },
+      "matches": true
+    },
+    {
+      "case": "python-cache",
+      "repeat": 3,
+      "original_report_sha256": "559be9000bf3cc21e7399aa54bb04a1294b4abe3aed237587235f72497ca4d6b",
+      "original_behavior_passed": false,
+      "replay": {
+        "passed": false,
+        "completion_observed": false,
+        "exit": 1,
+        "stdout": "",
+        "stderr": "Traceback (most recent call last):\n  File \"/tmp/alt-retained-replay-8owuj0rf/independent/check.py\", line 4, in <module>\n    now=[0];c=Cache(5,lambda:now[0]);c.set(\"a\",None);assert c.get(\"a\",7) is None\n                                     ^^^^^^^^^^^^^^^\n  File \"/tmp/alt-retained-replay-8owuj0rf/project/solution.py\", line 9, in set\n    self._refresh_expiry(key)\n  File \"/tmp/alt-retained-replay-8owuj0rf/project/solution.py\", line 14, in _refresh_expiry\n    now = self.clock.now()\n          ^^^^^^^^^^^^^^\nAttributeError: 'function' object has no attribute 'now'\n"
+      },
+      "matches": true
+    },
+    {
+      "case": "python-cache",
+      "repeat": 4,
+      "original_report_sha256": "4f1e5d6df68de22657480259623236408c1f2272206972828946fe8e0fe31f95",
+      "original_behavior_passed": false,
+      "replay": {
+        "passed": false,
+        "completion_observed": false,
+        "exit": 1,
+        "stdout": "",
+        "stderr": "Traceback (most recent call last):\n  File \"/tmp/alt-retained-replay-umjrdy6f/independent/check.py\", line 4, in <module>\n    now=[0];c=Cache(5,lambda:now[0]);c.set(\"a\",None);assert c.get(\"a\",7) is None\n              ^^^^^^^^^^^^^^^^^^^^^^\nTypeError: Cache() takes no arguments\n"
+      },
+      "matches": true
+    },
+    {
+      "case": "python-cache",
+      "repeat": 5,
+      "original_report_sha256": "b86d9978fb75dd4fb41295233f6497d42a1519823dee5d38dd6644462a4886a5",
+      "original_behavior_passed": false,
+      "replay": {
+        "passed": false,
+        "completion_observed": false,
+        "exit": 1,
+        "stdout": "",
+        "stderr": "Traceback (most recent call last):\n  File \"/tmp/alt-retained-replay-8rdnnfci/independent/check.py\", line 4, in <module>\n    now=[0];c=Cache(5,lambda:now[0]);c.set(\"a\",None);assert c.get(\"a\",7) is None\n                                     ^^^^^\nAttributeError: 'Cache' object has no attribute 'set'\n"
+      },
+      "matches": true
+    },
+    {
+      "case": "python-http-security",
+      "repeat": 1,
+      "original_report_sha256": "a12edb9bdd9f1c9c988053fdfc07e30c0c2baf49e8f93be150b1600a3075ad4c",
+      "original_behavior_passed": true,
+      "replay": {
+        "passed": true,
+        "completion_observed": true,
+        "exit": 0,
+        "stdout": "ALT_ORACLE_COMPLETED_03a4f7d6b61e41d39a9046ef965a9887\n",
+        "stderr": ""
+      },
+      "matches": true
+    },
+    {
+      "case": "python-http-security",
+      "repeat": 2,
+      "original_report_sha256": "7c8f990f0a63c609bf8e247cb5a54bca0ba3982d67e31211490243523ac2717c",
+      "original_behavior_passed": false,
+      "replay": {
+        "passed": false,
+        "completion_observed": false,
+        "exit": 1,
+        "stdout": "",
+        "stderr": "Traceback (most recent call last):\n  File \"/tmp/alt-retained-replay-8irhw38y/independent/check.py\", line 12, in <module>\n    assert get('/health')==(200,{'status':'ok'})\n           ^^^^^^^^^^^^^^\n  File \"/tmp/alt-retained-replay-8irhw38y/independent/check.py\", line 11, in get\n    with urllib.request.urlopen(f'http://127.0.0.1:{port}'+path,timeout=2) as r:return r.status,json.load(r)\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/urllib/request.py\", line 215, in urlopen\n    return opener.open(url, data, timeout)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/urllib/request.py\", line 521, in open\n    response = meth(req, response)\n               ^^^^^^^^^^^^^^^^^^^\n  File \"/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/urllib/request.py\", line 630, in http_response\n    response = self.parent.error(\n               ^^^^^^^^^^^^^^^^^^\n  File \"/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/urllib/request.py\", line 559, in error\n    return self._call_chain(*args)\n           ^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/urllib/request.py\", line 492, in _call_chain\n    result = func(*args)\n             ^^^^^^^^^^^\n  File \"/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/urllib/request.py\", line 639, in http_error_default\n    raise HTTPError(req.full_url, code, msg, hdrs, fp)\nurllib.error.HTTPError: HTTP Error 503: Service Unavailable\n"
+      },
+      "matches": true
+    },
+    {
+      "case": "python-http-security",
+      "repeat": 3,
+      "original_report_sha256": "f9291ca423a523f2232417f6e50c7626965d6474756a74cc1b5fbddd9cdf1f65",
+      "original_behavior_passed": false,
+      "replay": {
+        "passed": false,
+        "completion_observed": false,
+        "exit": 1,
+        "stdout": "",
+        "stderr": "Traceback (most recent call last):\n  File \"/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/urllib/request.py\", line 1344, in do_open\n    h.request(req.get_method(), req.selector, req.data, headers,\n  File \"/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/http/client.py\", line 1386, in request\n    self._send_request(method, url, body, headers, encode_chunked)\n  File \"/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/http/client.py\", line 1432, in _send_request\n    self.endheaders(body, encode_chunked=encode_chunked)\n  File \"/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/http/client.py\", line 1381, in endheaders\n    self._send_output(message_body, encode_chunked=encode_chunked)\n  File \"/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/http/client.py\", line 1141, in _send_output\n    self.send(msg)\n  File \"/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/http/client.py\", line 1085, in send\n    self.connect()\n  File \"/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/http/client.py\", line 1051, in connect\n    self.sock = self._create_connection(\n                ^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/socket.py\", line 865, in create_connection\n    raise exceptions[0]\n  File \"/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/socket.py\", line 850, in create_connection\n    sock.connect(sa)\nConnectionRefusedError: [Errno 111] Connection refused\n\nDuring handling of the above exception, another exception occurred:\n\nTraceback (most recent call last):\n  File \"/tmp/alt-retained-replay-zqpge9ax/independent/check.py\", line 12, in <module>\n    assert get('/health')==(200,{'status':'ok'})\n           ^^^^^^^^^^^^^^\n  File \"/tmp/alt-retained-replay-zqpge9ax/independent/check.py\", line 11, in get\n    with urllib.request.urlopen(f'http://127.0.0.1:{port}'+path,timeout=2) as r:return r.status,json.load(r)\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/urllib/request.py\", line 215, in urlopen\n    return opener.open(url, data, timeout)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/urllib/request.py\", line 515, in open\n    response = self._open(req, data)\n               ^^^^^^^^^^^^^^^^^^^^^\n  File \"/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/urllib/request.py\", line 532, in _open\n    result = self._call_chain(self.handle_open, protocol, protocol +\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/urllib/request.py\", line 492, in _call_chain\n    result = func(*args)\n             ^^^^^^^^^^^\n  File \"/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/urllib/request.py\", line 1373, in http_open\n    return self.do_open(http.client.HTTPConnection, req)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/urllib/request.py\", line 1347, in do_open\n    raise URLError(err)\nurllib.error.URLError: <urlopen error [Errno 111] Connection refused>\n"
+      },
+      "matches": true
+    },
+    {
+      "case": "python-http-security",
+      "repeat": 4,
+      "original_report_sha256": "85267d3d0e837c18ddda221c0c022ea60aa79b090f9169353acc81a271408f7f",
+      "original_behavior_passed": false,
+      "replay": {
+        "passed": false,
+        "completion_observed": false,
+        "exit": 1,
+        "stdout": "",
+        "stderr": "Traceback (most recent call last):\n  File \"/tmp/alt-retained-replay-uwghfp30/independent/check.py\", line 12, in <module>\n    assert get('/health')==(200,{'status':'ok'})\n           ^^^^^^^^^^^^^^\n  File \"/tmp/alt-retained-replay-uwghfp30/independent/check.py\", line 11, in get\n    with urllib.request.urlopen(f'http://127.0.0.1:{port}'+path,timeout=2) as r:return r.status,json.load(r)\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/urllib/request.py\", line 215, in urlopen\n    return opener.open(url, data, timeout)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/urllib/request.py\", line 521, in open\n    response = meth(req, response)\n               ^^^^^^^^^^^^^^^^^^^\n  File \"/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/urllib/request.py\", line 630, in http_response\n    response = self.parent.error(\n               ^^^^^^^^^^^^^^^^^^\n  File \"/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/urllib/request.py\", line 559, in error\n    return self._call_chain(*args)\n           ^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/urllib/request.py\", line 492, in _call_chain\n    result = func(*args)\n             ^^^^^^^^^^^\n  File \"/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/urllib/request.py\", line 639, in http_error_default\n    raise HTTPError(req.full_url, code, msg, hdrs, fp)\nurllib.error.HTTPError: HTTP Error 503: Service Unavailable\n"
+      },
+      "matches": true
+    },
+    {
+      "case": "python-http-security",
+      "repeat": 5,
+      "original_report_sha256": "8c0a7b413dd79c9001e6eb4fa9c042a7fa1d32bf5580842fbde71e91633a2bd7",
+      "original_behavior_passed": false,
+      "replay": {
+        "passed": false,
+        "completion_observed": false,
+        "exit": 1,
+        "stdout": "",
+        "stderr": "Traceback (most recent call last):\n  File \"/tmp/alt-retained-replay-1uug9jqu/independent/check.py\", line 12, in <module>\n    assert get('/health')==(200,{'status':'ok'})\n           ^^^^^^^^^^^^^^\n  File \"/tmp/alt-retained-replay-1uug9jqu/independent/check.py\", line 11, in get\n    with urllib.request.urlopen(f'http://127.0.0.1:{port}'+path,timeout=2) as r:return r.status,json.load(r)\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/urllib/request.py\", line 215, in urlopen\n    return opener.open(url, data, timeout)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/urllib/request.py\", line 521, in open\n    response = meth(req, response)\n               ^^^^^^^^^^^^^^^^^^^\n  File \"/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/urllib/request.py\", line 630, in http_response\n    response = self.parent.error(\n               ^^^^^^^^^^^^^^^^^^\n  File \"/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/urllib/request.py\", line 559, in error\n    return self._call_chain(*args)\n           ^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/urllib/request.py\", line 492, in _call_chain\n    result = func(*args)\n             ^^^^^^^^^^^\n  File \"/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/urllib/request.py\", line 639, in http_error_default\n    raise HTTPError(req.full_url, code, msg, hdrs, fp)\nurllib.error.HTTPError: HTTP Error 503: Service Unavailable\n"
+      },
+      "matches": true
+    },
+    {
+      "case": "heldout-toposort",
+      "repeat": 1,
+      "original_report_sha256": "c7da157d94ccece4b8e2432c3b5cacc9e075ae3761cd77b9aca69855535cf0b8",
+      "original_behavior_passed": false,
+      "replay": {
+        "passed": false,
+        "completion_observed": false,
+        "exit": 1,
+        "stdout": "",
+        "stderr": "Traceback (most recent call last):\n  File \"/tmp/alt-retained-replay-2k4tgebu/independent/check.py\", line 4, in <module>\n    r=order({\"app\":[\"db\",\"web\"],\"web\":[\"db\"]});assert set(r)=={\"app\",\"db\",\"web\"} and r.index(\"db\")<r.index(\"web\")<r.index(\"app\")\n      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/tmp/alt-retained-replay-2k4tgebu/project/solution.py\", line 8, in order\n    for dep in dependencies[node]:\n               ~~~~~~~~~~~~^^^^^^\nTypeError: list indices must be integers or slices, not str\n"
+      },
+      "matches": true
+    },
+    {
+      "case": "heldout-toposort",
+      "repeat": 2,
+      "original_report_sha256": "7a11167d5b652cc20877a122ed82c5a1a8818230b49cf0ca2c3835447ffd53f7",
+      "original_behavior_passed": false,
+      "replay": {
+        "passed": false,
+        "completion_observed": false,
+        "exit": 1,
+        "stdout": "",
+        "stderr": "Traceback (most recent call last):\n  File \"/tmp/alt-retained-replay-sc4mb1un/independent/check.py\", line 4, in <module>\n    r=order({\"app\":[\"db\",\"web\"],\"web\":[\"db\"]});assert set(r)=={\"app\",\"db\",\"web\"} and r.index(\"db\")<r.index(\"web\")<r.index(\"app\")\n                                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError\n"
+      },
+      "matches": true
+    },
+    {
+      "case": "heldout-toposort",
+      "repeat": 3,
+      "original_report_sha256": "9375784622f8ce34f28080c7f0c1cb2f886a1265fc6718fb944370dfc5b5c2ed",
+      "original_behavior_passed": false,
+      "replay": {
+        "passed": false,
+        "completion_observed": false,
+        "exit": 1,
+        "stdout": "",
+        "stderr": "Traceback (most recent call last):\n  File \"/tmp/alt-retained-replay-16r5h3ow/independent/check.py\", line 4, in <module>\n    r=order({\"app\":[\"db\",\"web\"],\"web\":[\"db\"]});assert set(r)=={\"app\",\"db\",\"web\"} and r.index(\"db\")<r.index(\"web\")<r.index(\"app\")\n                                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError\n"
+      },
+      "matches": true
+    },
+    {
+      "case": "heldout-toposort",
+      "repeat": 4,
+      "original_report_sha256": "42af0107067b56c9933dd906395027e7732a958ac59dcf6dfedc503a3b4a9ca2",
+      "original_behavior_passed": false,
+      "replay": {
+        "passed": false,
+        "completion_observed": false,
+        "exit": 1,
+        "stdout": "",
+        "stderr": "Traceback (most recent call last):\n  File \"/tmp/alt-retained-replay-mq6r8r9j/independent/check.py\", line 4, in <module>\n    r=order({\"app\":[\"db\",\"web\"],\"web\":[\"db\"]});assert set(r)=={\"app\",\"db\",\"web\"} and r.index(\"db\")<r.index(\"web\")<r.index(\"app\")\n      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/tmp/alt-retained-replay-mq6r8r9j/project/solution.py\", line 16, in order\n    deps = {node: list(deps[node]) for node in nodes}\n                       ^^^^\nUnboundLocalError: cannot access local variable 'deps' where it is not associated with a value\n"
+      },
+      "matches": true
+    },
+    {
+      "case": "heldout-toposort",
+      "repeat": 5,
+      "original_report_sha256": "47a3b9dcad90c1c9ae989a6ced300a5879808ac2047e21fe86255e9e7e9423a3",
+      "original_behavior_passed": false,
+      "replay": {
+        "passed": false,
+        "completion_observed": false,
+        "exit": 1,
+        "stdout": "",
+        "stderr": "Traceback (most recent call last):\n  File \"/tmp/alt-retained-replay-t7j15xof/independent/check.py\", line 4, in <module>\n    r=order({\"app\":[\"db\",\"web\"],\"web\":[\"db\"]});assert set(r)=={\"app\",\"db\",\"web\"} and r.index(\"db\")<r.index(\"web\")<r.index(\"app\")\n                                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError\n"
+      },
+      "matches": true
+    },
+    {
+      "case": "python-cli",
+      "repeat": 1,
+      "original_report_sha256": "69e72f3f4f642b9cc904515f1873bf775fb2ad1edd76e402788977e9789d9895",
+      "original_behavior_passed": false,
+      "replay": {
+        "passed": false,
+        "completion_observed": false,
+        "exit": 1,
+        "stdout": "",
+        "stderr": "Traceback (most recent call last):\n  File \"/tmp/alt-retained-replay-fei4i9b2/independent/check.py\", line 5, in <module>\n    r=run(\"--name\",\"Cedar Tree\",\"--times\",\"2\");assert r.returncode==0 and r.stdout==\"Hello, Cedar Tree!\\n\"*2\n                                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError\n"
+      },
+      "matches": true
+    },
+    {
+      "case": "python-cli",
+      "repeat": 2,
+      "original_report_sha256": "22620219b14942fb5bc552cb86f5752cec18293015c7fb625cdd1d76393231b2",
+      "original_behavior_passed": false,
+      "replay": {
+        "passed": false,
+        "completion_observed": false,
+        "exit": 1,
+        "stdout": "",
+        "stderr": "Traceback (most recent call last):\n  File \"/tmp/alt-retained-replay-v1t17fdr/independent/check.py\", line 5, in <module>\n    r=run(\"--name\",\"Cedar Tree\",\"--times\",\"2\");assert r.returncode==0 and r.stdout==\"Hello, Cedar Tree!\\n\"*2\n                                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError\n"
+      },
+      "matches": true
+    },
+    {
+      "case": "python-cli",
+      "repeat": 3,
+      "original_report_sha256": "ee139fdb4ab1d3e5f6ac9280fa9c2962b4c294221ea5e8c5cb1cbe3bfbc31746",
+      "original_behavior_passed": false,
+      "replay": {
+        "passed": false,
+        "completion_observed": false,
+        "exit": 1,
+        "stdout": "",
+        "stderr": "Traceback (most recent call last):\n  File \"/tmp/alt-retained-replay-ht931zch/independent/check.py\", line 5, in <module>\n    r=run(\"--name\",\"Cedar Tree\",\"--times\",\"2\");assert r.returncode==0 and r.stdout==\"Hello, Cedar Tree!\\n\"*2\n                                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError\n"
+      },
+      "matches": true
+    },
+    {
+      "case": "python-cli",
+      "repeat": 4,
+      "original_report_sha256": "7541b7e3fdd23225b4e7d25a45d9d2d20c547a3f16f4a8e92f56cc5ae3260074",
+      "original_behavior_passed": false,
+      "replay": {
+        "passed": false,
+        "completion_observed": false,
+        "exit": 1,
+        "stdout": "",
+        "stderr": "Traceback (most recent call last):\n  File \"/tmp/alt-retained-replay-_mubae6q/independent/check.py\", line 5, in <module>\n    r=run(\"--name\",\"Cedar Tree\",\"--times\",\"2\");assert r.returncode==0 and r.stdout==\"Hello, Cedar Tree!\\n\"*2\n                                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError\n"
+      },
+      "matches": true
+    },
+    {
+      "case": "python-cli",
+      "repeat": 5,
+      "original_report_sha256": "dc95a6e6430e5201e29e2ce781262955fb939593387d34077cc719fa8605c89d",
+      "original_behavior_passed": false,
+      "replay": {
+        "passed": false,
+        "completion_observed": false,
+        "exit": 1,
+        "stdout": "",
+        "stderr": "Traceback (most recent call last):\n  File \"/tmp/alt-retained-replay-1dc6vl3f/independent/check.py\", line 5, in <module>\n    r=run(\"--name\",\"Cedar Tree\",\"--times\",\"2\");assert r.returncode==0 and r.stdout==\"Hello, Cedar Tree!\\n\"*2\n                                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError\n"
+      },
+      "matches": true
+    },
+    {
+      "case": "python-retry",
+      "repeat": 1,
+      "original_report_sha256": "f0a50bd9404863a0d4a0d00338bbb89956e4ab478a7b797a2b16f8bd371019ee",
+      "original_behavior_passed": false,
+      "replay": {
+        "passed": false,
+        "completion_observed": false,
+        "exit": 1,
+        "stdout": "",
+        "stderr": "Traceback (most recent call last):\n  File \"/tmp/alt-retained-replay-au4anfxf/independent/check.py\", line 16, in <module>\n    else:raise AssertionError()\n         ^^^^^^^^^^^^^^^^^^^^^^\nAssertionError\n"
+      },
+      "matches": true
+    },
+    {
+      "case": "python-retry",
+      "repeat": 2,
+      "original_report_sha256": "e6ca7aabf40d40ea8aa579d5a67ae35e128450eb446a17f4e944bc76be7c004b",
+      "original_behavior_passed": false,
+      "replay": {
+        "passed": false,
+        "completion_observed": false,
+        "exit": 1,
+        "stdout": "",
+        "stderr": "Traceback (most recent call last):\n  File \"/tmp/alt-retained-replay-942_o166/independent/check.py\", line 16, in <module>\n    else:raise AssertionError()\n         ^^^^^^^^^^^^^^^^^^^^^^\nAssertionError\n"
+      },
+      "matches": true
+    },
+    {
+      "case": "python-retry",
+      "repeat": 3,
+      "original_report_sha256": "14e04b98ebcae4351c6c3e7a4cddd24bc2631999ec8cb3107e78c44bb2993ec0",
+      "original_behavior_passed": false,
+      "replay": {
+        "passed": false,
+        "completion_observed": false,
+        "exit": 1,
+        "stdout": "",
+        "stderr": "Traceback (most recent call last):\n  File \"/tmp/alt-retained-replay-gp3su7s0/independent/check.py\", line 9, in <module>\n    assert retry(flaky,3)==42 and len(calls)==3\n           ^^^^^^^^^^^^^^\n  File \"/tmp/alt-retained-replay-gp3su7s0/project/solution.py\", line 4, in retry\n    return fn()\n           ^^^^\n  File \"/tmp/alt-retained-replay-gp3su7s0/independent/check.py\", line 7, in flaky\n    if len(calls)<3:raise OSError(\"temporary\")\n                    ^^^^^^^^^^^^^^^^^^^^^^^^^^\nOSError: temporary\n"
+      },
+      "matches": true
+    },
+    {
+      "case": "python-retry",
+      "repeat": 4,
+      "original_report_sha256": "1ef9926d0013a983487c353ff5bfd60d62fe6b7d77fa37a6339768ea8b3edd3c",
+      "original_behavior_passed": false,
+      "replay": {
+        "passed": false,
+        "completion_observed": false,
+        "exit": 1,
+        "stdout": "",
+        "stderr": "Traceback (most recent call last):\n  File \"/tmp/alt-retained-replay-z65z7p58/independent/check.py\", line 16, in <module>\n    else:raise AssertionError()\n         ^^^^^^^^^^^^^^^^^^^^^^\nAssertionError\n"
+      },
+      "matches": true
+    },
+    {
+      "case": "python-retry",
+      "repeat": 5,
+      "original_report_sha256": "f07cbcaa89fe591cc6db0b230b2e0648b7b176646ca1c20c1e98f2faec084150",
+      "original_behavior_passed": false,
+      "replay": {
+        "passed": false,
+        "completion_observed": false,
+        "exit": 1,
+        "stdout": "",
+        "stderr": "Traceback (most recent call last):\n  File \"/tmp/alt-retained-replay-u38m34m5/independent/check.py\", line 16, in <module>\n    else:raise AssertionError()\n         ^^^^^^^^^^^^^^^^^^^^^^\nAssertionError\n"
+      },
+      "matches": true
+    },
+    {
+      "case": "heldout-date",
+      "repeat": 1,
+      "original_report_sha256": "5ee1b08caa0e4054caef1b358b0a52cd06ad26bc929b9654e7ac7dfc78a92292",
+      "original_behavior_passed": false,
+      "replay": {
+        "passed": false,
+        "completion_observed": false,
+        "exit": 1,
+        "stdout": "",
+        "stderr": "Traceback (most recent call last):\n  File \"/tmp/alt-retained-replay-pc7c9wkd/independent/check.py\", line 8, in <module>\n    else:raise AssertionError()\n         ^^^^^^^^^^^^^^^^^^^^^^\nAssertionError\n"
+      },
+      "matches": true
+    },
+    {
+      "case": "heldout-date",
+      "repeat": 2,
+      "original_report_sha256": "5ca7c47bf6ac99f6b14f55e5f1c104ea087b2feb3a9fedd1bf507d9662efa72a",
+      "original_behavior_passed": false,
+      "replay": {
+        "passed": false,
+        "completion_observed": false,
+        "exit": 1,
+        "stdout": "",
+        "stderr": "Traceback (most recent call last):\n  File \"/tmp/alt-retained-replay-1hjrioec/independent/check.py\", line 4, in <module>\n    assert utc_timestamp(\"2024-01-01T01:00:00+01:00\")==1704067200\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError\n"
+      },
+      "matches": true
+    },
+    {
+      "case": "heldout-date",
+      "repeat": 3,
+      "original_report_sha256": "4a0ad39ddab42ddd5b0f2958964443e35ca08b28e2ea4fdf0ac038e4b3b9b2d6",
+      "original_behavior_passed": false,
+      "replay": {
+        "passed": false,
+        "completion_observed": false,
+        "exit": 1,
+        "stdout": "",
+        "stderr": "Traceback (most recent call last):\n  File \"/tmp/alt-retained-replay-23dwap9p/independent/check.py\", line 4, in <module>\n    assert utc_timestamp(\"2024-01-01T01:00:00+01:00\")==1704067200\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/tmp/alt-retained-replay-23dwap9p/project/solution.py\", line 5, in utc_timestamp\n    parsed = date.fromisoformat(text)\n             ^^^^\nNameError: name 'date' is not defined\n"
+      },
+      "matches": true
+    },
+    {
+      "case": "heldout-date",
+      "repeat": 4,
+      "original_report_sha256": "5df12ded97f5e8b9448f1cb63b8c494762fdf712becc0d1ca256bab886295ce6",
+      "original_behavior_passed": false,
+      "replay": {
+        "passed": false,
+        "completion_observed": false,
+        "exit": 1,
+        "stdout": "",
+        "stderr": "Traceback (most recent call last):\n  File \"/tmp/alt-retained-replay-87pu52tw/independent/check.py\", line 8, in <module>\n    else:raise AssertionError()\n         ^^^^^^^^^^^^^^^^^^^^^^\nAssertionError\n"
+      },
+      "matches": true
+    },
+    {
+      "case": "heldout-date",
+      "repeat": 5,
+      "original_report_sha256": "c5bc4a57c9f08043139edaff5b34a7d3048141ca37f44047c54a0d5ac72b8b5f",
+      "original_behavior_passed": true,
+      "replay": {
+        "passed": true,
+        "completion_observed": true,
+        "exit": 0,
+        "stdout": "ALT_ORACLE_COMPLETED_bebc6538807a43a6a449342c722bde79\n",
+        "stderr": ""
+      },
+      "matches": true
+    },
+    {
+      "case": "python-async",
+      "repeat": 1,
+      "original_report_sha256": "223b038811a4d15c40bd9f9ed318b2ce8a23abb06e9f9f3294df69e412caef0d",
+      "original_behavior_passed": false,
+      "replay": {
+        "passed": false,
+        "completion_observed": false,
+        "exit": 1,
+        "stdout": "",
+        "stderr": "Traceback (most recent call last):\n  File \"/tmp/alt-retained-replay-uju7urt7/independent/check.py\", line 14, in <module>\n    asyncio.run(main())\n  File \"/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/asyncio/runners.py\", line 195, in run\n    return runner.run(main)\n           ^^^^^^^^^^^^^^^^\n  File \"/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/asyncio/runners.py\", line 118, in run\n    return self._loop.run_until_complete(task)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/asyncio/base_events.py\", line 691, in run_until_complete\n    return future.result()\n           ^^^^^^^^^^^^^^^\n  File \"/tmp/alt-retained-replay-uju7urt7/independent/check.py\", line 11, in main\n    assert await gather_values([make(i) for i in range(4)],2)==[0,1,2,3]\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/tmp/alt-retained-replay-uju7urt7/project/solution.py\", line 9, in gather_values\n    results.sort(key=lambda r: list(r)[0])\n  File \"/tmp/alt-retained-replay-uju7urt7/project/solution.py\", line 9, in <lambda>\n    results.sort(key=lambda r: list(r)[0])\n                               ^^^^^^^\nTypeError: 'int' object is not iterable\n"
+      },
+      "matches": true
+    },
+    {
+      "case": "python-async",
+      "repeat": 2,
+      "original_report_sha256": "ea2edf913aae5f107190fdf067e042b5154ee63754c2390327779765d9e6f55d",
+      "original_behavior_passed": false,
+      "replay": {
+        "passed": false,
+        "completion_observed": false,
+        "exit": 1,
+        "stdout": "",
+        "stderr": "Traceback (most recent call last):\n  File \"/tmp/alt-retained-replay-dpqwn3dx/independent/check.py\", line 14, in <module>\n    asyncio.run(main())\n  File \"/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/asyncio/runners.py\", line 195, in run\n    return runner.run(main)\n           ^^^^^^^^^^^^^^^^\n  File \"/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/asyncio/runners.py\", line 118, in run\n    return self._loop.run_until_complete(task)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/asyncio/base_events.py\", line 691, in run_until_complete\n    return future.result()\n           ^^^^^^^^^^^^^^^\n  File \"/tmp/alt-retained-replay-dpqwn3dx/independent/check.py\", line 11, in main\n    assert await gather_values([make(i) for i in range(4)],2)==[0,1,2,3]\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/tmp/alt-retained-replay-dpqwn3dx/project/solution.py\", line 7, in gather_values\n    await _worker(index)\n  File \"/tmp/alt-retained-replay-dpqwn3dx/project/solution.py\", line 4, in _worker\n    results.append(functions[index](functions[index]))\n                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nTypeError: main.<locals>.make.<locals>.work() takes 0 positional arguments but 1 was given\n"
+      },
+      "matches": true
+    },
+    {
+      "case": "python-async",
+      "repeat": 3,
+      "original_report_sha256": "c39635f5b207d5bc0e328a51ad8c0664b3b6f9cb5058a448147d1546edea75e3",
+      "original_behavior_passed": false,
+      "replay": {
+        "passed": false,
+        "completion_observed": false,
+        "exit": 1,
+        "stdout": "",
+        "stderr": "/tmp/alt-retained-replay-hcdem843/independent/check.py:11: RuntimeWarning: coroutine 'gather_values.<locals>._call' was never awaited\n  assert await gather_values([make(i) for i in range(4)],2)==[0,1,2,3]\nRuntimeWarning: Enable tracemalloc to get the object allocation traceback\nTraceback (most recent call last):\n  File \"/tmp/alt-retained-replay-hcdem843/independent/check.py\", line 14, in <module>\n    asyncio.run(main())\n  File \"/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/asyncio/runners.py\", line 195, in run\n    return runner.run(main)\n           ^^^^^^^^^^^^^^^^\n  File \"/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/asyncio/runners.py\", line 118, in run\n    return self._loop.run_until_complete(task)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/asyncio/base_events.py\", line 691, in run_until_complete\n    return future.result()\n           ^^^^^^^^^^^^^^^\n  File \"/tmp/alt-retained-replay-hcdem843/independent/check.py\", line 11, in main\n    assert await gather_values([make(i) for i in range(4)],2)==[0,1,2,3]\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError\n"
+      },
+      "matches": true
+    },
+    {
+      "case": "python-async",
+      "repeat": 4,
+      "original_report_sha256": "3d799837805a96fbefa10fe7996e74efa47dbed693e32d57aa9e43037979f89b",
+      "original_behavior_passed": false,
+      "replay": {
+        "passed": false,
+        "completion_observed": false,
+        "exit": 1,
+        "stdout": "",
+        "stderr": "Traceback (most recent call last):\n  File \"/tmp/alt-retained-replay-uk705gcl/independent/check.py\", line 14, in <module>\n    asyncio.run(main())\n  File \"/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/asyncio/runners.py\", line 195, in run\n    return runner.run(main)\n           ^^^^^^^^^^^^^^^^\n  File \"/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/asyncio/runners.py\", line 118, in run\n    return self._loop.run_until_complete(task)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/asyncio/base_events.py\", line 691, in run_until_complete\n    return future.result()\n           ^^^^^^^^^^^^^^^\n  File \"/tmp/alt-retained-replay-uk705gcl/independent/check.py\", line 11, in main\n    assert await gather_values([make(i) for i in range(4)],2)==[0,1,2,3]\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/tmp/alt-retained-replay-uk705gcl/project/solution.py\", line 4, in gather_values\n    results = await asyncio.gather(*[func() for func in functions], return_exceptions=True)\n                    ^^^^^^^\nNameError: name 'asyncio' is not defined. Did you forget to import 'asyncio'?\n"
+      },
+      "matches": true
+    },
+    {
+      "case": "python-async",
+      "repeat": 5,
+      "original_report_sha256": "d428ef2129d596456ed358e0bd52edf5fdf25afdb34a12cd848256355f4417e4",
+      "original_behavior_passed": false,
+      "replay": {
+        "passed": false,
+        "completion_observed": false,
+        "exit": 1,
+        "stdout": "",
+        "stderr": "Traceback (most recent call last):\n  File \"/tmp/alt-retained-replay-m2ydlcvg/independent/check.py\", line 14, in <module>\n    asyncio.run(main())\n  File \"/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/asyncio/runners.py\", line 195, in run\n    return runner.run(main)\n           ^^^^^^^^^^^^^^^^\n  File \"/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/asyncio/runners.py\", line 118, in run\n    return self._loop.run_until_complete(task)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/asyncio/base_events.py\", line 691, in run_until_complete\n    return future.result()\n           ^^^^^^^^^^^^^^^\n  File \"/tmp/alt-retained-replay-m2ydlcvg/independent/check.py\", line 11, in main\n    assert await gather_values([make(i) for i in range(4)],2)==[0,1,2,3]\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/tmp/alt-retained-replay-m2ydlcvg/project/solution.py\", line 2, in gather_values\n    return [value for _group, _values in _iterate(functions, limit) for _group, _values in zip(_group, _values) if _group]\n                                         ^^^^^^^^\nNameError: name '_iterate' is not defined\n"
+      },
+      "matches": true
+    },
+    {
+      "case": "python-config",
+      "repeat": 1,
+      "original_report_sha256": "00f71c8bdcf993db410f6e992b4ec85fcbc478979ae32e9c46d602d843ab42e3",
+      "original_behavior_passed": false,
+      "replay": {
+        "passed": false,
+        "completion_observed": false,
+        "exit": 1,
+        "stdout": "",
+        "stderr": "Traceback (most recent call last):\n  File \"/tmp/alt-retained-replay-l7bjxw5b/independent/check.py\", line 8, in <module>\n    p.write_text(json.dumps(v));assert load(p)==expect\n                                       ^^^^^^^^^^^^^^^\nAssertionError\n"
+      },
+      "matches": true
+    },
+    {
+      "case": "python-config",
+      "repeat": 2,
+      "original_report_sha256": "43fa3a93f4d2bbe57d6b3d7d8316061e5c2a57ae78935a1c6a3c9e6bfca0aef0",
+      "original_behavior_passed": false,
+      "replay": {
+        "passed": false,
+        "completion_observed": false,
+        "exit": 1,
+        "stdout": "",
+        "stderr": "Traceback (most recent call last):\n  File \"/tmp/alt-retained-replay-k9wzxgvc/independent/check.py\", line 3, in <module>\n    from solution import load\n  File \"/tmp/alt-retained-replay-k9wzxgvc/project/solution.py\", line 3\n    host = config.get(\"host\", \"localhost\")\nIndentationError: unexpected indent\n"
+      },
+      "matches": true
+    },
+    {
+      "case": "python-config",
+      "repeat": 3,
+      "original_report_sha256": "f4b37cfa287266b9302e6533ffaeae2282738b5f2d06011ee4d894b4e5bc7d99",
+      "original_behavior_passed": false,
+      "replay": {
+        "passed": false,
+        "completion_observed": false,
+        "exit": 1,
+        "stdout": "",
+        "stderr": "Traceback (most recent call last):\n  File \"/tmp/alt-retained-replay-q_0mq4ix/independent/check.py\", line 8, in <module>\n    p.write_text(json.dumps(v));assert load(p)==expect\n                                       ^^^^^^^\n  File \"/tmp/alt-retained-replay-q_0mq4ix/project/solution.py\", line 15, in load\n    raise ValueError(\"port must be an integer between 1 and 65535\")\nValueError: port must be an integer between 1 and 65535\n"
+      },
+      "matches": true
+    },
+    {
+      "case": "python-config",
+      "repeat": 4,
+      "original_report_sha256": "941a6452039083dfe3b5a290393941462a958ce7ce2a3ae32701e7d294c0f527",
+      "original_behavior_passed": false,
+      "replay": {
+        "passed": false,
+        "completion_observed": false,
+        "exit": 1,
+        "stdout": "",
+        "stderr": "Traceback (most recent call last):\n  File \"/tmp/alt-retained-replay-1cpth54_/independent/check.py\", line 13, in <module>\n    else:raise AssertionError(v)\n         ^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError: {'port': True}\n"
+      },
+      "matches": true
+    },
+    {
+      "case": "python-config",
+      "repeat": 5,
+      "original_report_sha256": "a0559fc7e6f1a711ef7cee9045140ccb9fb42832a6c705159975635ea289f4d9",
+      "original_behavior_passed": false,
+      "replay": {
+        "passed": false,
+        "completion_observed": false,
+        "exit": 1,
+        "stdout": "",
+        "stderr": "Traceback (most recent call last):\n  File \"/tmp/alt-retained-replay-xbvsazg2/independent/check.py\", line 8, in <module>\n    p.write_text(json.dumps(v));assert load(p)==expect\n                                       ^^^^^^^\n  File \"/tmp/alt-retained-replay-xbvsazg2/project/solution.py\", line 3, in load\n    config = json.load(f)\n             ^^^^\nNameError: name 'json' is not defined. Did you forget to import 'json'?\n"
+      },
+      "matches": true
+    }
+  ],
+  "scope": "Post-collection replay of all retained final sources using exact retained independent oracle bytes, fresh temporary project folders and this cloud host. No inference, model retries or changes to original campaign scores. This checks collection/result consistency, not new model attempts or adversarial isolation."
+}

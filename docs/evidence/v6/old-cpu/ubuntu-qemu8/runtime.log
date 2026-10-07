@@ -1,0 +1,18 @@
+0.00.114.516 I srv  llama_server: initializing ...
+0.00.116.602 I cmn  common_param: common_params_print_info: verbosity = 3 (adjust with the `-lv N` CLI arg)
+0.00.131.060 W srv  llama_server: security: no API key is set and CORS allows all origins (see https://github.com/ggml-org/llama.cpp/pull/25655)
+0.00.141.229 I srv    load_model: loading model '/model.gguf'
+0.04.997.002 I cmn          init: llama threadpool init, n_threads = 2
+0.19.363.420 I srv    load_model: initializing, n_slots = 1, n_ctx_slot = 512, kv_unified = 'false'
+0.19.543.117 W srv          init: chat template supports preserving reasoning, it is enabled by default (may use more tokens, disable via --no-reasoning-preserve)
+0.19.544.669 I srv  llama_server: model loaded
+0.19.544.799 I srv  llama_server: listening on http://127.0.0.1:18819
+0.19.569.030 I slot get_availabl: id  0 | task -1 | selected slot by LRU, t_last = -1
+0.19.569.981 I slot launch_slot_: id  0 | task 0 | processing task, is_child = 0
+0.22.829.653 I slot print_timing: id  0 | task 0 | prompt processing, n_tokens =      1, progress = 0.20, t =   3.26 s / 0.31 tokens per second
+1.04.288.474 I slot print_timing: id  0 | task 0 | prompt eval time =   16352.18 ms /     5 tokens ( 3270.44 ms per token,     0.31 tokens per second)
+1.04.288.535 I slot print_timing: id  0 | task 0 |        eval time =   28364.88 ms /     8 tokens ( 4052.13 ms per token,     0.25 tokens per second)
+1.04.288.574 I slot print_timing: id  0 | task 0 |       total time =   44717.06 ms /    13 tokens
+1.04.288.715 I slot print_timing: id  0 | task 0 |    graphs reused =          7
+1.04.290.471 I slot      release: id  0 | task 0 | stop processing: n_tokens = 12, truncated = 0
+1.04.300.256 I srv    operator(): operator(): cleaning up before exit...

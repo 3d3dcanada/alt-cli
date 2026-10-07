@@ -1,0 +1,30 @@
+{
+  "schema": 1,
+  "checks": [
+    {
+      "model": "spark",
+      "case": "heldout-date",
+      "repeat": 5,
+      "report_sha256": "c5bc4a57c9f08043139edaff5b34a7d3048141ca37f44047c54a0d5ac72b8b5f",
+      "original_frozen_oracle_passed": true,
+      "supplemental_script": "from solution import utc_day\nactual=utc_day('2026-01-01T00:00:00.500Z')\nprint(repr(actual))\nassert actual=='2026-01-01'\n",
+      "exit": 1,
+      "passed": false,
+      "stdout": "",
+      "stderr": "Traceback (most recent call last):\n  File \"<string>\", line 1, in <module>\nImportError: cannot import name 'utc_day' from 'solution' (/tmp/alt-supplemental-l1x54c37/solution.py)\n"
+    },
+    {
+      "model": "qwen",
+      "case": "heldout-toposort",
+      "repeat": 3,
+      "report_sha256": "0fba65abbb837f646cea3e976495d2d21e2a86ca0159110ddc11cde3c61d4dbb",
+      "original_frozen_oracle_passed": true,
+      "supplemental_script": "from solution import order\nactual=order({'db':[]})\nprint(repr(actual))\nassert actual==['db']\n",
+      "exit": 1,
+      "passed": false,
+      "stdout": "[]\n",
+      "stderr": "Traceback (most recent call last):\n  File \"<string>\", line 4, in <module>\nAssertionError\n"
+    }
+  ],
+  "scope": "Invalid draft: the Spark supplemental check used utc_day, which is not the declared utc_timestamp API. Its import failure is not a model counterexample. Replaced by the correctly named API check in supplemental-counterexamples.json."
+}
