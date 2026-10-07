@@ -1,5 +1,12 @@
 # alt-cli research
 
+**Implementation handoff, October 7, 2026:** the
+[unified plan](../SMALL_MODEL_IMPLEMENTATION_PLAN.md) maps both research passes
+into 14 sequenced work orders, including **7B and 9B Q4** deployment. The
+[training handoff](../../training/README.md) supplies corpus validation, native
+assistant-target encoding, explicit checkpoint templates and an optional QLoRA
+starter. Runtime improvements and GPU training remain unperformed.
+
 **Reasoning follow-up, October 7, 2026:** [Strengthening reasoning in small local
 models](2026-10-07-small-model-reasoning.md), with
 [eight proposed reasoning work orders](2026-10-07-reasoning-experiments.md) and a

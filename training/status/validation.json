@@ -1,0 +1,67 @@
+{
+  "schema_version": 1,
+  "recorded_at_utc": "2026-10-07T04:46:07.954909+00:00",
+  "scope": "Unified implementation plan and offline training handoff; runtime features are planned",
+  "checks": [
+    {
+      "command": "python3 -m unittest discover -s training/tests -v",
+      "passed": true,
+      "tests": 37,
+      "model_weights_loaded": false
+    },
+    {
+      "command": "python3 -m py_compile training/*.py training/tests/*.py",
+      "passed": true
+    },
+    {
+      "command": "cargo test --locked",
+      "passed": true,
+      "tests": 93
+    },
+    {
+      "command": "cargo fmt --all --check",
+      "passed": true
+    },
+    {
+      "command": "cargo clippy --locked --all-targets -- -D warnings",
+      "passed": true
+    },
+    {
+      "command": "git diff --check",
+      "passed": true
+    },
+    {
+      "check": "7B abliterated native tokenizer fixture",
+      "passed": true,
+      "receipt": "tokenizer-qualification.json",
+      "inference_run": false
+    },
+    {
+      "check": "changed-document relative links and training JSON parsing",
+      "passed": true,
+      "relative_links_checked": 104
+    },
+    {
+      "check": "explicit coverage of SM-01\u201312 and RE-01\u201308",
+      "passed": true
+    }
+  ],
+  "training_run_performed": false,
+  "production_training_records_created": 0,
+  "new_model_weights_downloaded": false,
+  "unperformed": [
+    "CUDA allocation/backpropagation/optimizer step",
+    "Architecture-specific MiMo 9B training stack",
+    "Adapter merge and Q4 conversion",
+    "Before/after trained-model behavioral evaluation",
+    "Physical GTX 1070 7B/9B inference fit and performance"
+  ],
+  "handoff_source_files": {
+    "training/features.py": "f338eb0946b5414dff7cd4e1b62479f0c4b38cd05b555daacac0a9e0c275394f",
+    "training/preflight.py": "5e528e8ecb1f97c063e9facd7f947351d7fe8a662e414e84613145f343e16710",
+    "training/prepare.py": "9f6ff3c43d72a5c311f065eeb6042a1e17f0600c3eef461144539bafd52962fc",
+    "training/qualify_tokenizer.py": "71312eae67bfa5875b37b5d212b4a1b521af35f35a4a58aebdd11bb3db4af39c",
+    "training/train_sft.py": "d3d01335c30b0130a2d05638b56032b45fa9420cee87b1d91a99ad4ac7038efd"
+  },
+  "note": "Source/API inspection, deterministic fixtures and a tokenizer-only check do not establish successful GPU training or stronger reasoning."
+}

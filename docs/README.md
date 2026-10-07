@@ -13,6 +13,9 @@
 
 ## Developing and evaluating
 
+- [Small-model implementation plan](SMALL_MODEL_IMPLEMENTATION_PLAN.md): combined
+  harness/reasoning work orders and 7B/9B Q4 qualification.
+- [Training handoff](../training/README.md): reviewed data, SFT starter and export gates.
 - [Contributing](../CONTRIBUTING.md) and [architecture](ARCHITECTURE.md).
 - [Cloud setup](CLOUD_SETUP.md) for the prepared `/workspace` environment.
 - [Implementation and validation](IMPLEMENTATION.md), with [0.5 evidence](evidence/v5/README.md).
