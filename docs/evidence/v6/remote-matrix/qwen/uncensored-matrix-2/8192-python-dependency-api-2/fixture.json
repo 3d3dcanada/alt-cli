@@ -1,0 +1,18 @@
+{
+  "oracle_version": 4,
+  "goal": "Repair solution.py adapter compute(values) to use bundled vendor.math.total(values, strict=True), return its result, and preserve exceptions. The former add() function no longer exists; do not duplicate vendor logic.",
+  "prompt": "Repair solution.py adapter compute(values) to use bundled vendor.math.total(values, strict=True), return its result, and preserve exceptions. The former add() function no longer exists; do not duplicate vendor logic. Inspect relevant files, save a brief plan, use native tools to implement the change, and test it. Report what you actually ran and any remaining uncertainty. Preserve existing public interfaces. Keep your explanation brief.",
+  "original_files": {
+    "solution.py": "from vendor.math import add\ndef compute(values):return add(values)\n",
+    "vendor/__init__.py": "",
+    "vendor/math.py": "def total(values,strict=False):\n if strict and any(type(v)!=int for v in values):raise ValueError(\"integers required\")\n return sum(values)\n"
+  },
+  "oracle_command": [
+    "python3",
+    "/home/runner/work/_temp/campaign/8192-python-dependency-api-2/independent/check.py"
+  ],
+  "oracle_sha256_before": {
+    "completion.json": "cd2dfa9ca4601fa4c4cafe9b7e580de8640705ee4f83fdbb7e3f38df3ff90ee4",
+    "check.py": "40531d523196b8bfeae3d88f48bdf15b133ca143d3f410b31f300dd527d57a3e"
+  }
+}
