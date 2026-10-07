@@ -311,23 +311,23 @@ impl App {
                     self.new_conversation()?;
                 }
             }
-            1 => self.open_browser(BrowserKind::Project, self.preferences.project.clone())?,
-            2 => {
+            2 => self.open_browser(BrowserKind::Project, self.preferences.project.clone())?,
+            4 => {
                 self.set_page(Page::Connections);
                 if self.config.profiles.is_empty() {
                     self.connection_wizard();
                 }
             }
-            3 => self.action("templates")?,
-            4 => {
+            5 => self.action("templates")?,
+            6 => {
                 if self.engine_ready() {
                     self.notify("The agent engine is installed. You can start a conversation.");
                 } else {
                     self.install_dialog(Component::Engine);
                 }
             }
-            5 => self.edit_brief(),
-            6 => {
+            7 => self.edit_brief(),
+            1 => {
                 if self
                     .preferences
                     .project
@@ -339,7 +339,7 @@ impl App {
                     self.new_practice()?;
                 }
             }
-            7 => self.task_action("task-configure")?,
+            3 => self.task_action("task-configure")?,
             _ => {}
         }
         Ok(())

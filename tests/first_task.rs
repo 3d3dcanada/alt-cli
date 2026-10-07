@@ -5,8 +5,47 @@ use alt_cli::{
 };
 use std::{
     fs,
+    process::Command,
     sync::{Arc, atomic::AtomicBool},
 };
+
+#[test]
+fn missing_practice_interpreter_keeps_actionable_error_and_failed_evidence() {
+    let data = tempfile::tempdir().unwrap();
+    let lesson = practice::create(data.path()).unwrap();
+    let invoke = || {
+        let mut command = Command::new(env!("CARGO_BIN_EXE_alt"));
+        command
+            .args([
+                "--data-dir",
+                data.path().to_str().unwrap(),
+                "--access",
+                "trusted",
+            ])
+            .current_dir(&lesson.project);
+        command
+    };
+    let failed = invoke()
+        .args(["task", "check", "Practice behavior"])
+        .env("PATH", data.path().join("unavailable-tools"))
+        .output()
+        .unwrap();
+    assert!(!failed.status.success());
+    let export = invoke().args(["task", "export"]).output().unwrap();
+    assert!(export.status.success());
+    let exported: serde_json::Value = serde_json::from_slice(&export.stdout).unwrap();
+    let check = exported["checks"].as_array().unwrap().last().unwrap();
+    let error = check["error"].as_str().unwrap();
+    assert!(error.contains("Cannot start python3"), "{error}");
+    assert!(error.contains("Install its tools/dependencies"), "{error}");
+    assert!(error.contains("Structured evidence incomplete"), "{error}");
+    assert!(check["exit_code"].is_null());
+    assert!(check["structured"].is_null());
+    let status = invoke().args(["task", "verify"]).output().unwrap();
+    let status: serde_json::Value = serde_json::from_slice(&status.stdout).unwrap();
+    assert_eq!(status["behavioral_acceptance"], false);
+    assert_eq!(status["complete"], false);
+}
 
 #[tokio::test]
 async fn practice_repair_verification_restart_undo_and_new_lesson() {
@@ -202,6 +241,8 @@ fn retrieval_finds_named_files_and_important_terms_after_conversational_filler()
     let mut p = Project::open(data.path(), cwd.path()).unwrap();
     let named = p.search("Please inspect settings.py for me").unwrap();
     assert_eq!(named[0]["path"], "nested/settings.py");
+    let sentence = p.search("Please inspect settings.py.").unwrap();
+    assert_eq!(sentence[0]["path"], "nested/settings.py");
     let long = p
         .search("I want you to help me with this please so we can do the cedar_cache_ttl repair")
         .unwrap();
@@ -209,4 +250,31 @@ fn retrieval_finds_named_files_and_important_terms_after_conversational_filler()
     p.start_task("unicode", "Inspect Unicode query").unwrap();
     let memory = p.memory("unicode", &"設定 ".repeat(500), 4096).unwrap();
     assert!(!memory.contains("Search needs 1–1,000 bytes"));
+}
+
+#[test]
+fn retrieved_code_keeps_identifiers_and_original_brackets() {
+    let data = tempfile::tempdir().unwrap();
+    let cwd = tempfile::tempdir().unwrap();
+    for (name, source) in [
+        (
+            "settings.py",
+            "def cedar_inventory_port():\n    return [4317, 4629]\n",
+        ),
+        ("values.txt", "cedar_inventory_port = [4317, 4629]\n"),
+    ] {
+        fs::write(cwd.path().join(name), source).unwrap();
+    }
+    let mut p = Project::open(data.path(), cwd.path()).unwrap();
+    let hits = p.search("cedar inventory port").unwrap();
+    assert_eq!(hits.len(), 2);
+    for hit in hits {
+        let excerpt = hit["excerpt"].as_str().unwrap();
+        assert!(excerpt.contains("cedar_inventory_port"), "{excerpt}");
+        assert!(excerpt.contains("[4317, 4629]"), "{excerpt}");
+    }
+    p.start_task("recall", "Find the inventory port").unwrap();
+    let memory = p.memory("recall", "cedar inventory port", 8192).unwrap();
+    assert!(memory.contains("cedar_inventory_port"));
+    assert!(!memory.contains("[cedar]_[inventory]_[port]"));
 }

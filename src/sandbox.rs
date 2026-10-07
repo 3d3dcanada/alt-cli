@@ -469,7 +469,13 @@ pub async fn run(
                     )?;
                 }
                 Err(e) => {
-                    result.error = Some(format!("Structured evidence incomplete: {e:#}"));
+                    let evidence_error = format!("Structured evidence incomplete: {e:#}");
+                    // A missing report can be a consequence of failing to start
+                    // the runner. Keep the original, actionable cause visible.
+                    result.error = Some(match result.error.take() {
+                        Some(cause) => format!("{cause}\n{evidence_error}"),
+                        None => evidence_error,
+                    });
                 }
             }
         }

@@ -393,8 +393,16 @@ fn home(frame: &mut Frame, app: &mut App, area: Rect) {
             "Tell the assistant what you want to accomplish.",
         ),
         (
+            "Try a practice project",
+            "Learn repair, real checks and undo in a fresh example folder.",
+        ),
+        (
             "Choose a project folder",
             "Pick the files Alt should work with.",
+        ),
+        (
+            "Prepare project checks",
+            "Choose how to test changes before asking your model to work.",
         ),
         (
             "Choose a connection",
@@ -415,14 +423,6 @@ fn home(frame: &mut Frame, app: &mut App, area: Rect) {
         (
             "Keep a project brief",
             "Save goals, decisions, and next steps for future messages.",
-        ),
-        (
-            "Try a practice project",
-            "Learn repair, real checks and undo in a fresh example folder.",
-        ),
-        (
-            "Prepare project checks",
-            "Choose how to test changes before asking your model to work.",
         ),
     ];
     let (choices, guidance) = if parts[1].height >= 22 {
