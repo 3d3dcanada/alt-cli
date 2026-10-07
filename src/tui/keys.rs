@@ -374,6 +374,7 @@ impl App {
             "send" => self.send_prompt()?,
             "stop" => self.stop_turn()?,
             "reconnect" => self.start_workspace(self.session.clone())?,
+            "allowance" => self.manager_action("inference-live", serde_json::json!({}))?,
             "brief" => self.edit_brief(),
             "project" => {
                 self.open_browser(BrowserKind::Project, self.preferences.project.clone())?

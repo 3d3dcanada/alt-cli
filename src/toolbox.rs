@@ -371,7 +371,7 @@ async fn serve_connection(stream: UnixStream, s: &Service) -> Result<()> {
                     v["text"].as_str().unwrap_or("")
                 ),
                 "run_check" | "terminal" => format!(
-                    "Evidence ID: {}\nExit code: {} · timeout: {} · cancelled: {}\n{}\n{}\n{}{}",
+                    "Evidence ID: {}\nExit code: {} · timeout: {} · cancelled: {}\n{}\n{}\n{}{}{}",
                     v["id"].as_str().unwrap_or(""),
                     v["exit_code"],
                     v["timed_out"],
@@ -392,6 +392,21 @@ async fn serve_connection(stream: UnixStream, s: &Service) -> Result<()> {
                         "\nChecks run on disposable project copies. Traceback paths under /tmp refer to that completed snapshot, not the working project. Use project-relative read/edit paths; preserve raw traceback evidence."
                     } else {
                         ""
+                    },
+                    if request.name == "run_check" {
+                        format!(
+                            "\nObserved failed cases: {}\n{}",
+                            v["workflow"]["facts"]["recovery"]["failed_cases"],
+                            v["current_reads"]
+                                .as_array()
+                                .into_iter()
+                                .flatten()
+                                .map(crate::compact_context::read_packet)
+                                .collect::<Vec<_>>()
+                                .join("\n")
+                        )
+                    } else {
+                        String::new()
                     }
                 ),
                 _ => serde_json::to_string(&v)?,
@@ -586,7 +601,9 @@ async fn execute(
         r.name,
         s.tool_profile.label()
     );
-    Project::open(&s.data, &s.cwd)?.attempt(&c.task, signature, None)?;
+    if s.policy != Policy::Trusted {
+        Project::open(&s.data, &s.cwd)?.attempt(&c.task, signature, None)?;
+    }
     match r.name.as_str() {
         "extension" => {
             ensure!(
@@ -857,9 +874,10 @@ async fn execute(
             )
             .await?;
             let mut value = serde_json::to_value(&result)?;
-            value["workflow"] = crate::workflow::packet(&Project::open(&s.data, &s.cwd)?, &c.task)?;
+            let p = Project::open(&s.data, &s.cwd)?;
+            value["workflow"] = crate::workflow::packet(&p, &c.task)?;
             if result.exit_code != Some(0) || result.error.is_some() {
-                let changes = Project::open(&s.data, &s.cwd)?.task(&c.task)?.changes;
+                let changes = p.task(&c.task)?.changes;
                 value["next_action"] = json!(if changes == 0 && s.tool_profile.is_compact() {
                     "No tracked edit has been applied. Use the enabled editor as a native tool call with a current read handle and actual replacement source, then rerun this check."
                 } else if changes == 0 {
@@ -867,6 +885,36 @@ async fn execute(
                 } else {
                     "Inspect the actual failed output and current files; adjust the implementation before repeating this check."
                 });
+                let mut targets = crate::workflow::diagnostic_locations(&p, &result)?
+                    .into_iter()
+                    .filter_map(|v| {
+                        Some((v["path"].as_str()?.to_owned(), v["line"].as_u64()? as usize))
+                    })
+                    .collect::<Vec<_>>();
+                for change in p
+                    .changes(Some(&c.task))?
+                    .into_iter()
+                    .filter(|change| change.status == "applied")
+                {
+                    if !targets.iter().any(|(path, _)| *path == change.path) {
+                        targets.push((change.path, 1));
+                    }
+                    if targets.len() >= 2 {
+                        break;
+                    }
+                }
+                let mut reads = Vec::new();
+                let mut chars = 0;
+                for (path, line) in targets.into_iter().take(2) {
+                    if let Ok(read) = p.read(&c.task, &path, line.saturating_sub(3).max(1), 12) {
+                        let text = crate::compact_context::read_packet(&read);
+                        if chars + text.chars().count() <= 5000 {
+                            chars += text.chars().count();
+                            reads.push(read);
+                        }
+                    }
+                }
+                value["current_reads"] = json!(reads);
             }
             Ok(value)
         }

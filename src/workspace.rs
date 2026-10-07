@@ -30,6 +30,10 @@ pub enum Command {
         allow: bool,
     },
     Cancel,
+    AddAllowance {
+        requests: u32,
+        tokens: u32,
+    },
     Shutdown,
 }
 
@@ -40,6 +44,7 @@ pub enum Update {
     Done(Value),
     Error(String),
     Progress(Progress),
+    Inference(crate::inference::Status),
     Closed,
 }
 
@@ -183,8 +188,18 @@ async fn worker(
     let mut response: Option<Response> = None;
     let mut deadline = tokio::time::Instant::now() + Duration::from_secs(1200);
     let mut cancelling = false;
+    let mut heartbeat = tokio::time::interval(Duration::from_millis(200));
+    heartbeat.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Skip);
+    let mut last_inference = None;
     loop {
         tokio::select! {
+            _=heartbeat.tick()=>{
+                if let Some(status)=engine.inference_status() && Some(&status)!=last_inference.as_ref() {
+                    store.append(&session.id,&json!({"type":"inference_status","data":status}))?;
+                    updates.send(Update::Inference(status.clone())).await?;
+                    last_inference=Some(status);
+                }
+            },
             result=async {response.as_mut().expect("guarded response").await},if response.is_some()=>{
                 // Flush notifications queued before the response.
                 while let Some(event)=engine.try_event() {
@@ -224,6 +239,17 @@ async fn worker(
                 Some(Command::Cancel) if response.is_some()=>{
                     engine.cancel(&session.engine_id).await?;cancelling=true;
                     deadline=tokio::time::Instant::now()+Duration::from_secs(5);
+                },
+                Some(Command::AddAllowance{requests,tokens}) if response.is_none()=>{
+                    match engine.add_allowance(requests,tokens) {
+                        Ok(status)=>{
+                            store.append(&session.id,&json!({"type":"allowance_added","requests":requests,"generated_tokens":tokens,"data":status}))?;
+                            updates.send(Update::Inference(status.clone())).await?;
+                            last_inference=Some(status);
+                            updates.send(Update::Progress(Progress{stage:"Allowance added. Send a message to continue the saved task.".into(),..Progress::default()})).await?;
+                        },
+                        Err(error)=>{updates.send(Update::Error(error.to_string())).await?;},
+                    }
                 },
                 Some(Command::Shutdown)|None=>break,
                 _=>{},

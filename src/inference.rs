@@ -159,6 +159,69 @@ pub struct Relay {
     pub endpoint: String,
     listener: JoinHandle<()>,
     pub evidence: PathBuf,
+    live: Live,
+}
+#[derive(Clone)]
+struct Live {
+    budget: std::sync::Arc<tokio::sync::Mutex<(u32, u32)>>,
+    status: tokio::sync::watch::Sender<Status>,
+}
+
+/// Observed relay activity. Waiting includes server queueing and prompt processing;
+/// it must not be presented as measured reasoning or GPU utilization.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum Stage {
+    Ready,
+    MeasuringInput,
+    WaitingForOutput,
+    ReceivingOutput,
+    AllowanceExhausted,
+    InputTooLarge,
+    Interrupted,
+}
+impl Stage {
+    pub fn label(self) -> &'static str {
+        match self {
+            Self::Ready => "Ready for a model request",
+            Self::MeasuringInput => "Measuring full prompt and tools",
+            Self::WaitingForOutput => "Waiting for model output (queue or prompt processing)",
+            Self::ReceivingOutput => "Receiving model output",
+            Self::AllowanceExhausted => "Model allowance exhausted",
+            Self::InputTooLarge => "Prompt exceeds the input reserve",
+            Self::Interrupted => "Model request interrupted",
+        }
+    }
+}
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct Status {
+    pub connection_id: String,
+    pub stage: Stage,
+    pub requests_issued: u64,
+    pub remaining_requests: Option<u32>,
+    pub remaining_generated_tokens: Option<u32>,
+    pub input_tokens: Option<u64>,
+    pub input_allowance: u32,
+    pub output_allowance: u32,
+    pub action_headroom: u32,
+    pub reasoning_allowance: Option<u32>,
+}
+impl Status {
+    fn new(p: &Profile) -> Self {
+        let s = p.effective_inference();
+        Self {
+            connection_id: uuid::Uuid::new_v4().to_string(),
+            stage: Stage::Ready,
+            requests_issued: 0,
+            remaining_requests: s.max_requests,
+            remaining_generated_tokens: s.total_generated_tokens,
+            input_tokens: None,
+            input_allowance: p.context_tokens - s.output_tokens,
+            output_allowance: s.output_tokens,
+            action_headroom: s.action_headroom,
+            reasoning_allowance: s.reasoning_tokens,
+        }
+    }
 }
 impl Relay {
     pub async fn start(root: &Path, p: &Profile) -> Result<Self> {
@@ -182,6 +245,9 @@ impl Relay {
             settings.total_generated_tokens.unwrap_or(u32::MAX),
             settings.max_requests.unwrap_or(u32::MAX),
         )));
+        let (status, _) = tokio::sync::watch::channel(Status::new(p));
+        let live = Live { budget, status };
+        let service = live.clone();
         let client = reqwest::Client::builder()
             .redirect(reqwest::redirect::Policy::none())
             .connect_timeout(Duration::from_secs(15))
@@ -191,8 +257,9 @@ impl Relay {
             loop {
                 tokio::select! {
                     accepted=socket.accept()=>match accepted {
-                        Ok((stream,_))=> {let p=profile.clone();let key=key.clone();let secret=secret.clone();let evidence=directory.clone();let client=client.clone();let budget=budget.clone();children.spawn(async move {
-                            if let Err(e)=serve(stream,&p,key.as_deref(),&secret,&evidence,&client,&budget).await {
+                        Ok((stream,_))=> {let p=profile.clone();let key=key.clone();let secret=secret.clone();let evidence=directory.clone();let client=client.clone();let live=service.clone();children.spawn(async move {
+                            if let Err(e)=serve(stream,&p,key.as_deref(),&secret,&evidence,&client,&live).await {
+                                live.status.send_modify(|s| s.stage=Stage::Interrupted);
                                 let _=crate::config::atomic_write(&evidence.join(format!("error-{}.json",uuid::Uuid::new_v4())),&serde_json::to_vec(&json!({"error":e.to_string()})).unwrap_or_default());
                             }
                         });}, Err(_)=>break
@@ -205,7 +272,51 @@ impl Relay {
             endpoint,
             listener,
             evidence,
+            live,
         })
+    }
+    pub fn status(&self) -> Status {
+        self.live.status.borrow().clone()
+    }
+    /// Adds only a finite, explicitly requested allowance. Existing costs remain
+    /// charged; configuration and model identity are unchanged.
+    pub fn add_allowance(&self, requests: u32, tokens: u32) -> Result<Status> {
+        ensure!(
+            requests > 0 && tokens > 0,
+            "Add a positive request and token allowance"
+        );
+        let mut budget = self.live.budget.try_lock().context(
+            "A model request is still finishing. Wait or reconnect before adding allowance",
+        )?;
+        let current = self.status();
+        ensure!(
+            current.remaining_requests.is_some() && current.remaining_generated_tokens.is_some(),
+            "This connection has no finite shared allowance to extend. Configure both limits in Model effort for the next connection"
+        );
+        let next_tokens = budget
+            .0
+            .checked_add(tokens)
+            .context("Token allowance is too large")?;
+        let next_requests = budget
+            .1
+            .checked_add(requests)
+            .context("Request allowance is too large")?;
+        let grant = json!({"schema":1,"requests_added":requests,"generated_tokens_added":tokens,"requests_issued":current.requests_issued,"remaining_requests_before":budget.1,"remaining_generated_tokens_before":budget.0,"model_unchanged":true,"scope":"Explicit user addition to this connection; no spent cost refunded and no model request issued"});
+        crate::config::atomic_write(
+            &self
+                .evidence
+                .join(format!("grant-{}.json", uuid::Uuid::new_v4())),
+            &serde_json::to_vec_pretty(&grant)?,
+        )?;
+        *budget = (next_tokens, next_requests);
+        self.live.status.send_modify(|s| {
+            s.remaining_requests = Some(next_requests);
+            s.remaining_generated_tokens = Some(next_tokens);
+            if s.stage == Stage::AllowanceExhausted {
+                s.stage = Stage::Ready;
+            }
+        });
+        Ok(self.status())
     }
 }
 impl Drop for Relay {
@@ -333,8 +444,9 @@ async fn serve(
     secret: &str,
     evidence: &Path,
     client: &reqwest::Client,
-    budget: &tokio::sync::Mutex<(u32, u32)>,
+    live: &Live,
 ) -> Result<()> {
+    let (budget, live_status) = (&live.budget, &live.status);
     let (reader, mut writer) = stream.into_split();
     let mut reader = BufReader::new(reader);
     let request = tokio::time::timeout(Duration::from_secs(20), async {
@@ -395,6 +507,7 @@ async fn serve(
     };
     let mut budget = budget.lock().await;
     if budget.0 == 0 || budget.1 == 0 {
+        live_status.send_modify(|s| s.stage = Stage::AllowanceExhausted);
         let bytes = serde_json::to_vec(
             &json!({"error":{"message":"Selected shared effort allowance exhausted; no extra model call was sent"}}),
         )?;
@@ -414,11 +527,20 @@ async fn serve(
     }
     // Measure the actual allocated body, including any reduced thinking budget.
     // Input rejection leaves the shared reservation untouched.
+    live_status.send_modify(|s| s.stage = Stage::MeasuringInput);
     let input = input_accounting(p, &body).await;
+    live_status.send_modify(|s| {
+        s.input_tokens = input["tokens"].as_u64();
+        s.output_allowance = allowance;
+        s.reasoning_allowance = body["reasoning_budget_tokens"]
+            .as_u64()
+            .and_then(|n| u32::try_from(n).ok());
+    });
     if input["tokens"]
         .as_u64()
         .is_some_and(|n| n > (p.context_tokens - p.effective_inference().output_tokens) as u64)
     {
+        live_status.send_modify(|s| s.stage = Stage::InputTooLarge);
         crate::config::atomic_write(
             &evidence.join(format!("rejected-{}.json", uuid::Uuid::new_v4())),
             &serde_json::to_vec(
@@ -434,6 +556,16 @@ async fn serve(
     }
     budget.0 -= allowance;
     budget.1 -= 1;
+    live_status.send_modify(|s| {
+        s.requests_issued += 1;
+        if s.remaining_requests.is_some() {
+            s.remaining_requests = Some(budget.1);
+        }
+        if s.remaining_generated_tokens.is_some() {
+            s.remaining_generated_tokens = Some(budget.0);
+        }
+        s.stage = Stage::WaitingForOutput;
+    });
     let id = uuid::Uuid::new_v4().to_string();
     let receipt = evidence.join(format!("{id}-receipt.json"));
     crate::config::atomic_write(
@@ -478,6 +610,10 @@ async fn serve(
     let mut truncated = false;
     while let Some(chunk) = stream.next().await {
         let chunk = chunk?;
+        let observed_stage = live_status.borrow().stage;
+        if !chunk.is_empty() && observed_stage != Stage::ReceivingOutput {
+            live_status.send_modify(|s| s.stage = Stage::ReceivingOutput);
+        }
         if !truncated && captured.len() + chunk.len() <= 8 * 1024 * 1024 {
             captured.extend_from_slice(&chunk);
             raw_file.write_all(&chunk).await?;
@@ -521,6 +657,21 @@ async fn serve(
             &json!({"complete":complete,"status":status.as_u16(),"input_accounting":input,"response_sha256":crate::project::digest(&captured),"response_truncated":truncated,"request_sha256":crate::project::digest(&serde_json::to_vec(&body)?),"usage":usage,"generated_tokens":generated,"charged_generated_tokens":charged,"allowance":allowance,"provider_budget_violation":charged>allowance as u64}),
         )?,
     )?;
+    live_status.send_modify(|s| {
+        if s.remaining_requests.is_some() {
+            s.remaining_requests = Some(budget.1);
+        }
+        if s.remaining_generated_tokens.is_some() {
+            s.remaining_generated_tokens = Some(budget.0);
+        }
+        s.stage = if !complete {
+            Stage::Interrupted
+        } else if budget.0 == 0 || budget.1 == 0 {
+            Stage::AllowanceExhausted
+        } else {
+            Stage::Ready
+        };
+    });
     writer.write_all(b"0\r\n\r\n").await?;
     Ok(())
 }

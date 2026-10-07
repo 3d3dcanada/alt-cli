@@ -93,7 +93,7 @@ fn goose_provider_error(params: &Value) -> Option<String> {
         if issue
             == "Rate limit exceeded: Selected shared effort allowance exhausted; no extra model call was sent."
         {
-            Some("Model call allowance exhausted. Your conversation and source were saved; adjust the allowance or continue in a new turn.".into())
+            Some("Model call allowance exhausted. Your conversation and source were saved. Choose Allowance to add a finite allowance to this connection, or adjust Model effort and reconnect. A new message alone does not reset the allowance.".into())
         } else {
             Some(format!(
                 "Model request failed. Your conversation and source were saved. {issue}"
@@ -409,6 +409,15 @@ impl Engine {
 
     pub fn set_task(&mut self, task: &str) {
         self.task = task.into();
+    }
+    pub fn inference_status(&self) -> Option<crate::inference::Status> {
+        self.relay.as_ref().map(crate::inference::Relay::status)
+    }
+    pub fn add_allowance(&self, requests: u32, tokens: u32) -> Result<crate::inference::Status> {
+        self.relay
+            .as_ref()
+            .context("No active inference relay")?
+            .add_allowance(requests, tokens)
     }
     pub fn verification(&self) -> Result<Option<crate::project_services::Verification>> {
         self.bridge

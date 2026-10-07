@@ -128,7 +128,27 @@ impl Project {
             );
             out.push_str(&header);
             let room = (max_chars.saturating_sub(out.chars().count()) / 3).min(1000);
-            out.push_str(&bounded(&c.output, room));
+            let workflow = crate::workflow::packet(self, task)?;
+            let observations = &workflow["facts"]["diagnostic"]["observed_lines"];
+            let failure = &workflow["facts"]["recovery"];
+            let diagnostic = if c.exit_code != Some(0)
+                || c.error.is_some()
+                || c.timed_out
+                || c.cancelled
+            {
+                format!(
+                    "Observed diagnostics: {}\nFailed cases: {}\nRecovery: {}\nActual output preview:\n{}",
+                    observations,
+                    failure["failed_cases"],
+                    failure["hint"]
+                        .as_str()
+                        .unwrap_or("Inspect current check evidence"),
+                    c.output
+                )
+            } else {
+                c.output.clone()
+            };
+            out.push_str(&bounded(&diagnostic, room));
             out.push('\n');
             if c.output.chars().count() > room || c.output_truncated {
                 out.push_str(

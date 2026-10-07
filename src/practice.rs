@@ -5,7 +5,7 @@ use crate::{
     project_services::Requirement,
     verification::{Contract, Format, Kind, ReportSpec},
 };
-use anyhow::Result;
+use anyhow::{Context, Result, ensure};
 use serde::Serialize;
 use std::path::{Path, PathBuf};
 
@@ -39,6 +39,109 @@ pub struct Practice {
     pub project: PathBuf,
     pub task: String,
     pub goal: String,
+}
+
+#[derive(Debug, Serialize)]
+pub struct PreparedTest {
+    #[serde(flatten)]
+    pub lesson: Practice,
+    pub state: PathBuf,
+    pub source_state: PathBuf,
+    pub selected_profile: String,
+    pub selection: serde_json::Value,
+    pub source_settings: serde_json::Value,
+}
+
+/// Reuses verified weight paths and binaries, but creates all mutable test state
+/// separately. No source project, session database, settings or presets are copied
+/// back. The model selection and inference/runtime settings remain explicit.
+pub fn prepare_test(
+    source: &Path,
+    destination: &Path,
+    selected: Option<&str>,
+    engine: &Path,
+) -> Result<PreparedTest> {
+    let config = crate::config::Config::read(source)?;
+    let (name, profile) = config.profile(selected)?;
+    ensure!(
+        profile.uncensored,
+        "PC live repair tests require your explicitly selected uncensored/abliterated model; no fallback is allowed"
+    );
+    let mut prefs = crate::config::Preferences::load(source)?;
+    prefs.engine_path = Some(
+        crate::runtime::find_engine(source, engine, &prefs)
+            .context("Install the agent engine before running a PC live repair test")?
+            .canonicalize()?,
+    );
+    if profile.local_model.is_some() {
+        prefs.runtime_path = Some(
+            crate::runtime::find_runtime(source, &prefs)
+                .context(
+                    "Install or select the model runtime before running the PC live repair test",
+                )?
+                .canonicalize()?,
+        );
+    }
+    let artifact = profile
+        .local_model
+        .as_deref()
+        .map(|id| crate::models::artifact(source, id))
+        .transpose()?;
+    if let Some(id) = prefs.instruction_version.as_deref() {
+        crate::instructions::text(source, id)?;
+        crate::instructions::metadata(source, id)?;
+    }
+    ensure!(
+        !destination.exists(),
+        "Use a new isolated test state folder; existing folders are never overwritten"
+    );
+    if let Some(parent) = destination.parent() {
+        std::fs::create_dir_all(parent)?;
+    }
+    std::fs::create_dir(destination)?;
+    config::private_dir(destination)?;
+    let destination = destination.canonicalize()?;
+    if let Some(artifact) = &artifact {
+        config::private_dir(&destination.join("models"))?;
+        config::atomic_write(
+            &destination
+                .join("models")
+                .join(format!("{}.json", artifact.id)),
+            &serde_json::to_vec_pretty(artifact)?,
+        )?;
+    }
+    if let Some(id) = prefs.instruction_version.as_deref() {
+        let directory = destination.join("instructions").join(id);
+        config::private_dir(&directory)?;
+        for file in ["procedure.md", "metadata.json", "registration.json"] {
+            config::atomic_write(
+                &directory.join(file),
+                &std::fs::read(source.join("instructions").join(id).join(file))?,
+            )?;
+        }
+    }
+    let copied = crate::config::Config {
+        default_profile: name.into(),
+        profiles: std::collections::BTreeMap::from([(name.into(), profile.clone())]),
+    };
+    copied.save(&destination)?;
+    let lesson = create(&destination)?;
+    prefs.project = lesson.project.clone();
+    prefs.recent_projects = vec![lesson.project.clone()];
+    prefs.save(&destination)?;
+    let digest_file = |file: &str| {
+        std::fs::read(source.join(file))
+            .ok()
+            .map(|bytes| crate::project::digest(&bytes))
+    };
+    Ok(PreparedTest {
+        lesson,
+        state: destination,
+        source_state: source.canonicalize()?,
+        selected_profile: name.into(),
+        selection: serde_json::json!({"profile":profile,"artifact":artifact,"runtime":prefs.runtime,"runtime_path":prefs.runtime_path,"engine_path":prefs.engine_path,"tool_profile":prefs.tool_profile,"workflow":prefs.workflow,"active_skill":prefs.active_skill,"instruction_version":prefs.instruction_version,"scope":"Copied selection; weights are reused in place and still integrity-checked by the runtime. External weight identity remains unqualified."}),
+        source_settings: serde_json::json!({"config_sha256":digest_file("config.toml"),"preferences_sha256":digest_file("preferences.toml"),"runtime_sha256":digest_file("runtime.toml")}),
+    })
 }
 
 /// Each invocation creates a new folder. Existing lessons and user projects are never reset.

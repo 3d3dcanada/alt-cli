@@ -10,6 +10,7 @@
 - [Troubleshooting](TROUBLESHOOTING.md): practical next steps for common failures.
 - [Verification contracts](VERIFICATION_CONTRACTS.md): exactly what check results prove.
 - [Model/runtime qualification](QUALIFICATION.md): measurements and physical test procedures.
+- [Compatibility record](COMPATIBILITY.md): adapter, runtime, model and hardware evidence.
 - [Small-model workflows](SMALL_MODEL_USAGE.md): explicit inference controls,
   host plans, executable skills, reviewed candidates and experimental analysis.
 
@@ -51,4 +52,5 @@ nor a passing CI run automatically closes model, hardware or human acceptance ga
 - [Current implementation and acceptance](IMPLEMENTATION_0.6.md), with [0.6 evidence](evidence/v6/README.md)
 - [Work orders](WORK_ORDERS_0.6.md)
 - [PC test guide](PC_TESTING.md)
-- [Beta release notes](releases/0.6.0-beta.1.md)
+- [Beta 2 work orders](PC_READY_WORK_ORDERS.md)
+- [Beta release notes](releases/0.6.0-beta.2.md)

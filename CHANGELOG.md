@@ -1,6 +1,21 @@
 # Changelog
 
-## Unreleased — small-model harness work orders
+## 0.6.0 beta 2 — small-model harness and PC completion
+
+- Added a disposable PC recorder for actual repair, independent four-case
+  acceptance, goal-preserving follow-up, cancellation/resume and undo. Reuses
+  the selected model without changing normal configuration or copying weights.
+- Added observed inference stages and remaining allowances in Chat, confirmed
+  finite allowance additions, and explicit allocation updates for saved tasks.
+  Spent and interrupted request costs remain recorded.
+- Added integrity-checked failed-case feedback, source diagnostic handles and
+  advisory recovery for unchanged failures and revisited source revisions.
+- Tested both adapters with twelve-turn conversations in Git projects retaining
+  uncommitted user changes, external-edit recovery and sixty stream scenarios.
+- Show the exact beta tag or source identity in the TUI header and build metadata.
+- Updated installation, model compatibility and local qualification instructions.
+- Added language-tool preflight so a broken Rust/Node environment stops a live
+  evaluation before model requests and remains distinct from incorrect source.
 
 - Added explicit compact text/line-array tool focus in CLI/TUI, short
   revision-bound handles, required edit fields, checkpointed creation/deletion,

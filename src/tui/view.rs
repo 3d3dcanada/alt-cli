@@ -118,6 +118,7 @@ pub fn draw(frame: &mut Frame, app: &mut App) {
                 Span::styled("  /  LOCAL WORKSPACE", style(MUTED)),
             ]),
             line(app.page.name(), TEXT),
+            line(crate::BUILD_LABEL, MUTED),
         ],
     );
     let model = app
@@ -577,16 +578,55 @@ fn chat(frame: &mut Frame, app: &mut App, area: Rect) {
         if app.busy {
             lines.push(line(
                 format!(
-                    "Working{}  {}s",
+                    "Working{}  {}s · {}",
                     ".".repeat(
                         (app.turn_started
                             .map(|s| s.elapsed().as_millis() / 400)
                             .unwrap_or(0)
                             % 4) as usize
                     ),
-                    app.turn_started.map(|s| s.elapsed().as_secs()).unwrap_or(0)
+                    app.turn_started.map(|s| s.elapsed().as_secs()).unwrap_or(0),
+                    if !app.permissions.is_empty() {
+                        "Waiting for your tool approval"
+                    } else {
+                        app.inference_status
+                            .as_ref()
+                            .map(|s| s.stage.label())
+                            .unwrap_or("Preparing saved task and source context")
+                    }
                 ),
                 WARN,
+            ));
+        }
+        if let Some(s) = &app.inference_status {
+            lines.push(line(
+                format!(
+                    "Calls left: {} · generated tokens left: {}",
+                    s.remaining_requests
+                        .map(|v| v.to_string())
+                        .unwrap_or_else(|| "no limit".into()),
+                    s.remaining_generated_tokens
+                        .map(|v| v.to_string())
+                        .unwrap_or_else(|| "no limit".into())
+                ),
+                MUTED,
+            ));
+            lines.push(line(
+                format!(
+                    "Prompt: {} / {} · output reserve: {}",
+                    s.input_tokens
+                        .map(|v| v.to_string())
+                        .unwrap_or_else(|| "unknown".into()),
+                    s.input_allowance,
+                    app.session
+                        .as_ref()
+                        .map(|session| session
+                            .profile
+                            .context_tokens
+                            .saturating_sub(s.input_allowance))
+                        .unwrap_or(s.output_allowance)
+                ),
+                MUTED,
             ));
         }
         let paragraph = Paragraph::new(lines)
@@ -718,6 +758,7 @@ fn chat(frame: &mut Frame, app: &mut App, area: Rect) {
             ("Send", "send"),
             ("New", "new"),
             ("Reconnect", "reconnect"),
+            ("Allowance", "allowance"),
             ("Task progress", "task"),
             ("Starting tasks", "templates"),
             ("Export", "export"),

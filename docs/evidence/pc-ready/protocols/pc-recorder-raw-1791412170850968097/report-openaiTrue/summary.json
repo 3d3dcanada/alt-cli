@@ -1,0 +1,405 @@
+{
+  "schema": 2,
+  "created_utc": "2026-10-07T22:29:45.124962+00:00",
+  "os": "Linux-6.18.44-x86_64-with-glibc2.41",
+  "machine": "x86_64",
+  "binary_sha256": "1017658ccff02ea2a8d4ae7135c63f98e101257e61f21d51d7bb4f957f512428",
+  "live_requested": true,
+  "checks": [
+    {
+      "name": "build",
+      "passed": true,
+      "category": "application",
+      "command_arguments": [
+        "build-info"
+      ],
+      "exit": 0,
+      "seconds": 0.008
+    },
+    {
+      "name": "hardware",
+      "passed": true,
+      "category": "application",
+      "command_arguments": [
+        "hardware"
+      ],
+      "exit": 0,
+      "seconds": 0.014
+    },
+    {
+      "name": "repair-prepare",
+      "passed": true,
+      "category": "application",
+      "command_arguments": [
+        "practice",
+        "--isolated-state",
+        "/workspace/.alt-pc-ready/protocols/pc-recorder-raw-1791412170850968097/report-openaiTrue/repair-state"
+      ],
+      "exit": 0,
+      "seconds": 0.077
+    },
+    {
+      "name": "seed-check",
+      "passed": true,
+      "category": "application",
+      "command_arguments": [
+        "task",
+        "check",
+        "Practice behavior"
+      ],
+      "exit": 1,
+      "seconds": 0.151
+    },
+    {
+      "name": "seed-independent",
+      "passed": true,
+      "category": "application",
+      "command_arguments": [
+        "/workspace/.alt-pc-ready/protocols/pc-recorder-raw-1791412170850968097/report-openaiTrue/independent-assertion.py"
+      ],
+      "exit": 1,
+      "seconds": 0.036
+    },
+    {
+      "name": "seed-independent-four-cases",
+      "passed": true,
+      "category": "application",
+      "executed": 4,
+      "failed": 3
+    },
+    {
+      "name": "repair-turn",
+      "passed": true,
+      "category": "native_transport",
+      "command_arguments": [
+        "run",
+        "Repair greeting.py so greet(name) trims spaces and returns Hello, NAME!, using friend for an empty name. Preserve the function interface. Read the file, apply an edit, and run the configured Practice behavior check. Explain the actual result.",
+        "--allow-tools",
+        "--json",
+        "--timeout",
+        "30"
+      ],
+      "exit": 0,
+      "normal_turn": true,
+      "seconds": 1.68
+    },
+    {
+      "name": "repair-independent",
+      "passed": false,
+      "category": "model_correctness",
+      "command_arguments": [
+        "/workspace/.alt-pc-ready/protocols/pc-recorder-raw-1791412170850968097/report-openaiTrue/independent-assertion.py"
+      ],
+      "exit": 1,
+      "seconds": 0.035
+    },
+    {
+      "name": "repair-independent-four-cases",
+      "passed": false,
+      "category": "model_correctness",
+      "executed": 4,
+      "failed": 4
+    },
+    {
+      "name": "repair-verification",
+      "passed": false,
+      "category": "model_correctness",
+      "command_arguments": [
+        "task",
+        "verify",
+        "--run"
+      ],
+      "exit": 1,
+      "seconds": 0.095
+    },
+    {
+      "name": "repair-export",
+      "passed": true,
+      "category": "application",
+      "command_arguments": [
+        "task",
+        "export"
+      ],
+      "exit": 0,
+      "seconds": 0.018
+    },
+    {
+      "name": "native-tracked-repair",
+      "passed": true,
+      "category": "native_transport"
+    },
+    {
+      "name": "followup-turn",
+      "passed": true,
+      "category": "native_transport",
+      "command_arguments": [
+        "run",
+        "Continue the original greeting repair. Read the current file and run Practice behavior again. Preserve the original interface and requirements. Report the actual check result and remaining failures.",
+        "--resume",
+        "1952b593-98a3-4cbe-b439-22b4de5d86e8",
+        "--allow-tools",
+        "--json",
+        "--timeout",
+        "30"
+      ],
+      "exit": 0,
+      "normal_turn": true,
+      "seconds": 1.444
+    },
+    {
+      "name": "original-goal-forwarded",
+      "passed": true,
+      "category": "application",
+      "requests": 3
+    },
+    {
+      "name": "followup-independent",
+      "passed": false,
+      "category": "model_correctness",
+      "command_arguments": [
+        "/workspace/.alt-pc-ready/protocols/pc-recorder-raw-1791412170850968097/report-openaiTrue/independent-assertion.py"
+      ],
+      "exit": 1,
+      "seconds": 0.038
+    },
+    {
+      "name": "followup-independent-four-cases",
+      "passed": false,
+      "category": "model_correctness",
+      "executed": 4,
+      "failed": 4
+    },
+    {
+      "name": "followup-verification",
+      "passed": false,
+      "category": "model_correctness",
+      "command_arguments": [
+        "task",
+        "verify",
+        "--run"
+      ],
+      "exit": 1,
+      "seconds": 0.144
+    },
+    {
+      "name": "cancel-turn",
+      "passed": true,
+      "category": "recovery",
+      "command_arguments": [
+        "run",
+        "Inspect the current greeting implementation and explain its behavior in detail. Do not edit files or execute commands for this message.",
+        "--resume",
+        "1952b593-98a3-4cbe-b439-22b4de5d86e8",
+        "--json",
+        "--timeout",
+        "30"
+      ],
+      "interrupt_after_issued_request": true,
+      "exit": 1,
+      "seconds": 1.358
+    },
+    {
+      "name": "cancel-preserves-files",
+      "passed": true,
+      "category": "recovery"
+    },
+    {
+      "name": "resume-after-cancel",
+      "passed": true,
+      "category": "recovery",
+      "command_arguments": [
+        "run",
+        "Continue the original greeting repair. Read the current file and run Practice behavior again. Preserve the original interface and requirements. Report the actual check result and remaining failures.",
+        "--resume",
+        "1952b593-98a3-4cbe-b439-22b4de5d86e8",
+        "--allow-tools",
+        "--json",
+        "--timeout",
+        "30"
+      ],
+      "exit": 0,
+      "normal_turn": true,
+      "seconds": 1.347
+    },
+    {
+      "name": "resumed-independent",
+      "passed": false,
+      "category": "model_correctness",
+      "command_arguments": [
+        "/workspace/.alt-pc-ready/protocols/pc-recorder-raw-1791412170850968097/report-openaiTrue/independent-assertion.py"
+      ],
+      "exit": 1,
+      "seconds": 0.035
+    },
+    {
+      "name": "resumed-independent-four-cases",
+      "passed": false,
+      "category": "model_correctness",
+      "executed": 4,
+      "failed": 4
+    },
+    {
+      "name": "resumed-verification",
+      "passed": false,
+      "category": "model_correctness",
+      "command_arguments": [
+        "task",
+        "verify",
+        "--run"
+      ],
+      "exit": 1,
+      "seconds": 0.156
+    },
+    {
+      "name": "saved-session",
+      "passed": true,
+      "category": "application",
+      "command_arguments": [
+        "export",
+        "1952b593-98a3-4cbe-b439-22b4de5d86e8"
+      ],
+      "exit": 0,
+      "seconds": 0.018
+    },
+    {
+      "name": "persisted-original-goal",
+      "passed": true,
+      "category": "recovery"
+    },
+    {
+      "name": "final-task-export",
+      "passed": true,
+      "category": "application",
+      "command_arguments": [
+        "task",
+        "export"
+      ],
+      "exit": 0,
+      "seconds": 0.016
+    },
+    {
+      "name": "undo-1",
+      "passed": true,
+      "category": "recovery",
+      "command_arguments": [
+        "task",
+        "undo-all",
+        "1952b593-98a3-4cbe-b439-22b4de5d86e8"
+      ],
+      "exit": 0,
+      "seconds": 0.02
+    },
+    {
+      "name": "undo-restores-seed",
+      "passed": true,
+      "category": "recovery"
+    },
+    {
+      "name": "undo-verification",
+      "passed": true,
+      "category": "recovery",
+      "command_arguments": [
+        "task",
+        "verify"
+      ],
+      "exit": 1,
+      "seconds": 0.019
+    },
+    {
+      "name": "undo-independent",
+      "passed": true,
+      "category": "application",
+      "command_arguments": [
+        "/workspace/.alt-pc-ready/protocols/pc-recorder-raw-1791412170850968097/report-openaiTrue/independent-assertion.py"
+      ],
+      "exit": 1,
+      "seconds": 0.059
+    },
+    {
+      "name": "undo-independent-four-cases",
+      "passed": true,
+      "category": "application",
+      "executed": 4,
+      "failed": 3
+    },
+    {
+      "name": "original-assertions-unchanged",
+      "passed": true,
+      "category": "application"
+    },
+    {
+      "name": "normal-settings-unchanged",
+      "passed": true,
+      "category": "application"
+    }
+  ],
+  "gpu_measurement_status": "Unqualified by inventory alone; inspect sampled per-runtime VRAM in model-qualification.stdout when performed",
+  "scope": "Local application, hardware, transport, repair correctness and recovery evidence. Nothing is uploaded. Full access keeps host permissions. Review raw reports before sharing.",
+  "selection": {
+    "active_skill": null,
+    "artifact": null,
+    "engine_path": "/workspace/.alt-tools/goose",
+    "instruction_version": null,
+    "profile": {
+      "api_key_env": null,
+      "context_tokens": 8192,
+      "endpoint": "http://127.0.0.1:42151/v1",
+      "inference": {
+        "action_headroom": 256,
+        "llama_extensions": false,
+        "max_requests": null,
+        "min_p": null,
+        "output_parameter": "max_tokens",
+        "output_tokens": 2048,
+        "reasoning_tokens": null,
+        "temperature": null,
+        "top_k": null,
+        "top_p": null,
+        "total_generated_tokens": null,
+        "version": 1
+      },
+      "max_turns": 12,
+      "model": "pc-recorder-protocol-fixture",
+      "provider": "openai",
+      "uncensored": true
+    },
+    "runtime": {
+      "batch": 128,
+      "cache_k": "f16",
+      "cache_v": "f16",
+      "flash_attention": false,
+      "gpu_layers": 0,
+      "thinking": null,
+      "threads": 0
+    },
+    "runtime_path": null,
+    "scope": "Copied selection; weights are reused in place and still integrity-checked by the runtime. External weight identity remains unqualified.",
+    "tool_profile": "compact",
+    "workflow": "host"
+  },
+  "repair_outcomes": {
+    "first": false,
+    "followup": false,
+    "after_cancel": false
+  },
+  "repair_status": "Performed in disposable state; inspect separate correctness, transport and recovery outcomes",
+  "outcomes": {
+    "application": {
+      "passed": true,
+      "checks": 14
+    },
+    "model_correctness": {
+      "passed": false,
+      "checks": 9
+    },
+    "native_transport": {
+      "passed": true,
+      "checks": 3
+    },
+    "recovery": {
+      "passed": true,
+      "checks": 7
+    }
+  },
+  "passed": false
+}

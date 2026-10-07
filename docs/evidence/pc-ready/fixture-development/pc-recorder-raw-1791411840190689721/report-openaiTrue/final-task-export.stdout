@@ -1,0 +1,446 @@
+{
+  "changes": [
+    {
+      "after": "def greet(name):\n    return 'broken'\n",
+      "after_hash": "a92c28539b63ef93c723739f9a972e30674d1303de832c76ce5e0715ff33308d",
+      "before": "def greet(name):\n    return 'Hello, ' + name + '!'\n",
+      "before_hash": "30606cf0e9c2eb93e5bbc1f9844df14c368c244c9a200fdcbc7a49e0685c1770",
+      "id": "99dc8246-4efb-49d9-9459-e90ee546796f",
+      "mode": 384,
+      "path": "greeting.py",
+      "reason": "Implement the requested change",
+      "status": "applied",
+      "task": "e9809abc-5072-4cf8-b0d3-4296dcc3290a",
+      "test_change": false
+    }
+  ],
+  "check_reports": [
+    {
+      "check_id": "826d6186-6e9b-49e5-97f0-f44ff897e200",
+      "sha256": "f1b94028c4c883cbb8d96ad0aeb7c50fbd928a7083760ec606e3a22eeba1cea1",
+      "text": "{\"schema\": 1, \"complete\": true, \"tests\": [{\"name\": \"ordinary name\", \"status\": \"passed\"}, {\"name\": \"trim spaces\", \"status\": \"failed\"}, {\"name\": \"empty name\", \"status\": \"failed\"}, {\"name\": \"spaces only\", \"status\": \"failed\"}]}"
+    },
+    {
+      "check_id": "c6b77c57-5261-449e-ab72-1ae536f55e10",
+      "sha256": "d765a00fe5f7bcad51e8386e1bcfdb53ff37c3e5a5f8855a9074d8d74eee9623",
+      "text": "{\"schema\": 1, \"complete\": true, \"tests\": [{\"name\": \"ordinary name\", \"status\": \"failed\"}, {\"name\": \"trim spaces\", \"status\": \"failed\"}, {\"name\": \"empty name\", \"status\": \"failed\"}, {\"name\": \"spaces only\", \"status\": \"failed\"}]}"
+    },
+    {
+      "check_id": "2852e95e-a32e-44ac-aa74-ba8d194b2367",
+      "sha256": "d765a00fe5f7bcad51e8386e1bcfdb53ff37c3e5a5f8855a9074d8d74eee9623",
+      "text": "{\"schema\": 1, \"complete\": true, \"tests\": [{\"name\": \"ordinary name\", \"status\": \"failed\"}, {\"name\": \"trim spaces\", \"status\": \"failed\"}, {\"name\": \"empty name\", \"status\": \"failed\"}, {\"name\": \"spaces only\", \"status\": \"failed\"}]}"
+    },
+    {
+      "check_id": "cd10d4f8-b1f0-4992-ad3d-330465db8ed1",
+      "sha256": "d765a00fe5f7bcad51e8386e1bcfdb53ff37c3e5a5f8855a9074d8d74eee9623",
+      "text": "{\"schema\": 1, \"complete\": true, \"tests\": [{\"name\": \"ordinary name\", \"status\": \"failed\"}, {\"name\": \"trim spaces\", \"status\": \"failed\"}, {\"name\": \"empty name\", \"status\": \"failed\"}, {\"name\": \"spaces only\", \"status\": \"failed\"}]}"
+    },
+    {
+      "check_id": "bf26fab0-5e6a-479f-96ac-73bb3ed6cd08",
+      "sha256": "d765a00fe5f7bcad51e8386e1bcfdb53ff37c3e5a5f8855a9074d8d74eee9623",
+      "text": "{\"schema\": 1, \"complete\": true, \"tests\": [{\"name\": \"ordinary name\", \"status\": \"failed\"}, {\"name\": \"trim spaces\", \"status\": \"failed\"}, {\"name\": \"empty name\", \"status\": \"failed\"}, {\"name\": \"spaces only\", \"status\": \"failed\"}]}"
+    }
+  ],
+  "check_specs": [
+    {
+      "argv": [
+        "python3",
+        "{assertion}"
+      ],
+      "contract": {
+        "assertion": {
+          "path": "/workspace/.alt-pc-ready/pc-recorder-raw-1791411840190689721/report-openaiTrue/repair-state/practice/5cdcd7cb-bdd0-47a6-9e7f-ee8d26785cff/assertion.py",
+          "sha256": "3c9eac5fa3ab0d867a8889284eb02ddebf2daace4376522b0d1a66e598a24d50"
+        },
+        "kind": "tests",
+        "report": {
+          "format": "json",
+          "path": ".alt-practice-report.json"
+        }
+      },
+      "name": "Practice behavior",
+      "timeout_secs": 30
+    }
+  ],
+  "checks": [
+    {
+      "argv": [
+        "python3",
+        "{assertion}"
+      ],
+      "cancelled": false,
+      "contract": {
+        "assertion": {
+          "path": "/workspace/.alt-pc-ready/pc-recorder-raw-1791411840190689721/report-openaiTrue/repair-state/practice/5cdcd7cb-bdd0-47a6-9e7f-ee8d26785cff/assertion.py",
+          "sha256": "3c9eac5fa3ab0d867a8889284eb02ddebf2daace4376522b0d1a66e598a24d50"
+        },
+        "kind": "tests",
+        "report": {
+          "format": "json",
+          "path": ".alt-practice-report.json"
+        }
+      },
+      "elapsed_ms": 31,
+      "environment": {
+        "argv_sha256": "fd191caee3474762a5cba4ad402cdab68fb54cce92d46320cbee96924d1502bc",
+        "environment_PATH_sha256": "7ec45148c409cf936098db80bf6d73123dc7b40560bb3df1c20305635d3a0648",
+        "environment_PYTHONPATH_sha256": "0a170887ca42ea8caf8c80317642cefcca4b318cea08e901f6b4f9fc720e7156",
+        "executable": "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python3.12",
+        "executable_metadata": "30894944:Ok(SystemTime { tv_sec: 1788486252, tv_nsec: 0 })",
+        "installed_dependencies": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "observed_version_python3": "Python 3.12.14",
+        "verification_contract": "3"
+      },
+      "error": "Structured report contains 3 failing tests",
+      "exit_code": 1,
+      "id": "826d6186-6e9b-49e5-97f0-f44ff897e200",
+      "isolation": "Unisolated: trusted command in disposable source copy",
+      "name": "Practice behavior",
+      "output": "stdout:\nordinary name: expected 'Hello, Cedar!', got 'Hello, Cedar!'\ntrim spaces: expected 'Hello, Cedar!', got 'Hello,   Cedar  !'\nempty name: expected 'Hello, friend!', got 'Hello, !'\nspaces only: expected 'Hello, friend!', got 'Hello,    !'\n\nstderr:\n",
+      "output_truncated": false,
+      "snapshot": "bc858f92f772b6aeb9aab3578895786f26856b9611ecc006b62c18f3fc99aa71",
+      "structured": {
+        "assertion_verified": true,
+        "complete": true,
+        "executed": 4,
+        "failed": 3,
+        "format": "json",
+        "passed": 1,
+        "report_sha256": "f1b94028c4c883cbb8d96ad0aeb7c50fbd928a7083760ec606e3a22eeba1cea1",
+        "skipped": 0
+      },
+      "task": "practice-5cdcd7cb-bdd0-47a6-9e7f-ee8d26785cff",
+      "tests_run": 4,
+      "timed_out": false
+    },
+    {
+      "argv": [
+        "python3",
+        "{assertion}"
+      ],
+      "cancelled": false,
+      "contract": {
+        "assertion": {
+          "path": "/workspace/.alt-pc-ready/pc-recorder-raw-1791411840190689721/report-openaiTrue/repair-state/practice/5cdcd7cb-bdd0-47a6-9e7f-ee8d26785cff/assertion.py",
+          "sha256": "3c9eac5fa3ab0d867a8889284eb02ddebf2daace4376522b0d1a66e598a24d50"
+        },
+        "kind": "tests",
+        "report": {
+          "format": "json",
+          "path": ".alt-practice-report.json"
+        }
+      },
+      "elapsed_ms": 29,
+      "environment": {
+        "argv_sha256": "fd191caee3474762a5cba4ad402cdab68fb54cce92d46320cbee96924d1502bc",
+        "environment_PATH_sha256": "7ec45148c409cf936098db80bf6d73123dc7b40560bb3df1c20305635d3a0648",
+        "environment_PYTHONPATH_sha256": "0a170887ca42ea8caf8c80317642cefcca4b318cea08e901f6b4f9fc720e7156",
+        "executable": "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python3.12",
+        "executable_metadata": "30894944:Ok(SystemTime { tv_sec: 1788486252, tv_nsec: 0 })",
+        "installed_dependencies": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "observed_version_python3": "Python 3.12.14",
+        "verification_contract": "3"
+      },
+      "error": "Structured report contains 4 failing tests",
+      "exit_code": 1,
+      "id": "c6b77c57-5261-449e-ab72-1ae536f55e10",
+      "isolation": "Unisolated: trusted command in disposable source copy",
+      "name": "Practice behavior",
+      "output": "stdout:\nordinary name: expected 'Hello, Cedar!', got 'broken'\ntrim spaces: expected 'Hello, Cedar!', got 'broken'\nempty name: expected 'Hello, friend!', got 'broken'\nspaces only: expected 'Hello, friend!', got 'broken'\n\nstderr:\n",
+      "output_truncated": false,
+      "snapshot": "134dfe58d9941bfa1da4a32cbb692865b38f2a219e971ddbab6e956d657cc5a0",
+      "structured": {
+        "assertion_verified": true,
+        "complete": true,
+        "executed": 4,
+        "failed": 4,
+        "format": "json",
+        "passed": 0,
+        "report_sha256": "d765a00fe5f7bcad51e8386e1bcfdb53ff37c3e5a5f8855a9074d8d74eee9623",
+        "skipped": 0
+      },
+      "task": "e9809abc-5072-4cf8-b0d3-4296dcc3290a",
+      "tests_run": 4,
+      "timed_out": false
+    },
+    {
+      "argv": [
+        "python3",
+        "{assertion}"
+      ],
+      "cancelled": false,
+      "contract": {
+        "assertion": {
+          "path": "/workspace/.alt-pc-ready/pc-recorder-raw-1791411840190689721/report-openaiTrue/repair-state/practice/5cdcd7cb-bdd0-47a6-9e7f-ee8d26785cff/assertion.py",
+          "sha256": "3c9eac5fa3ab0d867a8889284eb02ddebf2daace4376522b0d1a66e598a24d50"
+        },
+        "kind": "tests",
+        "report": {
+          "format": "json",
+          "path": ".alt-practice-report.json"
+        }
+      },
+      "elapsed_ms": 28,
+      "environment": {
+        "argv_sha256": "fd191caee3474762a5cba4ad402cdab68fb54cce92d46320cbee96924d1502bc",
+        "environment_PATH_sha256": "7ec45148c409cf936098db80bf6d73123dc7b40560bb3df1c20305635d3a0648",
+        "environment_PYTHONPATH_sha256": "0a170887ca42ea8caf8c80317642cefcca4b318cea08e901f6b4f9fc720e7156",
+        "executable": "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python3.12",
+        "executable_metadata": "30894944:Ok(SystemTime { tv_sec: 1788486252, tv_nsec: 0 })",
+        "installed_dependencies": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "observed_version_python3": "Python 3.12.14",
+        "verification_contract": "3"
+      },
+      "error": "Structured report contains 4 failing tests",
+      "exit_code": 1,
+      "id": "2852e95e-a32e-44ac-aa74-ba8d194b2367",
+      "isolation": "Unisolated: trusted command in disposable source copy",
+      "name": "Practice behavior",
+      "output": "stdout:\nordinary name: expected 'Hello, Cedar!', got 'broken'\ntrim spaces: expected 'Hello, Cedar!', got 'broken'\nempty name: expected 'Hello, friend!', got 'broken'\nspaces only: expected 'Hello, friend!', got 'broken'\n\nstderr:\n",
+      "output_truncated": false,
+      "snapshot": "134dfe58d9941bfa1da4a32cbb692865b38f2a219e971ddbab6e956d657cc5a0",
+      "structured": {
+        "assertion_verified": true,
+        "complete": true,
+        "executed": 4,
+        "failed": 4,
+        "format": "json",
+        "passed": 0,
+        "report_sha256": "d765a00fe5f7bcad51e8386e1bcfdb53ff37c3e5a5f8855a9074d8d74eee9623",
+        "skipped": 0
+      },
+      "task": "e9809abc-5072-4cf8-b0d3-4296dcc3290a",
+      "tests_run": 4,
+      "timed_out": false
+    },
+    {
+      "argv": [
+        "python3",
+        "{assertion}"
+      ],
+      "cancelled": false,
+      "contract": {
+        "assertion": {
+          "path": "/workspace/.alt-pc-ready/pc-recorder-raw-1791411840190689721/report-openaiTrue/repair-state/practice/5cdcd7cb-bdd0-47a6-9e7f-ee8d26785cff/assertion.py",
+          "sha256": "3c9eac5fa3ab0d867a8889284eb02ddebf2daace4376522b0d1a66e598a24d50"
+        },
+        "kind": "tests",
+        "report": {
+          "format": "json",
+          "path": ".alt-practice-report.json"
+        }
+      },
+      "elapsed_ms": 27,
+      "environment": {
+        "argv_sha256": "fd191caee3474762a5cba4ad402cdab68fb54cce92d46320cbee96924d1502bc",
+        "environment_PATH_sha256": "7ec45148c409cf936098db80bf6d73123dc7b40560bb3df1c20305635d3a0648",
+        "environment_PYTHONPATH_sha256": "0a170887ca42ea8caf8c80317642cefcca4b318cea08e901f6b4f9fc720e7156",
+        "executable": "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python3.12",
+        "executable_metadata": "30894944:Ok(SystemTime { tv_sec: 1788486252, tv_nsec: 0 })",
+        "installed_dependencies": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "observed_version_python3": "Python 3.12.14",
+        "verification_contract": "3"
+      },
+      "error": "Structured report contains 4 failing tests",
+      "exit_code": 1,
+      "id": "cd10d4f8-b1f0-4992-ad3d-330465db8ed1",
+      "isolation": "Unisolated: trusted command in disposable source copy",
+      "name": "Practice behavior",
+      "output": "stdout:\nordinary name: expected 'Hello, Cedar!', got 'broken'\ntrim spaces: expected 'Hello, Cedar!', got 'broken'\nempty name: expected 'Hello, friend!', got 'broken'\nspaces only: expected 'Hello, friend!', got 'broken'\n\nstderr:\n",
+      "output_truncated": false,
+      "snapshot": "134dfe58d9941bfa1da4a32cbb692865b38f2a219e971ddbab6e956d657cc5a0",
+      "structured": {
+        "assertion_verified": true,
+        "complete": true,
+        "executed": 4,
+        "failed": 4,
+        "format": "json",
+        "passed": 0,
+        "report_sha256": "d765a00fe5f7bcad51e8386e1bcfdb53ff37c3e5a5f8855a9074d8d74eee9623",
+        "skipped": 0
+      },
+      "task": "e9809abc-5072-4cf8-b0d3-4296dcc3290a",
+      "tests_run": 4,
+      "timed_out": false
+    },
+    {
+      "argv": [
+        "python3",
+        "{assertion}"
+      ],
+      "cancelled": false,
+      "contract": {
+        "assertion": {
+          "path": "/workspace/.alt-pc-ready/pc-recorder-raw-1791411840190689721/report-openaiTrue/repair-state/practice/5cdcd7cb-bdd0-47a6-9e7f-ee8d26785cff/assertion.py",
+          "sha256": "3c9eac5fa3ab0d867a8889284eb02ddebf2daace4376522b0d1a66e598a24d50"
+        },
+        "kind": "tests",
+        "report": {
+          "format": "json",
+          "path": ".alt-practice-report.json"
+        }
+      },
+      "elapsed_ms": 28,
+      "environment": {
+        "argv_sha256": "fd191caee3474762a5cba4ad402cdab68fb54cce92d46320cbee96924d1502bc",
+        "environment_PATH_sha256": "7ec45148c409cf936098db80bf6d73123dc7b40560bb3df1c20305635d3a0648",
+        "environment_PYTHONPATH_sha256": "0a170887ca42ea8caf8c80317642cefcca4b318cea08e901f6b4f9fc720e7156",
+        "executable": "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python3.12",
+        "executable_metadata": "30894944:Ok(SystemTime { tv_sec: 1788486252, tv_nsec: 0 })",
+        "installed_dependencies": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "observed_version_python3": "Python 3.12.14",
+        "verification_contract": "3"
+      },
+      "error": "Structured report contains 4 failing tests",
+      "exit_code": 1,
+      "id": "bf26fab0-5e6a-479f-96ac-73bb3ed6cd08",
+      "isolation": "Unisolated: trusted command in disposable source copy",
+      "name": "Practice behavior",
+      "output": "stdout:\nordinary name: expected 'Hello, Cedar!', got 'broken'\ntrim spaces: expected 'Hello, Cedar!', got 'broken'\nempty name: expected 'Hello, friend!', got 'broken'\nspaces only: expected 'Hello, friend!', got 'broken'\n\nstderr:\n",
+      "output_truncated": false,
+      "snapshot": "134dfe58d9941bfa1da4a32cbb692865b38f2a219e971ddbab6e956d657cc5a0",
+      "structured": {
+        "assertion_verified": true,
+        "complete": true,
+        "executed": 4,
+        "failed": 4,
+        "format": "json",
+        "passed": 0,
+        "report_sha256": "d765a00fe5f7bcad51e8386e1bcfdb53ff37c3e5a5f8855a9074d8d74eee9623",
+        "skipped": 0
+      },
+      "task": "e9809abc-5072-4cf8-b0d3-4296dcc3290a",
+      "tests_run": 4,
+      "timed_out": false
+    }
+  ],
+  "notes": [
+    {
+      "body": "Repair greeting.py so greet(name) trims spaces and returns Hello, NAME!, using friend for an empty name. Preserve the function interface. Read the file, apply an edit, and run the configured Practice behavior check. Explain the actual result.",
+      "created": "2026-10-07 22:24:11",
+      "kind": "request",
+      "source": "user",
+      "task": "practice-5cdcd7cb-bdd0-47a6-9e7f-ee8d26785cff"
+    },
+    {
+      "body": "Read greeting.py, reproduce the failed check, repair the greeting, rerun all four cases, then try undo.",
+      "created": "2026-10-07 22:24:11",
+      "kind": "plan",
+      "source": "practice setup",
+      "task": "practice-5cdcd7cb-bdd0-47a6-9e7f-ee8d26785cff"
+    },
+    {
+      "body": "Check Practice behavior: exit Some(1), timeout false, cancelled false, isolation Unisolated: trusted command in disposable source copy, snapshot bc858f92f772b6aeb9aab3578895786f26856b9611ecc006b62c18f3fc99aa71, evidence 826d6186-6e9b-49e5-97f0-f44ff897e200. Structured report contains 3 failing tests",
+      "created": "2026-10-07 22:24:11",
+      "kind": "failure",
+      "source": "826d6186-6e9b-49e5-97f0-f44ff897e200",
+      "task": "practice-5cdcd7cb-bdd0-47a6-9e7f-ee8d26785cff"
+    },
+    {
+      "body": "Repair greeting.py so greet(name) trims spaces and returns Hello, NAME!, using friend for an empty name. Preserve the function interface. Read the file, apply an edit, and run the configured Practice behavior check. Explain the actual result.",
+      "created": "2026-10-07 22:24:11",
+      "kind": "request",
+      "source": "user",
+      "task": "e9809abc-5072-4cf8-b0d3-4296dcc3290a"
+    },
+    {
+      "body": "Host workflow: inspect current source; reproduce with configured checks; patch using revision-bound handles; rerun required checks; recover from actual diagnostics.",
+      "created": "2026-10-07 22:24:11",
+      "kind": "plan",
+      "source": "host workflow (not a model-authored plan)",
+      "task": "e9809abc-5072-4cf8-b0d3-4296dcc3290a"
+    },
+    {
+      "body": "Applied 99dc8246-4efb-49d9-9459-e90ee546796f to greeting.py; check results are now stale",
+      "created": "2026-10-07 22:24:11",
+      "kind": "observation",
+      "source": "99dc8246-4efb-49d9-9459-e90ee546796f",
+      "task": "e9809abc-5072-4cf8-b0d3-4296dcc3290a"
+    },
+    {
+      "body": "Check Practice behavior: exit Some(1), timeout false, cancelled false, isolation Unisolated: trusted command in disposable source copy, snapshot 134dfe58d9941bfa1da4a32cbb692865b38f2a219e971ddbab6e956d657cc5a0, evidence c6b77c57-5261-449e-ab72-1ae536f55e10. Structured report contains 4 failing tests",
+      "created": "2026-10-07 22:24:11",
+      "kind": "failure",
+      "source": "c6b77c57-5261-449e-ab72-1ae536f55e10",
+      "task": "e9809abc-5072-4cf8-b0d3-4296dcc3290a"
+    },
+    {
+      "body": "Check Practice behavior: exit Some(1), timeout false, cancelled false, isolation Unisolated: trusted command in disposable source copy, snapshot 134dfe58d9941bfa1da4a32cbb692865b38f2a219e971ddbab6e956d657cc5a0, evidence 2852e95e-a32e-44ac-aa74-ba8d194b2367. Structured report contains 4 failing tests",
+      "created": "2026-10-07 22:24:12",
+      "kind": "failure",
+      "source": "2852e95e-a32e-44ac-aa74-ba8d194b2367",
+      "task": "e9809abc-5072-4cf8-b0d3-4296dcc3290a"
+    },
+    {
+      "body": "Continue the original greeting repair. Read the current file and run Practice behavior again. Preserve the original interface and requirements. Report the actual check result and remaining failures.",
+      "created": "2026-10-07 22:24:12",
+      "kind": "request",
+      "source": "user",
+      "task": "e9809abc-5072-4cf8-b0d3-4296dcc3290a"
+    },
+    {
+      "body": "Check Practice behavior: exit Some(1), timeout false, cancelled false, isolation Unisolated: trusted command in disposable source copy, snapshot 134dfe58d9941bfa1da4a32cbb692865b38f2a219e971ddbab6e956d657cc5a0, evidence cd10d4f8-b1f0-4992-ad3d-330465db8ed1. Structured report contains 4 failing tests",
+      "created": "2026-10-07 22:24:13",
+      "kind": "failure",
+      "source": "cd10d4f8-b1f0-4992-ad3d-330465db8ed1",
+      "task": "e9809abc-5072-4cf8-b0d3-4296dcc3290a"
+    },
+    {
+      "body": "Inspect the current greeting implementation and explain its behavior in detail. Do not edit files or execute commands for this message.",
+      "created": "2026-10-07 22:24:13",
+      "kind": "request",
+      "source": "user",
+      "task": "e9809abc-5072-4cf8-b0d3-4296dcc3290a"
+    },
+    {
+      "body": "Continue the original greeting repair. Read the current file and run Practice behavior again. Preserve the original interface and requirements. Report the actual check result and remaining failures.",
+      "created": "2026-10-07 22:24:15",
+      "kind": "request",
+      "source": "user",
+      "task": "e9809abc-5072-4cf8-b0d3-4296dcc3290a"
+    },
+    {
+      "body": "Check Practice behavior: exit Some(1), timeout false, cancelled false, isolation Unisolated: trusted command in disposable source copy, snapshot 134dfe58d9941bfa1da4a32cbb692865b38f2a219e971ddbab6e956d657cc5a0, evidence bf26fab0-5e6a-479f-96ac-73bb3ed6cd08. Structured report contains 4 failing tests",
+      "created": "2026-10-07 22:24:16",
+      "kind": "failure",
+      "source": "bf26fab0-5e6a-479f-96ac-73bb3ed6cd08",
+      "task": "e9809abc-5072-4cf8-b0d3-4296dcc3290a"
+    }
+  ],
+  "project": "/workspace/.alt-pc-ready/pc-recorder-raw-1791411840190689721/report-openaiTrue/repair-state/practice/5cdcd7cb-bdd0-47a6-9e7f-ee8d26785cff/project",
+  "tasks": [
+    {
+      "goal": "Repair greeting.py so greet(name) trims spaces and returns Hello, NAME!, using friend for an empty name. Preserve the function interface. Read the file, apply an edit, and run the configured Practice behavior check. Explain the actual result.",
+      "id": "practice-5cdcd7cb-bdd0-47a6-9e7f-ee8d26785cff",
+      "next": "Read the actual failed cases and current implementation. Make a focused change, then rerun the original checks; a longer response does not establish a repair.",
+      "phase": "Results",
+      "plan": "Read greeting.py, reproduce the failed check, repair the greeting, rerun all four cases, then try undo."
+    },
+    {
+      "goal": "Repair greeting.py so greet(name) trims spaces and returns Hello, NAME!, using friend for an empty name. Preserve the function interface. Read the file, apply an edit, and run the configured Practice behavior check. Explain the actual result.",
+      "id": "e9809abc-5072-4cf8-b0d3-4296dcc3290a",
+      "next": "The same check failed repeatedly on unchanged source. Reread the implementation and actual failed cases, then change the implementation or explain a missing dependency before rerunning.",
+      "phase": "Results",
+      "plan": "Host workflow: inspect current source; reproduce with configured checks; patch using revision-bound handles; rerun required checks; recover from actual diagnostics."
+    }
+  ],
+  "verification": {
+    "behavioral_acceptance": false,
+    "complete": false,
+    "requirements": [
+      {
+        "check_kind": "tests",
+        "coverage": "independent behavioral assertion",
+        "evidence": "bf26fab0-5e6a-479f-96ac-73bb3ed6cd08",
+        "requirement": {
+          "check_name": "Practice behavior",
+          "description": "Repair greeting.py so greet(name) trims spaces and returns Hello, NAME!, using friend for an empty name. Preserve the function interface. Read the file, apply an edit, and run the configured Practice behavior check. Explain the actual result.",
+          "name": "Greeting works for all four cases"
+        },
+        "status": "could not complete"
+      }
+    ],
+    "scope": "Required checks are incomplete",
+    "source_snapshot": "134dfe58d9941bfa1da4a32cbb692865b38f2a219e971ddbab6e956d657cc5a0"
+  }
+}

@@ -124,8 +124,11 @@ def main():
     parser.add_argument('--provider', choices=['openai', 'ollama'], default='openai')
     parser.add_argument('--tool-profile', choices=['compact','compact-lines'], default='compact')
     parser.add_argument('--output', type=Path)
+    parser.add_argument('--conversation-turns', type=int, default=2, help='Actual continuation turns, 2..50')
+    parser.add_argument('--git-project', action='store_true', help='Use a committed project with a separate dirty user file')
     parser.add_argument('--interface', choices=['cli','tui'], default='cli')
     args = parser.parse_args()
+    assert 2 <= args.conversation_turns <= 50
     EDITOR = 'edit_lines' if args.tool_profile == 'compact-lines' else 'edit_text'
     server = ThreadingHTTPServer(('127.0.0.1', 0), Provider)
     threading.Thread(target=server.serve_forever, daemon=True).start()
@@ -136,6 +139,15 @@ def main():
             project = root / 'project'
             project.mkdir()
             SOURCE = project / 'repair.py'
+            user_file=project/'keep.py'
+            if args.git_project:
+                SOURCE.write_text('def scaled(x):\n return x * 2\n')
+                user_file.write_text('# Existing user module\nVALUE = 1\n')
+                subprocess.run(['git','init','-q',str(project)],check=True)
+                subprocess.run(['git','add','repair.py','keep.py'],cwd=project,check=True)
+                subprocess.run(['git','-c','user.name=Alt protocol fixture','-c','user.email=fixture@example.invalid','-c','commit.gpgsign=false','commit','-qm','Seed project'],cwd=project,check=True)
+                user_file.write_text('# Existing user module\nVALUE = 2  # Uncommitted user change ☃\n')
+                user_bytes=user_file.read_bytes()
             state = root / 'state'
             base = [str(args.alt.resolve()), '--data-dir', str(state), '--engine', str(args.goose.resolve()), '--access', 'trusted']
             endpoint = f'http://127.0.0.1:{server.server_port}' + ('/v1' if args.provider == 'openai' else '')
@@ -208,19 +220,20 @@ def main():
                 from live_tui_turn import run_turn
                 destination = args.output.parent / f'{args.output.stem}-tui-scope' if args.output else root / 'tui-scope'
                 destination.mkdir(parents=True)
-                receipt = run_turn(base, project, state, FOLLOWUP_GOAL, 60, destination, lambda _: 0, followup_prompts=[FOLLOWUP_TEXT])
+                receipt = run_turn(base, project, state, FOLLOWUP_GOAL, 60, destination, lambda _: 0, followup_prompts=[FOLLOWUP_TEXT]*(args.conversation_turns-1))
                 assert receipt['error'] is None and receipt['terminal_restored'] and receipt['response_ready_visible'] and not receipt['quit_signal_fallback'], receipt
-                assert receipt['turns_completed'] == receipt['prompts_sent'] == receipt['turns_requested'] == 2, receipt
+                assert receipt['turns_completed'] == receipt['prompts_sent'] == receipt['turns_requested'] == args.conversation_turns, receipt
                 events = [json.loads(line) for line in (destination / 'turn.jsonl').read_text().splitlines()]
             else:
                 first = [json.loads(line) for line in run('run', FOLLOWUP_GOAL, '--json').splitlines()]
                 session = next(e['session']['id'] for e in first if e.get('type') == 'session')
-                second = [json.loads(line) for line in run('run', FOLLOWUP_TEXT, '--json', '--resume', session).splitlines()]
-                events = first + second
-                assert sum(e.get('type') == 'turn_end' and e.get('data', {}).get('stopReason') == 'end_turn' for e in events) == 2
-            assert len(REQUESTS[request_offset:]) == 2, 'Scope fixture requires one actual model request per turn'
+                events=first
+                for _ in range(args.conversation_turns-1):
+                    events += [json.loads(line) for line in run('run', FOLLOWUP_TEXT, '--json', '--resume', session).splitlines()]
+                assert sum(e.get('type') == 'turn_end' and e.get('data', {}).get('stopReason') == 'end_turn' for e in events) == args.conversation_turns
+            assert len(REQUESTS[request_offset:]) == args.conversation_turns, 'Scope fixture requires one actual model request per turn'
             assert SOURCE.read_text() == original_source, 'Scope-only fixture must not manufacture a repair'
-            rows.append({'scenario':'continuation-keeps-original-goal','scope':'Actual two-turn context/transport; source intentionally unchanged; no model weights','events':events,'requests':REQUESTS[request_offset:],'original_goal':FOLLOWUP_GOAL})
+            rows.append({'scenario':'continuation-keeps-original-goal','scope':'Actual continuation context/transport; source intentionally unchanged; no model weights','turns':args.conversation_turns,'events':events,'requests':REQUESTS[request_offset:],'original_goal':FOLLOWUP_GOAL})
             FOLLOWUP_GOAL = None
             SOURCE.write_text('def scaled(x):\n return x * 2\n')
             run('inference', '--requests', '1')
@@ -250,11 +263,14 @@ def main():
             export = json.loads(run('task', 'export'))
             assert any(c['status']=='rejected' for c in export['changes'])
             assert sum(c['status']=='applied' for c in export['changes']) == 7
+            if args.git_project:
+                assert user_file.read_bytes()==user_bytes, 'Uncommitted user changes were overwritten'
+                assert subprocess.check_output(['git','status','--porcelain','--','keep.py'],cwd=project,text=True).strip()=='M keep.py'
         if args.output:
             for row in rows:
                 row['interface'] = 'cli' if row['scenario'] in ['allowance-exhausted','provider-bad-request'] else args.interface
             args.output.parent.mkdir(parents=True, exist_ok=True)
-            args.output.write_text(json.dumps({'scope':'Real Goose and MCP with scripted weight-free responses; protocol only','provider':args.provider,'tool_profile':args.tool_profile,'interface':args.interface,'rows':rows},indent=2)+'\n')
+            args.output.write_text(json.dumps({'scope':'Real Goose and MCP with scripted weight-free responses; protocol only','provider':args.provider,'tool_profile':args.tool_profile,'interface':args.interface,'conversation_turns':args.conversation_turns,'git_project':args.git_project,'rows':rows},indent=2)+'\n')
         print(f'PASS: Goose/{args.provider}: {args.tool_profile} initial read, native {EDITOR} edits, denial, checkpoints, checks, stale-handle and failed-check recovery, exhausted-allowance failure with saved source/history.')
     finally:
         server.shutdown()

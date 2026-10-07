@@ -4,6 +4,11 @@ The supported package target is Linux x86_64. Start with CPU inference or a mode
 server you already use; a GPU is not required to open Alt. Model weights and the
 agent engine are installed separately, after you choose them in the interface.
 
+Use [Alt v0.6.0-beta.2](https://github.com/3d3dcanada/alt-cli/releases/tag/v0.6.0-beta.2)
+for the current packaged beta, including the repair/recovery PC recorder. Its tag
+appears in the TUI header and `alt build-info`; ordinary `alt --version` reports
+the package version.
+
 ## Build from GitHub
 
 On Debian/Ubuntu, install the build and managed-runtime prerequisites:

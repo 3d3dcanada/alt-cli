@@ -466,6 +466,9 @@ impl App {
         Ok(())
     }
     fn manage_inference(&mut self, action: &str, state: Value) -> Result<()> {
+        if action.starts_with("inference-live") {
+            return self.manage_live_allowance(action, state);
+        }
         let (name, profile) = self
             .current_profile()
             .context("Choose a connection first")?;
@@ -522,6 +525,18 @@ impl App {
                         "Min-p",
                         settings.min_p.map(|v| v.to_string()).unwrap_or_default(),
                         "Requires owned llama.cpp or an explicitly qualified external server",
+                    ),
+                    (
+                        "total_generated_tokens",
+                        "Shared generated tokens",
+                        settings.total_generated_tokens.map(|v|v.to_string()).unwrap_or_default(),
+                        "Per connection, shared across messages. Blank leaves this allowance unlimited",
+                    ),
+                    (
+                        "max_requests",
+                        "Shared model calls",
+                        settings.max_requests.map(|v|v.to_string()).unwrap_or_default(),
+                        "Per connection, including retries. Blank leaves this allowance unlimited",
                     ),
                 ];
                 let mut items: Vec<_> = fields
@@ -601,6 +616,8 @@ impl App {
                     "llama_extensions"=>next.llama_extensions=value.parse()?,
                     "output_tokens" => next.output_tokens = value.parse()?,
                     "action_headroom" => next.action_headroom = value.parse()?,
+                    "total_generated_tokens" => next.total_generated_tokens=if value.is_empty(){None}else{Some(value.parse()?)},
+                    "max_requests" => next.max_requests=if value.is_empty(){None}else{Some(value.parse()?)},
                     "reasoning_tokens" => {
                         next.reasoning_tokens = if value.is_empty() {
                             None
@@ -649,9 +666,90 @@ impl App {
                 self.config = config;
                 self.workspace = None;
                 self.connected = false;
-                self.notify("Model allocation saved. Next connection sends these settings in actual requests.");
+                self.notify("Model allocation saved. For this saved task, open Allowance → Apply saved allocation and reconnect.");
             }
             _ => anyhow::bail!("Unknown inference action"),
+        }
+        Ok(())
+    }
+    fn manage_live_allowance(&mut self, action: &str, mut state: Value) -> Result<()> {
+        ensure!(
+            self.session.is_some() && !self.busy && !self.connecting,
+            "Wait for the task to stop before reviewing its saved allocation"
+        );
+        let status = self
+            .inference_status
+            .clone()
+            .context("Waiting for the active connection's allowance report")?;
+        if action != "inference-live" && action != "inference-live-inspect" {
+            ensure!(
+                state["connection"].as_str() == Some(&status.connection_id),
+                "The connection changed. Reopen Allowance to review its current costs"
+            );
+        }
+        match action {
+            "inference-live" => self.manager_menu("Current connection allowance", "Costs are shared across messages on this connection. Adding allowance does not refund spent tokens, send a request, change your model or reset your task. Reconnecting starts a separately recorded connection.", vec![
+                ("Inspect current allowance".into(),"Observed input, reserved output and remaining calls/tokens".into(),"inference-live-inspect".into(),json!({})),
+                ("Add a finite allowance".into(),"Choose extra calls and tokens, then confirm".into(),"inference-live-requests".into(),json!({"connection":status.connection_id})),
+                ("Change output or context settings".into(),"For an input-reserve error; save settings and reconnect".into(),"inference-settings".into(),json!({})),
+                ("Apply saved allocation and reconnect".into(),"Keep this task and model; review new context/output settings".into(),"inference-live-reconnect-review".into(),json!({"connection":status.connection_id})),
+            ]),
+            "inference-live-inspect" => {
+                let limit = |value: Option<u32>| value.map(|v| v.to_string()).unwrap_or_else(|| "No shared limit".into());
+                let prompt = status.input_tokens.map(|v| format!("{v} tokens")).unwrap_or_else(|| "Unknown; the selected server has not supplied a count".into());
+                let thinking = status.reasoning_allowance.map(|v| format!("{v} tokens inside the output allowance")).unwrap_or_else(|| "Selected server default".into());
+                let body = format!("Stage: {}\nModel calls issued: {}\nModel calls remaining: {}\nGenerated tokens remaining: {}\n\nMeasured prompt: {}\nInput reserve: {} tokens\nOutput allowance for the last call: {} tokens\nThinking allowance: {}\nConfigured action headroom: {} tokens\n\nRemaining tokens exclude in-flight reservations. External input counts stay unknown unless measured. Waiting for output includes the server queue and prompt processing; it does not measure reasoning.\n\nFor an input-reserve error, reduce Total output tokens or choose a larger measured native context in Connections. Save settings, then use Allowance → Apply saved allocation and reconnect. The original request remains saved.", status.stage.label(), status.requests_issued, limit(status.remaining_requests), limit(status.remaining_generated_tokens), prompt, status.input_allowance, status.output_allowance, thinking, status.action_headroom);
+                self.dialog = Some(Dialog::Notice { title: "Observed inference allowance".into(), body, scroll: 0 });
+            },
+            "inference-live-requests" => {
+                ensure!(self.connected,"Reconnect before adding allowance to an active connection");
+                ensure!(status.remaining_requests.is_some() && status.remaining_generated_tokens.is_some(),"Configure both shared limits in Model effort first; this connection has no finite allowance to extend");
+                self.manager_input("Extra model calls","Positive calls to add to this connection. Nothing runs until you send another message.","inference-live-tokens",state,"12");
+            },
+            "inference-live-tokens" => {
+                let requests: u32=state["value"].as_str().unwrap_or("").trim().parse()?;
+                ensure!(requests>0,"Choose a positive number of extra calls");
+                state["requests"]=json!(requests);
+                self.manager_input("Extra generated tokens","Positive total output allowance to add, shared across the extra calls. Thinking uses the same total.","inference-live-confirm",state,"8192");
+            },
+            "inference-live-confirm" => {
+                let tokens: u32=state["value"].as_str().unwrap_or("").trim().parse()?;
+                ensure!(tokens>0,"Choose a positive token allowance");
+                let requests=state["requests"].as_u64().context("Missing extra calls")?;
+                state["tokens"]=json!(tokens);
+                self.manager_confirm("Add this connection allowance?",format!("Add {requests} model calls and {tokens} generated tokens.\n\nSpent costs stay charged. The selected model, source files and saved task remain the same. No model request runs automatically. This addition is saved in the request evidence and conversation."),"inference-live-add",state);
+            },
+            "inference-live-add" => {
+                ensure!(self.connected,"The connection closed. Reconnect before adding allowance");
+                let requests=u32::try_from(state["requests"].as_u64().context("Extra calls")?)?;
+                let tokens=u32::try_from(state["tokens"].as_u64().context("Extra tokens")?)?;
+                self.workspace.as_ref().context("Connection closed")?.send(crate::workspace::Command::AddAllowance{requests,tokens})?;
+                self.notify("Adding the confirmed allowance; no model request has been sent.");
+            },
+            "inference-live-reconnect-review" => {
+                let session=self.session.as_ref().context("No saved conversation")?;
+                let configured=self.config.profiles.get(&session.profile_name).context("The saved connection is missing from Connections")?;
+                let mut identity=configured.clone();
+                identity.context_tokens=session.profile.context_tokens;
+                identity.max_turns=session.profile.max_turns;
+                identity.inference=session.profile.inference.clone();
+                if identity.local_model.is_some() {identity.endpoint=session.profile.endpoint.clone();}
+                ensure!(serde_json::to_value(&identity)?==serde_json::to_value(&session.profile)?,"That configured connection now selects a different model or endpoint. Restore the original selection before applying allocation to this task");
+                let mut next=session.profile.clone();
+                next.context_tokens=configured.context_tokens;
+                next.max_turns=configured.max_turns;
+                next.inference=configured.inference.clone();
+                next.validate()?;
+                state["allocation"]=serde_json::to_value(&next)?;
+                self.manager_confirm("Reconnect with this allocation?",format!("Model: {}\nContext: {} → {} tokens\nOutput: {} → {} tokens\n\nKeep the original task, model and provider. This starts a new recorded connection allowance; earlier spent costs remain in evidence. Owned runtimes reload at the selected context. External servers must support that native window. No prompt is sent automatically.",next.model,session.profile.context_tokens,next.context_tokens,session.profile.effective_inference().output_tokens,next.effective_inference().output_tokens),"inference-live-reconnect",state);
+            },
+            "inference-live-reconnect" => {
+                let id=self.session.as_ref().context("No saved conversation")?.id.clone();
+                let profile=serde_json::from_value(state["allocation"].clone())?;
+                let root=self.root.clone();
+                self.launch_io("Saving reviewed allocation",move||Ok(JobResult::Resume(crate::store::Store::open(&root)?.update_allocation(&id,profile)?)))?;
+            },
+            _=>anyhow::bail!("Unknown live allowance action"),
         }
         Ok(())
     }
