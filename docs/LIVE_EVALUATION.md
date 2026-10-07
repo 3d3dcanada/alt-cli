@@ -1,5 +1,10 @@
 # Live uncensored-model evaluation
 
+This page preserves the earlier 0.2–0.4 experiments and their limitations at the
+time. Current application behavior and the 0.6 campaigns are recorded in
+[Implementation 0.6](IMPLEMENTATION_0.6.md). See [coding-task matrices](EVALUATION_MATRIX.md)
+for the current harness; historical claims below do not replace current results.
+
 ## 0.4: repeated independent task acceptance
 
 All 24 baseline attempts used the same pinned Heretic Q4_K_M artifact identified

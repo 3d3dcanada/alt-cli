@@ -1,0 +1,20 @@
+{
+  "phase": "restart_after_200_notes",
+  "expected": {
+    "release_tag": "MARIGOLD_42",
+    "transport": "grpc",
+    "port": 4317
+  },
+  "response_objects": [
+    {
+      "release_tag": "unknown",
+      "transport": "unknown",
+      "port": 4317
+    }
+  ],
+  "passed": false,
+  "cli_exit": 0,
+  "seconds": 171.26,
+  "session": "5f282604-0bb4-4963-984a-352d3e8bf181",
+  "prose": "The requested information for Cedar cannot be fully retrieved from the current files and search results:\n\n- The pinned release tag is not found in the current file or search results.\n- The saved transport protocol is not found in the current file or search results.\n- The inventory port is present in the file (`cedar_inventory_port = 4317`), but it is named `cedar_inventory_port` rather than `cedar]_[inventory]_[port]` as referenced in the task.\n\nAdditional context:\n- A user decision states that Cedar uses gRPC as its transport protocol, but this is not confirmed in the current file or search results.\n- The pinned release tag requirement specifies \"MARIGOLD_42\", but this is not found in the current file.\n\nSince the task requires reporting specific values from cedar_settings.py, and the values are either missing or misnamed, the data cannot be verified without further inspection or file edits (which are not allowed per the task instructions).\n\nFinal response (based on available data):\n\n```json\n{\n  \"release_tag\": \"unknown\",\n  \"transport\": \"unknown\",\n  \"port\": 4317\n}\n```"
+}

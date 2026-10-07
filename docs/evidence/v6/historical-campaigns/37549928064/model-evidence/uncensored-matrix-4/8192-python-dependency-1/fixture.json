@@ -1,0 +1,17 @@
+{
+  "oracle_version": 3,
+  "goal": "Fix app.py so it runs without installing any third-party dependency. The slugify import is unavailable; use the bundled vendor/slugify.py helper and preserve the app entry point and helper behavior. Running python3 app.py must print cedar-project.",
+  "prompt": "Fix app.py so it runs without installing any third-party dependency. The slugify import is unavailable; use the bundled vendor/slugify.py helper and preserve the app entry point and helper behavior. Running python3 app.py must print cedar-project. Inspect relevant files, save a brief plan, use native tools to implement the change, and test it. Report what you actually ran and any remaining uncertainty. Preserve existing public interfaces. Keep your explanation brief.",
+  "original_files": {
+    "app.py": "from slugify import slugify\n\ndef label(text):\n    return slugify(text)\n\nif __name__ == '__main__':\n    print(label('Cedar Project'))\n",
+    "vendor/slugify.py": "def slugify(text):\n    return \"-\".join(text.lower().split())\n",
+    "vendor/__init__.py": ""
+  },
+  "oracle_command": [
+    "python3",
+    "/home/runner/work/_temp/campaign/8192-python-dependency-1/independent/check.py"
+  ],
+  "oracle_sha256_before": {
+    "check.py": "5ea2cfbfb8a0c910afc8aae721a9c36e07cccf05b96129c33d99eeb7fcd97872"
+  }
+}

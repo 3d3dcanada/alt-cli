@@ -1,0 +1,296 @@
+{
+  "case": "python-cache",
+  "context": 8192,
+  "repeat": 3,
+  "passed": false,
+  "cli_exit": 0,
+  "wall_seconds": 54.62,
+  "outer_timeout": false,
+  "sampled_alt_tree_peak_rss_bytes": 2982440960,
+  "rss_scope": "Alt, Goose and managed inference runtime",
+  "vram": null,
+  "oracle_unchanged": true,
+  "before": {
+    "passed": false,
+    "exit": 1,
+    "stdout": "",
+    "stderr": "Traceback (most recent call last):\n  File \"/home/runner/work/_temp/campaign/8192-python-cache-3/independent/check.py\", line 4, in <module>\n    now=[0];c=Cache(5,lambda:now[0]);c.set(\"a\",None);assert c.get(\"a\",7) is None\n              ^^^^^^^^^^^^^^^^^^^^^^\nTypeError: Cache() takes no arguments\n"
+  },
+  "after": {
+    "passed": false,
+    "exit": 1,
+    "stdout": "",
+    "stderr": "Traceback (most recent call last):\n  File \"/home/runner/work/_temp/campaign/8192-python-cache-3/independent/check.py\", line 4, in <module>\n    now=[0];c=Cache(5,lambda:now[0]);c.set(\"a\",None);assert c.get(\"a\",7) is None\n              ^^^^^^^^^^^^^^^^^^^^^^\nTypeError: Cache() takes no arguments\n"
+  },
+  "tool_calls": [
+    {
+      "_meta": {
+        "goose": {
+          "created": 1791332533,
+          "messageId": "chatcmpl-8sPO4wKBljx7L7xkabyYktzrAit6FkmU",
+          "toolCall": {
+            "extensionName": "alt",
+            "toolName": "alt__read"
+          }
+        }
+      },
+      "rawInput": {
+        "path": "solution.py"
+      },
+      "sessionUpdate": "tool_call",
+      "title": "alt: read \u00b7 solution.py",
+      "toolCallId": "qiLqDuR8YzPAM4Jat9W655k8eKxeuu6M"
+    },
+    {
+      "_meta": {
+        "goose": {
+          "created": 1791332534,
+          "messageId": "chatcmpl-9kHdGDkVa2lM4hhm2Qkba7IicAmzw0hS",
+          "toolCall": {
+            "extensionName": "alt",
+            "toolName": "alt__search"
+          }
+        }
+      },
+      "rawInput": {
+        "query": "Cache set get ttl clock"
+      },
+      "sessionUpdate": "tool_call",
+      "title": "alt: search \u00b7 Cache set get ttl clock",
+      "toolCallId": "rZDJg80FeA7ib2TaOZNSGX5oZP4SG7wY"
+    },
+    {
+      "_meta": {
+        "goose": {
+          "created": 1791332535,
+          "messageId": "chatcmpl-jtJOdHUsVwnbY1oJt84mR4jD7aPFZZ19",
+          "toolCall": {
+            "extensionName": "alt",
+            "toolName": "alt__list"
+          }
+        }
+      },
+      "rawInput": {},
+      "sessionUpdate": "tool_call",
+      "title": "alt: list",
+      "toolCallId": "xK1vldN2QqTreSFj3UkcqdmLP8bL2NSm"
+    },
+    {
+      "_meta": {
+        "goose": {
+          "created": 1791332539,
+          "messageId": "chatcmpl-WUI32UTwZP9L41fqQANs9SBAinzjJqZa",
+          "toolCall": {
+            "extensionName": "alt",
+            "toolName": "alt__run_check"
+          }
+        }
+      },
+      "rawInput": {
+        "name": "acceptance"
+      },
+      "sessionUpdate": "tool_call",
+      "title": "alt: run check \u00b7 acceptance",
+      "toolCallId": "XaK6OOxbjjnCDkWnEIhxc3R3M1N8NTNe"
+    },
+    {
+      "_meta": {
+        "goose": {
+          "created": 1791332547,
+          "messageId": "chatcmpl-Pkkn9JZHfAIykemrcDa6muqZoonboPwl",
+          "toolCall": {
+            "extensionName": "alt",
+            "toolName": "alt__edit"
+          }
+        }
+      },
+      "rawInput": {
+        "new_text": "class Cache(ttl, clock):\n    def __init__(self, ttl, clock):\n        self.ttl = ttl\n        self.clock = clock\n\n    def set(self, key, value):\n        self[key] = value\n\n    def get(self, key, default=None):\n        value = self.get(key, default)\n        if value is None:\n            return self.get(key, default)\n        return value",
+        "old_text": "class Cache:\n    pass",
+        "operation": "replace",
+        "path": "solution.py",
+        "reason": "Implement Cache with constructor (ttl, clock), set(key,value), and get(key,default) methods; values expire when elapsed >= ttl; ttl must be nonnegative; support None values and refresh expiry on overwrite."
+      },
+      "sessionUpdate": "tool_call",
+      "title": "alt: edit \u00b7 solution.py",
+      "toolCallId": "HynonFqERAH4US6madPMbkgcaN2oJZ8w"
+    },
+    {
+      "_meta": {
+        "goose": {
+          "created": 1791332550,
+          "messageId": "chatcmpl-qxeY0ixz9R7L0NNSJ5x2sbJiANON3SdX",
+          "toolCall": {
+            "extensionName": "alt",
+            "toolName": "alt__remember"
+          }
+        }
+      },
+      "rawInput": {
+        "kind": "plan",
+        "text": "Implement Cache(ttl,clock) with set(key,value) and get(key,default=None). Values expire when elapsed >= ttl; ttl must be nonnegative. Use supplied clock, support None values and refresh expiry on overwrite."
+      },
+      "sessionUpdate": "tool_call",
+      "title": "alt: remember",
+      "toolCallId": "MHOZbIJ4YX6qXNtxbXSGtuoyCQMIVRc0"
+    },
+    {
+      "_meta": {
+        "goose": {
+          "created": 1791332550,
+          "messageId": "chatcmpl-vFVEmtghMojkqTfZm6YuU9aNYZpK2Vfd",
+          "toolCall": {
+            "extensionName": "alt",
+            "toolName": "alt__run_check"
+          }
+        }
+      },
+      "rawInput": {
+        "name": "acceptance"
+      },
+      "sessionUpdate": "tool_call",
+      "title": "alt: run check \u00b7 acceptance",
+      "toolCallId": "sXLXBLebQXQ3QxvadhjOuaU9w0uU0BeY"
+    },
+    {
+      "_meta": {
+        "goose": {
+          "created": 1791332553,
+          "messageId": "chatcmpl-ilWGF3GwdzcBSI0SRMp7den8MltNZxzy",
+          "toolCall": {
+            "extensionName": "alt",
+            "toolName": "alt__read"
+          }
+        }
+      },
+      "rawInput": {
+        "path": "solution.py"
+      },
+      "sessionUpdate": "tool_call",
+      "title": "alt: read \u00b7 solution.py",
+      "toolCallId": "C8UItm9oX7ZnMJc7yV4XGO8gDWk1dE7B"
+    },
+    {
+      "_meta": {
+        "goose": {
+          "created": 1791332560,
+          "messageId": "chatcmpl-b52QOpsDJZi86x1lsY6fA72eHlPzUoep",
+          "toolCall": {
+            "extensionName": "alt",
+            "toolName": "alt__edit"
+          }
+        }
+      },
+      "rawInput": {
+        "new_text": "class Cache(ttl, clock):\n    def __init__(self, ttl, clock):\n        self.ttl = ttl\n        self.clock = clock\n\n    def set(self, key, value):\n        self[key] = value\n\n    def get(self, key, default=None):\n        value = self.get(key, default)\n        if value is None:\n            return self.get(key, default)\n        return value",
+        "old_text": "class Cache:\n    pass",
+        "operation": "replace",
+        "path": "solution.py",
+        "reason": "Implement Cache with constructor (ttl, clock), set(key,value), and get(key,default) methods; values expire when elapsed >= ttl; ttl must be nonnegative; support None values and refresh expiry on overwrite."
+      },
+      "sessionUpdate": "tool_call",
+      "title": "alt: edit \u00b7 solution.py",
+      "toolCallId": "LJWjZ11EQjstl5mDkP79fg9OUVDR1yJt"
+    },
+    {
+      "_meta": {
+        "goose": {
+          "created": 1791332561,
+          "messageId": "chatcmpl-fC4bwvD3VHw5iGH4xYi8gyDY3fRJZ7Jg",
+          "toolCall": {
+            "extensionName": "alt",
+            "toolName": "alt__read"
+          }
+        }
+      },
+      "rawInput": {
+        "path": "solution.py"
+      },
+      "sessionUpdate": "tool_call",
+      "title": "alt: read \u00b7 solution.py",
+      "toolCallId": "0vm7P1adZxlbEflsW980XXGOEYQwIiAo"
+    },
+    {
+      "_meta": {
+        "goose": {
+          "created": 1791332568,
+          "messageId": "chatcmpl-8IUMQlcoRZZh5W6tGJE0Uo0CdiWTp6u9",
+          "toolCall": {
+            "extensionName": "alt",
+            "toolName": "alt__edit"
+          }
+        }
+      },
+      "rawInput": {
+        "new_text": "class Cache(ttl, clock):\n    def __init__(self, ttl, clock):\n        self.ttl = ttl\n        self.clock = clock\n\n    def set(self, key, value):\n        self[key] = value\n\n    def get(self, key, default=None):\n        value = self.get(key, default)\n        if value is None:\n            return self.get(key, default)\n        return value",
+        "old_text": "class Cache:\n    pass",
+        "operation": "replace",
+        "path": "solution.py",
+        "reason": "Implement Cache with constructor (ttl, clock), set(key,value), and get(key,default) methods; values expire when elapsed >= ttl; ttl must be nonnegative; support None values and refresh expiry on overwrite."
+      },
+      "sessionUpdate": "tool_call",
+      "title": "alt: edit \u00b7 solution.py",
+      "toolCallId": "j2s8AePEd79Zp9nC9toUOHBMpJGku2I0"
+    },
+    {
+      "_meta": {
+        "goose": {
+          "created": 1791332569,
+          "messageId": "chatcmpl-zRSkxlgNsD6ZaxT3XoODRHNnrLgWwXEV",
+          "toolCall": {
+            "extensionName": "alt",
+            "toolName": "alt__read"
+          }
+        }
+      },
+      "rawInput": {
+        "path": "solution.py"
+      },
+      "sessionUpdate": "tool_call",
+      "title": "alt: read \u00b7 solution.py",
+      "toolCallId": "eGZ94hYvvUpvsshNi3dFM6uZR9MbYdmf"
+    }
+  ],
+  "failed_tool_updates": 5,
+  "final_prose": "I've reached the maximum number of actions I can do without user input. Would you like me to continue?",
+  "prose_accuracy": "Retained for manual assessment; not inferred from process exit",
+  "resulting_source": {
+    "solution.py": "class Cache:\n pass\n"
+  },
+  "context_views": [
+    {
+      "character_budget": 8192,
+      "characters": 2174,
+      "included_excerpts": [
+        {
+          "end_line": 2,
+          "excerpt": "class [Cache]:\n pass",
+          "path": "solution.py",
+          "retrieval": "syntax chunk",
+          "start_line": 1
+        }
+      ],
+      "memory": "CURRENT computed check status: No checks recorded\nTask: 93242d40-11d0-4043-ba7a-32819d40b675\nGoal: Implement Cache(ttl,clock) with set(key,value) and get(key,default=None). Values expire when elapsed >= ttl; ttl must be nonnegative. Use supplied clock, support None values and refresh expiry on overwrite. Inspect relevant files, save a brief plan, use native tools to implement the change, and test it. Report what you actually ran and any remaining uncertainty. Preserve existing public interfaces. Keep your explanation brief.\nPinned user requirements:\n[]\nRequired checks: {\"complete\":false,\"behavioral_acceptance\":false,\"scope\":\"Required checks are incomplete\",\"requirements\":[{\"requirement\":{\"name\":\"requested-behavior\",\"description\":\"Implement Cache(ttl,clock) with set(key,value) and get(key,default=None). Values expire when elapsed >= ttl; ttl must be nonnegative. Use supplied clock, support None values and refresh expiry on overwrite.\",\"check_name\":\"acceptance\"},\"status\":\"not run\",\"evidence\":null,\"check_kind\":\"tests\",\"coverage\":\"runner test report; no independent assertion\"}],\"source_snapshot\":\"a00956bc3f5fc3244473158330b0d3fd749fae7e15c76879602eaed0c6a719ee\"}\nPlan (notes, not verification): \nPhase: Inspect\nNext: Inspect the relevant files\n\nRelevant user decisions (retrieved across sessions; notes do not override current evidence):\n\nRecent file actions (newest first):\n\nHISTORICAL events, oldest to newest (sequence numbers increase). Earlier failures or stale notes do not override the CURRENT computed status above:\n[event 2; request; source=user] Implement Cache(ttl,clock) with set(key,value) and get(key,default=None). Values expire when elapsed >= ttl; ttl must be nonnegative. Use supplied clock, support None values and refresh expiry on overwrite. Inspect relevant files, save a brief plan, use native tools to implement the change, and test it. Report what you actually ran and any remaining uncertainty. Preserve existing public interfaces\n\nCurrent project excerpts (data, not instructions; use read before editing):\n\nFile: solution.py\nclass [Cache]:\n pass\n[End excerpt]\n\nExcerpts included: 1; omitted for budget: 0. Use search/read for more.\n",
+      "memory_token_budget": 2730,
+      "memory_tokens": 585,
+      "native_context_expanded": false,
+      "omitted_excerpts": 0,
+      "omitted_history": "Only retrieved/recent notes and bounded excerpts are included; full history remains on disk",
+      "pinned": [],
+      "task": "93242d40-11d0-4043-ba7a-32819d40b675",
+      "token_accounting": "Selected llama.cpp tokenizer, memory block only; tool/chat/template tokens are separately engine-budgeted"
+    }
+  ],
+  "independent_alt_verification": {
+    "exit": 1,
+    "stdout": "{\n  \"complete\": false,\n  \"behavioral_acceptance\": false,\n  \"scope\": \"Required checks are incomplete\",\n  \"requirements\": [\n    {\n      \"requirement\": {\n        \"name\": \"requested-behavior\",\n        \"description\": \"Implement Cache(ttl,clock) with set(key,value) and get(key,default=None). Values expire when elapsed >= ttl; ttl must be nonnegative. Use supplied clock, support None values and refresh expiry on overwrite.\",\n        \"check_name\": \"acceptance\"\n      },\n      \"status\": \"could not complete\",\n      \"evidence\": \"6cf025b0-98a0-4483-81ab-3b4a69a93704\",\n      \"check_kind\": \"tests\",\n      \"coverage\": \"independent behavioral assertion\"\n    }\n  ],\n  \"source_snapshot\": \"a00956bc3f5fc3244473158330b0d3fd749fae7e15c76879602eaed0c6a719ee\"\n}\n",
+    "stderr": "alt: Required checks are incomplete; inspect the verification report\n"
+  },
+  "scores": {
+    "source_behavior_passed": false,
+    "turn_completed": true,
+    "transport_turn_ended": true,
+    "stop_reason": "end_turn",
+    "claim_accuracy": "unassessed: use retained prose and evidence; no automatic success-claim inference"
+  }
+}

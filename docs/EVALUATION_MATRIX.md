@@ -1,5 +1,26 @@
 # Reproducible coding-task matrices
 
+The 0.6 GitHub workflow runs an entire 120-attempt matrix for an explicitly
+selected pinned Spark or Qwen uncensored checkpoint. Dispatch **Complete
+uncensored model matrix** and choose the model. Each campaign builds one frozen
+executable, then runs eight disjoint shards: 100 development attempts and 20
+held-out attempts at 8K context, five repetitions per task. A green measurement
+job means all assigned attempts were retained, not that the model solved them.
+
+`scripts/summarize_matrix.py` checks every expected cell, raw evidence hashes,
+unchanged oracles and matching executable/model/runtime/settings across shards.
+`scripts/compare_matrices.py` rejects comparisons with changed model, harness,
+runtime or budget controls. Generation seeds and underlying hosted CPU hardware
+are not matched; comparisons are descriptive counts, not statistical proof.
+The workflow preserves failures and timeouts in a dedicated results branch as
+well as Actions artifacts. It never silently switches models or promotes a preset.
+
+`scripts/measure_live_memory.py` separately probes saved decisions, 200 distracting
+notes, process restarts and a source edit. It uses the same selected uncensored
+model for all three observations. The request contains no expected answer values.
+This narrow recall probe is separate from coding-task success and cannot enlarge
+the model's native context. See the current [implementation record](IMPLEMENTATION_0.6.md).
+
 `acceptance_projects.py` defines 20 development tasks and four held-out tasks.
 They cover Python/Rust/JavaScript features, multi-file repairs, dependency imports,
 CLI setup, configuration, CSV precision, SQLite migration/transactions, paths,
@@ -11,6 +32,17 @@ Run `python3 scripts/acceptance_projects.py` first. Every oracle must reject its
 broken seed and accept a known repair. Additional negative controls reject selected
 incomplete repairs. This validates the fixture, not a model's ability to solve it.
 Do not tune prompts on held-out task results and then describe those tasks as unseen.
+
+Oracle contract 4 requires the assertion runner to emit a fresh completion receipt
+only after the checks finish. Exit 0 alone is insufficient: Python, Rust and
+JavaScript early-exit negative controls exercise that failure. The Rust oracle
+compiles against the actual project snapshot and verifies that its named test
+ran. Collection copies only declared assertion inputs, never generated compiler
+output. `scripts/smoke_acceptance_collection.py` exercises collection, snapshot
+behavior and structured verification through actual Alt processes. Earlier
+contract-3 cohorts remain historical and cannot be compared as matched baselines.
+These checks establish the recorded fixture behavior; Full access is not a
+sandbox for adversarial oracle code.
 
 ```bash
 python3 scripts/live_acceptance.py \

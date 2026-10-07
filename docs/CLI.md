@@ -47,6 +47,13 @@ gating terms on Hugging Face first. Authenticated Ollama inference is not suppor
 
 ## Run a task
 
+Start with `alt practice` to create a fresh example in Alt's data folder. Open the
+TUI and choose **Try a practice project** on Home for the repair/check/undo guide.
+The four Python checks are pinned outside the editable example. An existing
+project is preserved, and each new lesson gets its own folder. Home's **Prepare
+project checks** offers commands discovered from your project's actual manifests;
+review a suggestion before saving or running it.
+
 ```bash
 alt run 'Inspect this project and explain its test commands'
 alt --access trusted run 'Run the documented checks and explain failures' --allow-tools --json

@@ -1,0 +1,40 @@
+{
+  "files": 5001,
+  "machine": "CPU cloud, filesystem cache warm after file creation",
+  "measurements": [
+    {
+      "phase": "initial",
+      "seconds": 14.659,
+      "report": {
+        "indexed": 5001,
+        "method": "Incremental metadata scan; changed content only; inode/ctime/mtime/size detection",
+        "removed": 0,
+        "skipped": 0,
+        "updated": 5001
+      }
+    },
+    {
+      "phase": "unchanged",
+      "seconds": 0.085,
+      "report": {
+        "indexed": 5001,
+        "method": "Incremental metadata scan; changed content only; inode/ctime/mtime/size detection",
+        "removed": 0,
+        "skipped": 0,
+        "updated": 0
+      }
+    },
+    {
+      "phase": "edit_and_delete",
+      "seconds": 0.093,
+      "report": {
+        "indexed": 5000,
+        "method": "Incremental metadata scan; changed content only; inode/ctime/mtime/size detection",
+        "removed": 1,
+        "skipped": 0,
+        "updated": 1
+      }
+    }
+  ],
+  "scope": "Index discovery exceeds 4096-file editing/check-snapshot limit; those mutation limits remain explicit."
+}

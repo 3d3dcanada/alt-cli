@@ -15,15 +15,15 @@ or server connections. It does not modify model weights or silently replace your
 selected model. Full access supports arbitrary commands, networking, package
 installation and external tools with your normal account permissions.
 
-![Alt's terminal and project workspace](docs/screenshots/v4/terminal.png)
+![Alt 0.6 showing the independently checked practice repair](docs/screenshots/v6/verified-80x24.png)
 
-**Status: 0.6.0 beta · Linux x86_64 · Apache-2.0.** The screenshot is from the
-working 0.4 interface; 0.6 adds practice tasks, clearer check setup and recovery improvements. Model reliability and hardware support are measured separately from
+**Status: 0.6.0 beta · Linux x86_64 · Apache-2.0.** The screenshot shows the actual
+0.6 practice workflow after a manual edit and four behavioral checks. Model reliability and hardware support are measured separately from
 application tests. [Read the results and remaining gaps](docs/IMPLEMENTATION.md).
 
 ## Try it on your computer
 
-Versioned Linux packages are published on [GitHub Releases](https://github.com/3d3dcanada/alt-cli/releases). See [Installation](docs/INSTALLATION.md) for archive and GitHub provenance verification, or build from source below.
+Find versioned Linux packages on [GitHub Releases](https://github.com/3d3dcanada/alt-cli/releases). See [Installation](docs/INSTALLATION.md) for archive and GitHub provenance verification, or build from source below.
 
 Install [Rust with rustup](https://rustup.rs/), Git and a C compiler first. On
 Debian/Ubuntu, the usual prerequisites are `git build-essential pkg-config curl
@@ -130,11 +130,12 @@ Keys are referenced by environment-variable name, not saved in model profiles.
 - [Implementation and evidence](docs/IMPLEMENTATION.md) · [Current work orders](docs/WORK_ORDERS_0.6.md) · [PC test guide](docs/PC_TESTING.md)
 - [Research and project history](docs/research/README.md) · [Documentation index](docs/README.md)
 
-Earlier validation included 79 Rust tests, four PTY walkthroughs, 30 responsiveness
-journeys, 30 terminal lifecycle rounds and packaged install/rollback checks on
-Debian 11 and Ubuntu 24.04. These are scoped measurements, not a guarantee that any
-model can solve any task. Automated checks and raw failures are retained in the
-repository; the current report records the additional 0.6 checks, model campaign and pending human/hardware acceptance.
+Current validation includes **91 Rust tests**, five PTY walkthroughs, 30
+responsiveness journeys, 60 stream-recovery scenarios and packaged
+install/update/rollback checks on Debian 11 and Ubuntu 24.04. The local PC recorder
+also passed a live uncensored-model CPU trial. These measurements do not guarantee
+that a model can solve an arbitrary task. The [current evidence](docs/evidence/v6/README.md)
+separates application results, model outcomes and remaining human/hardware checks.
 
 ## Development and license
 

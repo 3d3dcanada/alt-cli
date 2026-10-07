@@ -1,0 +1,41 @@
+{
+  "schema": 1,
+  "old_oracle_contract": 3,
+  "replacement_oracle_contract": 4,
+  "runs": [
+    {
+      "run": 37549928064,
+      "status": "Completed model execution; incomplete export",
+      "reason": "Rust compiler outputs entered the evidence collector, aborting one shard export. Original report recorded 105/120 validated cells. Evidence branch push also attempted to restore an older workflow and was rejected.",
+      "recovered_directory": "historical-campaigns/37549928064",
+      "available_attempt_reports": 116
+    },
+    {
+      "run": 37550199900,
+      "status": "Cancelled",
+      "reason": "Stopped after identifying oracle execution/collection flaws; available artifacts are retained. Unfinished runner files cannot be reconstructed.",
+      "recovered_directory": "historical-campaigns/37550199900",
+      "available_attempt_reports": 0
+    },
+    {
+      "run": 37552329323,
+      "status": "Failed before model execution",
+      "reason": "File-editor submission raced a background file listing. Fixed with replaceable read-only listing and regression tests."
+    },
+    {
+      "run": 37552331937,
+      "status": "Cancelled",
+      "reason": "Stopped because it used the superseded oracle contract; no scores from this cohort qualify a preset.",
+      "recovered_directory": "historical-campaigns/37552331937",
+      "available_attempt_reports": 0
+    },
+    {
+      "run": 37553912579,
+      "status": "Cancelled",
+      "reason": "Stopped because it used the superseded oracle contract; some workers were still queued. No model-success selection was used.",
+      "recovered_directory": "historical-campaigns/37553912579",
+      "available_attempt_reports": 0
+    }
+  ],
+  "scope": "Diagnostic and historical campaigns only. Final acceptance requires fresh complete matrices under oracle contract 4; raw available outputs remain separate."
+}

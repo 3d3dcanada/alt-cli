@@ -85,7 +85,8 @@ signature. Published betas additionally provide GitHub provenance attestations. 
 
 ## First launch
 
-1. In Home, choose the folder you want to work on.
+1. In Home, choose **Try a practice project** for a guided repair/check/undo
+   example, or choose the folder you want to work on.
 2. Choose **Connect a model**. For an existing server, enter its address, test the
    connection, choose a listed model and save. Ollama uses its server root;
    compatible APIs usually use a `/v1` address.
@@ -96,7 +97,9 @@ signature. Published betas additionally provide GitHub provenance attestations. 
    also install the CPU runtime from Models, or select your own executable in
    Settings. Downloads are pinned and checked before use.
 5. Choose access in Settings and send a request. Open Task to review actual edits
-   and checks. Configure checks directly there when the model cannot do it.
+   and checks. **Prepare project checks** on Home offers commands discovered
+   from the project; review them before adding. Configure contracts directly in
+   Task when the model cannot do it.
 
 Guided checks require working Bubblewrap/user namespaces. On Debian/Ubuntu,
 `sudo apt install bubblewrap` installs the optional isolation tool. If your host
