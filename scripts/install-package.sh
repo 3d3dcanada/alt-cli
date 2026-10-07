@@ -44,19 +44,21 @@ fi
 python3 - "$package_dir" <<'PY'
 import hashlib,json,sys
 from pathlib import Path
+def require(condition,message):
+ if not condition: raise SystemExit(message)
 p=Path(sys.argv[1]);manifest=json.loads((p/'PLATFORM.json').read_text())
-assert hashlib.sha256((p/'alt').read_bytes()).hexdigest()==manifest['sha256'],'Binary checksum failed'
+require(hashlib.sha256((p/'alt').read_bytes()).hexdigest()==manifest['sha256'],'Binary checksum failed')
 contents=json.loads((p/'CONTENTS.json').read_text())
 required={'alt','install.sh','README.md','LICENSE','THIRD_PARTY.md','DEPENDENCIES.md','PLATFORM.json','BUILD.json','SBOM.cdx.json'}
-assert isinstance(contents,dict) and required<=contents.keys(),'Incomplete package manifest'
+require(isinstance(contents,dict) and required<=contents.keys(),'Incomplete package manifest')
 permitted=set(contents)|{'CONTENTS.json','CONTENTS.json.sig','PLATFORM.json.sig'}
 for target in p.rglob('*'):
- assert not target.is_symlink(),'Linked package entry'
- assert target.is_dir() or (target.is_file() and str(target.relative_to(p)) in permitted),'Unexpected package entry'
+ require(not target.is_symlink(),'Linked package entry')
+ require(target.is_dir() or (target.is_file() and str(target.relative_to(p)) in permitted),'Unexpected package entry')
 for name,digest in contents.items():
- rel=Path(name);assert not rel.is_absolute() and '..' not in rel.parts,'Invalid content path'
- target=p/rel;assert target.is_file() and not target.is_symlink(),'Missing or linked package file'
- assert hashlib.sha256(target.read_bytes()).hexdigest()==digest,f'Package integrity failed: {name}'
+ rel=Path(name);require(not rel.is_absolute() and '..' not in rel.parts,'Invalid content path')
+ target=p/rel;require(target.is_file() and not target.is_symlink(),'Missing or linked package file')
+ require(hashlib.sha256(target.read_bytes()).hexdigest()==digest,f'Package integrity failed: {name}')
 PY
 "$package_dir/alt" --version || { echo 'Incompatible binary; see PLATFORM.json.' >&2; exit 1; }
 # Preserve the corresponding state before replacing an existing installation.
