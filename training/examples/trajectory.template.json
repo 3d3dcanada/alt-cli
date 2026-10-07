@@ -1,0 +1,47 @@
+{
+  "schema_version": 1,
+  "id": "REPLACE_WITH_REVIEWED_TRAJECTORY_ID",
+  "task_group": "REPLACE_WITH_FROZEN_FAMILY_ID",
+  "split": "train",
+  "response_style": "concise",
+  "synthetic": false,
+  "actor": {
+    "kind": "model",
+    "repository": "REPLACE_WITH_ACTUAL_UNCENSORED_ACTOR",
+    "revision": "REPLACE_WITH_ACTOR_COMMIT",
+    "uncensored": true,
+    "artifact_sha256": "REPLACE_WITH_WEIGHT_OR_WEIGHT_MANIFEST_SHA256",
+    "template_sha256": "REPLACE_WITH_NATIVE_TEMPLATE_SHA256",
+    "quantization": "REPLACE_WITH_ACTUAL_PRECISION_OR_QUANTIZATION",
+    "runtime_build": "REPLACE_WITH_EXACT_RUNTIME_BUILD"
+  },
+  "messages": [],
+  "tools": [],
+  "source": {
+    "repository": "REPLACE_WITH_SOURCE_REPOSITORY",
+    "revision": "REPLACE_WITH_SOURCE_COMMIT",
+    "license": "REPLACE_AFTER_RIGHTS_REVIEW",
+    "raw_trace_path": "evidence/attempt/turn.jsonl",
+    "raw_trace_sha256": "REPLACE_WITH_SHA256",
+    "transcript_path": "evidence/attempt/transcript.json",
+    "transcript_sha256": "REPLACE_WITH_SHA256",
+    "snapshot_path": "evidence/attempt/tested-source.tar",
+    "snapshot_sha256": "REPLACE_WITH_SHA256"
+  },
+  "checks": [
+    {
+      "name": "behavior-contract-v1",
+      "path": "evidence/attempt/check.json",
+      "sha256": "REPLACE_WITH_SHA256"
+    }
+  ],
+  "review": {
+    "status": "pending",
+    "reviewer": "REPLACE_WITH_REVIEWER",
+    "source_correctness": false,
+    "tool_results_real": false,
+    "rights_reviewed": false,
+    "privacy_reviewed": false,
+    "split_reviewed": false
+  }
+}

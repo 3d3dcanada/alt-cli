@@ -1,0 +1,26 @@
+{
+  "schema_version": 1,
+  "deployment_target": "9B Q4; exact family and GTX 1070 profile require qualification",
+  "model": {
+    "repository": "REPLACE_WITH_UNCENSORED_HF_REPOSITORY",
+    "revision": "REPLACE_WITH_IMMUTABLE_CHECKPOINT_COMMIT",
+    "uncensored": true,
+    "license": "REPLACE_AFTER_REVIEW",
+    "license_reviewed": false
+  },
+  "chat_template_kwargs": {},
+  "training": {
+    "method": "qlora-nf4",
+    "compute_dtype": "fp16",
+    "max_length": 2048,
+    "max_steps": 100,
+    "eval_steps": 25,
+    "gradient_accumulation_steps": 16,
+    "learning_rate": 0.0001,
+    "lora_rank": 16,
+    "lora_alpha": 32,
+    "seed": 42,
+    "min_train_task_groups": 32,
+    "min_validation_task_groups": 8
+  }
+}

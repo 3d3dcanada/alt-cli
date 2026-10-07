@@ -4,6 +4,13 @@ Updated October 6, 2026. This describes the full product roadmap. The 0.4 beta i
 
 **Reference machine:** Linux, 16 GB system RAM, NVIDIA GTX 1070 with 8 GB VRAM. Prioritize older consumer computers, retain CPU operation, and enable additional acceleration/capacity on newer systems. ORA is the user's own runtime and does not require a dedicated integration in this phase.
 
+**October 7 update:** the owner also uses **7B and 9B Q4 models** on this machine.
+These are explicit deployment targets, including CPU/partial-offload profiles
+where required. The [unified harness/reasoning implementation plan](SMALL_MODEL_IMPLEMENTATION_PLAN.md)
+supersedes the older size-prioritization assumptions below and links the
+[training handoff](../training/README.md). Exact-model PC fit and training remain
+separate qualification gates.
+
 ## Approved 0.3 additions
 
 Implemented: Alt-owned tools and execution profiles; checkpoints/diff/undo;
