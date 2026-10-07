@@ -1,0 +1,43 @@
+name: Qualify official LM Studio headless runtime
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - name: Acquire the official installer for inspection without executing it
+        run: |
+          mkdir lmstudio-evidence
+          python3 - <<'PY'
+          import hashlib,json,urllib.request
+          from pathlib import Path
+          root=Path('lmstudio-evidence')
+          result={'source':'https://lmstudio.ai/install.sh','executed':False}
+          try:
+              with urllib.request.urlopen(result['source'],timeout=60) as response:
+                  body=response.read(1024*1024+1)
+                  assert len(body)<=1024*1024, 'Unexpectedly large installer'
+                  result['resolved_url']=response.url
+              (root/'installer.sh').write_bytes(body)
+              result.update(sha256=hashlib.sha256(body).hexdigest(),bytes=len(body),acquired=True)
+          except Exception as error:
+              result.update(acquired=False,error=str(error))
+          (root/'acquisition.json').write_text(json.dumps(result,indent=2)+'\n')
+          PY
+      - name: Retain acquisition evidence on a documents-only branch
+        run: |
+          git fetch origin main:refs/remotes/origin/main
+          git switch -c "evidence/lmstudio-$GITHUB_RUN_ID" origin/main
+          mkdir -p docs/evidence/v6/lmstudio
+          cp -R lmstudio-evidence/. docs/evidence/v6/lmstudio/
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add docs/evidence/v6/lmstudio
+          git commit -m "Retain official LM Studio acquisition evidence $GITHUB_RUN_ID"
+          git push origin HEAD
