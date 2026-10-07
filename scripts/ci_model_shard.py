@@ -18,10 +18,10 @@ command=[sys.executable,str(scripts/'live_acceptance.py'),'--binary',str(a.binar
 a.output.mkdir(parents=True,exist_ok=True)
 with (a.output/'campaign.log').open('w') as log:
     result=subprocess.run(command,stdout=log,stderr=subprocess.STDOUT)
-subprocess.run([sys.executable,str(scripts/'collect_live_evidence.py'),str(campaign),str(a.output)],check=True)
 build=json.loads(subprocess.check_output([str(a.binary.resolve()),'build-info']))
 (a.output/'BUILD.json').write_text(json.dumps(build,indent=2)+'\n')
-(a.output/'host.json').write_text(json.dumps({'platform':platform.platform(),'cpu_count':os.cpu_count(),'github_run_id':os.environ.get('GITHUB_RUN_ID'),'github_sha':os.environ.get('GITHUB_SHA'),'shard':a.shard,'assigned_cases':cases,'harness_exit':result.returncode,'harness_inputs':{name:hashlib.sha256((scripts/name).read_bytes()).hexdigest() for name in ['live_acceptance.py','acceptance_projects.py','acceptance_extra.py']}},indent=2)+'\n')
+(a.output/'host.json').write_text(json.dumps({'platform':platform.platform(),'cpu_count':os.cpu_count(),'github_run_id':os.environ.get('GITHUB_RUN_ID'),'github_sha':os.environ.get('GITHUB_SHA'),'shard':a.shard,'assigned_cases':cases,'harness_exit':result.returncode,'harness_inputs':{name:hashlib.sha256((scripts/name).read_bytes()).hexdigest() for name in ['live_acceptance.py','acceptance_projects.py','acceptance_extra.py','collect_live_evidence.py']}},indent=2)+'\n')
+subprocess.run([sys.executable,str(scripts/'collect_live_evidence.py'),str(campaign),str(a.output)],check=True)
 reports=list(a.output.glob('*/report.json'))
 assert len(reports)==len(cases)*5, f'Incomplete shard: recorded {len(reports)} of {len(cases)*5}'
 print(json.dumps({'recorded':len(reports),'passed':sum(json.loads(p.read_text())['passed'] for p in reports),'scope':'Measurement completed; this is not a model acceptance pass.'}))

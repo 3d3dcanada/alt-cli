@@ -15,8 +15,10 @@ for run in sorted(a.source.iterdir()):
   if source.exists():
    assert source.stat().st_size<32*1024*1024,'Inspect unexpectedly large evidence before copying'
    shutil.copy2(source,dest/name);manifest[str((dest/name).relative_to(a.destination))]=hashlib.sha256(source.read_bytes()).hexdigest()
- for source in sorted((run/'independent').rglob('*')):
-  if not source.is_file():continue
+ fixture=json.loads((run/'fixture.json').read_text())
+ for name in sorted(fixture['oracle_sha256_before']):
+  relative=Path(name);assert not relative.is_absolute() and '..' not in relative.parts
+  source=run/'independent'/relative
   assert not source.is_symlink() and source.stat().st_size<4*1024*1024
   target=dest/'independent'/source.relative_to(run/'independent');target.parent.mkdir(parents=True,exist_ok=True)
   shutil.copy2(source,target);manifest[str(target.relative_to(a.destination))]=hashlib.sha256(source.read_bytes()).hexdigest()
@@ -25,6 +27,7 @@ for run in sorted(a.source.iterdir()):
   with sqlite3.connect('file:'+str(database)+'?mode=ro',uri=True)as db:
    try:contexts.extend(json.loads(row[0]) for row in db.execute('SELECT payload FROM context_views'))
    except sqlite3.OperationalError:pass
- if contexts:(dest/'context-views.json').write_text(json.dumps(contexts,indent=2)+'\n')
+ if contexts:
+  path=dest/'context-views.json';path.write_text(json.dumps(contexts,indent=2)+'\n');manifest[str(path.relative_to(a.destination))]=hashlib.sha256(path.read_bytes()).hexdigest()
 (root_manifest:=a.destination/'RAW-SHA256.json').write_text(json.dumps(manifest,sort_keys=True,indent=2)+'\n')
 print(f'Retained {len(manifest)} raw files in {a.destination}')
