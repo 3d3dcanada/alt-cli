@@ -113,6 +113,9 @@ class Generations(unittest.TestCase):
         runner = r"""
 import importlib.util,os,sys
 from pathlib import Path
+# The helper can come from an immutable extracted release package. Importing the
+# fault target must not add unmanifested __pycache__ files to that package.
+sys.dont_write_bytecode=True
 spec=importlib.util.spec_from_file_location('installer',sys.argv[1])
 module=importlib.util.module_from_spec(spec);spec.loader.exec_module(module)
 original=module.link
