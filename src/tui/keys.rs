@@ -125,6 +125,9 @@ impl App {
             Page::Home => match key.code {
                 KeyCode::Down => self.home_selected = (self.home_selected + 1) % 8,
                 KeyCode::Up => self.home_selected = (self.home_selected + 7) % 8,
+                KeyCode::Left | KeyCode::Right => {
+                    self.move_home_horizontally(key.code == KeyCode::Right)
+                }
                 KeyCode::Enter => self.home_action(self.home_selected)?,
                 _ => {}
             },
@@ -279,7 +282,7 @@ impl App {
             },
             Page::Settings => match key.code {
                 KeyCode::Up => self.settings_selected = self.settings_selected.saturating_sub(1),
-                KeyCode::Down => self.settings_selected = (self.settings_selected + 1).min(16),
+                KeyCode::Down => self.settings_selected = (self.settings_selected + 1).min(17),
                 KeyCode::Enter | KeyCode::Right => self.setting_action(self.settings_selected)?,
                 _ => {}
             },
@@ -307,6 +310,31 @@ impl App {
                     self.hub_files.len()
                 }
             }
+        }
+    }
+
+    fn move_home_horizontally(&mut self, right: bool) {
+        let Some((current, _)) = self
+            .hits
+            .iter()
+            .find(|(_, hit)| matches!(hit, Hit::Home(index) if *index == self.home_selected))
+        else {
+            return;
+        };
+        // Follow the rendered cards so changing layout or terminal size cannot
+        // send selection into an invisible second column. The selected hint at
+        // the bottom is a duplicate hit, after the actual cards/list rows.
+        if let Some(index) = self.hits.iter().find_map(|(rect, hit)| {
+            let Hit::Home(index) = hit else { return None };
+            (rect.y == current.y
+                && if right {
+                    rect.x > current.x
+                } else {
+                    rect.x < current.x
+                })
+            .then_some(*index)
+        }) {
+            self.home_selected = index;
         }
     }
 
@@ -399,6 +427,7 @@ impl App {
             return self.task_action(action);
         }
         match action {
+            "appearance" => self.appearance_dialog(),
             "quit" => {
                 if self.busy || self.connecting || self.job.is_some() {
                     self.dialog=Some(Dialog::Confirm{title:"Leave Alt?".into(),body:"Your conversation is saved. The active task and any download will stop; partial downloads can be resumed later.".into(),action:ConfirmAction::Quit,selected:0});
@@ -713,6 +742,10 @@ impl App {
             14 => return self.manager_action("benchmark-preview", serde_json::json!({})),
             15 => return self.manager_action("tools-focus", serde_json::json!({})),
             16 => return self.manager_action("qualify-preview", serde_json::json!({})),
+            17 => {
+                self.appearance_dialog();
+                return Ok(());
+            }
             10 => return self.manager_action("manage-tools", serde_json::json!({})),
             11 => return self.manager_action("manage-storage", serde_json::json!({})),
             12 => return self.manager_action("manage-models", serde_json::json!({})),
@@ -1155,7 +1188,7 @@ impl App {
                 down,
             ),
             Page::Sessions => move_selection(&mut self.session_selected, self.sessions.len(), down),
-            Page::Settings => move_selection(&mut self.settings_selected, 17, down),
+            Page::Settings => move_selection(&mut self.settings_selected, 18, down),
             Page::Files => {
                 let count = self.filtered_files().len();
                 move_selection(&mut self.workbench.file_selected, count, down);
@@ -1182,6 +1215,7 @@ impl App {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::config::Preferences;
 
     fn setup() -> (tempfile::TempDir, App) {
         let directory = tempfile::tempdir().unwrap();
@@ -1195,6 +1229,158 @@ mod tests {
         app.paste(query);
         app.key(KeyEvent::new(KeyCode::Enter, KeyModifiers::NONE))
             .unwrap();
+    }
+
+    #[test]
+    fn home_arrows_cross_visible_card_columns_without_activating_them() {
+        let (_directory, mut app) = setup();
+        app.hits = (0..8)
+            .map(|index| {
+                (
+                    ratatui::layout::Rect::new(
+                        if index < 4 { 3 } else { 50 },
+                        10 + (index % 4) as u16 * 4,
+                        44,
+                        4,
+                    ),
+                    Hit::Home(index),
+                )
+            })
+            .collect();
+        app.hits
+            .push((ratatui::layout::Rect::new(3, 30, 90, 2), Hit::Home(2)));
+        app.home_selected = 2;
+        let right = KeyEvent::new(KeyCode::Right, KeyModifiers::NONE);
+        let left = KeyEvent::new(KeyCode::Left, KeyModifiers::NONE);
+        app.key(right).unwrap();
+        assert_eq!(app.home_selected, 6);
+        app.key(right).unwrap();
+        assert_eq!(app.home_selected, 6);
+        app.key(left).unwrap();
+        assert_eq!(app.home_selected, 2);
+        app.key(KeyEvent::new(KeyCode::Down, KeyModifiers::NONE))
+            .unwrap();
+        app.key(right).unwrap();
+        assert_eq!(app.home_selected, 7);
+        app.key(left).unwrap();
+        assert_eq!(app.home_selected, 3);
+
+        app.hits = (0..8)
+            .map(|index| {
+                (
+                    ratatui::layout::Rect::new(3, 5 + index as u16, 54, 1),
+                    Hit::Home(index),
+                )
+            })
+            .collect();
+        app.hits
+            .push((ratatui::layout::Rect::new(3, 20, 54, 2), Hit::Home(3)));
+        app.key(right).unwrap();
+        app.key(left).unwrap();
+        assert_eq!(app.home_selected, 3);
+        assert_eq!(app.page, Page::Home);
+        assert!(app.dialog.is_none());
+        assert!(!app.root.join("preferences.toml").exists());
+    }
+
+    #[test]
+    fn appearance_keyboard_choices_save_live_without_losing_drafts_or_changing_connections() {
+        let (_directory, mut app) = setup();
+        app.composer.replace("Keep this unsent request");
+        app.page = Page::Chat;
+        let original_config = toml::to_string(&app.config).unwrap();
+        let original_project = app.preferences.project.clone();
+        let original_context = app.preferences.context_tokens;
+
+        palette(&mut app, "Appearance");
+        assert!(
+            matches!(&app.dialog, Some(Dialog::Menu { title, selected: 0, .. }) if title == "Appearance")
+        );
+        let enter = KeyEvent::new(KeyCode::Enter, KeyModifiers::NONE);
+        let down = KeyEvent::new(KeyCode::Down, KeyModifiers::NONE);
+        app.key(enter).unwrap();
+        app.key(down).unwrap();
+        app.key(down).unwrap();
+        app.key(enter).unwrap();
+        assert_eq!(
+            app.preferences.appearance.theme,
+            crate::config::ThemePreset::Aurora
+        );
+        assert!(
+            matches!(&app.dialog, Some(Dialog::Menu { title, selected: 2, .. }) if title == "Color theme")
+        );
+        assert_eq!(
+            Preferences::load(&app.root).unwrap().appearance.theme,
+            crate::config::ThemePreset::Aurora
+        );
+
+        app.setting_action(17).unwrap();
+        app.key(down).unwrap();
+        app.key(enter).unwrap();
+        for _ in 0..3 {
+            app.key(down).unwrap();
+        }
+        app.key(enter).unwrap();
+        assert_eq!(
+            app.preferences.appearance.layout,
+            crate::config::LayoutPreset::Focus
+        );
+        app.menu_action(MenuAction::Decorations).unwrap();
+        let loaded = Preferences::load(&app.root).unwrap();
+        assert!(!loaded.appearance.decorations);
+        assert_eq!(loaded.appearance.layout, crate::config::LayoutPreset::Focus);
+        assert_eq!(loaded.context_tokens, original_context);
+        assert_eq!(loaded.project, original_project);
+        assert_eq!(app.page, Page::Chat);
+        assert_eq!(app.composer.text, "Keep this unsent request");
+        assert_eq!(toml::to_string(&app.config).unwrap(), original_config);
+
+        app.menu_action(MenuAction::ResetAppearance).unwrap();
+        assert_eq!(
+            Preferences::load(&app.root).unwrap().appearance,
+            crate::config::Appearance::default()
+        );
+        assert_eq!(app.composer.text, "Keep this unsent request");
+    }
+
+    #[test]
+    fn invalid_accent_and_failed_appearance_save_preserve_input_and_current_preferences() {
+        let (_directory, mut app) = setup();
+        app.menu_action(MenuAction::Theme(crate::config::ThemePreset::Ember))
+            .unwrap();
+        let stored = std::fs::read(app.root.join("preferences.toml")).unwrap();
+        app.menu_action(MenuAction::AccentColor).unwrap();
+        app.paste("#nope");
+        let error = app
+            .key(KeyEvent::new(KeyCode::Enter, KeyModifiers::NONE))
+            .unwrap_err();
+        assert!(error.to_string().contains("six hexadecimal digits"));
+        assert!(
+            matches!(&app.dialog, Some(Dialog::Input { editor, action: InputAction::AccentColor, .. }) if editor.text == "#nope")
+        );
+        assert_eq!(
+            std::fs::read(app.root.join("preferences.toml")).unwrap(),
+            stored
+        );
+        app.submit_input(InputAction::AccentColor, "#7aa2f7".into())
+            .unwrap();
+        assert_eq!(
+            app.preferences.appearance.accent.as_deref(),
+            Some("#7AA2F7")
+        );
+        let before = app.preferences.appearance.clone();
+        std::fs::rename(
+            app.root.join("preferences.toml"),
+            app.root.join("preserved.toml"),
+        )
+        .unwrap();
+        std::fs::create_dir(app.root.join("preferences.toml")).unwrap();
+        assert!(
+            app.menu_action(MenuAction::Theme(crate::config::ThemePreset::Daylight))
+                .is_err()
+        );
+        assert_eq!(app.preferences.appearance, before);
+        assert!(matches!(&app.dialog, Some(Dialog::Menu { title, .. }) if title == "Color theme"));
     }
 
     #[tokio::test]
@@ -1248,7 +1434,7 @@ mod tests {
         for _ in 0..10 {
             app.mouse(MouseEventKind::ScrollDown, 40, 15).unwrap();
         }
-        assert_eq!(app.settings_selected, 16);
+        assert_eq!(app.settings_selected, 17);
         assert_eq!(app.preferences.context_tokens, original_context);
         assert!(app.dialog.is_none());
         assert!(!app.root.join("preferences.toml").exists());

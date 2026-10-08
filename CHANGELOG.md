@@ -2,6 +2,10 @@
 
 ## Unreleased — final-pass implementation
 
+- Add six complete color themes, a custom accent, four saved layouts and a
+  graphics toggle. Style wide Home as a dashboard with clickable status panels
+  and action cards. Keep mouse navigation available in Focus and preserve compact
+  layouts. Test actual theme/layout journeys, restarts, drafts and contrast.
 - Add a real startup screen, responsive Home, visible compact navigation, complete
   action search and mouse-wheel lists. Fix clipped folder-picker actions and
   compact Home click routing. Explain `alt` launch and PATH after installation;

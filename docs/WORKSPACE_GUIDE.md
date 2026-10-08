@@ -2,7 +2,13 @@
 
 Type **`alt`** after installation to open the workspace. Start without a model to
 explore Home or a practice project. **Ctrl+P** finds actions and **Ctrl+Q** exits.
-[See the current interface and startup screen](UX_FINALIZATION.md).
+[See themes, layouts and the current interface](APPEARANCE.md), or the
+[launch walkthrough](UX_FINALIZATION.md).
+
+Use the theme control at the top right or **Settings → Appearance** to choose
+among six themes, enter your own accent color, change the navigation layout, or
+turn decorative graphics off. Changes save automatically. Click the page name at
+the top left to find another page, including when using the Focus layout.
 
 The current source adds [small-model controls and workflows](SMALL_MODEL_USAGE.md).
 That guide covers the expanded settings menu, skills, native probe and candidates.
@@ -59,7 +65,7 @@ preserved form; its Next step points to the appropriate recovery controls.
 | Models | Import GGUF, inspect a server's models, search/open Hub repositories, download/resume |
 | Connections | Add, test, edit and select model endpoints |
 | Conversations | Search, rename, resume, archive/restore and export saved conversations |
-| Settings | Access/context, tool paths, workflows/MCP, storage, model cache, runtime tuning, benchmark |
+| Settings | Themes/layouts/graphics, access/context, tool paths, workflows/MCP, storage, model cache, runtime tuning, benchmark |
 | Help | Keyboard shortcuts and usage guidance |
 | Task | Objective, plan, evidence, configured/required checks, decisions, diffs and undo |
 | Files | Browse paths, filter names, view/search/edit/create text, grouped change history |

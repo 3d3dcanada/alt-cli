@@ -1,5 +1,9 @@
 # Alt: launch and final UX walkthrough
 
+The following captures record the launch walkthrough before the appearance pass.
+For the current Home design and customization controls, see
+[Themes, layouts and screenshots](APPEARANCE.md).
+
 The product is **Alt**, the installed command is **`alt`**, and the repository and
 package are **Alt CLI** (`alt-cli`). Type the word `alt` and press Enter in a real
 terminal. Home opens before you configure a model; **Ctrl+Q** saves drafts and
@@ -65,8 +69,8 @@ that tested build. Its installed TUI and all **eight package gates** passed,
 including Debian 11, Ubuntu 24.04 and published beta 3 upgrade/rollback.
 The screenshot-inclusive package was checked again after adding the offline
 images. [GitHub verification](https://github.com/3d3dcanada/alt-cli/actions/runs/37768587588)
-was still running when this evidence was handed off; the counts above are local
-cloud results.
+completed successfully after the original handoff; the counts above are the
+recorded local cloud results for that earlier build.
 
 The regression suite drives actual keyboard, paste, mouse and resize events in
 pseudo-terminals. It visits all 11 pages by keyboard and mouse and opens all 17

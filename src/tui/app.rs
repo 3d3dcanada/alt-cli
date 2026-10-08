@@ -4,7 +4,9 @@ use super::{
     view,
 };
 use crate::{
-    config::{Config, Preferences, Profile, Provider, private_dir},
+    config::{
+        Appearance, Config, LayoutPreset, Preferences, Profile, Provider, ThemePreset, private_dir,
+    },
     display_text,
     engine::Event,
     models::{self, Artifact, Cancel, HubModel, ModelFile, Progress},
@@ -128,6 +130,7 @@ pub enum BrowserKind {
 }
 #[derive(Debug, Clone)]
 pub enum InputAction {
+    AccentColor,
     Manager {
         action: String,
         state: Value,
@@ -178,6 +181,14 @@ pub enum ConfirmAction {
 }
 #[derive(Debug, Clone)]
 pub enum MenuAction {
+    Appearance,
+    ThemeMenu,
+    LayoutMenu,
+    Theme(ThemePreset),
+    Layout(LayoutPreset),
+    AccentColor,
+    Decorations,
+    ResetAppearance,
     NewPractice,
     Manager { action: String, state: Value },
     StartJob { command: String, keep: bool },
@@ -1430,9 +1441,138 @@ impl App {
         Ok(())
     }
 
+    pub fn appearance_dialog(&mut self) {
+        self.appearance_menu(0);
+    }
+
+    fn appearance_menu(&mut self, selected: usize) {
+        let appearance = &self.preferences.appearance;
+        self.dialog = Some(Dialog::Menu {
+            title: "Appearance".into(),
+            description: "Make Alt yours. Choices preview immediately and are saved for next time. Esc returns to your work.".into(),
+            items: vec![
+                ("Color theme".into(), appearance.theme.label().into(), MenuAction::ThemeMenu),
+                ("Layout".into(), appearance.layout.label().into(), MenuAction::LayoutMenu),
+                ("Accent color".into(), appearance.accent.clone().unwrap_or_else(|| "Theme default".into()), MenuAction::AccentColor),
+                ("Decorative graphics".into(), if appearance.decorations { "On — illustrated welcome and panels" } else { "Off — simple presentation" }.into(), MenuAction::Decorations),
+                ("Reset appearance".into(), "Lagoon, automatic layout and default graphics".into(), MenuAction::ResetAppearance),
+            ],
+            selected,
+        });
+    }
+
+    fn theme_menu(&mut self) {
+        let mut items: Vec<_> = ThemePreset::ALL
+            .into_iter()
+            .map(|theme| {
+                let selected = theme == self.preferences.appearance.theme;
+                (
+                    theme.label().into(),
+                    format!(
+                        "{}{}",
+                        if selected { "Current · " } else { "" },
+                        theme.description()
+                    ),
+                    MenuAction::Theme(theme),
+                )
+            })
+            .collect();
+        items.push((
+            "Back to Appearance".into(),
+            "Change layout, accent or graphics".into(),
+            MenuAction::Appearance,
+        ));
+        self.dialog = Some(Dialog::Menu {
+            title: "Color theme".into(),
+            description: "Choose a preset to preview and save it. Presets reset the custom accent. Esc keeps your choice and returns to work.".into(),
+            selected: ThemePreset::ALL.iter().position(|theme| *theme == self.preferences.appearance.theme).unwrap_or(0),
+            items,
+        });
+    }
+
+    fn layout_menu(&mut self) {
+        let mut items: Vec<_> = LayoutPreset::ALL
+            .into_iter()
+            .map(|layout| {
+                let selected = layout == self.preferences.appearance.layout;
+                (
+                    layout.label().into(),
+                    format!(
+                        "{}{}",
+                        if selected { "Current · " } else { "" },
+                        layout.description()
+                    ),
+                    MenuAction::Layout(layout),
+                )
+            })
+            .collect();
+        items.push((
+            "Back to Appearance".into(),
+            "Change theme, accent or graphics".into(),
+            MenuAction::Appearance,
+        ));
+        self.dialog = Some(Dialog::Menu {
+            title: "Layout".into(),
+            description: "Choose a layout to preview and save it. All pages remain available through Ctrl+P and keyboard navigation.".into(),
+            selected: LayoutPreset::ALL.iter().position(|layout| *layout == self.preferences.appearance.layout).unwrap_or(0),
+            items,
+        });
+    }
+
+    fn save_appearance(&mut self, appearance: Appearance) -> Result<()> {
+        let mut preferences = self.preferences.clone();
+        preferences.appearance = appearance;
+        preferences.save(&self.root)?;
+        self.preferences = preferences;
+        Ok(())
+    }
+
     pub fn menu_action(&mut self, action: MenuAction) -> Result<()> {
         self.dialog = None;
         match action {
+            MenuAction::Appearance => self.appearance_dialog(),
+            MenuAction::ThemeMenu => self.theme_menu(),
+            MenuAction::LayoutMenu => self.layout_menu(),
+            MenuAction::Theme(theme) => {
+                self.theme_menu();
+                let mut appearance = self.preferences.appearance.clone();
+                appearance.theme = theme;
+                appearance.accent = None;
+                self.save_appearance(appearance)?;
+                self.theme_menu();
+                self.notify(format!("{} theme saved. Press Esc to return to your work.", theme.label()));
+            }
+            MenuAction::Layout(layout) => {
+                self.layout_menu();
+                let mut appearance = self.preferences.appearance.clone();
+                appearance.layout = layout;
+                self.save_appearance(appearance)?;
+                self.layout_menu();
+                self.notify(format!("{} layout saved. Press Esc to return to your work.", layout.label()));
+            }
+            MenuAction::AccentColor => {
+                self.dialog = Some(Dialog::Input {
+                    title: "Accent color".into(),
+                    hint: "Enter #RRGGBB, such as #51D3CA. Leave blank or enter default to use the theme color. Contrast is adjusted for readable text.".into(),
+                    editor: Editor::new(self.preferences.appearance.accent.clone().unwrap_or_default()),
+                    action: InputAction::AccentColor,
+                    multiline: false,
+                });
+            }
+            MenuAction::Decorations => {
+                self.appearance_menu(3);
+                let mut appearance = self.preferences.appearance.clone();
+                appearance.decorations = !appearance.decorations;
+                self.save_appearance(appearance)?;
+                self.appearance_menu(3);
+                self.notify("Graphics preference saved. Your work stays in place.");
+            }
+            MenuAction::ResetAppearance => {
+                self.appearance_menu(4);
+                self.save_appearance(Appearance::default())?;
+                self.appearance_menu(4);
+                self.notify("Appearance reset to Lagoon, automatic layout and default graphics.");
+            }
             MenuAction::NewPractice => self.new_practice()?,
             MenuAction::Manager{action,state}=>self.manager_action(&action,state)?,
             MenuAction::StartJob{command,keep}=>self.dialog=Some(Dialog::Input { title: "Job time budget".into(), hint: "Seconds before stopping; 0 means unlimited. Lifetime choice still applies.".into(), editor: Editor::new("0"), action: InputAction::JobTimeout {command,keep}, multiline:false }),
@@ -1887,6 +2027,15 @@ impl App {
     }
     fn submit_input_inner(&mut self, action: InputAction, text: String) -> Result<()> {
         match action {
+            InputAction::AccentColor => {
+                let mut appearance = self.preferences.appearance.clone();
+                appearance.set_accent(&text)?;
+                self.save_appearance(appearance)?;
+                self.appearance_menu(2);
+                self.notify(
+                    "Accent color saved. The color is adjusted when needed for readable text.",
+                );
+            }
             InputAction::Manager { action, mut state } => {
                 state["value"] = serde_json::json!(text);
                 self.manager_action(&action, state)?;
@@ -2207,7 +2356,8 @@ pub async fn run(
     let _restore = Restore;
     // Paint before opening persistent state. Fast starts proceed immediately;
     // slower disks still show what Alt is doing, without a timed splash screen.
-    terminal.draw(view::startup)?;
+    let appearance = Appearance::load_for_startup(&root);
+    terminal.draw(|frame| view::startup(frame, &appearance))?;
     let mut app = App::load(root, engine, profile)?;
     execute!(std::io::stdout(), EnableBracketedPaste)?;
     if app.preferences.mouse {

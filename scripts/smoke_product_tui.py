@@ -56,6 +56,7 @@ SETTINGS = [
     "Select a model first",
     "Which tools fit this task?",
     "Model qualification",
+    "Appearance",
 ]
 
 
@@ -63,9 +64,9 @@ class Terminal:
     def __init__(self, root, columns, rows):
         self.columns, self.rows = columns, rows
         self.project = root / "Example project"
-        self.project.mkdir()
+        self.project.mkdir(exist_ok=True)
         for index in range(50):
-            (self.project / f"folder_{index:02}").mkdir()
+            (self.project / f"folder_{index:02}").mkdir(exist_ok=True)
         self.state = root / "state"
         self.master, self.slave = pty.openpty()
         fcntl.ioctl(self.slave, termios.TIOCSWINSZ, struct.pack("HHHH", rows, columns, 0, 0))
@@ -238,7 +239,7 @@ def exercise(term):
     before = term.text
     term.wheel(8)
     assert term.text != before, "Settings ignored the mouse wheel"
-    term.wait("Qualify model")
+    term.wait("Appearance:")
     term.capture("settings-wheel")
     term.wheel(8, down=False)
     term.wait("Context:")
@@ -289,6 +290,8 @@ def exercise(term):
 
 def main():
     receipts = []
+    with BINARY.open("rb") as binary:
+        initial_digest = hashlib.file_digest(binary, "sha256").hexdigest()
     for columns, rows in [(120, 40), (80, 24), (60, 18)]:
         with tempfile.TemporaryDirectory(prefix="alt-product-tui-") as directory:
             root = Path(directory)
@@ -334,12 +337,13 @@ def main():
             assert "database" in term.text.lower(), term.text
         finally:
             term.stop()
+    with BINARY.open("rb") as binary:
+        digest = hashlib.file_digest(binary, "sha256").hexdigest()
+    assert digest == initial_digest, "The tested binary changed during the journeys; rerun against an immutable build"
     destination = os.environ.get("ALT_TUI_SCREENSHOTS")
     if destination:
-        with BINARY.open("rb") as binary:
-            digest = hashlib.file_digest(binary, "sha256").hexdigest()
         Path(destination, "product-journey-receipt.json").write_text(json.dumps({"binary": str(BINARY), "binary_sha256": digest, "model_weights": False, "engine": "weight-free ACP protocol fixture; no model conversation in these journeys", "startup_capture": "actual startup frame held while opening a SQLite database under exclusive lock; lock released before Home", "startup_error_restored_terminal": True, "journeys": receipts}, indent=2) + "\n")
-    print(f"PASS: product navigation at 120×40, 80×24, 60×18; {sum(len(r['checks']) for r in receipts) + 1} asserted checks; actual startup, all 11 pages by keyboard and mouse, 17 Settings entries, scoped palette, wheel scrolling, resize and terminal restoration on normal exit and startup error.")
+    print(f"PASS: product navigation at 120×40, 80×24, 60×18; {sum(len(r['checks']) for r in receipts) + 1} asserted checks; actual startup, all 11 pages by keyboard and mouse, {len(SETTINGS)} Settings entries, scoped palette, wheel scrolling, resize and terminal restoration on normal exit and startup error.")
 
 
 if __name__ == "__main__":

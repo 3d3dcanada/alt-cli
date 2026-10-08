@@ -189,6 +189,172 @@ impl Config {
     }
 }
 
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum ThemePreset {
+    Graphite,
+    Aurora,
+    Ember,
+    Daylight,
+    HighContrast,
+    #[default]
+    #[serde(other)]
+    Lagoon,
+}
+
+impl ThemePreset {
+    pub const ALL: [Self; 6] = [
+        Self::Lagoon,
+        Self::Graphite,
+        Self::Aurora,
+        Self::Ember,
+        Self::Daylight,
+        Self::HighContrast,
+    ];
+
+    pub fn label(self) -> &'static str {
+        match self {
+            Self::Lagoon => "Lagoon",
+            Self::Graphite => "Graphite",
+            Self::Aurora => "Aurora",
+            Self::Ember => "Ember",
+            Self::Daylight => "Daylight",
+            Self::HighContrast => "High contrast",
+        }
+    }
+
+    pub fn description(self) -> &'static str {
+        match self {
+            Self::Lagoon => "Deep blue surfaces with a clear teal accent",
+            Self::Graphite => "Neutral charcoal with a cool silver accent",
+            Self::Aurora => "Midnight violet with soft purple highlights",
+            Self::Ember => "Warm dark surfaces with an amber accent",
+            Self::Daylight => "Light surfaces with dark text and teal highlights",
+            Self::HighContrast => "Black surfaces, bright text and strong outlines",
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum LayoutPreset {
+    Sidebar,
+    Tabs,
+    Focus,
+    #[default]
+    #[serde(other)]
+    Auto,
+}
+
+impl LayoutPreset {
+    pub const ALL: [Self; 4] = [Self::Auto, Self::Sidebar, Self::Tabs, Self::Focus];
+
+    pub fn label(self) -> &'static str {
+        match self {
+            Self::Auto => "Automatic",
+            Self::Sidebar => "Sidebar",
+            Self::Tabs => "Top tabs",
+            Self::Focus => "Focus",
+        }
+    }
+
+    pub fn description(self) -> &'static str {
+        match self {
+            Self::Auto => "Sidebar on wide screens; tabs on smaller screens",
+            Self::Sidebar => "Keep navigation at the left; narrow screens use tabs",
+            Self::Tabs => "Put navigation above your workspace",
+            Self::Focus => "More room for your work; Tab reveals navigation, Ctrl+P finds pages",
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(default)]
+pub struct Appearance {
+    pub theme: ThemePreset,
+    pub layout: LayoutPreset,
+    pub decorations: bool,
+    pub accent: Option<String>,
+}
+
+impl Default for Appearance {
+    fn default() -> Self {
+        Self {
+            theme: ThemePreset::default(),
+            layout: LayoutPreset::default(),
+            decorations: true,
+            accent: None,
+        }
+    }
+}
+
+impl Appearance {
+    /// Startup only needs presentation. Keep this read bounded and leave any
+    /// recovery, validation and writes to the normal application loader.
+    pub fn load_for_startup(root: &Path) -> Self {
+        use std::io::Read;
+        const LIMIT: u64 = 256 * 1024;
+        let loaded = (|| -> Option<Self> {
+            let file = std::fs::File::open(root.join("preferences.toml")).ok()?;
+            let mut text = String::new();
+            file.take(LIMIT + 1).read_to_string(&mut text).ok()?;
+            if text.len() > LIMIT as usize {
+                return None;
+            }
+            let value: toml::Value = toml::from_str(&text).ok()?;
+            Some(Self::from_value(value.get("appearance")?.clone()))
+        })();
+        loaded.unwrap_or_default()
+    }
+
+    fn from_value(value: toml::Value) -> Self {
+        let mut appearance: Self = value.try_into().unwrap_or_default();
+        if let Some(accent) = appearance.accent.take() {
+            // An invalid cosmetic value must not discard connection, runtime,
+            // project or access preferences from the same file.
+            let _ = appearance.set_accent(&accent);
+        }
+        appearance
+    }
+
+    pub fn accent_rgb(&self) -> Option<(u8, u8, u8)> {
+        let text = self.accent.as_ref()?.strip_prefix('#')?;
+        if text.len() != 6 || !text.bytes().all(|byte| byte.is_ascii_hexdigit()) {
+            return None;
+        }
+        Some((
+            u8::from_str_radix(&text[0..2], 16).ok()?,
+            u8::from_str_radix(&text[2..4], 16).ok()?,
+            u8::from_str_radix(&text[4..6], 16).ok()?,
+        ))
+    }
+
+    pub fn set_accent(&mut self, text: &str) -> Result<()> {
+        let text = text.trim();
+        if text.is_empty() || text.eq_ignore_ascii_case("default") {
+            self.accent = None;
+            return Ok(());
+        }
+        let hex = text.strip_prefix('#').unwrap_or(text);
+        if hex.len() != 6 || !hex.bytes().all(|byte| byte.is_ascii_hexdigit()) {
+            bail!(
+                "Enter six hexadecimal digits, such as #51D3CA, or leave blank for the theme default"
+            );
+        }
+        self.accent = Some(format!("#{}", hex.to_ascii_uppercase()));
+        Ok(())
+    }
+}
+
+fn deserialize_appearance<'de, D>(deserializer: D) -> std::result::Result<Appearance, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    Ok(Appearance::from_value(toml::Value::deserialize(
+        deserializer,
+    )?))
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(default, deny_unknown_fields)]
 pub struct Preferences {
@@ -205,6 +371,8 @@ pub struct Preferences {
     pub workflow: crate::workflow::Mode,
     pub active_skill: Option<String>,
     pub instruction_version: Option<String>,
+    #[serde(deserialize_with = "deserialize_appearance")]
+    pub appearance: Appearance,
 }
 
 impl Default for Preferences {
@@ -223,6 +391,7 @@ impl Default for Preferences {
             workflow: crate::workflow::Mode::default(),
             active_skill: None,
             instruction_version: None,
+            appearance: Appearance::default(),
         }
     }
 }
@@ -320,7 +489,7 @@ pub fn private_dir(path: &Path) -> Result<()> {
 
 #[cfg(test)]
 mod tests {
-    use super::{Config, Profile, Provider};
+    use super::{Appearance, Config, LayoutPreset, Preferences, Profile, Provider, ThemePreset};
     use std::collections::BTreeMap;
 
     fn profile(name: Option<&str>) -> Profile {
@@ -335,6 +504,91 @@ mod tests {
             local_model: None,
             inference: None,
         }
+    }
+
+    #[test]
+    fn appearance_migration_preserves_existing_preferences_and_recovers_cosmetic_errors() {
+        let root = tempfile::tempdir().unwrap();
+        for appearance in [
+            "",
+            "\n[appearance]\ntheme = 'future-theme'\nlayout = 'future-layout'",
+            "\n[appearance]\ntheme = 12\nlayout = false",
+            "\nappearance = 'invalid'",
+        ] {
+            std::fs::write(
+                root.path().join("preferences.toml"),
+                format!("context_tokens = 16384\nmax_turns = 24\nmouse = false\nproject = '/retained/project'\n{appearance}"),
+            ).unwrap();
+            let loaded = Preferences::load(root.path()).unwrap();
+            assert_eq!(loaded.context_tokens, 16384);
+            assert_eq!(loaded.max_turns, 24);
+            assert!(!loaded.mouse);
+            assert_eq!(loaded.project, std::path::Path::new("/retained/project"));
+            assert_eq!(loaded.appearance, Appearance::default());
+        }
+
+        std::fs::write(
+            root.path().join("preferences.toml"),
+            "context_tokens = 32768\n[appearance]\ntheme = 'aurora'\naccent = '#🦀0000'\n",
+        )
+        .unwrap();
+        let loaded = Preferences::load(root.path()).unwrap();
+        assert_eq!(loaded.context_tokens, 32768);
+        assert_eq!(loaded.appearance.theme, ThemePreset::Aurora);
+        assert_eq!(loaded.appearance.accent, None);
+    }
+
+    #[test]
+    fn appearance_presets_layouts_and_accent_persist_without_changing_runtime_preferences() {
+        let root = tempfile::tempdir().unwrap();
+        let mut preferences = Preferences {
+            mouse: false,
+            context_tokens: 16384,
+            max_turns: 24,
+            engine_path: Some("/custom/engine".into()),
+            ..Preferences::default()
+        };
+        preferences.appearance.set_accent("7aa2f7").unwrap();
+        for theme in ThemePreset::ALL {
+            for layout in LayoutPreset::ALL {
+                for decorations in [false, true] {
+                    preferences.appearance.theme = theme;
+                    preferences.appearance.layout = layout;
+                    preferences.appearance.decorations = decorations;
+                    preferences.save(root.path()).unwrap();
+                    let restored = Preferences::load(root.path()).unwrap();
+                    assert_eq!(restored.appearance, preferences.appearance);
+                    assert_eq!(restored.appearance.accent_rgb(), Some((122, 162, 247)));
+                    assert_eq!(restored.context_tokens, 16384);
+                    assert_eq!(restored.max_turns, 24);
+                    assert!(!restored.mouse);
+                    assert_eq!(restored.engine_path, preferences.engine_path);
+                    assert_eq!(restored.project, preferences.project);
+                    assert_eq!(
+                        Appearance::load_for_startup(root.path()),
+                        restored.appearance
+                    );
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn startup_appearance_read_is_bounded_and_does_not_repair_files() {
+        let root = tempfile::tempdir().unwrap();
+        let path = root.path().join("preferences.toml");
+        for text in [
+            "[appearance]\ntheme = 'daylight'\n#".to_owned() + &"x".repeat(256 * 1024),
+            "invalid toml = [".into(),
+        ] {
+            std::fs::write(&path, &text).unwrap();
+            assert_eq!(
+                Appearance::load_for_startup(root.path()),
+                Appearance::default()
+            );
+            assert_eq!(std::fs::read_to_string(&path).unwrap(), text);
+        }
+        assert_eq!(std::fs::read_dir(root.path()).unwrap().count(), 1);
     }
 
     #[test]
