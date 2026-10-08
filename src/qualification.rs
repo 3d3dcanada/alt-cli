@@ -29,7 +29,7 @@ async fn lifecycle(
         "{}/chat/completions",
         runtime.endpoint.trim_end_matches('/')
     );
-    let client = reqwest::Client::builder()
+    let client = crate::runtime::http_client(profile)
         .timeout(Duration::from_secs(90))
         .build()?;
     let request = async {

@@ -138,20 +138,27 @@ pub async fn probe(
             effective.endpoint = runtime.endpoint.clone();
             local = Some(runtime);
         }
-        let client = reqwest::Client::builder()
+        let client = crate::runtime::http_client(&effective)
             .timeout(Duration::from_secs(timeout))
             .build()?;
         let template = if local.is_some() {
-            let props: Value = client
+            let mut response = client
                 .get(format!(
                     "{}/props",
                     effective.endpoint.trim_end_matches("/v1")
                 ))
                 .send()
                 .await?
-                .error_for_status()?
-                .json()
-                .await?;
+                .error_for_status()?;
+            let mut bytes = Vec::new();
+            while let Some(chunk) = response.chunk().await? {
+                ensure!(
+                    bytes.len() + chunk.len() <= 2 * 1024 * 1024,
+                    "Runtime properties exceed 2 MiB"
+                );
+                bytes.extend_from_slice(&chunk);
+            }
+            let props: Value = serde_json::from_slice(&bytes)?;
             report["runtime_properties"] = props.clone();
             report["observed_support"] = json!({"tools":props["chat_template_caps"]["supports_tools"],"native_tool_calls":props["chat_template_caps"]["supports_tool_calls"],"thinking_toggle_template":props["chat_template"].as_str().is_some_and(|s|s.contains("enable_thinking")),"requested_thinking_toggle":prefs.runtime.thinking,"scope":"Template/runtime metadata; actual call results are measured separately"});
             props["chat_template"].as_str().map(str::to_owned)

@@ -12,6 +12,7 @@ import sqlite3
 import struct
 import subprocess
 import tempfile
+import sys
 import termios
 import threading
 import time
@@ -22,6 +23,8 @@ from process_state import running
 repo = Path(__file__).resolve().parents[1]
 binary = Path(os.environ.get("ALT_TEST_BINARY", repo / "target/debug/alt")).resolve()
 fixture = repo / "tests/fixtures/acp_engine.py"
+sys.path.insert(0, str(repo / "tests/fixtures"))
+from gguf import fixture as gguf_fixture
 
 class Inventory(BaseHTTPRequestHandler):
     def log_message(self, *_): pass
@@ -40,7 +43,7 @@ with tempfile.TemporaryDirectory(prefix="alt-tui-smoke-") as directory:
     state = root / "state"
     project = root / "my project"
     project.mkdir()
-    (project / "sample.gguf").write_bytes(b"GGUFfixture-file-not-a-real-model")
+    (project / "sample.gguf").write_bytes(gguf_fixture())
     trace = root / "acp.jsonl"
     base = [str(binary), "--data-dir", str(state), "--engine", str(fixture)]
     master, slave = pty.openpty()

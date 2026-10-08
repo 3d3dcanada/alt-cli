@@ -51,7 +51,7 @@ fn check_evidence(check: &CheckResult) -> String {
     });
     if check.output_truncated {
         text.push_str(
-            "\n\nOutput exceeded the capture limit. Only the captured part is available.",
+            "\n\nThis is a bounded preview. Ctrl+P → Retained check output reads integrity-checked stdout/stderr segments, including the retained final window. Older bytes beyond retention are unavailable.",
         );
     }
     text.push_str(&format!(
@@ -190,9 +190,9 @@ impl App {
                     crate::project_worker::task(p, preferred)
                 })
                 .await?;
-            Ok(JobResult::Check(
+            Ok(JobResult::Check(Box::new(
                 sandbox::run(root, cwd, task, name, policy, cancel).await?,
-            ))
+            )))
         })
     }
     pub fn set_access(&mut self, policy: Policy) -> Result<()> {

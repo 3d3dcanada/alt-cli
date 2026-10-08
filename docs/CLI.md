@@ -17,6 +17,7 @@ alt init --provider ollama --model YOUR_MODEL --uncensored
 # alt init --model YOUR_MODEL --endpoint http://127.0.0.1:1234/v1 --uncensored
 alt doctor
 alt hardware
+alt hardware --fit --provider
 alt build-info
 ```
 
@@ -39,6 +40,7 @@ alt models files mradermacher/Qwen3-4B-Instruct-2507-heretic-GGUF
 alt models download PUBLISHER/REPOSITORY --file EXACT_FILENAME.gguf --use
 alt models import /path/to/model.gguf --uncensored --use
 alt models local
+alt models inspect /path/to/model.gguf
 alt install engine
 alt install runtime
 ```
@@ -47,7 +49,11 @@ The repository and filename placeholders must be replaced with actual Hub choice
 Downloads verify published SHA256 metadata, and imports preserve the original
 file. Use the Models UI for guided selection, pause/resume and cache management.
 `HF_TOKEN` is optional for repositories your Hub account can access; accept any
-gating terms on Hugging Face first. Authenticated Ollama inference is not supported.
+gating terms on Hugging Face first. Authenticated Ollama profiles use the configured
+API-key environment variable for inventory and inference. GGUF inspection validates
+bounded metadata, tensor payloads and complete imported shard sets. Hardware fit
+is an estimate until your exact model/runtime combination has been measured; see
+[runtime fit](RUNTIME_FIT.md).
 
 ## Run a task
 
@@ -102,9 +108,9 @@ This proves the configured build result, not behavioral acceptance. For a separa
 maintained assertion that writes Alt's structured JSON report:
 
 ```bash
-alt task configure-check acceptance -- python3 /trusted/acceptance.py
-alt task contract acceptance --kind tests --format json \
-  --report .alt-check-results.json --assertion /trusted/acceptance.py
+alt task configure-check acceptance --kind tests --format json \
+  --report .alt-check-results.json --assertion /trusted/acceptance.py \
+  -- python3 '{assertion}'
 alt task require behavior --check acceptance --description 'The requested behavior and regressions'
 alt task verify --run
 ```
@@ -113,6 +119,30 @@ The assertion runs against the disposable source copy and writes to
 `ALT_CHECK_REPORT`. See [Verification contracts](VERIFICATION_CONTRACTS.md) for
 JSON/JUnit/TAP formats, assertion pinning, coverage and evidence freshness.
 Guided isolation must be available, or explicitly choose your intended access mode.
+
+Check arguments and evidence settings are saved together. `--input-file PATH`
+declares an additional file dependency; `--generated-output GLOB` declares newly
+created build outputs. Existing source files cannot be exempted as generated
+outputs. Reconfiguring a command preserves its contract unless `--reset-contract`
+is supplied. Effective environment and declared inputs contribute to freshness.
+Execution records describe observed source snapshots; Full access commands are
+not an immutable sandbox. Raw output is retained in bounded tail logs:
+
+```bash
+alt task logs CHECK_RESULT_ID --stream stderr --limit 16384
+alt task logs CHECK_RESULT_ID --stream stdout --offset 0 --limit 16384
+alt task requests
+alt task correct-request REQUEST_SEQUENCE 'Exact replacement requirement' --reason 'Changed scope'
+alt task recovered
+alt task restore-recovered CHANGE_ID apply SOURCE_SHA256
+# Inspect the proposal and diff first; --apply explicitly applies it.
+```
+
+Active requirements retain the exact wording of each user request. A correction
+links the old request to its replacement and reason; it does not erase history.
+Recovered source versions become ordinary tracked proposals, with the same
+conflict checks as other edits. Checkpoints cannot restore arbitrary terminal or
+remote side effects.
 
 ## Terminal jobs and selected tools
 
@@ -141,11 +171,14 @@ Focus does not change access policy. TUI Settings also manages external MCP tool
 alt runtime --gpu-layers 0 --threads 2 --batch 128
 alt runtime --thinking false
 alt runtime --thinking-default
+alt runtime --startup-timeout-secs 300
 alt evaluate
 alt benchmark
 alt qualify --contexts 2048,4096,8192 --repeats 1
 alt state backup /path/outside-alt-state/backup.tar.gz
 alt state restore /path/to/backup.tar.gz /path/to/new-restored-state
+alt state budget --inference-mib 512
+alt state export-inference CONNECTION_ID /path/to/export.json
 ```
 
 Live evaluation commands require an explicitly selected uncensored/abliterated

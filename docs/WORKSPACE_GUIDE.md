@@ -240,19 +240,22 @@ old-report cleanup. Diagnostics omit credential values, endpoint URLs, prompts,
 source files, project paths and raw logs. Review the exported content before sharing.
 Other evidence exports and backups may include project data and are not encrypted.
 
-A backup includes Alt configuration, conversations, project journals/checkpoints
-and evidence. It excludes model blobs/imported originals, runtimes, engine cache
-and live job resources. It is not a filesystem backup of the working project.
+A core backup includes Alt configuration, conversations, project journals/checkpoints,
+execution recovery receipts/logs and inference cost/integrity receipts. Raw inference
+requests/responses and inference archives are exported separately; the backup
+manifest explicitly records these exclusions. It also excludes model blobs/imported
+originals, runtimes, engine cache and live job resources. It is not a filesystem backup of the working project.
 Restore verifies a checksummed manifest and requires a new or empty destination.
 Model records retain original paths; relocate or download again if those paths are
-missing. Database migrations create recovery copies before transactional changes.
+missing. Database migrations create recovery copies before transactional changes. A shared state-generation barrier coordinates writes; backups briefly take its exclusive side while freezing files and SQLite images, then release it before compression. Active checks or edits produce a retry message if a consistent snapshot cannot be acquired.
 
 Conversation retention first creates a compressed recovery archive, then removes
 only old conversations you already marked archived. Unarchived/recent conversations
 remain. Restore an archive without overwriting an existing conversation. Report
-retention previews eligible exports/evaluation files and finished jobs separately;
-checkpoints and databases are preserved. Interrupted file writes and undo are
-reconciled against before/after hashes; conflicts remain visible for manual review.
+retention previews eligible exports/evaluation files, finished jobs and inactive inference connections separately. Inference payloads are exported with a hash manifest before removal, while settings, cost/integrity receipts and archive indexes remain. Active leases and legacy connections without leases are protected. Verified inference archives remain under `inference-archives`; preserve them with your backups or move them to another storage location. They are never automatically deleted.
+
+Storage usage reports an explicit inference evidence warning budget (512 MiB by default), current bytes and a recovery action. The warning never cuts off inference or removes files. Checkpoints and databases are preserved. Interrupted file writes and undo are
+reconciled against before/after hashes; conflicts remain visible for manual review. Package updates stage and verify complete executable/documentation generations before switching one atomic pointer. Use `bash install.sh --status` to inspect the actual generation after interruption, and `--rollback` to switch to the retained prior executable/documentation. State downgrade still requires the matching pre-upgrade backup in a new folder.
 
 ```bash
 alt state usage

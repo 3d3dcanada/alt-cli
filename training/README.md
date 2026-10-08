@@ -1,6 +1,6 @@
 # Training handoff for Alt
 
-October 7, 2026. **No model has been trained in this cloud.** This environment has
+October 8, 2026. **No model has been trained in this cloud.** This environment has
 four CPU cores of quota, 32 GiB cgroup RAM and no NVIDIA/ROCm device. Useful 7B/9B
 training is not practical here, and we do not yet have a correctness-reviewed
 corpus. The [capability receipt](status/cloud-capability.json) records the probe.
@@ -21,6 +21,11 @@ RE-06–07, sequenced as H10–12 in the
 the paper findings, limitations and source ledgers. SFT/distillation can change
 weights; prompt/tool improvements do not train the model.
 
+The final-pass [readiness gate](status/final-pass-readiness.json) and
+[qualification handoff](../docs/FINAL_PASS_QUALIFICATION.md) retain the new
+family-count, complete-attempt and exact-loader requirements. The old pending
+fixtures remain pending; nothing in this pass approves or trains them.
+
 ## What is supplied
 
 - `prepare.py`: standard-library corpus validation and train/validation export.
@@ -31,6 +36,12 @@ weights; prompt/tool improvements do not train the model.
 - `preflight.py`: hardware/library probe; no package installation or weight loading.
 - `qualify_tokenizer.py`: opt-in native-template fixture using no weights; its
   repository/revision are explicit, and local files can be hashed for provenance.
+- `readiness.py`: binds reviewed records, source/check evidence, a complete
+  collection ledger, hard 32/8 family floors, exact configuration and a measured
+  GPU loader receipt. Training rechecks the underlying files and current device.
+- `qualify_loader.py`: plans by default; explicit `--execute` performs a disposable
+  finite forward/backward pass on the exact reviewed Safetensors parent. No
+  optimizer update or adapter is saved, and this is not a quality measurement.
 - `train_sft.py`: optional, single-CUDA-GPU NF4 QLoRA starter using Transformers
   and PEFT, including exact dataset/config/checkpoint resume verification.
   Its data/encoding functions are tested; **GPU execution is unperformed**.
@@ -301,12 +312,55 @@ Re-collect bounded real evidence or deliberately increase the context after memo
 qualification. A 2K training sequence is a starter budget, not a 2K model-context
 limit or a way to extend its pretrained native window.
 
-## 7. Run the pilot and preserve its receipt
+## 7. Qualify readiness, then run the pilot
+
+Keep a complete collection ledger using
+[`examples/collection-ledger.template.json`](examples/collection-ledger.template.json).
+Declare every planned attempt before collection and retain failed, interrupted and
+unperformed entries. The ledger's `plan` points to the separately frozen
+[`collection-plan.template.json`](examples/collection-plan.template.json), with
+its actual declaration time and SHA-256. Its slot IDs, families and splits must
+match the ledger exactly; omitted failures cannot disappear from accounting.
+Each performed outcome references a hashed actual attempt receipt through
+`evidence.path` and `evidence.sha256`, relative to the evidence directory. See
+[`collection-attempt.template.json`](examples/collection-attempt.template.json).
+The receipt binds the plan hash, actual start time, outcome, actor and the exact
+raw trace, transcript, source snapshot and check hashes. A `passed` label alone
+is insufficient. Templates are deliberately unusable until actual measurements
+and review supply the missing identities.
+
+A reviewed record needs `collection.attempt_id` and
+`collection.ledger_sha256` linking it to a passing attempt of the same family and
+split. Freeze that ledger before preparing the reviewed corpus; adding attempts
+requires a new version and newly bound records. Final held-out families cannot be
+used for corpus, prompt or adapter selection. Do not relabel them.
+
+On a suitable, explicitly selected CUDA machine, inspect the exact pinned parent
+and configuration, then qualify the loader. The default invocation writes a plan
+without importing Torch or downloading weights. Add `--execute` to actually load
+the parent and measure the backward pass. The test establishes loader compatibility
+on that GPU, not fit for a complete 2K training sequence or improved behavior.
+
+```bash
+CUDA_VISIBLE_DEVICES=0 .alt-training/venv/bin/python training/qualify_loader.py \
+  --config .alt-training/sft.json --output .alt-training/loader-001 --execute
+.alt-training/venv/bin/python training/readiness.py \
+  --records .alt-training/reviewed.jsonl --registry .alt-training/split-registry.json \
+  --evidence-root .alt-training/evidence --ledger .alt-training/collection-ledger.json \
+  --config .alt-training/sft.json --loader-receipt .alt-training/loader-001/loader-receipt.json \
+  --output .alt-training/readiness-001.json
+```
+
+The readiness command returns exit 2 with concrete blockers when prerequisites
+are missing. It never trains. Zero reviewed families and no CUDA remain the
+cloud result. Once this receipt passes and `prepare.py` has exported the exact
+same records and registry, start the explicitly authorized pilot:
 
 ```bash
 CUDA_VISIBLE_DEVICES=0 .alt-training/venv/bin/python training/train_sft.py \
   --config .alt-training/sft.json --dataset .alt-training/prepared-v1 \
-  --train --output .alt-training/sft-run-001
+  --train --readiness-receipt .alt-training/readiness-001.json \
+  --output .alt-training/sft-run-001
 ```
 
 Defaults: NF4 double quantization; rank 16/alpha 32; batch one, accumulation 16;

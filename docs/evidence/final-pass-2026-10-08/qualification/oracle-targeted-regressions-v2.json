@@ -1,0 +1,150 @@
+{
+  "oracle_version": "final-pass-2",
+  "scope": "Deterministic oracle regression controls; no live model outcomes",
+  "regressions": [
+    {
+      "control": "hmac-valid-module-import",
+      "family": "final-utf8-secret-compare",
+      "expected_passed": true,
+      "observed": {
+        "passed": true,
+        "completion_observed": true,
+        "exit": 0,
+        "stdout": "ALT_ORACLE_COMPLETED_e3a806c3ddb44f458b0af4daf4acfa2e\n",
+        "stderr": ""
+      }
+    },
+    {
+      "control": "hmac-valid-direct-import",
+      "family": "final-utf8-secret-compare",
+      "expected_passed": true,
+      "observed": {
+        "passed": true,
+        "completion_observed": true,
+        "exit": 0,
+        "stdout": "ALT_ORACLE_COMPLETED_c6a94a1056a0490d93b3a3b3b37f2c23\n",
+        "stderr": ""
+      }
+    },
+    {
+      "control": "hmac-valid-aliased-import",
+      "family": "final-utf8-secret-compare",
+      "expected_passed": true,
+      "observed": {
+        "passed": true,
+        "completion_observed": true,
+        "exit": 0,
+        "stdout": "ALT_ORACLE_COMPLETED_b20eda9f375b44c99d001c35347e55eb\n",
+        "stderr": ""
+      }
+    },
+    {
+      "control": "hmac-ordinary-equality-rejected",
+      "family": "final-utf8-secret-compare",
+      "expected_passed": false,
+      "observed": {
+        "passed": false,
+        "completion_observed": false,
+        "exit": 1,
+        "stdout": "",
+        "stderr": "Traceback (most recent call last):\n  File \"/tmp/alt-final-oracle-regression-azf06cz_/independent/check.py\", line 10, in <module>\n    p.assert_any_call(\"\u03b1\".encode(),\"\u03b2\".encode())\n  File \"/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/unittest/mock.py\", line 1020, in assert_any_call\n    raise AssertionError(\nAssertionError: compare_digest(b'\\xce\\xb1', b'\\xce\\xb2') call not found\n"
+      }
+    },
+    {
+      "control": "protected-file-edit:scales.py",
+      "family": "final-multifile-unit-conversion",
+      "expected_passed": false,
+      "observed": {
+        "passed": false,
+        "completion_observed": false,
+        "exit": 1,
+        "stdout": "",
+        "stderr": "Traceback (most recent call last):\n  File \"/tmp/alt-final-oracle-regression-ur85_ku1/independent/check.py\", line 12, in <module>\n    assert Path('scales.py').read_bytes() == b'FACTORS={\"m\":1,\"cm\":0.01,\"km\":1000}\\n', 'Protected fixture changed: scales.py'\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError: Protected fixture changed: scales.py\n"
+      }
+    },
+    {
+      "control": "protected-file-edit:main.py",
+      "family": "final-multifile-unit-conversion",
+      "expected_passed": false,
+      "observed": {
+        "passed": false,
+        "completion_observed": false,
+        "exit": 1,
+        "stdout": "",
+        "stderr": "Traceback (most recent call last):\n  File \"/tmp/alt-final-oracle-regression-w0klnygh/independent/check.py\", line 15, in <module>\n    assert Path('main.py').read_bytes() == b\"from units import convert\\nprint(convert(2, 'km', 'm'))\\n\", 'Protected fixture changed: main.py'\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError: Protected fixture changed: main.py\n"
+      }
+    },
+    {
+      "control": "protected-file-edit:tools/formats.py",
+      "family": "final-repository-mime-navigation",
+      "expected_passed": false,
+      "observed": {
+        "passed": false,
+        "completion_observed": false,
+        "exit": 1,
+        "stdout": "",
+        "stderr": "Traceback (most recent call last):\n  File \"/tmp/alt-final-oracle-regression-cz2hex93/independent/check.py\", line 13, in <module>\n    assert Path('tools/formats.py').read_bytes() == b\"def detect(filename): return 'decoy'\\n\", 'Protected fixture changed: tools/formats.py'\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError: Protected fixture changed: tools/formats.py\n"
+      }
+    },
+    {
+      "control": "protected-file-edit:app/registry.py",
+      "family": "final-repository-mime-navigation",
+      "expected_passed": false,
+      "observed": {
+        "passed": false,
+        "completion_observed": false,
+        "exit": 1,
+        "stdout": "",
+        "stderr": "Traceback (most recent call last):\n  File \"/tmp/alt-final-oracle-regression-qfhzigu4/independent/check.py\", line 16, in <module>\n    assert Path('app/registry.py').read_bytes() == b'MIME={\".gz\":\"application/gzip\",\".tar.gz\":\"application/x-compressed-tar\",\".txt\":\"text/plain\"}\\n', 'Protected fixture changed: app/registry.py'\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError: Protected fixture changed: app/registry.py\n"
+      }
+    },
+    {
+      "control": "mime-mapping-deletion",
+      "family": "final-repository-mime-navigation",
+      "expected_passed": false,
+      "observed": {
+        "passed": false,
+        "completion_observed": false,
+        "exit": 1,
+        "stdout": "",
+        "stderr": "Traceback (most recent call last):\n  File \"/tmp/alt-final-oracle-regression-pfuzpj96/independent/check.py\", line 6, in <module>\n    assert detect(\"README.TXT\")==\"text/plain\"\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError\n"
+      }
+    },
+    {
+      "control": "unified-diff-valid-hunk-counts",
+      "family": "final-unified-diff-counts",
+      "expected_passed": true,
+      "observed": {
+        "passed": true,
+        "completion_observed": true,
+        "exit": 0,
+        "stdout": "ALT_ORACLE_COMPLETED_25847342279748febe652069b4b643a3\n",
+        "stderr": ""
+      }
+    },
+    {
+      "control": "unified-diff-file-headers-counted-rejected",
+      "family": "final-unified-diff-counts",
+      "expected_passed": false,
+      "observed": {
+        "passed": false,
+        "completion_observed": false,
+        "exit": 1,
+        "stdout": "",
+        "stderr": "Traceback (most recent call last):\n  File \"/tmp/alt-final-oracle-regression-51uo2rmx/independent/check.py\", line 6, in <module>\n    assert f(\"--- a/a\\n+++ b/a\\n@@ -1 +1 @@\\n-old\\n+new\\n--- a/b\\n+++ b/b\\n@@ -1 +1 @@\\n-old\\n+new\\n\")== (2,2)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError\n"
+      }
+    },
+    {
+      "control": "unified-diff-content-prefix-skipped-rejected",
+      "family": "final-unified-diff-counts",
+      "expected_passed": false,
+      "observed": {
+        "passed": false,
+        "completion_observed": false,
+        "exit": 1,
+        "stdout": "",
+        "stderr": "Traceback (most recent call last):\n  File \"/tmp/alt-final-oracle-regression-3ggsn41y/independent/check.py\", line 7, in <module>\n    assert f(\"--- a/x\\n+++ b/x\\n@@ -1 +1 @@\\n---old\\n+++new\\n\\\\ No newline at end of file\\n\")== (1,1)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError\n"
+      }
+    }
+  ]
+}

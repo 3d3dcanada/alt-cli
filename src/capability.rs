@@ -58,6 +58,14 @@ pub fn identity(
         .transpose()?;
     let build: Value = serde_json::from_str(crate::BUILD_INFO)?;
     let mut value = json!({"schema":1,"source_sha256":build["source_sha256"],"model_id":profile.model,"provider":profile.provider,"endpoint":if profile.local_model.is_some(){"managed"}else{&profile.endpoint},"artifact_sha256":artifact.as_ref().map(|a|&a.sha256),"runtime_sha256":runtime,"runtime_libraries":libraries,"engine_sha256":engine,"context":profile.context_tokens,"max_turns":profile.max_turns,"runtime_settings":preferences.runtime,"tool_profile":preferences.tool_profile,"access":preferences.access_policy,"tool_schema_sha256":crate::project::digest(&serde_json::to_vec(&crate::toolbox::focused_tools(preferences.tool_profile))?),"operator_sha256":crate::project::digest(include_bytes!("../prompts/operator.md")),"template_sha256":template.map(|t|crate::project::digest(t.as_bytes())),"identity_complete":artifact.is_some()&&runtime.is_some()&&engine.is_some()&&template.is_some()});
+    value["artifact_id"] = json!(artifact.as_ref().map(|a| &a.id));
+    value["artifact_parts"] = json!(artifact.as_ref().map(|a| {
+        a.pieces
+            .iter()
+            .map(|p| json!({"bytes":p.bytes,"sha256":p.sha256}))
+            .collect::<Vec<_>>()
+    }));
+    value["artifact_metadata"] = json!(artifact.as_ref().and_then(|a| a.metadata.as_ref()));
     value["effective_inference"] = profile.effective_inference().accounting(profile);
     value["operator_sha256"] = json!(crate::project::digest(
         preferences.tool_profile.operator().as_bytes()

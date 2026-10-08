@@ -236,7 +236,13 @@ async fn deterministic_checks_bind_evidence_to_source_and_preserve_original() {
             name: "test".into(),
             argv: vec!["python3".into(), "check.py".into()],
             timeout_secs: 5,
-            contract: Default::default(),
+            contract: alt_cli::verification::Contract {
+                inputs: alt_cli::verification::ExecutionInputs {
+                    generated: vec!["generated.txt".into()],
+                    ..Default::default()
+                },
+                ..Default::default()
+            },
         })
         .unwrap();
     }

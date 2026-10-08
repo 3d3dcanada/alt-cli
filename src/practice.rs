@@ -173,6 +173,7 @@ pub fn create(data: &Path) -> Result<Practice> {
                 path: ".alt-practice-report.json".into(),
             }),
             assertion: Some(Contract::pin(&assertion)?),
+            inputs: Default::default(),
         },
     })?;
     p.set_requirement(&Requirement {

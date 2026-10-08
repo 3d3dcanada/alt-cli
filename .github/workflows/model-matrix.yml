@@ -1,108 +1,145 @@
-name: Complete uncensored model matrix
+name: Frozen matched 7B and 9B qualification
 on:
   workflow_dispatch:
     inputs:
-      model:
-        description: Explicit uncensored checkpoint to evaluate
+      partition:
+        description: Final holdout freezes both arms before any result; never tune from it
         type: choice
-        options: [spark, qwen]
-        default: spark
+        options: [development, validation, final-holdout]
+        default: development
         required: true
-  push:
-    tags: ['eval-*']
+      shards:
+        description: Serial workers per job; every job downloads both exact Q4 models
+        type: choice
+        options: ['4', '16', '32']
+        default: '4'
+        required: true
+      attempts_per_shard:
+        description: Explicit budget (600-second cap per attempt); missing slots remain unperformed
+        type: number
+        default: 2
+        required: true
 permissions:
   contents: read
-env:
-  MATRIX_MODEL: ${{ inputs.model || 'spark' }}
 jobs:
-  build:
+  freeze:
     runs-on: ubuntu-24.04
-    timeout-minutes: 45
+    timeout-minutes: 60
+    outputs:
+      matrix: ${{ steps.matrix.outputs.matrix }}
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
-      - name: Prepare and validate the candidate
+      - name: Build and test exact candidate
         run: |
           set -euo pipefail
           sudo mkdir -p /workspace
           sudo chown "$USER" /workspace
           ln -s "$GITHUB_WORKSPACE" /workspace/alt-cli
-          bash scripts/setup-cloud.sh 2>&1 | tee candidate-build.log
-          bash scripts/build-portable.sh 2>&1 | tee -a candidate-build.log
-          mkdir candidate
-          cp target/portable-glibc231/release/alt candidate/alt
+          bash scripts/setup-cloud.sh > candidate-build.log 2>&1
+          python3 -m unittest discover -s scripts -p test_qualification_campaign.py -v >> candidate-build.log 2>&1
+          python3 scripts/acceptance_final.py > oracle-validation.json
+      - name: Verify the fixed released baseline before extracting executable
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mkdir baseline
+          gh release download v0.6.0-beta.3 --repo 3d3dcanada/alt-cli --pattern 'alt-0.6.0-linux-x86_64.tar.gz*' --dir baseline
+          cd baseline
+          echo 'f1c4bc5d4cef9f5e52109c0cbc5d5c77bd81cb0d14fb99e33a1a777e8f12c78e  alt-0.6.0-linux-x86_64.tar.gz' | sha256sum --check
+          gh attestation verify alt-0.6.0-linux-x86_64.tar.gz --repo 3d3dcanada/alt-cli --bundle alt-0.6.0-linux-x86_64.tar.gz.sigstore.jsonl --signer-workflow 3d3dcanada/alt-cli/.github/workflows/publish.yml --source-ref refs/tags/v0.6.0-beta.3 --source-digest fa0c8e4130ec4d13c59193436679c4e059c22dee --deny-self-hosted-runners --format json > baseline-verification.json
+          tar -xzf alt-0.6.0-linux-x86_64.tar.gz alt-0.6.0-linux-x86_64/alt
+      - name: Freeze full attempt plan, exact artifacts and candidate before inspection
+        run: |
+          set -euo pipefail
+          target/debug/alt --data-dir /tmp/alt-qualification-tools install engine
+          target/debug/alt --data-dir /tmp/alt-qualification-tools install runtime
+          python3 scripts/fetch_evaluation_model.py --model mimo9 --directory /tmp/alt-qualification-models
+          python3 scripts/fetch_evaluation_model.py --model josie7 --directory /tmp/alt-qualification-models
+          python3 scripts/qualification_campaign.py create --output campaign --baseline baseline/alt-0.6.0-linux-x86_64/alt --engine /tmp/alt-qualification-tools/tools/goose --runtime /tmp/alt-qualification-tools/tools/llama-b11429/llama-server --model-dir /tmp/alt-qualification-models > campaign-plan.log
+          python3 scripts/qualification_campaign.py seal --root campaign --candidate target/debug/alt --source-commit "$GITHUB_SHA" > candidate-seal.log
+      - name: Declare shard allocation
+        id: matrix
+        env:
+          SHARDS: ${{ inputs.shards }}
+        run: |
+          python3 - <<'PY'
+          import json,os
+          with open(os.environ['GITHUB_OUTPUT'],'a') as f:
+              f.write('matrix='+json.dumps({'shard':list(range(int(os.environ['SHARDS'])))})+'\n')
+          PY
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()
         with:
-          name: candidate-build-log
-          path: candidate-build.log
+          name: qualification-freeze-evidence
+          path: |
+            candidate-build.log
+            oracle-validation.json
+            baseline/baseline-verification.json
+            campaign-plan.log
+            candidate-seal.log
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
-          name: frozen-model-candidate
-          path: candidate/alt
+          name: sealed-qualification-capsule
+          path: campaign/
   evaluate:
-    needs: build
+    needs: freeze
     runs-on: ubuntu-24.04
-    timeout-minutes: 120
+    timeout-minutes: 300
     strategy:
       fail-fast: false
-      matrix:
-        shard: [0,1,2,3,4,5,6,7]
+      matrix: ${{ fromJson(needs.freeze.outputs.matrix) }}
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
       - uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0
         with:
-          name: frozen-model-candidate
-          path: candidate
-      - name: Acquire exact uncensored weights and pinned runtimes
+          name: sealed-qualification-capsule
+          path: campaign
+      - name: Acquire only the two declared models and runtimes
         run: |
-          chmod +x candidate/alt
-          candidate/alt --data-dir "$RUNNER_TEMP/bootstrap" install engine
-          candidate/alt --data-dir "$RUNNER_TEMP/bootstrap" install runtime
-          python3 scripts/fetch_evaluation_model.py --model "$MATRIX_MODEL" --directory "$RUNNER_TEMP"
-      - name: Run all assigned attempts and retain failed outcomes
+          set -euo pipefail
+          chmod +x campaign/binaries/*
+          python3 -m pip install --target /tmp/alt-qualification-python pyte==0.8.2
+          campaign/binaries/candidate --data-dir /tmp/alt-qualification-tools install engine
+          campaign/binaries/candidate --data-dir /tmp/alt-qualification-tools install runtime
+          python3 scripts/fetch_evaluation_model.py --model mimo9 --directory /tmp/alt-qualification-models
+          python3 scripts/fetch_evaluation_model.py --model josie7 --directory /tmp/alt-qualification-models
+      - name: Execute bounded matched shard without retrying failed attempts
         env:
-          SHARD: ${{ matrix.shard }}
+          PARTITION: ${{ inputs.partition }}
+          SHARD_INDEX: ${{ matrix.shard }}
+          SHARD_COUNT: ${{ inputs.shards }}
+          ATTEMPTS: ${{ inputs.attempts_per_shard }}
+          PYTHONDONTWRITEBYTECODE: '1'
+          PYTHONPATH: /tmp/alt-qualification-python
         run: |
-          python3 scripts/ci_model_shard.py --binary candidate/alt --root "$RUNNER_TEMP" --shard "$SHARD" --output evidence --model "$MATRIX_MODEL"
+          python3 campaign/evaluator/qualification_campaign.py run --root campaign --partition "$PARTITION" --shard-index "$SHARD_INDEX" --shard-count "$SHARD_COUNT" --max-attempts "$ATTEMPTS"
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()
         with:
-          name: uncensored-matrix-${{ matrix.shard }}
-          path: evidence/
+          name: qualification-attempts-${{ matrix.shard }}
+          path: campaign/attempts/
+          include-hidden-files: true
   report:
-    permissions:
-      contents: write
-    needs: evaluate
-    if: always()
+    needs: [freeze, evaluate]
+    if: always() && needs.freeze.result == 'success'
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
       - uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0
         with:
-          pattern: uncensored-matrix-*
-          path: collected
-      - name: Check every matrix cell and summarize
-        run: |
-          mkdir -p collected
-          python3 scripts/summarize_matrix.py collected --output matrix-summary.json --model "$MATRIX_MODEL"
+          name: sealed-qualification-capsule
+          path: campaign
+      - uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0
+        continue-on-error: true
+        with:
+          pattern: qualification-attempts-*
+          merge-multiple: true
+          path: campaign/attempts
+      - name: Account for every planned, failed, interrupted and unperformed slot
+        run: python3 campaign/evaluator/qualification_campaign.py summary --root campaign --output qualification-summary.json
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()
         with:
-          name: complete-model-matrix
-          path: matrix-summary.json
-      - name: Preserve the measured evidence in a dedicated results branch
-        if: always()
-        run: |
-          test -f matrix-summary.json
-          # Commit evidence on the current default branch so the Actions token
-          # is only writing documents, never restoring an older workflow file.
-          git fetch origin main:refs/remotes/origin/main
-          git switch -c "evidence/model-matrix-$GITHUB_RUN_ID" origin/main
-          mkdir -p docs/evidence/v6/remote-matrix/"$MATRIX_MODEL"
-          cp -R collected/. docs/evidence/v6/remote-matrix/"$MATRIX_MODEL"/
-          cp matrix-summary.json docs/evidence/v6/remote-matrix/"$MATRIX_MODEL"/summary.json
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add docs/evidence/v6/remote-matrix
-          git commit -m "Record complete uncensored model matrix $GITHUB_RUN_ID"
-          git push origin HEAD
+          name: complete-qualification-accounting
+          path: qualification-summary.json

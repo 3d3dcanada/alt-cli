@@ -16,6 +16,11 @@ command=['python3',str(repo/'scripts/smoke_package.py'),str(archive),'--tui']
 if a.previous:command+=['--previous',str(a.previous.resolve())]
 if a.verify_key:command+=['--verify-key',str(a.verify_key.resolve())]
 run('installed-integrity-upgrade-rollback',command)
+research=list(archive.parent.glob('research-*.tar.gz')); indexes=list(archive.parent.glob('research-*-index.json'))
+if len(research)==1 and len(indexes)==1:
+ run('historical-research-integrity',['python3',str(repo/'scripts/verify-research.py'),str(research[0]),'--index',str(indexes[0]),'--package',str(archive)])
+else:
+ rows.append({'name':'historical-research-integrity','passed':False,'error':'Expected exactly one separately published research archive and index'})
 run('official-cyclonedx-schema',['python3',str(repo/'scripts/validate_sbom.py'),str(archive)])
 with tempfile.TemporaryDirectory(prefix='alt-release-',dir='/workspace' if Path('/workspace').is_dir() else None) as d:
  root=Path(d)

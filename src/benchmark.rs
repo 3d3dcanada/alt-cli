@@ -65,7 +65,7 @@ pub async fn run(
                     .trim_end_matches('/')
                     .trim_end_matches("/v1")
             );
-            let props_client = reqwest::Client::builder()
+            let props_client = runtime::http_client(&effective)
                 .timeout(Duration::from_secs(5))
                 .build()?;
             let props = async {
@@ -104,16 +104,20 @@ pub async fn run(
         })
         .await??;
         let mut trials = Vec::new();
-        let client = reqwest::Client::builder()
+        let client = runtime::http_client(&effective)
             .timeout(Duration::from_secs(180))
             .build()?;
         for n in 0..3 {
-            let mut body = json!({"model":effective.model,"messages":[{"role":"user","content":"Write a short numbered list of five practical steps for testing a small software project."}],"stream":false,"temperature":0,"max_tokens":160});
+            if let Some(runtime) = local.as_mut() {
+                runtime.check_warm_identity()?;
+            }
+            let mut body = json!({"model":effective.model,"messages":[{"role":"user","content":"Write a short numbered list of five practical steps for testing a small software project."}],"stream":true,"temperature":0,"max_tokens":160});
             let url = if effective.provider == Provider::Ollama {
                 body["options"] =
                     json!({"temperature":0,"num_ctx":effective.context_tokens,"num_predict":160});
                 format!("{}/api/chat", effective.endpoint.trim_end_matches('/'))
             } else {
+                body["stream_options"] = json!({"include_usage":true});
                 format!(
                     "{}/chat/completions",
                     effective.endpoint.trim_end_matches('/')
@@ -125,14 +129,67 @@ pub async fn run(
             }
             let start = Instant::now();
             let response = request.send().await?.error_for_status()?;
+            let response_type = response
+                .headers()
+                .get(reqwest::header::CONTENT_TYPE)
+                .and_then(|h| h.to_str().ok())
+                .unwrap_or("")
+                .to_string();
             let mut bytes = Vec::new();
+            let mut pending = Vec::new();
+            let mut first_token = None;
+            let mut value = Value::Null;
+            let streaming =
+                response_type.contains("event-stream") || response_type.contains("ndjson");
             use futures_util::StreamExt;
             let mut stream = response.bytes_stream();
             while let Some(chunk) = stream.next().await {
-                bytes.extend_from_slice(&chunk?);
-                ensure!(bytes.len() <= 1024 * 1024, "Benchmark response too large");
+                let chunk = chunk?;
+                ensure!(
+                    bytes.len() + chunk.len() <= 1024 * 1024,
+                    "Benchmark response too large"
+                );
+                bytes.extend_from_slice(&chunk);
+                if streaming {
+                    pending.extend_from_slice(&chunk);
+                    while let Some(end) = pending.iter().position(|b| *b == b'\n') {
+                        let line: Vec<_> = pending.drain(..=end).collect();
+                        let line = std::str::from_utf8(&line)?.trim();
+                        let data = if response_type.contains("event-stream") {
+                            line.strip_prefix("data:").map(str::trim)
+                        } else {
+                            Some(line)
+                        };
+                        if let Some(data) = data.filter(|s| !s.is_empty() && *s != "[DONE]") {
+                            let frame: Value = serde_json::from_str(data)?;
+                            let delta = &frame["choices"][0]["delta"];
+                            if first_token.is_none()
+                                && [
+                                    delta.get("content"),
+                                    delta.get("reasoning_content"),
+                                    delta.get("reasoning"),
+                                    frame["message"].get("content"),
+                                    frame["message"].get("thinking"),
+                                ]
+                                .into_iter()
+                                .flatten()
+                                .any(|v| v.as_str().is_some_and(|s| !s.is_empty()))
+                            {
+                                first_token = Some(start.elapsed().as_secs_f64());
+                            }
+                            if frame.get("usage").is_some_and(|v| !v.is_null())
+                                || frame.get("eval_count").is_some()
+                                || value.is_null()
+                            {
+                                value = frame;
+                            }
+                        }
+                    }
+                }
             }
-            let value: Value = serde_json::from_slice(&bytes)?;
+            if !streaming {
+                value = serde_json::from_slice(&bytes)?;
+            }
             let seconds = start.elapsed().as_secs_f64();
             let tokens = if effective.provider == Provider::Ollama {
                 value["eval_count"].as_u64()
@@ -143,7 +200,22 @@ pub async fn run(
                 tokens.is_some_and(|t| t > 0),
                 "Runtime did not report generated token usage"
             );
-            trials.push(json!({"trial":n+1,"actual_request":body,"seconds_including_prompt_processing":seconds,"generated_tokens":tokens,"tokens_per_wall_second":tokens.unwrap() as f64/seconds,"runtime_timings":value.get("timings"),"ollama_eval_duration_ns":value.get("eval_duration"),"response":value}));
+            let decode_rate = value["timings"]["predicted_per_second"]
+                .as_f64()
+                .or_else(|| {
+                    value["eval_duration"]
+                        .as_f64()
+                        .filter(|n| *n > 0.0)
+                        .map(|n| tokens.unwrap() as f64 * 1e9 / n)
+                });
+            let prompt_rate = value["timings"]["prompt_per_second"].as_f64().or_else(|| {
+                value["prompt_eval_count"]
+                    .as_f64()
+                    .zip(value["prompt_eval_duration"].as_f64())
+                    .filter(|(_, n)| *n > 0.0)
+                    .map(|(count, ns)| count * 1e9 / ns)
+            });
+            trials.push(json!({"trial":n+1,"runtime_state":if local.is_none(){"external runtime lifecycle unmeasured"}else if n==0{"cold: first request after owned load"}else{"warm: same owned process, file identities checked"},"actual_request":body,"time_to_first_generated_token_seconds":first_token,"ttft_scope":if streaming{"Observed first nonempty content/reasoning stream field"}else{"Unmeasured: server returned a non-streaming body"},"seconds_including_prompt_processing":seconds,"generated_tokens":tokens,"tokens_per_wall_second":tokens.unwrap() as f64/seconds,"reported_decode_tokens_per_second":decode_rate,"reported_prompt_tokens_per_second":prompt_rate,"runtime_timings":value.get("timings"),"ollama_eval_duration_ns":value.get("eval_duration"),"response":value,"raw_response":String::from_utf8_lossy(&bytes)}));
             report["trials"] = json!(trials);
         }
         Ok(())
@@ -157,6 +229,7 @@ pub async fn run(
         let _ = monitor.await;
     }
     if let Some(runtime) = &mut local {
+        report["observed_offload"] = runtime.offload_observation();
         runtime.stop().await;
         report["owned_runtime_stopped"] = json!(true);
     }
@@ -188,7 +261,7 @@ pub async fn token_count(profile: &Profile, content: &str) -> Result<usize> {
             .trim_end_matches('/')
             .trim_end_matches("/v1")
     );
-    let client = reqwest::Client::builder()
+    let client = runtime::http_client(profile)
         .timeout(Duration::from_secs(2))
         .build()?;
     let mut request = client
@@ -229,19 +302,16 @@ fn sample_runtime(
                 })
                 .unwrap_or(0)
                 * 1024;
-            let gpu = tokio::time::timeout(
+            let gpu = crate::process::bounded_output(
+                tokio::process::Command::new("nvidia-smi").args([
+                    "--query-compute-apps=pid,used_memory",
+                    "--format=csv,noheader,nounits",
+                ]),
                 Duration::from_millis(500),
-                tokio::process::Command::new("nvidia-smi")
-                    .args([
-                        "--query-compute-apps=pid,used_memory",
-                        "--format=csv,noheader,nounits",
-                    ])
-                    .kill_on_drop(true)
-                    .output(),
+                64 * 1024,
             )
             .await
             .ok()
-            .and_then(Result::ok)
             .filter(|r| r.status.success())
             .map(|r| {
                 String::from_utf8_lossy(&r.stdout)

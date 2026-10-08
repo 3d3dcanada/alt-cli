@@ -21,16 +21,19 @@ jobs:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
       - name: Prepare workspace and validate
         run: |
+          python3 scripts/ci-stage.py --name release-stage-1 -- bash -euo pipefail <<'ALT_CI_STAGE'
           sudo mkdir -p /workspace
           sudo chown "$USER" /workspace
           ln -s "$GITHUB_WORKSPACE" /workspace/alt-cli
           bash scripts/setup-cloud.sh
+          ALT_CI_STAGE
       - name: Build, sign and validate exact package
         env:
           ALT_RELEASE_PRIVATE_KEY: ${{ secrets.ALT_RELEASE_PRIVATE_KEY }}
           PREVIOUS_URL: ${{ inputs.previous_package_url }}
           PREVIOUS_SHA: ${{ inputs.previous_package_sha256 }}
         run: |
+          python3 scripts/ci-stage.py --name release-stage-2 -- bash -euo pipefail <<'ALT_CI_STAGE'
           set -euo pipefail
           export CARGO_HOME=/workspace/.cargo RUSTUP_HOME=/workspace/.rustup
           export PATH="/workspace/.cargo/bin:/workspace/.alt-tools:$PATH"
@@ -45,8 +48,12 @@ jobs:
           openssl pkey -in "$ALT_SIGNING_KEY" -pubout -out dist/release-public.pem
           python3 scripts/release_gate.py dist/alt-*.tar.gz --previous "$RUNNER_TEMP/previous.tar.gz" --require-upgrade --verify-key dist/release-public.pem --output dist/release-gate.json
           openssl dgst -sha256 -verify dist/release-public.pem -signature dist/alt-*.tar.gz.sig dist/alt-*.tar.gz
+          ALT_CI_STAGE
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
         with:
           name: signed-unpublished-candidate
-          path: dist/
+          path: |
+            dist/
+            ci-evidence/
 # Uploads a reviewable candidate; it never publishes or tags a release automatically.

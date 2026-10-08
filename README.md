@@ -17,15 +17,18 @@ installation and external tools with your normal account permissions.
 
 ![Alt's actual 80×24 TUI after a MiMo 9B Q4 model repair and independent checks](docs/screenshots/v6/native-model-repair-80x24.png)
 
-**Status: 0.6.0 beta 3 · Linux x86_64 · Apache-2.0.** The screenshot shows an actual
+**Published: 0.6.0 beta 3. This branch: final-pass candidate. Linux x86_64 · Apache-2.0.** The screenshot shows an actual
 CPU MiMo 9B Q4 repair through the TUI, after the unchanged independent checks passed.
 Model reliability and hardware support are measured separately from
 application tests. [Read the results and remaining gaps](docs/IMPLEMENTATION.md).
 
-The [2026-10-08 audit](docs/FINAL_AUDIT_2026-10-08.md) found open correctness,
-draft/settings preservation and runtime defects in beta 3. Its
-[14 improvement work orders](docs/FINAL_PASS_WORK_ORDERS.md) are planned fixes,
-not changes already included in this release.
+The [2026-10-08 audit](docs/FINAL_AUDIT_2026-10-08.md) identified correctness,
+draft/settings preservation and runtime defects in beta 3. This source branch
+implements the [14 approved work orders](docs/FINAL_PASS_DELIVERY.md), including
+durable drafts, recoverable external edits, stronger verification, private owned
+runtimes and smaller packages. The published beta 3 remains the earlier build.
+[Qualification](docs/FINAL_PASS_QUALIFICATION.md) records measured results and
+remaining model, hardware and novice acceptance gates.
 
 **Included in beta 3:** explicit inference allocation, host task workflows, bounded
 skills, source handles, serial checked candidates, reviewed instruction trials
@@ -65,7 +68,7 @@ Debian/Ubuntu, the usual prerequisites are `git build-essential pkg-config curl
 ca-certificates python3 libgomp1`. The repository selects Rust 1.99.0 automatically.
 
 ```bash
-git clone https://github.com/3d3dcanada/alt-cli.git
+git clone --branch build/final-pass-2026-10-08 https://github.com/3d3dcanada/alt-cli.git
 cd alt-cli
 cargo build --locked --release
 ./target/release/alt
@@ -173,11 +176,10 @@ Keys are referenced by environment-variable name, not saved in model profiles.
 - [Implementation and evidence](docs/IMPLEMENTATION.md) · [Current work orders](docs/WORK_ORDERS_0.6.md) · [PC test guide](docs/PC_TESTING.md)
 - [Research and project history](docs/research/README.md) · [Documentation index](docs/README.md)
 
-Current source validation includes **123 Rust tests**, strict Clippy, both adapter
+The earlier beta 3 validation included **123 Rust tests**, strict Clippy, both adapter
 fixtures for both compact edit formats, and actual small-terminal permission,
-edit/check/undo and conversation-continuation journeys. Compact follow-ups retain
-the complete original request as context, with the latest user message taking
-precedence. The retained 0.6 acceptance also includes five PTY walkthroughs, 30
+edit/check/undo and conversation-continuation journeys. Current source retains every exact active user request, with explicit corrections
+and a visible error if the requirements exceed the selected context budget. The retained 0.6 acceptance also includes five PTY walkthroughs, 30
 responsiveness journeys, 60 stream-recovery scenarios and packaged
 install/update/rollback checks on Debian 11 and Ubuntu 24.04. The local PC recorder
 also passed a live uncensored-model CPU trial. These measurements do not guarantee

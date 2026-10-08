@@ -12,6 +12,7 @@ jobs:
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
       - run: |
+          python3 scripts/ci-stage.py --name scheduled-soak -- bash -euo pipefail <<'ALT_CI_STAGE'
           sudo mkdir -p /workspace
           sudo chown "$USER" /workspace
           ln -s "$GITHUB_WORKSPACE" /workspace/alt-cli
@@ -23,8 +24,11 @@ jobs:
           cargo test --locked bounded_seeded_mutation_corpus
           python3 scripts/soak.py --rounds 200 --output dist/scheduled-soak.json
           python3 scripts/smoke_pressure_tui.py --rounds 100 --output dist/scheduled-ui.json
+          ALT_CI_STAGE
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()
         with:
           name: scheduled-soak-evidence
-          path: dist/
+          path: |
+            dist/
+            ci-evidence/

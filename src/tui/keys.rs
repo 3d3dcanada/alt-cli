@@ -63,6 +63,9 @@ impl App {
             self.set_page(Page::ALL[if n == 0 { 9 } else { n as usize - 1 }]);
             return Ok(());
         }
+        if let Some(action) = super::actions::shortcut(key) {
+            return self.action(action);
+        }
         if ctrl {
             match key.code {
                 KeyCode::Char('p') => return self.action("palette"),
@@ -241,6 +244,8 @@ impl App {
                 _ => {}
             },
             Page::Context => match key.code {
+                KeyCode::Char('i') => self.understanding()?,
+                KeyCode::Char('c') => self.correct_requirement()?,
                 KeyCode::Char('p') => self.workbench_action("pin-requirement")?,
                 KeyCode::Char('u') => self.workbench_action("unpin-requirement")?,
                 KeyCode::Char('r') => self.workbench_action("context-refresh")?,
@@ -249,6 +254,9 @@ impl App {
                 _ => {}
             },
             Page::Task => match key.code {
+                KeyCode::Char('l') => self.manager_action("check-logs", serde_json::json!({}))?,
+                KeyCode::Char('i') => self.understanding()?,
+                KeyCode::Char('f') => self.recovered_files()?,
                 KeyCode::Char('v') => self.workbench_action("verification-status")?,
                 KeyCode::Char('a') => self.workbench_action("verification-plan")?,
                 KeyCode::Char('t') => self.workbench_action("verification-run")?,
@@ -346,6 +354,24 @@ impl App {
     }
 
     pub fn action(&mut self, action: &str) -> Result<()> {
+        let page = match action {
+            "page-home" => Some(Page::Home),
+            "page-chat" => Some(Page::Chat),
+            "page-models" => Some(Page::Models),
+            "page-connections" => Some(Page::Connections),
+            "page-sessions" => Some(Page::Sessions),
+            "page-settings" => Some(Page::Settings),
+            "page-help" => Some(Page::Help),
+            "page-files" => Some(Page::Files),
+            "page-jobs" => Some(Page::Jobs),
+            "page-context" => Some(Page::Context),
+            _ => None,
+        };
+        if let Some(page) = page {
+            self.set_page(page);
+            return Ok(());
+        }
+
         if action.starts_with("file")
             || action.starts_with("job-")
             || action.starts_with("jobs-")
@@ -395,40 +421,28 @@ impl App {
                     selected: 0,
                 })
             }
+            "model-fit" | "storage-usage" | "storage-budget" | "inference-export"
+            | "check-inputs" | "check-logs" => {
+                self.manager_action(action, serde_json::json!({}))?
+            }
             "palette" => {
-                let mut items = Page::ALL
-                    .iter()
-                    .map(|p| {
-                        (
-                            p.name().to_string(),
-                            "Open page".into(),
-                            MenuAction::Page(*p),
-                        )
-                    })
-                    .collect::<Vec<_>>();
-                items.extend([
-                    (
-                        "New conversation".into(),
-                        "Keep previous conversations saved".into(),
-                        MenuAction::New,
-                    ),
-                    (
-                        "Choose project".into(),
-                        "Browse folders".into(),
-                        MenuAction::Project,
-                    ),
-                    (
-                        "Edit project brief".into(),
-                        "Keep goals and decisions in context".into(),
-                        MenuAction::Brief,
-                    ),
-                ]);
-                self.dialog = Some(Dialog::Menu {
-                    title: "Quick actions".into(),
-                    description: "Arrow keys to choose; Enter to open.".into(),
-                    items,
+                self.dialog = Some(Dialog::Palette {
+                    query: Editor::default(),
                     selected: 0,
-                });
+                })
+            }
+            "drafts" => self.draft_menu(),
+            "save-drafts" => {
+                self.remember_draft();
+                self.flush_drafts = true;
+            }
+            "manual-model" => self.manual_model()?,
+            "understanding" => self.understanding()?,
+            "correct-requirement" => self.correct_requirement()?,
+            "recovered-files" => self.recovered_files()?,
+            "next-step" => {
+                let (_, _, action) = self.next_step();
+                self.action(action)?;
             }
             "tool-details" => {
                 let tool = self
@@ -455,6 +469,7 @@ impl App {
                 self.notify("Filter changed. Refresh the search to apply it.");
             }
             "import" => self.open_browser(BrowserKind::Model, self.preferences.project.clone())?,
+            "install-engine" => self.install_dialog(Component::Engine),
             "runtime" => {
                 if self.runtime_ready() {
                     self.notify("The local CPU runtime is installed. Select a local model and start a conversation.");
@@ -496,11 +511,9 @@ impl App {
                 let name = name.clone();
                 self.model_tab = 1;
                 self.set_page(Page::Models);
-                self.launch_job("Testing connection", move |_, _| async move {
-                    Ok(JobResult::Inventory(
-                        name,
-                        models::inventory(&profile).await?,
-                    ))
+                self.launch_job("Testing connection", move |cancel, _| async move {
+                    let models = tokio::select! { result = models::inventory(&profile) => result?, _ = models::cancelled(&cancel) => anyhow::bail!("Connection check cancelled") };
+                    Ok(JobResult::Inventory(name, models))
                 })?;
             }
             "remove-connection" => {
@@ -614,6 +627,11 @@ impl App {
                 });
             }
             "modal-cancel" => {
+                if matches!(self.dialog, Some(Dialog::Connection(_)))
+                    && let Some(job) = &self.job
+                {
+                    job.cancel.store(true, Ordering::Relaxed);
+                }
                 self.dialog = None;
             }
             "modal-submit" => {
@@ -708,25 +726,34 @@ impl App {
             return Ok(());
         };
         let draft = self.draft(form)?;
-        self.launch_job("Checking the connection", move |_, _| async move {
-            let models = models::inventory(&draft.profile).await?;
+        self.status_error = false;
+        self.launch_job("Checking the connection", move |cancel, _| async move {
+            let models = tokio::select! { result = models::inventory(&draft.profile) => result?, _ = models::cancelled(&cancel) => anyhow::bail!("Connection check cancelled") };
             Ok(JobResult::Tested(draft, models))
         })
     }
-    fn draft(&self, form: &ConnectionForm) -> Result<ConnectionDraft> {
+    pub(super) fn draft(&self, form: &ConnectionForm) -> Result<ConnectionDraft> {
         let key = form.fields[2].text.trim();
         let original = form.original.clone();
-        let profile = Profile {
-            provider: form.provider,
-            endpoint: form.fields[1].text.trim().trim_end_matches('/').into(),
-            model: "choose-next".into(),
-            context_tokens: self.preferences.context_tokens,
-            max_turns: self.preferences.max_turns,
-            uncensored: false,
-            api_key_env: (!key.is_empty()).then(|| key.into()),
-            local_model: None,
-            inference: None,
-        };
+        let mut profile = form
+            .original
+            .as_ref()
+            .and_then(|name| self.config.profiles.get(name))
+            .cloned()
+            .unwrap_or(Profile {
+                provider: form.provider,
+                endpoint: String::new(),
+                model: "choose-next".into(),
+                context_tokens: self.preferences.context_tokens,
+                max_turns: self.preferences.max_turns,
+                uncensored: false,
+                api_key_env: None,
+                local_model: None,
+                inference: None,
+            });
+        // A connection form is a typed patch: unrelated allocations and claims survive.
+        profile.endpoint = form.fields[1].text.trim().trim_end_matches('/').into();
+        profile.api_key_env = (!key.is_empty()).then(|| key.into());
         profile.validate()?;
         ensure!(
             !form.fields[0].text.trim().is_empty(),
@@ -745,6 +772,11 @@ impl App {
             return Ok(());
         };
         if key.code == KeyCode::Esc {
+            if matches!(dialog, Dialog::Connection(_))
+                && let Some(job) = &self.job
+            {
+                job.cancel.store(true, Ordering::Relaxed);
+            }
             if matches!(dialog, Dialog::Notice { .. }) {
                 self.dialog = self.recovery_dialog.take().map(|d| *d);
             }
@@ -753,6 +785,25 @@ impl App {
         // Keep a recoverable form on validation errors.
         self.dialog = Some(dialog.clone());
         match &mut dialog {
+            Dialog::Palette { query, selected } => {
+                let entries = super::actions::search(&query.text);
+                match key.code {
+                    KeyCode::Down => {
+                        *selected = (*selected + 1).min(entries.len().saturating_sub(1))
+                    }
+                    KeyCode::Up => *selected = selected.saturating_sub(1),
+                    KeyCode::Enter => {
+                        if let Some(action) = entries.get(*selected) {
+                            self.dialog = None;
+                            return self.action(action.id);
+                        }
+                    }
+                    _ => {
+                        query.key(key, false);
+                        *selected = 0;
+                    }
+                }
+            }
             Dialog::Notice { scroll, .. } => {
                 match key.code {
                     KeyCode::PageDown => *scroll = scroll.saturating_add(8),
@@ -784,12 +835,15 @@ impl App {
                 KeyCode::Tab | KeyCode::Down => form.focus = (form.focus + 1) % 3,
                 KeyCode::BackTab | KeyCode::Up => form.focus = (form.focus + 2) % 3,
                 KeyCode::Enter => return self.test_form(),
-                KeyCode::Char('m') if ctrl => {
-                    let draft = self.draft(form)?;
-                    self.dialog=Some(Dialog::Input{title:"Enter a model identifier".into(),hint:"Use the exact name from your server. This saves without checking its inventory.".into(),editor:Editor::default(),action:InputAction::ManualModel(draft),multiline:false});
-                    return Ok(());
+                KeyCode::Char('o') if ctrl => return self.manual_model(),
+                _ => {
+                    if let Some(job) = &self.job
+                        && job.label == "Checking the connection"
+                    {
+                        job.cancel.store(true, Ordering::Relaxed);
+                    }
+                    form.fields[form.focus].key(key, false);
                 }
-                _ => form.fields[form.focus].key(key, false),
             },
             Dialog::PickModel {
                 draft,
@@ -859,6 +913,12 @@ impl App {
             Dialog::Confirm {
                 action, selected, ..
             } => match key.code {
+                KeyCode::PageUp | KeyCode::Up => {
+                    self.modal_scroll = self.modal_scroll.saturating_sub(4)
+                }
+                KeyCode::PageDown | KeyCode::Down => {
+                    self.modal_scroll = self.modal_scroll.saturating_add(4)
+                }
                 KeyCode::Tab | KeyCode::BackTab | KeyCode::Left | KeyCode::Right => {
                     *selected = 1 - *selected
                 }
@@ -896,7 +956,34 @@ impl App {
         if !self.permissions.is_empty() {
             return;
         }
+        if matches!(self.dialog, Some(Dialog::Connection(_)))
+            && let Some(job) = &self.job
+            && job.label == "Checking the connection"
+        {
+            job.cancel.store(true, Ordering::Relaxed);
+        }
+        let incoming = text
+            .chars()
+            .filter(|c| *c == '\n' || *c == '\t' || !c.is_control())
+            .map(char::len_utf8)
+            .sum::<usize>();
+        let existing = match &self.dialog {
+            Some(Dialog::Connection(form)) => Some(form.fields[form.focus].text.len()),
+            Some(Dialog::Input { editor, .. }) => Some(editor.text.len()),
+            Some(Dialog::Palette { query, .. }) => Some(query.text.len()),
+            None if self.page == Page::Chat => Some(self.composer.text.len()),
+            None if self.search_focus => Some(self.session_search.text.len()),
+            _ => None,
+        };
+        if existing.is_some_and(|len| len.saturating_add(incoming) > 64 * 1024) {
+            self.error("Paste exceeds the 64 KiB editor limit. Existing text is unchanged. Put the large text in a project file and include its path in your request, or paste a smaller section.");
+            return;
+        }
         match &mut self.dialog {
+            Some(Dialog::Palette { query, selected }) => {
+                query.insert(text, false);
+                *selected = 0;
+            }
             Some(Dialog::Connection(form)) => form.fields[form.focus].insert(text, false),
             Some(Dialog::Input {
                 editor, multiline, ..
@@ -949,7 +1036,10 @@ impl App {
                 } else if let Some(Dialog::Confirm { selected, .. }) = &mut self.dialog {
                     *selected = choice;
                     self.dialog_key(KeyEvent::new(KeyCode::Enter, KeyModifiers::NONE))?;
-                } else if let Some(Dialog::Menu { selected, .. }) = &mut self.dialog {
+                } else if let Some(
+                    Dialog::Menu { selected, .. } | Dialog::Palette { selected, .. },
+                ) = &mut self.dialog
+                {
                     *selected = choice;
                     self.dialog_key(KeyEvent::new(KeyCode::Enter, KeyModifiers::NONE))?;
                 }

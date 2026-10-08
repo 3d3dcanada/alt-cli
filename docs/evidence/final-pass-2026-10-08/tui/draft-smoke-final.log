@@ -1,0 +1,16 @@
+Traceback (most recent call last):
+  File "/workspace/alt-cli/scripts/smoke_draft_tui.py", line 131, in <module>
+    if __name__=='__main__':main()
+                            ^^^^^^
+  File "/workspace/alt-cli/scripts/smoke_draft_tui.py", line 117, in main
+    t.close();saved=book(state);current=saved['entries'][saved['active']]
+    ^^^^^^^^^
+  File "/workspace/alt-cli/scripts/terminal_harness.py", line 21, in close
+    if self.proc.poll() is None:self.send(b'\x11');self.proc.wait(timeout=10)
+                                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/subprocess.py", line 1264, in wait
+    return self._wait(timeout=timeout)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/subprocess.py", line 2045, in _wait
+    raise TimeoutExpired(self.args, timeout)
+subprocess.TimeoutExpired: Command '['/workspace/.alt-audit-ux/frozen-alt-final', '--data-dir', '/tmp/alt-submit-ui-yeiqt7nv/state']' timed out after 10 seconds

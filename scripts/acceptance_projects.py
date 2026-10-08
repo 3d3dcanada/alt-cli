@@ -90,7 +90,7 @@ def setup(name,root):
   (oracle/'src').mkdir();(oracle/'src/lib.rs').write_text(case['oracle'])
   # The same pinned assertions must test the execution snapshot, not an absolute
   # dependency on the original editable folder. Build output is never an input.
-  (oracle/'check.py').write_text('''import json,os,shutil,subprocess,sys,tempfile
+  (oracle/'check.py').write_text('''import json,os,re,shutil,subprocess,sys,tempfile
 from pathlib import Path
 source=Path(__file__).parent/'src/lib.rs'
 with tempfile.TemporaryDirectory(prefix='alt-rust-oracle-') as d:
@@ -99,8 +99,17 @@ with tempfile.TemporaryDirectory(prefix='alt-rust-oracle-') as d:
  shutil.copy2(source,crate/'src/lib.rs')
  (crate/'Cargo.toml').write_text('[package]\\nname="independent_oracle"\\nversion="0.1.0"\\nedition="2021"\\n[dependencies]\\nfixture_stats={path='+json.dumps(str(Path.cwd()))+'}\\n')
  env={**os.environ,'CARGO_TARGET_DIR':str(root/'target')}
- result=subprocess.run(['cargo','test','--offline','--manifest-path',str(crate/'Cargo.toml')],env=env,capture_output=True,text=True)
+ result=subprocess.run(['cargo','test','--offline','--message-format=json','--manifest-path',str(crate/'Cargo.toml')],env=env,capture_output=True,text=True)
  print(result.stdout,end=''); print(result.stderr,end='',file=sys.stderr)
+ # Quote the actual panicking oracle location and assertion text. This exposes
+ # the observed counterexample, never a reference implementation or changed test.
+ failure=re.search(r'panicked at src/lib[.]rs:(\\d+):(\\d+):',result.stdout)
+ if failure:
+  line,column=map(int,failure.groups()); lines=source.read_text().splitlines()
+  if 0<line<=len(lines) and 0<column<=len(lines[line-1])+1:
+   tail=lines[line-1][column-1:]; end=tail.find(');')
+   excerpt=(tail[:end+2] if end>=0 else tail)[:700]
+   print('ALT_OBSERVATION '+json.dumps({'kind':'actual Rust assertion failure','oracle_source_line':line,'oracle_source_column':column,'assertion_source_excerpt':excerpt,'scope':'Quoted from the unchanged independent assertion at the observed panic location; not a reference solution'}))
  passed=result.returncode==0 and 'test behavior ... ok' in result.stdout and 'test result: ok. 1 passed; 0 failed;' in result.stdout
  if passed: print(COMPLETION_RECEIPT_PLACEHOLDER)
  sys.exit(0 if passed else 1)

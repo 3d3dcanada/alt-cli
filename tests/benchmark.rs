@@ -3,6 +3,8 @@ use alt_cli::{
     config::{Preferences, Profile, Provider},
     models, runtime,
 };
+#[path = "fixtures/gguf.rs"]
+mod gguf_fixture;
 use std::sync::{
     Arc,
     atomic::{AtomicBool, Ordering},
@@ -50,12 +52,81 @@ async fn cancellation_interrupts_a_stalled_backend_and_preserves_a_failed_report
         1
     );
 }
+
+#[tokio::test]
+async fn streamed_calibration_measures_first_output_and_preserves_external_unknowns() {
+    use tokio::io::{AsyncReadExt, AsyncWriteExt};
+    let root = tempfile::tempdir().unwrap();
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let selected = profile(format!("http://{}/v1", listener.local_addr().unwrap()));
+    let server = tokio::spawn(async move {
+        for _ in 0..3 {
+            let (mut socket, _) = listener.accept().await.unwrap();
+            let mut request = Vec::new();
+            let mut buffer = [0; 4096];
+            loop {
+                let n = socket.read(&mut buffer).await.unwrap();
+                assert!(n > 0);
+                request.extend_from_slice(&buffer[..n]);
+                if let Some(end) = request.windows(4).position(|p| p == b"\r\n\r\n") {
+                    let headers = String::from_utf8_lossy(&request[..end]);
+                    let length = headers
+                        .lines()
+                        .find_map(|line| {
+                            line.to_ascii_lowercase()
+                                .strip_prefix("content-length:")
+                                .map(|n| n.trim().parse::<usize>().unwrap())
+                        })
+                        .unwrap();
+                    if request.len() >= end + 4 + length {
+                        let body: serde_json::Value =
+                            serde_json::from_slice(&request[end + 4..end + 4 + length]).unwrap();
+                        assert_eq!(body["stream"], true);
+                        break;
+                    }
+                }
+            }
+            socket.write_all(b"HTTP/1.1 200 OK\r\nContent-Type: text/event-stream\r\nConnection: close\r\n\r\n").await.unwrap();
+            tokio::time::sleep(std::time::Duration::from_millis(30)).await;
+            socket
+                .write_all(b"data: {\"choices\":[{\"delta\":{\"content\":\"fixture\"}}]}\n\n")
+                .await
+                .unwrap();
+            tokio::time::sleep(std::time::Duration::from_millis(70)).await;
+            socket.write_all(b"data: {\"choices\":[{\"delta\":{},\"finish_reason\":\"stop\"}],\"usage\":{\"completion_tokens\":16},\"timings\":{\"predicted_per_second\":64,\"prompt_per_second\":128}}\n\ndata: [DONE]\n\n").await.unwrap();
+        }
+    });
+    let report = benchmark::run(
+        root.path(),
+        &Preferences::default(),
+        &selected,
+        Arc::new(AtomicBool::new(false)),
+    )
+    .await
+    .unwrap();
+    assert!(report["error"].is_null(), "{report}");
+    assert!(report["sampled_peak_runtime_rss_bytes"].is_null());
+    for row in report["trials"].as_array().unwrap() {
+        let first = row["time_to_first_generated_token_seconds"]
+            .as_f64()
+            .unwrap();
+        let total = row["seconds_including_prompt_processing"].as_f64().unwrap();
+        assert!(first >= 0.02 && first + 0.05 < total, "{row}");
+        assert_eq!(row["reported_decode_tokens_per_second"], 64.0);
+        assert_eq!(row["reported_prompt_tokens_per_second"], 128.0);
+        assert_eq!(
+            row["runtime_state"],
+            "external runtime lifecycle unmeasured"
+        );
+    }
+    server.await.unwrap();
+}
 #[tokio::test]
 async fn requested_gpu_and_allocation_failure_explain_recovery_without_substituting_models() {
     use std::os::unix::fs::PermissionsExt;
     let root = tempfile::tempdir().unwrap();
     let original = root.path().join("fixture.gguf");
-    std::fs::write(&original, b"GGUFfixture-not-real-weights").unwrap();
+    std::fs::write(&original, gguf_fixture::fixture(None)).unwrap();
     let model = models::import(
         root.path(),
         &original,

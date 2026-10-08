@@ -31,7 +31,7 @@ for width, height in [(120, 40), (80, 24), (60, 18)]:
             assert project != original and (original/'keep.txt').read_text() == 'unchanged'
             base = [str(binary), '--data-dir', str(state)]
             def verify():
-                r = subprocess.run(base+['task','verify'], cwd=project, capture_output=True, text=True)
+                r = subprocess.run(base+['task','verify'], cwd=project, capture_output=True, text=True, env={**os.environ,'TERM':'xterm-256color'})
                 return json.loads(r.stdout)
             t.send(b'\r'); t.wait('Structured report contains 3 failing tests'); assert not verify()['complete']
             t.send(b'\x1b9'); t.wait('Project files'); t.send(b'/'); t.wait('Filter project files')

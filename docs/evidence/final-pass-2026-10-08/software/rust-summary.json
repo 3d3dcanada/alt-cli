@@ -1,0 +1,47 @@
+[
+  {
+    "stage": "rust-tests",
+    "command": [
+      "cargo",
+      "test",
+      "--locked"
+    ],
+    "exit_code": 0,
+    "seconds": 48.251
+  },
+  {
+    "stage": "format",
+    "command": [
+      "cargo",
+      "fmt",
+      "--all",
+      "--check"
+    ],
+    "exit_code": 0,
+    "seconds": 0.515
+  },
+  {
+    "stage": "clippy",
+    "command": [
+      "cargo",
+      "clippy",
+      "--locked",
+      "--all-targets",
+      "--",
+      "-D",
+      "warnings"
+    ],
+    "exit_code": 0,
+    "seconds": 8.976
+  },
+  {
+    "stage": "debug-build",
+    "command": [
+      "cargo",
+      "build",
+      "--locked"
+    ],
+    "exit_code": 0,
+    "seconds": 16.467
+  }
+]

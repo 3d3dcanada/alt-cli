@@ -338,6 +338,19 @@ async fn serve_connection(stream: UnixStream, s: &Service) -> Result<()> {
                     v["data_directory"].as_str().unwrap_or("")
                 ),
                 "read" if s.tool_profile.is_compact() => crate::compact_context::read_packet(&v),
+                "edit" | "edit_text" | "edit_lines" | "create_file" | "create_lines"
+                | "delete_file"
+                    if v["applied"] == false =>
+                {
+                    format!(
+                        "Edit NOT applied. Proposed scope/parse preview: {}\n{}\nReread a smaller complete symbol or use operation=replace-text with exact old_text. If deletion, rename or incomplete intermediate syntax is intentional, repeat with intentional=true. Full terminal remains available.",
+                        v["preview"],
+                        v["current_read"]
+                            .as_object()
+                            .map(|_| crate::compact_context::read_packet(&v["current_read"]))
+                            .unwrap_or_default()
+                    )
+                }
                 "edit_text" | "edit_lines" | "create_file" | "create_lines" | "delete_file" => {
                     format!(
                         "Applied checkpoint {} to {}. Syntax parser: {} · parse errors: {} (parser only).\n{}{}\nrun_check names: {}. Run a fresh check; earlier results are stale.\n",
@@ -395,8 +408,11 @@ async fn serve_connection(stream: UnixStream, s: &Service) -> Result<()> {
                     },
                     if request.name == "run_check" {
                         format!(
-                            "\nObserved failed cases: {}\n{}",
+                            "\nObserved failed cases: {}\nObserved diagnostics: {}\nCheck-emitted counterexamples: {}\nReproduce configured argv: {}\n{}",
                             v["workflow"]["facts"]["recovery"]["failed_cases"],
+                            v["failure_packet"]["observed_diagnostics"],
+                            v["failure_packet"]["counterexamples"],
+                            v["failure_packet"]["reproduction_argv"],
                             v["current_reads"]
                                 .as_array()
                                 .into_iter()
@@ -431,6 +447,7 @@ async fn serve_connection(stream: UnixStream, s: &Service) -> Result<()> {
 
 fn tool_failed(v: &Value) -> bool {
     v["isError"] == true
+        || v["blocked_by_preflight"] == true
         || v["error"].is_string()
         || v["timed_out"] == true
         || v["cancelled"] == true
@@ -540,6 +557,10 @@ struct CreateFileArgs {
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
 struct TextEditArgs {
+    #[serde(default = "span_operation")]
+    operation: String,
+    #[serde(default)]
+    old_text: Option<String>,
     path: String,
     handle: String,
     new_text: String,
@@ -562,6 +583,9 @@ struct DeleteFileArgs {
     #[serde(default = "edit_reason")]
     reason: String,
 }
+fn span_operation() -> String {
+    "replace-span".into()
+}
 fn edit_reason() -> String {
     "Implement the requested change".into()
 }
@@ -575,6 +599,10 @@ struct NoteArgs {
 #[serde(deny_unknown_fields)]
 struct CheckArgs {
     name: String,
+    #[serde(default)]
+    hypothesis: Option<String>,
+    #[serde(default)]
+    prediction: Option<String>,
 }
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -616,7 +644,13 @@ async fn execute(
             let tool = r.arguments["tool"].as_str().context("Missing tool name")?;
             approve(s,c,id,&format!("External tool · {name}/{tool}"),&r.arguments,"Runs the selected external server tool with its configured host/network access. External side effects cannot be undone.").await?;
             s.extensions
-                .call(&s.data, name, tool, r.arguments["arguments"].clone())
+                .call_with_policy(
+                    &s.data,
+                    name,
+                    tool,
+                    r.arguments["arguments"].clone(),
+                    s.policy,
+                )
                 .await
         }
         "list" => {
@@ -690,6 +724,15 @@ async fn execute(
             let id = r.arguments["id"]
                 .as_str()
                 .context("Evidence id is required")?;
+            if let Some(stream) = r.arguments["stream"].as_str() {
+                return crate::verification::read_execution_log(
+                    &p,
+                    id,
+                    stream,
+                    r.arguments["offset"].as_u64(),
+                    6000,
+                );
+            }
             let text: String =
                 p.db.query_row("SELECT payload FROM checks WHERE id=?1", [id], |row| {
                     row.get(0)
@@ -721,18 +764,41 @@ async fn execute(
                 s.policy != Policy::ReviewOnly,
                 "Review only is selected; propose changes in your response or ask the user to choose Guided changes"
             );
+            let mut edit_arguments = r.arguments.clone();
+            let intentional = edit_arguments
+                .as_object_mut()
+                .context("Edit arguments must be an object")?
+                .remove("intentional")
+                .map(|v| {
+                    v.as_bool()
+                        .ok_or_else(|| anyhow::anyhow!("intentional must be true or false"))
+                })
+                .transpose()?
+                .unwrap_or(false);
+            let preview_only = edit_arguments
+                .as_object_mut()
+                .context("Edit arguments must be an object")?
+                .remove("preview")
+                .map(|v| {
+                    v.as_bool()
+                        .ok_or_else(|| anyhow::anyhow!("preview must be true or false"))
+                })
+                .transpose()?
+                .unwrap_or(false);
             let (change, path, operation, reason) = if r.name == "edit_text" {
-                let a: TextEditArgs = serde_json::from_value(r.arguments.clone())?;
-                let change = Project::open(&s.data, &s.cwd)?.prepare_text_edit(
+                let a: TextEditArgs = serde_json::from_value(edit_arguments.clone())?;
+                let change = Project::open(&s.data, &s.cwd)?.prepare_scoped_text_edit(
                     &c.task,
                     &a.path,
                     &a.handle,
+                    &a.operation,
+                    a.old_text.as_deref(),
                     &a.new_text,
                     &a.reason,
                 )?;
                 (change, a.path, "handle".into(), a.reason)
             } else if r.name == "create_file" {
-                let a: TextCreateArgs = serde_json::from_value(r.arguments.clone())?;
+                let a: TextCreateArgs = serde_json::from_value(edit_arguments.clone())?;
                 let change = Project::open(&s.data, &s.cwd)?.prepare_edit(
                     &c.task,
                     &a.path,
@@ -744,7 +810,7 @@ async fn execute(
                 )?;
                 (change, a.path, "create".into(), a.reason)
             } else if r.name == "edit_lines" {
-                let a: LinesEditArgs = serde_json::from_value(r.arguments.clone())?;
+                let a: LinesEditArgs = serde_json::from_value(edit_arguments.clone())?;
                 let change = Project::open(&s.data, &s.cwd)?.prepare_lines_edit(
                     &c.task,
                     &a.path,
@@ -755,12 +821,12 @@ async fn execute(
                 )?;
                 (change, a.path, "handle".into(), a.reason)
             } else if r.name == "create_lines" {
-                let a: CreateFileArgs = serde_json::from_value(r.arguments.clone())?;
+                let a: CreateFileArgs = serde_json::from_value(edit_arguments.clone())?;
                 let change = Project::open(&s.data, &s.cwd)?
                     .prepare_lines_edit(&c.task, &a.path, None, &a.lines, "create", &a.reason)?;
                 (change, a.path, "create".into(), a.reason)
             } else if r.name == "delete_file" {
-                let a: DeleteFileArgs = serde_json::from_value(r.arguments.clone())?;
+                let a: DeleteFileArgs = serde_json::from_value(edit_arguments.clone())?;
                 let change = Project::open(&s.data, &s.cwd)?.prepare_lines_edit(
                     &c.task,
                     &a.path,
@@ -771,7 +837,7 @@ async fn execute(
                 )?;
                 (change, a.path, "delete".into(), a.reason)
             } else {
-                let a: EditArgs = serde_json::from_value(r.arguments.clone())?;
+                let a: EditArgs = serde_json::from_value(edit_arguments.clone())?;
                 ensure!(
                     a.operation == "delete" || r.arguments.get("new_text").is_some(),
                     "new_text is required for create/replace. Send old_text and new_text as separate native tool arguments, not a JSON example inside a string."
@@ -802,6 +868,22 @@ async fn execute(
                 };
                 (change, a.path, a.operation, a.reason)
             };
+            let preview = crate::compact_context::edit_preview(&change)?;
+            if preview_only
+                || (preview["needs_intent"] == true && !intentional && operation != "delete")
+            {
+                let p = Project::open(&s.data, &s.cwd)?;
+                p.reject(&change.id)?;
+                let read = p.read(&c.task, &path, 1, 100).ok();
+                return Ok(
+                    json!({"applied":false,"blocked_by_preflight":!preview_only,"preview":preview,"current_read":read,"scope":"Proposal retained as rejected; project bytes unchanged"}),
+                );
+            }
+            let proposed_detail = format!(
+                "{}\nPre-apply parse/scope observations: {}",
+                change.diff(),
+                preview
+            );
             let detail = format!(
                 "{}\n{}\n{}\nCheckpoint: {}\n{}",
                 reason,
@@ -812,7 +894,7 @@ async fn execute(
                     "Original file will be saved for undo."
                 },
                 change.id,
-                change.diff()
+                proposed_detail
             );
             if let Err(e) = approve(
                 s,
@@ -846,11 +928,21 @@ async fn execute(
                 None
             };
             Ok(
-                json!({"checkpoint":applied.id,"path":applied.path,"sha256":applied.after_hash,"syntax":syntax,"current_read":current_read,"configured_checks":p.checks()?.iter().map(|c|&c.name).collect::<Vec<_>>(),"next":"Inspect any syntax errors, then run a fresh configured check. File changed; previous results are stale. Do not invent a check name."}),
+                json!({"applied":true,"preview":preview,"intentional":intentional,"checkpoint":applied.id,"path":applied.path,"sha256":applied.after_hash,"syntax":syntax,"current_read":current_read,"configured_checks":p.checks()?.iter().map(|c|&c.name).collect::<Vec<_>>(),"next":"Inspect any syntax errors, then run a fresh configured check. File changed; previous results are stale. Do not invent a check name."}),
             )
         }
         "run_check" => {
             let a: CheckArgs = serde_json::from_value(r.arguments.clone())?;
+            ensure!(
+                a.hypothesis.is_some() == a.prediction.is_some(),
+                "A reasoning probe supplies both a hypothesis and a concrete prediction"
+            );
+            for text in [&a.hypothesis, &a.prediction].into_iter().flatten() {
+                ensure!(
+                    !text.trim().is_empty() && text.len() <= 2000,
+                    "Keep each hypothesis/prediction to 1–2000 bytes"
+                );
+            }
             let checks = Project::open(&s.data, &s.cwd)?.checks()?;
             let check = checks.iter().find(|v| v.name == a.name).with_context(|| {
                 format!(
@@ -864,6 +956,17 @@ async fn execute(
                 "Review only does not execute code"
             );
             approve(s,c,id,&format!("Run {}",a.name),&json!(check),&format!("{}\nRuns on a disposable copy of the project. The result records the exact source snapshot. Dependencies must already be available.",s.policy.label())).await?;
+            if let (Some(hypothesis), Some(prediction)) = (&a.hypothesis, &a.prediction) {
+                Project::open(&s.data, &s.cwd)?.note(
+                    &c.task,
+                    "hypothesis",
+                    &format!(
+                        "Hypothesis: {hypothesis}\nPrediction for {}: {prediction}",
+                        a.name
+                    ),
+                    "model probe (unverified)",
+                )?;
+            }
             let result = sandbox::run(
                 s.data.clone(),
                 s.cwd.clone(),
@@ -876,6 +979,17 @@ async fn execute(
             let mut value = serde_json::to_value(&result)?;
             let p = Project::open(&s.data, &s.cwd)?;
             value["workflow"] = crate::workflow::packet(&p, &c.task)?;
+            value["failure_packet"] = crate::workflow::failure_packet(&p, &result)?;
+            if let (Some(hypothesis), Some(prediction)) = (&a.hypothesis, &a.prediction) {
+                let observation = json!({"hypothesis":hypothesis,"prediction":prediction,"evidence_id":result.id,"source_revision":result.snapshot,"exit_code":result.exit_code,"error":result.error,"scope":"Prediction not automatically judged; compare it with actual check evidence"});
+                p.note(
+                    &c.task,
+                    "observation",
+                    &observation.to_string(),
+                    "host probe receipt",
+                )?;
+                value["probe"] = observation;
+            }
             if result.exit_code != Some(0) || result.error.is_some() {
                 let changes = p.task(&c.task)?.changes;
                 value["next_action"] = json!(if changes == 0 && s.tool_profile.is_compact() {
@@ -905,8 +1019,30 @@ async fn execute(
                 }
                 let mut reads = Vec::new();
                 let mut chars = 0;
+                let mut seen = std::collections::BTreeSet::new();
                 for (path, line) in targets.into_iter().take(2) {
-                    if let Ok(read) = p.read(&c.task, &path, line.saturating_sub(3).max(1), 12) {
+                    let enclosing = p
+                        .bytes(&path)?
+                        .and_then(|b| String::from_utf8(b).ok())
+                        .map(|body| crate::syntax::chunks(&path, &body))
+                        .transpose()?
+                        .and_then(|s| {
+                            s.chunks
+                                .into_iter()
+                                .filter(|c| {
+                                    c.start_line <= line
+                                        && c.end_line >= line
+                                        && c.end_line - c.start_line < 300
+                                })
+                                .min_by_key(|c| c.end_line - c.start_line)
+                        });
+                    let (start, count) = enclosing
+                        .map(|c| (c.start_line, c.end_line - c.start_line + 1))
+                        .unwrap_or((line.saturating_sub(3).max(1), 12));
+                    if let Ok(read) = p.read(&c.task, &path, start, count) {
+                        if !seen.insert(read["range_handle"].clone().to_string()) {
+                            continue;
+                        }
                         let text = crate::compact_context::read_packet(&read);
                         if chars + text.chars().count() <= 5000 {
                             chars += text.chars().count();
@@ -947,22 +1083,39 @@ async fn execute(
 }
 pub fn tool_list() -> Value {
     let tool = |name: &str, description: &str, props: Value, required: Vec<&str>| json!({"name":name,"description":description,"inputSchema":{"type":"object","properties":props,"required":required,"additionalProperties":false},"annotations":{"readOnlyHint":matches!(name,"list"|"read"|"search"|"evidence"),"openWorldHint":matches!(name,"terminal"|"run_check"|"skill")}});
-    json!({"tools":[
+    let mut catalog = json!({"tools":[
         tool("list","List project files, configured checks, and active access mode. Excludes generated folders, secrets and links.",json!({}),vec![]),
         tool("read","Read a current file and revision-bound range/symbol handles. Required before edit. Handles avoid copying original text.",json!({"path":{"type":"string"},"start_line":{"type":"integer","minimum":1},"lines":{"type":"integer","minimum":1,"maximum":300}}),vec!["path"]),
         tool("search","Search current project text and symbols with lexical retrieval. Excerpts are not an edit authorization.",json!({"query":{"type":"string"}}),vec!["query"]),
         tool("skill","Search skill metadata, read one procedure, or run its declared executable helper with existing access/approval.",json!({"action":{"type":"string","enum":["list","read","helper"]},"query":{"type":"string"},"id":{"type":"string"},"helper":{"type":"string"},"input":{"type":"object"}}),vec!["action"]),
-        tool("evidence","Read another bounded page of actual captured check output by evidence id. Does not rerun or verify anything.",json!({"id":{"type":"string"},"offset":{"type":"integer","minimum":0}}),vec!["id"]),
+        tool("evidence","Read actual evidence without rerunning. Optional stream=stdout/stderr reads retained raw bytes; offset then counts observed stream bytes. Without stream, offset counts legacy preview characters.",json!({"id":{"type":"string"},"stream":{"type":"string","enum":["stdout","stderr"]},"offset":{"type":"integer","minimum":0}}),vec!["id"]),
         tool("remember","Persist a plan, decision, next step or explicitly unverified hypothesis. Notes never certify success.",json!({"kind":{"type":"string","enum":["plan","decision","next","hypothesis"]},"text":{"type":"string"}}),vec!["kind","text"]),
         tool("edit","Apply a focused change with checkpoint/undo. Prefer operation=handle with a range or symbol handle from read and new_text. Exact unique old_text replacement remains available. Approval follows selected access mode.",json!({"path":{"type":"string"},"handle":{"type":"string","description":"Exact revision-bound handle returned by read; required for handle operation."},"old_text":{"type":"string","description":"Exact unique substring for replace only; no line numbers."},"new_text":{"type":"string","description":"Replacement text for handle/replace/create."},"operation":{"type":"string","enum":["handle","replace","create","delete"]},"reason":{"type":"string"}}),vec!["path","operation","reason"]),
         tool("edit_lines","Replace exactly the current read span. Copy its handle; preserve indentation. Checkpoint/undo and selected access approval apply.",json!({"path":{"type":"string"},"handle":{"type":"string","description":"Copy the handle from the current read of this path."},"lines":{"type":"array","items":{"type":"string"},"description":"One literal source line per item, without newline characters. [] removes the span."},"reason":{"type":"string"}}),vec!["path","handle","lines"]),
         tool("create_lines","Create a missing file with a checkpoint. Use edit_lines for an existing file.",json!({"path":{"type":"string"},"lines":{"type":"array","items":{"type":"string"},"description":"One literal source line per item."},"reason":{"type":"string"}}),vec!["path","lines"]),
-        tool("edit_text","Replace exactly the current read span with source text. Copy its handle; no old_text needed. Checkpoint/undo and access approval apply. Original newline style and span-ending newline are preserved.",json!({"path":{"type":"string"},"handle":{"type":"string","description":"Copy the handle from the current read of this path."},"new_text":{"type":"string","description":"Actual replacement source with real line breaks and indentation."},"reason":{"type":"string"}}),vec!["path","handle","new_text"]),
+        tool("edit_text","Choose a current handle and replacement source. Default replace-span replaces ALL shown lines; replace-symbol uses a complete symbol handle; replace-text changes exact unique old_text inside a span; insert-before/after preserves the anchor. Pre-apply syntax/diff feedback supports preview and intentional rewrites; checkpoint/undo and access approval apply.",json!({"operation":{"type":"string","enum":["replace-span","replace-symbol","replace-text","insert-before","insert-after"]},"old_text":{"type":"string","description":"Exact unique target inside the read span for replace-text."},"path":{"type":"string"},"handle":{"type":"string","description":"Copy the handle from the current read of this path."},"new_text":{"type":"string","description":"Actual replacement source with real line breaks and indentation."},"reason":{"type":"string"}}),vec!["path","handle","new_text"]),
         tool("create_file","Create a missing file with source text and a checkpoint. Use edit_text for an existing file.",json!({"path":{"type":"string"},"new_text":{"type":"string"},"reason":{"type":"string"}}),vec!["path","new_text"]),
         tool("delete_file","Delete an existing file using a complete current read handle. Checkpoint/undo and selected access approval apply.",json!({"path":{"type":"string"},"handle":{"type":"string"},"reason":{"type":"string"}}),vec!["path","handle"]),
-        tool("run_check","Run a user-configured named check after approval. list shows names; argv cannot be set by this tool.",json!({"name":{"type":"string"}}),vec!["name"]),
+        tool("run_check","Run a configured check on a disposable source copy. Optional hypothesis and prediction record an executable reasoning probe; actual results never automatically verify a model explanation.",json!({"name":{"type":"string"},"hypothesis":{"type":"string","maxLength":2000},"prediction":{"type":"string","maxLength":2000}}),vec!["name"]),
         tool("terminal","Arbitrary shell command in the real project, including networking, installs and external tools. Only available in user-selected Full access mode. External side effects are not undoable.",json!({"command":{"type":"string"},"timeout_secs":{"type":"integer","minimum":1,"maximum":600}}),vec!["command"])
-    ]})
+    ]});
+    for tool in catalog["tools"].as_array_mut().expect("tools") {
+        if matches!(
+            tool["name"].as_str(),
+            Some(
+                "edit"
+                    | "edit_text"
+                    | "edit_lines"
+                    | "create_file"
+                    | "create_lines"
+                    | "delete_file"
+            )
+        ) {
+            tool["inputSchema"]["properties"]["intentional"] = json!({"type":"boolean","description":"Explicitly accept a reported intentional deletion, rename or incomplete intermediate syntax. Full terminal is independent."});
+            tool["inputSchema"]["properties"]["preview"] = json!({"type":"boolean","description":"Return proposed diff and syntax scope without applying."});
+        }
+    }
+    catalog
 }
 /// Private stdio transport launched only by the selected ACP engine.
 pub async fn stdio(socket: &Path, profile: ToolProfile) -> Result<()> {

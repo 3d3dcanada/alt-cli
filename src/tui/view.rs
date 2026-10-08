@@ -59,6 +59,9 @@ fn button(
     action: &'static str,
     active: bool,
 ) {
+    let label = super::actions::get(action)
+        .map(|entry| entry.label)
+        .unwrap_or(label);
     frame.render_widget(
         Paragraph::new(format!(" {label} ")).style(
             Style::default()
@@ -72,6 +75,9 @@ fn button(
 fn buttons(frame: &mut Frame, app: &mut App, area: Rect, items: &[(&str, &'static str)]) {
     let mut x = area.x;
     for (label, action) in items {
+        let label = super::actions::get(action)
+            .map(|entry| entry.label)
+            .unwrap_or(label);
         let width = (label.chars().count() as u16 + 2).min(area.right().saturating_sub(x));
         if width < 3 {
             break;
@@ -96,7 +102,10 @@ pub fn draw(frame: &mut Frame, app: &mut App) {
             vec![
                 line("ALT", ACCENT),
                 line("Make this terminal at least 60 columns × 18 rows.", TEXT),
-                line("Your work is saved. Ctrl+Q leaves Alt.", MUTED),
+                line(
+                    "Resize to continue. Ctrl+Q saves drafts and leaves Alt.",
+                    MUTED,
+                ),
             ],
         );
         return;
@@ -316,12 +325,12 @@ fn footer(frame: &mut Frame, app: &mut App, area: Rect) {
         match app.page {
             Page::Files => "↑↓ Select  Enter View  E Edit  S Find  G Line  / Filter",
             Page::Jobs => "Enter Attach  Ctrl+] Detach  N Start  S Stop  R Restart  L Logs",
-            Page::Context => "P Pin requirement  U Unpin  R Refresh  PgUp/PgDn Scroll",
+            Page::Context => "I Understands · C Correct · P Pin · U Unpin · R Refresh",
             Page::Home => {
                 "↑↓ Choose   Enter Open   Tab Navigation   Ctrl+P Quick actions   Ctrl+Q Quit"
             }
             Page::Chat => {
-                "Enter Send   Alt+Enter / Ctrl+J New line   Esc Stop   Ctrl+T Activity   Ctrl+B Brief"
+                "Enter Send · Esc Stop · Ctrl+P Actions · Ctrl+L Allowance · Ctrl+D Drafts"
             }
             Page::Models => {
                 "←→ Library / Server / Hub   ↑↓ Select   Enter Use/Open   R Refresh   I Import   S Search"
@@ -331,7 +340,7 @@ fn footer(frame: &mut Frame, app: &mut App, area: Rect) {
                 "↑↓ Select   Enter Resume   / Search   R Rename   E Export   Delete Archive"
             }
             Page::Task => {
-                "↑↓ Change   Enter Diff   R Run checks   U Undo   C Configure   M Memory   E Evidence"
+                "R Checks · U Undo · C Configure · I Understands · F Recovered · E Evidence"
             }
             Page::Settings => "↑↓ Choose setting   Enter Change   Settings are saved automatically",
             Page::Help => {
@@ -500,14 +509,16 @@ fn home(frame: &mut Frame, app: &mut App, area: Rect) {
             cols[1],
         );
     }
+    let (next, _, _) = app.next_step();
     paragraph(
         frame,
         parts[2],
-        line(
-            "Tip: your assistant can be wrong. Tool results show what actually happened.",
-            MUTED,
-        ),
+        vec![
+            line(format!("Next: {next}"), ACCENT),
+            line("Ctrl+P → Continue next step · Saved drafts: Ctrl+D", MUTED),
+        ],
     );
+    app.hits.push((parts[2], Hit::Button("next-step")));
 }
 
 fn chat(frame: &mut Frame, app: &mut App, area: Rect) {
@@ -541,6 +552,10 @@ fn chat(frame: &mut Frame, app: &mut App, area: Rect) {
                 line("", TEXT),
                 line("Your first message connects the selected model.", MUTED),
                 line("No model selected? Open Connections first.", MUTED),
+                line(
+                    "Ctrl+P searches every action · Ctrl+D restores drafts.",
+                    MUTED,
+                ),
             ]);
         }
         for message in &app.messages {
@@ -574,6 +589,17 @@ fn chat(frame: &mut Frame, app: &mut App, area: Rect) {
                     },
                 ));
             }
+        }
+        if let Some(submission) = &app.pending_prompt {
+            lines.push(line(
+                if app.send_pending_on_ready {
+                    "Submitted while connecting · next message stays in the editor"
+                } else {
+                    "Interrupted submission retained · Ctrl+D to review before retry"
+                },
+                WARN,
+            ));
+            lines.push(line(submission.text.clone(), MUTED));
         }
         if app.busy {
             lines.push(line(
@@ -633,7 +659,8 @@ fn chat(frame: &mut Frame, app: &mut App, area: Rect) {
             .wrap(Wrap { trim: false })
             .block(block(" Conversation ", !app.tools_focus && !app.nav_focus));
         let count = paragraph
-            .line_count(conversation.width)
+            .line_count(conversation.width.saturating_sub(2))
+            .saturating_sub(2)
             .min(u16::MAX as usize) as u16;
         let scroll = count
             .saturating_sub(conversation.height.saturating_sub(2))
@@ -735,9 +762,15 @@ fn chat(frame: &mut Frame, app: &mut App, area: Rect) {
     }
     let composer_block = block(
         if app.busy {
-            " Next message · send after this task finishes "
+            if app.draft_saved {
+                " Next message · saved locally "
+            } else {
+                " Next message · saving draft… "
+            }
+        } else if app.draft_saved {
+            " Describe what you want · draft saved "
         } else {
-            " Describe what you want · Enter sends "
+            " Describe what you want · saving draft… "
         },
         !app.tools_focus && !app.nav_focus,
     );
@@ -1322,13 +1355,13 @@ fn help(frame: &mut Frame, area: Rect, scroll: u16) {
         line("", TEXT),
         line("FIND YOUR WAY", ACCENT),
         line(
-            "Click a page or press Alt+1…8. Tab focuses navigation. Ctrl+P opens quick actions. Enter sends a message; Alt+Enter or Ctrl+J adds a new line. Paste works. Esc stops a task. Ctrl+Q exits.",
+            "Click a page or press Alt+1…0. Tab focuses navigation. Ctrl+P searches all actions. Ctrl+L opens allowance; Ctrl+R reconnects; Ctrl+D restores drafts. Enter sends a message; Alt+Enter or Ctrl+J adds a new line. Esc stops a task. Ctrl+Q saves drafts and exits.",
             TEXT,
         ),
         line("", TEXT),
         line("WHEN SOMETHING GOES WRONG", ACCENT),
         line(
-            "Your conversation stays saved. Check the connection address, model application, available memory, and tool evidence. Reconnect a saved conversation to continue. Paused model downloads resume when you choose the same file.",
+            "Your conversation stays saved. Drafts autosave every 250 ms while storage responds, and flush on orderly exit. Abrupt termination can lose changes since the last completed save. Save errors are shown; retained submissions never resend automatically. Check the server, memory and tool evidence. Ctrl+O enters a model ID without inventory. Paused downloads resume when you choose the same file.",
             TEXT,
         ),
     ];
@@ -1413,6 +1446,43 @@ fn modal(frame: &mut Frame, app: &mut App, area: Rect) {
     );
     frame.render_widget(Clear, rect);
     match dialog {
+        Dialog::Palette { query, selected } => {
+            frame.render_widget(block(" Quick actions · type to search ", true), rect);
+            let rows = Layout::vertical([
+                Constraint::Length(3),
+                Constraint::Min(4),
+                Constraint::Length(1),
+            ])
+            .split(inset(rect, 2, 1));
+            frame.render_widget(block(" Search actions ", true), rows[0]);
+            editor(frame, inset(rows[0], 1, 1), &query, false, true);
+            let choices = super::actions::search(&query.text)
+                .iter()
+                .map(|a| {
+                    (
+                        a.label.to_string(),
+                        format!(
+                            "{}{}",
+                            a.hint,
+                            a.shortcut
+                                .map(|c| format!(" · Ctrl+{}", c.to_ascii_uppercase()))
+                                .unwrap_or_default()
+                        ),
+                    )
+                })
+                .collect();
+            selectable_list(frame, app, rows[1], "Available actions", choices, selected);
+            for (_, hit) in &mut app.hits {
+                if let Hit::Row(index) = hit {
+                    *hit = Hit::Choice(*index);
+                }
+            }
+            paragraph(
+                frame,
+                rows[2],
+                line("↑↓ Select · Enter Open · Esc Close", MUTED),
+            );
+        }
         Dialog::Menu {
             title,
             description,
@@ -1421,10 +1491,14 @@ fn modal(frame: &mut Frame, app: &mut App, area: Rect) {
         } => {
             frame.render_widget(block(format!(" {title} "), true), rect);
             let rows = Layout::vertical([
-                Constraint::Length(if description.lines().count() > 1 {
-                    7
-                } else {
-                    3
+                Constraint::Length({
+                    use unicode_width::UnicodeWidthStr;
+                    let width = rect.width.saturating_sub(4).max(1) as usize;
+                    let lines = description
+                        .lines()
+                        .map(|line| line.width().div_ceil(width).max(1))
+                        .sum::<usize>();
+                    (lines as u16).clamp(1, rect.height.saturating_sub(7).clamp(1, 7))
                 }),
                 Constraint::Min(4),
                 Constraint::Length(1),
@@ -1459,29 +1533,45 @@ fn modal(frame: &mut Frame, app: &mut App, area: Rect) {
         Dialog::Connection(form) => {
             frame.render_widget(block(" Connect your model · Step 1 of 2 ", true), rect);
             let inner = inset(rect, 2, 1);
+            let rows = Layout::vertical([
+                Constraint::Length(if inner.height >= 17 { 3 } else { 1 }),
+                Constraint::Length(3),
+                Constraint::Length(3),
+                Constraint::Length(3),
+                Constraint::Min(0),
+                Constraint::Length(1),
+                Constraint::Length(1),
+            ])
+            .split(inner);
             paragraph(
                 frame,
-                Rect::new(inner.x, inner.y, inner.width, 3),
-                vec![
-                    line(
-                        "Give this connection a name, then check its server address.",
-                        TEXT,
-                    ),
-                    line(
-                        "Start the server in your model application first. No API key is needed for most local servers.",
-                        MUTED,
-                    ),
-                ],
+                rows[0],
+                line(
+                    if app
+                        .job
+                        .as_ref()
+                        .is_some_and(|j| j.label == "Checking the connection")
+                    {
+                        "Checking the connection… Esc cancels."
+                    } else if app.status_error {
+                        &app.status
+                    } else if inner.height >= 17 {
+                        "Name this connection and enter the server address. Start the server in your model application first. Most local servers need no API key."
+                    } else {
+                        "Connect a running model server."
+                    },
+                    if app.status_error { BAD } else { MUTED },
+                ),
             );
             for (i, label) in [
                 "Connection name",
                 "Server address",
-                "API key variable (optional; enter a variable name, not the key)",
+                "API key variable (optional)",
             ]
             .iter()
             .enumerate()
             {
-                let field = Rect::new(inner.x, inner.y + 3 + i as u16 * 3, inner.width, 3);
+                let field = rows[i + 1];
                 frame.render_widget(block(format!(" {label} "), form.focus == i), field);
                 editor(
                     frame,
@@ -1494,18 +1584,23 @@ fn modal(frame: &mut Frame, app: &mut App, area: Rect) {
             }
             paragraph(
                 frame,
-                Rect::new(inner.x, inner.y + 12, inner.width, 2),
+                rows[5],
                 line(
-                    "Tab changes fields · Enter checks the connection · Ctrl+M enters a model ID manually",
+                    if form.focus == 2 {
+                        "Enter the variable name, never the secret key."
+                    } else {
+                        "Tab fields · Ctrl+O model ID · Esc cancel"
+                    },
                     MUTED,
                 ),
             );
             buttons(
                 frame,
                 app,
-                Rect::new(inner.x, inner.bottom().saturating_sub(1), inner.width, 1),
+                rows[6],
                 &[
                     ("Check connection", "test-form"),
+                    ("Enter model ID", "manual-model"),
                     ("Cancel", "modal-cancel"),
                 ],
             );
@@ -1666,15 +1761,20 @@ fn modal(frame: &mut Frame, app: &mut App, area: Rect) {
             selected,
             ..
         } => {
-            frame.render_widget(block(format!(" {title} "), true), rect);
+            frame.render_widget(block(format!(" {title} · PgUp/PgDn details "), true), rect);
             let rows = Layout::vertical([Constraint::Min(5), Constraint::Length(2)])
                 .split(inset(rect, 2, 1));
-            paragraph(
-                frame,
+            let stamp = format!("{title}:{}", body.len());
+            if app.confirm_stamp != stamp {
+                app.modal_scroll = 0;
+                app.confirm_stamp = stamp;
+            }
+            frame.render_widget(
+                Paragraph::new(body)
+                    .style(style(TEXT))
+                    .wrap(Wrap { trim: false })
+                    .scroll((app.modal_scroll, 0)),
                 rows[0],
-                body.lines()
-                    .map(|s| line(s.to_owned(), TEXT))
-                    .collect::<Vec<_>>(),
             );
             let cols = Layout::horizontal([Constraint::Percentage(50), Constraint::Percentage(50)])
                 .split(rows[1]);
@@ -2212,10 +2312,17 @@ mod tests {
         assert!(
             matches!(&app.dialog,Some(Dialog::Connection(form)) if form.fields[1].text=="not-an-address")
         );
-        app.pending_prompt = Some("Please keep my original request".into());
+        app.pending_prompt = Some(super::super::drafts::Submission::new(
+            "Please keep my original request".into(),
+        ));
+        app.composer.replace("Keep the next message too");
         app.workspace_update(crate::workspace::Update::Error("Server unavailable".into()))
             .unwrap();
-        assert_eq!(app.composer.text, "Please keep my original request");
+        assert_eq!(app.composer.text, "Keep the next message too");
+        assert_eq!(
+            app.pending_prompt.as_ref().unwrap().text,
+            "Please keep my original request"
+        );
         app.dialog = None;
         app.workspace_update(crate::workspace::Update::Done(
             serde_json::json!({"stopReason":"end_turn"}),

@@ -1,0 +1,167 @@
+{
+  "schema": 1,
+  "date": "2026-10-08",
+  "scope": "Actual keyboard PTYs with deterministic local providers/ACP or real Goose using weight-free provider fixtures. No live checkpoint, GPU performance, human novice success rate or universal crash-loss SLA established.",
+  "source_stages": {
+    "frozen-alt-7": "Includes responsive chat-scroll correction and recovery/evidence management UI; before later explicit failed-flush error draining and retiring-workspace queue.",
+    "frozen-alt-8": "Adds explicit failed-flush error draining; before retiring-workspace queue.",
+    "frozen-alt-9": "Includes retiring-workspace stop/join queue. Final subsequent source edit only moves Loading deadline after existing Reasoning mode to preserve existing menu position; root final integration must validate this final source.",
+    "frozen-alt-final": "Earlier successful build including new draft/evidence/recovery UI; before chat-scroll correction, explicit flush race fix and retirement queue."
+  },
+  "stages": [
+    {
+      "name": "draft-latest",
+      "outcome": "passed",
+      "binary_sha256": "243373268a45dbd58a21b7930232e31ea28ac832ecb0926ab3c586d57c5e1789",
+      "binary_stage": "frozen-alt-9",
+      "log": "draft-smoke-9.log",
+      "log_sha256": "728de9d680c9530aac30a818fc4e707f938a4c64266796635537db3faf72031e",
+      "checks": [
+        "80x24 and 60x18 keyboard profile preservation, manual ID, inventory cancellation, SIGKILL draft restore, New/archive restore and paste limit feedback",
+        "60x18 second writer rejected and save failure keeps editor open until repair and explicit flush",
+        "Startup success/failure/cancel retain submitted message ID separately from next-message draft"
+      ],
+      "details": "draft-smoke-9.json",
+      "details_sha256": "2f6db55b8b235a6c0519802760841d5ff2fc8952d7d9a8bc3895383bb6de5dd3",
+      "attempt_count": 6
+    },
+    {
+      "name": "allowance-latest",
+      "outcome": "passed",
+      "binary_sha256": "243373268a45dbd58a21b7930232e31ea28ac832ecb0926ab3c586d57c5e1789",
+      "binary_stage": "frozen-alt-9",
+      "log": "allowance-smoke-9.log",
+      "log_sha256": "3e1003a93b480a750c3136deea071e3c3dd78acf971af1b9df1e9c11392fa77d",
+      "checks": [
+        "Real Goose with weight-free local provider at120x40,80x24,60x18",
+        "Observed waiting/receiving stages, exhausted allocation, explicit finite addition, saved allocation reconnect with no automatic prompt"
+      ],
+      "details": "allowance-smoke-9.json",
+      "details_sha256": "5e736f84b323b497339f3d55cd857f09431cf04a8626ec2c0d33b714c030d8c1",
+      "attempt_count": 3
+    },
+    {
+      "name": "baseline-tui-latest",
+      "outcome": "passed",
+      "binary_sha256": "243373268a45dbd58a21b7930232e31ea28ac832ecb0926ab3c586d57c5e1789",
+      "binary_stage": "frozen-alt-9",
+      "log": "existing-tui-9.log",
+      "log_sha256": "e6b7745bcb6e4c08759a6c0b85490befad7a1234df0832430cac24bf655fe4e3",
+      "checks": [
+        "First-run wizard, model selection, project picker, Unicode/multiline paste, brief delivery, tool rejection, cancellation, search/rename/export/resume",
+        "Connection repair, valid GGUF container import, navigation/resize, terminal restoration, SIGTERM and Linux parent-death cleanup"
+      ]
+    },
+    {
+      "name": "recovery-management",
+      "outcome": "passed",
+      "binary_sha256": "5d308105edbd5b02701dbce3788aea52c31af08a0855cb12ce083fe7ebeebfb3",
+      "binary_stage": "frozen-alt-7",
+      "log": "recovery-smoke-9.log",
+      "log_sha256": "938d9d2c65d735394d98ceb1b831573d6b6078fe271c85929d224ad34701f6f6",
+      "checks": [
+        "80x24 and60x18 raw stdout/stderr switch with late stderr evidence",
+        "External/generated declarations preserve command, timeout and contract kind; storage warning budget persisted",
+        "Displaced file review leaves current file unchanged until explicit restore",
+        "60x18 user requirement replacement retains exact earlier text/reason and sends no additional model prompt"
+      ],
+      "details": "recovery-smoke-9.json",
+      "details_sha256": "938d9d2c65d735394d98ceb1b831573d6b6078fe271c85929d224ad34701f6f6",
+      "attempt_count": 3
+    },
+    {
+      "name": "workbench",
+      "outcome": "passed",
+      "binary_sha256": "c526f291988c2376c21a788fd2dd51828a6d66eb23ba0ede7e18d57f02bb3420",
+      "binary_stage": "frozen-alt-8",
+      "log": "workbench-smoke-8.log",
+      "log_sha256": "400b7da698b0b347f4b8a79da834fbfa7fc5f652c4cf53a99a7cdf2fb22af7ab",
+      "checks": [
+        "Files create/edit/preview/undo; empty filter/file; pinned context; MCP setup/tool selection; diagnostics",
+        "PTY input/persistence/reconnect/stop; small terminal; terminal settings restored"
+      ]
+    },
+    {
+      "name": "task-memory",
+      "outcome": "passed",
+      "binary_sha256": "7a9648c0c0180b419fbcd0421f6298f70af1c58abe7ba32a1f1098470636b447",
+      "binary_stage": "frozen-alt-final",
+      "log": "task-smoke-final.log",
+      "log_sha256": "ddc56693861ec10d3e860bb2153c258a37ca710b4280eeede12e80b580bd2b37",
+      "checks": [
+        "Task check configuration/rerun without model, isolation failure reporting, explicit Full access, raw evidence",
+        "Durable user decision, memory retrieval, export and terminal restoration"
+      ]
+    }
+  ],
+  "rust_tests": {
+    "command": "cargo test --locked --lib tui::",
+    "passed": 18,
+    "failed": 0,
+    "filtered_out": 7,
+    "log": "tui-tests-3.log",
+    "source_stage": "Before retiring-workspace queue; parent owns full final all-suite run."
+  },
+  "clippy": {
+    "command": "cargo clippy --locked --all-targets -- -D warnings",
+    "outcome": "passed",
+    "log": "ui-clippy-9.log",
+    "source_stage": "Includes retiring-workspace queue; before final runtime menu ordering correction."
+  },
+  "failed_attempts": [
+    {
+      "log": "draft-smoke-final.log",
+      "resolution": "Quit helper did not accept the existing confirmation while canceled startup cleanup was active; corrected helper and reran successfully.",
+      "log_sha256": "843aab7c5a64e368ff1d5257c8b69e8d4772b7744e4c64f533e4ae44a007894d"
+    },
+    {
+      "log": "allowance-smoke-final.log",
+      "resolution": "Verified defect: minimum-size chat scrolling double-counted paragraph borders and hid live inference stages. Fixed paragraph count/inner width; all sizes subsequently pass.",
+      "log_sha256": "b212b09b855a74a3a0e8f7f86bc1a17e8e09bab230deb646c14f5ad3f2e81429"
+    },
+    {
+      "log": "draft-smoke-7.log",
+      "resolution": "Verified recovery message race: a queued autosave error replaced the explicit quit-save failure message. Drained stale autosave errors after explicit failed flush; disk-failure recovery now passes.",
+      "log_sha256": "b03064c64ae79a2b279c5ecb81dcb9702340ba68cb4e173d87882d8c5a2099c4"
+    },
+    {
+      "log": "recovery-smoke-7.log",
+      "resolution": "New test setup expected an array from task checks; corrected to configured field.",
+      "log_sha256": "f8980e142e6ef27a63fd83e82f765b031b4f5a3f76f3de8a68c9ed3efeecb0a6"
+    },
+    {
+      "log": "recovery-smoke-8.log",
+      "resolution": "New test setup used nonexistent storage subcommand; corrected to state usage.",
+      "log_sha256": "9d15d83712470bc48356312d9ad81419b301cbe0ecf1d37edfd4df7b45bdb6ca"
+    }
+  ],
+  "durability": {
+    "autosave_timer_ms": 250,
+    "event_loop_tick_ms": 60,
+    "boundary": "Only the last completed atomic durable write is guaranteed after abrupt termination. Timer scheduling and filesystem latency are not hard bounded. Orderly exit flushes and refuses to leave after a reported write failure.",
+    "observations_from": "draft-smoke-9.json",
+    "input_to_durable_ms": [
+      116.83,
+      139.03
+    ],
+    "inventory_cancel_ms": [
+      167.67,
+      146.31
+    ],
+    "samples_per_metric": 2
+  },
+  "not_measured": [
+    "Five uncoached human novice sessions",
+    "GTX1070 fit/performance",
+    "Any checkpoint capability/reasoning improvement",
+    "Universal maximum uncommitted keystroke window under arbitrary storage stalls"
+  ],
+  "scripts": {
+    "smoke_draft_tui.py": "82c07f6c970c29380c8ca79ac93b2c9161cb07d3e3d4759a843acf5fd7862b87",
+    "smoke_recovery_tui.py": "fc4f425afb23b3d61737b5500d893046801b046596b2ce4a933913328e18acd5",
+    "smoke_allowance_tui.py": "79afb652b52fa03012df5c548afe923b02df9b00534a3694bfb6c55aa085c571",
+    "smoke_tui.py": "dc1d436e25fe1604ac763cbd8daf9163f9ca4e10f459b0fb0c34437c139677dd",
+    "smoke_task_tui.py": "7c3debd0893086bbebe2364a7d6b5f9666b89dbd8c9ac00e58beebcfff5991c5",
+    "smoke_workbench_tui.py": "d2a0dc7f5f5b7aed3bf1fc2b0119164eebe3900af21946ea472872fffe59d5fb"
+  }
+}

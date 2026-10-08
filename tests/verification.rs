@@ -76,6 +76,7 @@ async fn independent_check_contract_rejects_fake_output_and_stales_on_assertion_
         timeout_secs: 10,
         contract: Contract {
             kind: Kind::Tests,
+            inputs: Default::default(),
             report: Some(ReportSpec {
                 format: Format::Json,
                 path: "result.json".into(),

@@ -14,6 +14,8 @@ use std::{
     time::{Duration, Instant},
 };
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
+#[path = "gguf.rs"]
+pub mod gguf;
 
 #[derive(Debug, Clone, Default)]
 pub struct Progress {
@@ -67,7 +69,10 @@ async fn json_response(request: reqwest::RequestBuilder) -> Result<Value> {
 }
 
 pub async fn inventory(profile: &Profile) -> Result<Vec<String>> {
-    let mut request = client()?.get(profile.models_url());
+    let mut request = crate::runtime::http_client(profile)
+        .connect_timeout(Duration::from_secs(10))
+        .build()?
+        .get(profile.models_url());
     if let Some(key) = profile.key()? {
         request = request.bearer_auth(key);
     }
@@ -262,6 +267,8 @@ pub struct Artifact {
     pub source: Option<ModelFile>,
     #[serde(default)]
     pub pieces: Vec<LocalPart>,
+    #[serde(default)]
+    pub metadata: Option<gguf::Metadata>,
 }
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct LocalPart {
@@ -340,14 +347,43 @@ pub async fn hash_file(
 }
 
 pub async fn verify_gguf(path: &Path) -> Result<()> {
-    let mut file = tokio::fs::File::open(path)
-        .await
-        .context("The model file is missing or cannot be read")?;
-    let mut magic = [0u8; 4];
-    file.read_exact(&mut magic)
-        .await
-        .context("The model file is incomplete")?;
-    ensure!(&magic == b"GGUF", "This is not a GGUF model file");
+    inspect_gguf(path).await.map(|_| ())
+}
+pub async fn inspect_gguf(path: &Path) -> Result<gguf::Metadata> {
+    let path = path.to_owned();
+    tokio::task::spawn_blocking(move || gguf::inspect(&path)).await?
+}
+fn validate_set(metadata: &[gguf::Metadata]) -> Result<()> {
+    let first = metadata.first().context("Empty GGUF set")?;
+    let expected = first.split_count.unwrap_or(1);
+    ensure!(
+        expected as usize == metadata.len(),
+        "Incomplete GGUF split set: expected {expected} members, found {}. Import the complete set again",
+        metadata.len()
+    );
+    let mut tensors = 0u64;
+    for (index, m) in metadata.iter().enumerate() {
+        ensure!(
+            m.split_count.unwrap_or(1) == expected
+                && (expected == 1 || m.split_index == Some(index as u64)),
+            "GGUF split indexes/counts do not match the numbered set"
+        );
+        ensure!(
+            m.architecture == first.architecture
+                && m.blocks == first.blocks
+                && m.embedding == first.embedding
+                && m.native_context == first.native_context
+                && m.total_tensors == first.total_tensors,
+            "GGUF split members have inconsistent model metadata"
+        );
+        tensors = tensors
+            .checked_add(m.tensors)
+            .context("GGUF tensor count overflow")?;
+    }
+    ensure!(
+        first.total_tensors.is_none_or(|n| n == tensors),
+        "GGUF split tensor total does not match its metadata"
+    );
     Ok(())
 }
 
@@ -356,13 +392,59 @@ pub async fn import(
     path: &Path,
     uncensored_claim: bool,
     cancel: Cancel,
-    progress: impl FnMut(Progress),
+    mut progress: impl FnMut(Progress),
 ) -> Result<Artifact> {
     let path = path.canonicalize().context("That file does not exist")?;
-    verify_gguf(&path).await?;
-    let (bytes, hash) = hash_file(&path, &cancel, progress).await?;
+    let header = inspect_gguf(&path).await?;
+    let pattern = regex::Regex::new(r"^(.*)-(\d{5})-of-(\d{5})\.gguf$")?;
+    let filename = path
+        .file_name()
+        .context("Model filename")?
+        .to_string_lossy();
+    let paths = if let Some(c) = pattern.captures(&filename) {
+        let count: u64 = c[3].parse()?;
+        ensure!(
+            (1..=1024).contains(&count) && header.split_count == Some(count),
+            "Numbered GGUF filename and split metadata disagree"
+        );
+        let parent = path.parent().context("Model parent")?;
+        (1..=count)
+            .map(|n| parent.join(format!("{}-{n:05}-of-{count:05}.gguf", &c[1])))
+            .collect::<Vec<_>>()
+    } else {
+        ensure!(
+            header.split_count.unwrap_or(1) == 1,
+            "Split GGUF files require their original numbered filenames and complete set"
+        );
+        vec![path.clone()]
+    };
+    let mut pieces = Vec::new();
+    let mut metadata = Vec::new();
+    let mut bytes = 0u64;
+    for member in paths {
+        ensure!(!cancel.load(Ordering::Relaxed), "Import cancelled");
+        let member = member
+            .canonicalize()
+            .with_context(|| format!("Missing GGUF split member {}", member.display()))?;
+        metadata.push(inspect_gguf(&member).await?);
+        let (size, hash) = hash_file(&member, &cancel, &mut progress).await?;
+        bytes = bytes.checked_add(size).context("GGUF set size overflow")?;
+        pieces.push(LocalPart {
+            path: member,
+            bytes: size,
+            sha256: hash,
+        });
+    }
+    validate_set(&metadata)?;
+    let path = pieces[0].path.clone();
+    let hash = pieces[0].sha256.clone();
+    let id = if pieces.len() == 1 {
+        hash.clone()
+    } else {
+        crate::project::digest(&serde_json::to_vec(&pieces)?)
+    };
     let model = Artifact {
-        id: hash.clone(),
+        id,
         name: path
             .file_name()
             .unwrap_or_default()
@@ -374,7 +456,8 @@ pub async fn import(
         license: "Imported file — check its publisher's license".into(),
         uncensored_claim,
         source: None,
-        pieces: vec![],
+        pieces,
+        metadata: metadata.into_iter().next(),
     };
     save_artifact(root, &model)?;
     Ok(model)
@@ -413,6 +496,24 @@ pub async fn download_set(
     } else {
         file.parts.clone()
     };
+    ensure!(
+        parts.len() <= 1024 && !parts.is_empty(),
+        "GGUF set must contain 1–1024 members"
+    );
+    ensure!(
+        file.sha256.len() == 64 && file.sha256.chars().all(|c| c.is_ascii_hexdigit()),
+        "Invalid GGUF artifact checksum"
+    );
+    ensure!(
+        parts.iter().all(|p| p.bytes > 0
+            && p.sha256.len() == 64
+            && p.sha256.chars().all(|c| c.is_ascii_hexdigit())),
+        "GGUF member has no usable size/checksum"
+    );
+    ensure!(
+        parts[0].sha256.eq_ignore_ascii_case(&file.sha256) && parts[0].filename == file.filename,
+        "GGUF first member does not match artifact metadata"
+    );
     ensure!(
         parts.iter().try_fold(0u64, |n, p| n.checked_add(p.bytes)) == Some(file.bytes),
         "GGUF set size mismatch"
@@ -467,6 +568,7 @@ pub async fn download_set(
         human_bytes(remaining)
     );
     let mut completed = 0;
+    let mut headers = Vec::new();
     for part in &parts {
         ensure!(
             Path::new(&part.filename)
@@ -495,9 +597,10 @@ pub async fn download_set(
             },
         )
         .await?;
-        verify_gguf(&path).await?;
+        headers.push(inspect_gguf(&path).await?);
         completed += part.bytes;
     }
+    validate_set(&headers)?;
     if destination == &staging {
         tokio::fs::rename(&staging, &final_dir).await?;
         std::fs::File::open(&cache)?.sync_all()?;
@@ -520,6 +623,7 @@ pub async fn download_set(
         uncensored_claim: file.uncensored_claim,
         source: Some(file),
         pieces,
+        metadata: headers.into_iter().next(),
     };
     save_artifact(root, &model)?;
     Ok(model)
@@ -546,15 +650,17 @@ pub async fn verify_artifact(
     } else {
         model.pieces.clone()
     };
+    let mut headers = Vec::new();
     for part in pieces {
-        verify_gguf(&part.path).await?;
+        headers.push(inspect_gguf(&part.path).await?);
         let (bytes, hash) = hash_file(&part.path, cancel, &mut progress).await?;
         ensure!(
-            bytes == part.bytes && hash == part.sha256,
+            bytes == part.bytes && hash.eq_ignore_ascii_case(&part.sha256),
             "Model part changed since import: {}. Restore a verified copy",
             part.path.display()
         );
     }
+    validate_set(&headers)?;
     Ok(())
 }
 /// Removing an import unregisters it. Only recorded managed paths are deleted.

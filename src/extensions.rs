@@ -98,18 +98,11 @@ struct Process {
     child: Child,
     input: ChildStdin,
     output: BufReader<ChildStdout>,
-    identity: Option<crate::jobs::Identity>,
+    group: crate::process::OwnedGroup,
 }
 impl Drop for Process {
     fn drop(&mut self) {
-        if let Some(identity) = &self.identity
-            && identity.alive()
-        {
-            let _ = nix::sys::signal::killpg(
-                nix::unistd::Pid::from_raw(identity.pid as i32),
-                nix::sys::signal::Signal::SIGKILL,
-            );
-        }
+        self.group.kill();
         let _ = self.child.start_kill();
     }
 }
@@ -198,14 +191,14 @@ impl Client {
                 let mut child = command_line
                     .spawn()
                     .context("Cannot start MCP server; check command and installed dependencies")?;
-                let identity = child.id().and_then(crate::jobs::Identity::read);
+                let group = crate::process::OwnedGroup::capture(&child);
                 let input = child.stdin.take().context("Server stdin")?;
                 let output = BufReader::new(child.stdout.take().context("Server stdout")?);
                 Self::Stdio(Box::new(Process {
                     child,
                     input,
                     output,
-                    identity,
+                    group,
                 }))
             }
             Transport::Http { url, auth_env } => Self::Http {
@@ -351,23 +344,8 @@ impl Client {
     }
     async fn close(&mut self) {
         if let Self::Stdio(p) = self {
-            if let Some(identity) = &p.identity
-                && identity.alive()
-            {
-                let _ = nix::sys::signal::killpg(
-                    nix::unistd::Pid::from_raw(identity.pid as i32),
-                    nix::sys::signal::Signal::SIGTERM,
-                );
-            }
             let _ = p.input.shutdown().await;
-            if tokio::time::timeout(Duration::from_millis(300), p.child.wait())
-                .await
-                .is_err()
-            {
-                let _ = p.child.start_kill();
-                let _ = p.child.wait().await;
-            }
-            p.identity = None;
+            p.group.stop(&mut p.child).await;
         }
     }
 }
@@ -432,6 +410,26 @@ mod sse_tests {
     }
 }
 pub async fn probe(root: &Path, name: &str) -> Result<Value> {
+    probe_with_policy(
+        root,
+        name,
+        crate::config::Preferences::load(root)?.access_policy,
+    )
+    .await
+}
+pub fn require_full_access(policy: crate::project::Policy) -> Result<()> {
+    ensure!(
+        policy == crate::project::Policy::Trusted,
+        "External extensions require Full access; no server was started or contacted"
+    );
+    Ok(())
+}
+pub async fn probe_with_policy(
+    root: &Path,
+    name: &str,
+    policy: crate::project::Policy,
+) -> Result<Value> {
+    require_full_access(policy)?;
     let c = load(root, name)?;
     let mut client = Client::connect(&c).await?;
     let result: Result<Value> = async {
@@ -519,6 +517,24 @@ impl Manager {
         tool: &str,
         arguments: Value,
     ) -> Result<Value> {
+        self.call_with_policy(
+            root,
+            name,
+            tool,
+            arguments,
+            crate::config::Preferences::load(root)?.access_policy,
+        )
+        .await
+    }
+    pub async fn call_with_policy(
+        &self,
+        root: &Path,
+        name: &str,
+        tool: &str,
+        arguments: Value,
+        policy: crate::project::Policy,
+    ) -> Result<Value> {
+        require_full_access(policy)?;
         let c = load(root, name)?;
         ensure!(
             c.enabled && c.selected_tools.iter().any(|t| t == tool),

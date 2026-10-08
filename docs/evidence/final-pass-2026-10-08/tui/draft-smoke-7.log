@@ -1,0 +1,28 @@
+Traceback (most recent call last):
+  File "/workspace/alt-cli/scripts/smoke_draft_tui.py", line 161, in <module>
+    if __name__=='__main__':main()
+                            ^^^^^^
+  File "/workspace/alt-cli/scripts/smoke_draft_tui.py", line 119, in main
+    t.paste(' PLUS UNSAVED');t.wait('Draft not saved');t.send(b'\x1b');t.send(b'\x11');t.wait('Could not save drafts');assert t.proc.poll() is None
+                                                                                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/alt-cli/scripts/terminal_harness.py", line 15, in wait
+    raise AssertionError('Missing '+repr(text)+'\n'+'\n'.join(self.screen.display))
+AssertionError: Missing 'Could not save drafts'
+  ALT  /  LOCAL WORKSPACE                          fixture  
+  ╭ Let's get this working ──────────────────────────────╮  
+  │ Draft not saved: Is a directory (os error 21). Your  │  
+Ho│ text remains here. Free storage or repair the state  │  
+  │ folder, then use Save drafts before leaving.         │  
+ ╭│                                                      │╮ 
+ ││ Next step: Open Settings → Storage and recovery to   ││ 
+ ││ inspect disk use, or Model files and cache to        ││ 
+ ││ relocate managed weights.                            ││ 
+ ││                                                      ││ 
+ ╰│                                                      │╯ 
+ ╭│                                                      │╮ 
+ ││                                                      ││ 
+ ╰│                                                      │╯ 
+  │                                                      │r 
+  │  Back · PgUp/PgDn to scroll                          │  
+  ╰──────────────────────────────────────────────────────╯  
+                                                            

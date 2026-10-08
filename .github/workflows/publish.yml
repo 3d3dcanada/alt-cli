@@ -32,6 +32,7 @@ jobs:
           ref: ${{ inputs.tag || github.ref }}
       - name: Validate tag and prepare workspace
         run: |
+          python3 scripts/ci-stage.py --name publish-setup -- bash -euo pipefail <<'ALT_CI_STAGE'
           python3 - <<'PY'
           import os,re,tomllib
           version=tomllib.load(open('Cargo.toml','rb'))['package']['version']
@@ -42,8 +43,10 @@ jobs:
           sudo chown "$USER" /workspace
           ln -s "$GITHUB_WORKSPACE" /workspace/alt-cli
           bash scripts/setup-cloud.sh
+          ALT_CI_STAGE
       - name: Build and validate exact package including prior CI upgrade
         run: |
+          python3 scripts/ci-stage.py --name publish-package -- bash -euo pipefail <<'ALT_CI_STAGE'
           export CARGO_HOME=/workspace/.cargo RUSTUP_HOME=/workspace/.rustup
           export PATH="/workspace/.cargo/bin:/workspace/.alt-tools:$PATH"
           export PYTHONPATH=/workspace/.alt-tools/python
@@ -52,28 +55,41 @@ jobs:
           python3 scripts/release_gate.py dist/alt-*.tar.gz --previous "$RUNNER_TEMP/previous.tar.gz" --require-upgrade --output dist/release-gate.json
           cargo install cargo-audit --version 0.22.2 --locked --root /workspace/.alt-tools/audit
           /workspace/.alt-tools/audit/bin/cargo-audit audit --db /workspace/.alt-tools/advisory-db --deny warnings --json > dist/dependency-audit.json
+          ALT_CI_STAGE
       - name: Require successful verification of the exact release tag
         run: |
+          python3 scripts/ci-stage.py --name publish-verify-tag -- bash -euo pipefail <<'ALT_CI_STAGE'
           python3 scripts/wait_release_verification.py --repo "$GITHUB_REPOSITORY" --tag "$RELEASE_TAG" --sha "$(git rev-parse HEAD)" --timeout 1800 > dist/tag-verification.json
+          ALT_CI_STAGE
       - name: Sign provenance using GitHub's short-lived workflow identity
         id: attest
         uses: actions/attest-build-provenance@43d14bc2b83dec42d39ecae14e916627a18bb661
         with:
-          subject-path: dist/alt-*.tar.gz
+          subject-path: |
+            dist/alt-*.tar.gz
+            dist/research-*.tar.gz
       - name: Verify attestation and publish the tested beta
         env:
           BUNDLE_PATH: ${{ steps.attest.outputs.bundle-path }}
         run: |
+          python3 scripts/ci-stage.py --name publish-release -- bash -euo pipefail <<'ALT_CI_STAGE'
           set -euo pipefail
           package=(dist/alt-*.tar.gz)
           test "${#package[@]}" -eq 1
           gh attestation verify "${package[0]}" --repo "$GITHUB_REPOSITORY" --bundle "$BUNDLE_PATH" --signer-workflow "$GITHUB_REPOSITORY/.github/workflows/publish.yml" --source-ref "refs/tags/$RELEASE_TAG" --format json > dist/attestation-verification.json
           cp "$BUNDLE_PATH" "${package[0]}.sigstore.jsonl"
+          research=(dist/research-*.tar.gz)
+          test "${#research[@]}" -eq 1
+          gh attestation verify "${research[0]}" --repo "$GITHUB_REPOSITORY" --bundle "$BUNDLE_PATH" --signer-workflow "$GITHUB_REPOSITORY/.github/workflows/publish.yml" --source-ref "refs/tags/$RELEASE_TAG" --format json > dist/research-attestation-verification.json
+          cp "$BUNDLE_PATH" "${research[0]}.sigstore.jsonl"
           notes="docs/releases/${RELEASE_TAG#v}.md"
           test -f "$notes"
-          gh release create "$RELEASE_TAG" --verify-tag --prerelease --title "Alt $RELEASE_TAG" --notes-file "$notes" "${package[0]}" "${package[0]}.sha256" "${package[0]}.sigstore.jsonl" dist/release-gate.json dist/dependency-audit.json dist/attestation-verification.json dist/tag-verification.json
+          gh release create "$RELEASE_TAG" --verify-tag --prerelease --title "Alt $RELEASE_TAG" --notes-file "$notes" "${package[0]}" "${package[0]}.sha256" "${package[0]}.sigstore.jsonl" dist/release-gate.json dist/dependency-audit.json dist/attestation-verification.json dist/tag-verification.json "${research[0]}" "${research[0]}.sha256" "${research[0]}.sigstore.jsonl" dist/research-*-index.json dist/research-attestation-verification.json
+          ALT_CI_STAGE
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()
         with:
           name: beta-release-evidence
-          path: dist/
+          path: |
+            dist/
+            ci-evidence/

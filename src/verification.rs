@@ -1,5 +1,7 @@
 //! Declared check purpose and bounded structured evidence, independent of model prose.
+mod execution;
 use anyhow::{Context, Result, bail, ensure};
+pub use execution::*;
 use serde::{Deserialize, Serialize};
 use std::{
     collections::BTreeSet,
@@ -38,9 +40,20 @@ pub struct Assertion {
 #[serde(deny_unknown_fields)]
 pub struct Contract {
     #[serde(default)]
+    pub inputs: ExecutionInputs,
+    #[serde(default)]
     pub kind: Kind,
     pub report: Option<ReportSpec>,
     pub assertion: Option<Assertion>,
+}
+/// Explicit additional file dependencies and permitted newly generated outputs.
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct ExecutionInputs {
+    #[serde(default)]
+    pub files: Vec<PathBuf>,
+    #[serde(default)]
+    pub generated: Vec<String>,
 }
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Outcome {
@@ -55,6 +68,26 @@ pub struct Outcome {
 }
 impl Contract {
     pub fn validate(&self, cwd: &Path, argv: &[String]) -> Result<()> {
+        ensure!(
+            self.inputs.files.len() <= 64 && self.inputs.generated.len() <= 64,
+            "Declare at most 64 external inputs and generated output paths"
+        );
+        for path in &self.inputs.files {
+            let resolved = if path.is_absolute() {
+                path.clone()
+            } else {
+                cwd.join(path)
+            };
+            ensure!(
+                resolved.is_file(),
+                "Declared input is unavailable: {}",
+                resolved.display()
+            );
+        }
+        for path in &self.inputs.generated {
+            crate::project::Project::validate_path(path)?;
+        }
+
         if self.kind == Kind::Tests {
             ensure!(
                 self.report.is_some(),

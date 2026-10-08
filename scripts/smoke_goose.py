@@ -18,13 +18,22 @@ REQUESTS = []
 MODEL = "alt-protocol-fixture"
 STALL_STARTED = threading.Event()
 STALL_RELEASE = threading.Event()
+AUTH_TOKEN = None
 
 
 class Provider(BaseHTTPRequestHandler):
     def log_message(self, *_):
         pass
 
+    def authenticated(self):
+        if AUTH_TOKEN is not None and self.headers.get("Authorization") != f"Bearer {AUTH_TOKEN}":
+            self.send_error(401)
+            return False
+        return True
+
     def do_GET(self):
+        if not self.authenticated():
+            return
         if self.path == "/v1/models":
             value = {"object": "list", "data": [{"id": MODEL, "object": "model"}]}
         elif self.path == "/api/tags":
@@ -45,6 +54,8 @@ class Provider(BaseHTTPRequestHandler):
         self.wfile.write(body)
 
     def do_POST(self):
+        if not self.authenticated():
+            return
         request = json.loads(self.rfile.read(int(self.headers["Content-Length"])))
         if self.path == "/api/show":
             self.send_json({"capabilities": ["completion", "tools"], "model_info": {"general.architecture": "llama", "llama.context_length": 8192}})
@@ -103,11 +114,17 @@ class Provider(BaseHTTPRequestHandler):
 
 
 def main():
+    global AUTH_TOKEN
     parser = argparse.ArgumentParser()
     parser.add_argument("--alt", default="target/debug/alt")
     parser.add_argument("--goose", required=True)
     parser.add_argument("--provider", choices=["openai", "ollama"], default="openai")
+    parser.add_argument("--authenticated", action="store_true", help="Require a dummy bearer credential throughout the protocol journey")
     args = parser.parse_args()
+    env = os.environ.copy()
+    if args.authenticated:
+        AUTH_TOKEN = "alt-protocol-dummy-not-a-service-credential"
+        env["ALT_SMOKE_PROVIDER_TOKEN"] = AUTH_TOKEN
     alt, goose = str(Path(args.alt).resolve()), str(Path(args.goose).resolve())
     server = ThreadingHTTPServer(("127.0.0.1", 0), Provider)
     thread = threading.Thread(target=server.serve_forever, daemon=True)
@@ -121,12 +138,17 @@ def main():
 
             def run(*arguments):
                 result = subprocess.run([alt, "--data-dir", str(root / "state"), "--engine", goose, "--access", "trusted", *arguments],
-                                        cwd=workspace, capture_output=True, text=True, timeout=90)
+                                        cwd=workspace, env=env, capture_output=True, text=True, timeout=90)
                 if result.returncode:
                     raise AssertionError(f"alt {arguments} failed\n{result.stderr}\n{result.stdout[-10000:]}")
                 return result.stdout
 
-            run("init", "--model", MODEL, "--endpoint", endpoint, "--provider", args.provider, "--context", "8192")
+            auth_arguments = ["--api-key-env", "ALT_SMOKE_PROVIDER_TOKEN"] if args.authenticated else []
+            run("init", "--model", MODEL, "--endpoint", endpoint, "--provider", args.provider, "--context", "8192", *auth_arguments)
+            if args.authenticated:
+                wrong = {**env, "ALT_SMOKE_PROVIDER_TOKEN": "incorrect-dummy"}
+                denied_inventory = subprocess.run([alt, "--data-dir", str(root / "state"), "models"], cwd=workspace, env=wrong, capture_output=True, text=True, timeout=10)
+                assert denied_inventory.returncode != 0, "Incorrect provider credentials were accepted"
             print(run("doctor").strip())
             denied = [json.loads(line) for line in run("run", "Run fixture check", "--json").splitlines()]
             assert not (workspace / "fixture-evidence.txt").exists(), "Unapproved shell tool executed"
@@ -148,12 +170,12 @@ def main():
             assert any(e['type']=='update' and 'Observed tool result:' in json.dumps(e) and '1' in json.dumps(e) for e in external),external
             run('extensions','disable','fixture_ext')
             (workspace/'fixture-evidence.txt').unlink()
-            plain=subprocess.run([alt,'--data-dir',str(root/'state'),'--engine',goose,'--access','trusted','plain'],input='Run fixture check\nn\nRun fixture check\ny\n/quit\n',cwd=workspace,capture_output=True,text=True,timeout=90)
+            plain=subprocess.run([alt,'--data-dir',str(root/'state'),'--engine',goose,'--access','trusted','plain'],input='Run fixture check\nn\nRun fixture check\ny\n/quit\n',cwd=workspace,env=env,capture_output=True,text=True,timeout=90)
             assert plain.returncode==0,(plain.stdout,plain.stderr)
             assert 'Allow once? [y/N]' in plain.stdout and 'ALT_TOOL_OK' in plain.stdout,(plain.stdout,plain.stderr)
             assert (workspace/'fixture-evidence.txt').read_text()=='ALT_TOOL_OK'
             cancellation = subprocess.Popen([alt, "--data-dir", str(root / "state"), "--engine", goose,
-                                              "run", "STALL_FIXTURE", "--json"], cwd=workspace,
+                                              "run", "STALL_FIXTURE", "--json"], cwd=workspace, env=env,
                                              stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
             try:
                 assert STALL_STARTED.wait(timeout=15), "Engine never called the stalled fixture"

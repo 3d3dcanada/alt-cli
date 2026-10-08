@@ -7,14 +7,14 @@ from pathlib import Path
 if sys.flags.optimize:raise RuntimeError('Run without Python optimization; evidence assertions must remain enabled')
 from acceptance_projects import CASES,setup,check,ORACLE_VERSION,DEVELOPMENT,HELD_OUT,oracle_inputs,assertion_script
 p=argparse.ArgumentParser(description=__doc__)
-p.add_argument("--suite",choices=["v4","v5"],default="v4")
+p.add_argument("--suite",choices=["v4","v5","final-pass"],default="v4")
 p.add_argument("--output-tokens",type=int)
 p.add_argument("--reasoning-tokens",type=int)
 p.add_argument("--temperature",type=float)
 p.add_argument("--top-p",type=float)
 p.add_argument("--workflow",choices=["model-plan","host"],default="model-plan")
 p.add_argument("--skill")
-p.add_argument('--thinking',choices=['default','on','off'],default='default');p.add_argument('--stop-after',type=int,help='Retain a bounded pilot and leave remaining matrix cells explicitly unmeasured');p.add_argument('--resume',action='store_true');p.add_argument('--tool-profile',choices=['all','inspect','coding','terminal','compact','compact-lines'],default='all');p.add_argument('--partition',choices=['development','held-out','all'],default='development');p.add_argument('--threads',type=int,default=2);p.add_argument('--batch',type=int,default=128)
+p.add_argument('--thinking',choices=['default','on','off'],default='default');p.add_argument('--stop-after',type=int,help='Retain a bounded pilot and leave remaining matrix cells explicitly unmeasured');p.add_argument('--resume',action='store_true');p.add_argument('--tool-profile',choices=['all','inspect','coding','terminal','compact','compact-lines'],default='all');p.add_argument('--partition',choices=['development','validation','final-holdout','held-out','all'],default='development');p.add_argument('--threads',type=int,default=2);p.add_argument('--batch',type=int,default=128)
 p.add_argument('--verification-plan',action='store_true');p.add_argument('--history-notes',type=int,default=0)
 p.add_argument('--binary',type=Path,default=Path('target/debug/alt'));p.add_argument('--engine',type=Path,required=True);p.add_argument('--model',type=Path,required=True);p.add_argument('--sha256',required=True);p.add_argument('--uncensored',action='store_true',required=True);p.add_argument('--runtime',type=Path);p.add_argument('--provider',choices=['openai','ollama'],default='openai');p.add_argument('--endpoint');p.add_argument('--model-id');p.add_argument('--contexts',default='8192');p.add_argument('--repeats',type=int,default=5);p.add_argument('--cases');p.add_argument('--timeout',type=int,default=240);p.add_argument('--output',type=Path,required=True)
 p.add_argument('--generated-tokens',type=int);p.add_argument('--requests',type=int)
@@ -22,6 +22,8 @@ p.add_argument('--instruction-draft',type=Path,help='Trial this bounded offline 
 p.add_argument('--interface',choices=['cli','tui'],default='cli');p.add_argument('--width',type=int,default=80);p.add_argument('--height',type=int,default=24)
 p.add_argument('--followup-prompt',action='append',default=[],help='Send a follow-up in the same actual TUI conversation after a normal turn; the total deadline/allowance remains shared')
 a=p.parse_args()
+if a.suite=='final-pass':
+ from acceptance_final import CASES,setup,check,ORACLE_VERSION,DEVELOPMENT,HELD_OUT,oracle_inputs,assertion_script
 if a.suite=='v5':
  from acceptance_v5 import CASES,setup,check,ORACLE_VERSION,DEVELOPMENT,HELD_OUT,oracle_inputs,assertion_script
 assert a.timeout>0 and a.threads>0 and 16<=a.batch<=8192
@@ -30,7 +32,14 @@ assert a.interface=='cli' or a.instruction_draft is None,'TUI draft trials need 
 assert not a.followup_prompt or a.interface=='tui','Follow-up qualification uses the actual persistent TUI conversation'
 assert len(a.followup_prompt)<=3 and all(0<len(p.encode())<=64000 for p in a.followup_prompt)
 assert a.cases is None or all(n in CASES for n in a.cases.split(',')), 'Unknown fixture'
-a.cases=a.cases or ','.join(DEVELOPMENT if a.partition=='development' else HELD_OUT if a.partition=='held-out' else CASES);assert a.runtime or (a.endpoint and a.model_id),'Choose managed runtime or explicit endpoint/model';assert a.repeats>=1
+if a.partition in ['validation','final-holdout']:
+ assert a.suite=='final-pass','The selected partition belongs to final-pass'
+ selected=[name for name,case in CASES.items() if case.get('partition')==a.partition]
+else:selected=DEVELOPMENT if a.partition=='development' else HELD_OUT if a.partition=='held-out' else CASES
+a.cases=a.cases or ','.join(selected)
+if a.suite=='final-pass' and a.partition!='all':
+ assert all(CASES[n]['partition']==a.partition for n in a.cases.split(',')), 'Case crosses the declared partition'
+assert a.runtime or (a.endpoint and a.model_id),'Choose managed runtime or explicit endpoint/model';assert a.repeats>=1
 assert a.runtime or a.thinking=='default','Configure reasoning on the external server; this switch controls only an owned runtime'
 binary=a.binary.resolve();artifact=a.model.resolve();h=hashlib.sha256()
 with artifact.open('rb') as f:
@@ -44,7 +53,7 @@ if not preflight['passed']:raise SystemExit('Language tool preflight failed. No 
 frozen=root/'alt-under-test'
 if frozen.exists():assert a.resume and hashlib.sha256(binary.read_bytes()).hexdigest()==hashlib.sha256(frozen.read_bytes()).hexdigest(),'Resume needs identical binary'
 else:shutil.copy2(binary,frozen)
-for source in ['live_acceptance.py','live_tui_turn.py','acceptance_projects.py','acceptance_extra.py','acceptance_v5.py','evaluation_preflight.py']:
+for source in ['live_acceptance.py','live_tui_turn.py','acceptance_projects.py','acceptance_extra.py','acceptance_v5.py','acceptance_final.py','evaluation_preflight.py']:
  target=root/source
  if not target.exists():shutil.copy2(Path(__file__).parent/source,target)
  else:assert hashlib.sha256(target.read_bytes()).hexdigest()==hashlib.sha256((Path(__file__).parent/source).read_bytes()).hexdigest(), "Resume evaluator source changed"
@@ -58,7 +67,7 @@ if a.interface=='tui':config.update(width=a.width,height=a.height)
 config['instruction_sha256']=hashlib.sha256(a.instruction_draft.read_bytes()).hexdigest() if a.instruction_draft else None
 if a.instruction_draft:assert 0<len(a.instruction_draft.read_bytes())<=5000,'Use a bounded nonempty instruction draft'
 config['inference']={'output_tokens':a.output_tokens,'reasoning_tokens':a.reasoning_tokens,'temperature':a.temperature,'top_p':a.top_p,'workflow':a.workflow,'skill':a.skill,'generated_tokens':a.generated_tokens,'requests':a.requests}
-config['oracle_code_sha256']={name:hashlib.sha256((root/name).read_bytes()).hexdigest() for name in ['acceptance_projects.py','acceptance_extra.py','acceptance_v5.py','live_tui_turn.py']}
+config['oracle_code_sha256']={name:hashlib.sha256((root/name).read_bytes()).hexdigest() for name in ['acceptance_projects.py','acceptance_extra.py','acceptance_v5.py','acceptance_final.py','live_tui_turn.py']}
 if a.thinking!='default':config['thinking']=a.thinking
 if (root/'configuration.json').exists():assert json.loads((root/'configuration.json').read_text())==config,'Resume configuration or fixtures changed'
 else:(root/'configuration.json').write_text(json.dumps(config,indent=2)+'\n')
@@ -115,7 +124,7 @@ for context in config['contexts']:
     subprocess.run(base+['task','remember','Cedar requirement: preserve the original public API and use the bundled helper when fixing dependency imports.'],cwd=project,check=True,capture_output=True)
     for n in range(a.history_notes):subprocess.run(base+['task','remember',f'Unrelated layout decision {n}: use spacing for panel {n}.'],cwd=project,check=True,capture_output=True)
     subprocess.run(base+['task','pin','Preserve the original public API.'],cwd=project,check=True,capture_output=True)
-   prompt=CASES[name]['goal']+' Inspect relevant files, save a brief plan, use native tools to implement the change, and test it. Report what you actually ran and any remaining uncertainty. Preserve existing public interfaces. Keep your explanation brief.'
+   prompt=CASES[name]['goal']+CASES[name].get('prompt_suffix',' Inspect relevant files, save a brief plan, use native tools to implement the change, and test it. Report what you actually ran and any remaining uncertainty. Preserve existing public interfaces. Keep your explanation brief.')
    (run_dir/'fixture.json').write_text(json.dumps({'oracle_version':ORACLE_VERSION,'goal':CASES[name]['goal'],'prompt':prompt,'original_files':CASES[name]['files'],'oracle_command':oracle,'oracle_sha256_before':oracle_hash},indent=2)+'\n')
    started=time.monotonic();peak=0;timed_out=False
    tui=None
