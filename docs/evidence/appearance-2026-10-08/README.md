@@ -14,6 +14,8 @@ mouse navigation in Focus. The user guide and actual image gallery are in
 | Appearance PTY journeys | 21 groups passed; 198 page visits across six themes and four layouts |
 | General product PTY journey | 112 checks passed across all 11 pages and 18 Settings entries |
 | Existing TUI regression suites | All eight passed; initial test timing failure retained and corrected |
+| Portable Linux package gates | All eight passed, including 14 offline image references and actual beta 3 upgrade/rollback |
+| Installed package appearance | Aurora and Focus saved, rendered correctly and survived restart |
 
 The appearance matrix exercises 120×40, 80×24 and 60×18 layouts, actual resize
 events, mouse-only Focus navigation, dashboard arrow/mouse actions, all six
@@ -80,5 +82,41 @@ directory to retain screenshots and receipts. Cloud Python tools are in
 This validates the listed interactions and emitted colors. It does not establish
 model reasoning quality, every terminal emulator/font combination, physical
 GTX 1070 performance or uncoached novice acceptance. Those gates remain open.
-Portable-package results and remote CI status are recorded separately when the
-packaged build finishes. Earlier evidence directories remain unchanged.
+Earlier evidence directories remain unchanged.
+
+## Portable package and GitHub
+
+The clean portable build is source commit
+`43df077a5d50afdd87fea3e106dc2bc5ab70e5c4`. Its application source fingerprint
+matches the frozen debug binary used by the full matrix. The exact package passed
+all eight gates, including installed operation on Debian 11 and Ubuntu 24.04,
+actual published beta 3 upgrade/rollback/re-upgrade, research archive integrity,
+SBOM validation and 14 offline image references checked against manifest hashes.
+The two curated screenshot folders remain bounded in the core offline package;
+historical evidence stays in the separately verified research archive.
+
+A further actual PTY check installed this optimized package through `install.sh`,
+selected Aurora and Focus in the public appearance controls, then reopened the
+same state. Both settings and observed colors persisted; terminal attributes
+restored on both exits. The receipt, reproduction script, observed text and exact
+build identities are retained in `portable/`.
+
+- Portable binary SHA-256:
+  `48f7d59efc2e409a00d5f7095e63e38107de7105c35c0de845ed1e4df3882891`.
+- Archive SHA-256:
+  `9094b5ab4853fe1876ca51f840f8e1848966dd1af20db2db7123bc546dc9f4ab`.
+- No release was published. The archived package's documentation/evidence
+  corresponds to the source commit above; this later evidence-only commit records
+  its completed tests without changing application or packaging code.
+
+[GitHub Verify](https://github.com/3d3dcanada/alt-cli/actions/runs/37777896752)
+was still running when the final evidence snapshot was saved. Its JSON snapshot
+is retained in `portable/github-verify-status.json`; local passes are not a claim
+of completed remote CI. The duplicate push run was cancelled by the workflow's
+normal branch concurrency setting.
+
+The latest GitGuardian check still reports earlier incident **38001251** for a
+public log checksum in `final-pass-2026-10-08/protocols/SHA256.json`. Its full
+response is retained in `portable/gitguardian-check.json`. No new finding is
+reported for this styling pass. The checksum evidence remains intact; external
+false-positive dismissal is still outstanding.
