@@ -57,6 +57,42 @@ impl App {
         });
     }
     pub fn manager_action(&mut self, action: &str, state: Value) -> Result<()> {
+        if action.starts_with("model-fit") {
+            return self.model_fit_action(action, state);
+        }
+        if matches!(
+            action,
+            "storage-budget"
+                | "storage-budget-save"
+                | "inference-export"
+                | "inference-export-path"
+                | "inference-export-run"
+        ) {
+            return self.manage_storage(action, state);
+        }
+        if action == "recovered-preview" {
+            ensure!(
+                !self.busy && !self.connecting,
+                "Stop the task before reviewing recovered versions"
+            );
+            let change = state["change"].as_str().context("Change")?.to_owned();
+            let operation = state["operation"].as_str().context("Operation")?.to_owned();
+            let sha = state["sha256"]
+                .as_str()
+                .context("Version digest")?
+                .to_owned();
+            self.launch_project("Preparing recovered file preview",move|p,_|{
+                let proposal = p.prepare_displaced_restore(&change,&operation,&sha)?;
+                Ok(JobResult::Dialog(Dialog::Confirm{title:"Restore this recovered file version?".into(),body:format!("{}\n\n{}\n\nThis creates a normal tracked checkpoint. If the current file changes after this preview, restoration stops for review.",proposal.path,proposal.diff()),action:ConfirmAction::ApplyFile(proposal.id),selected:0}))
+            })?;
+            return Ok(());
+        }
+        if action.starts_with("requirement-") {
+            return self.requirement_action(action, state);
+        }
+        if action.starts_with("draft-") {
+            return self.draft_action(action, state);
+        }
         if action.starts_with("inference-") {
             return self.manage_inference(action, state);
         }
@@ -121,7 +157,7 @@ impl App {
                     };
                     crate::instructions::activate(&self.root, &mut prefs, id)?;
                     self.preferences = prefs;
-                    self.workspace = None;
+                    self.retire_workspace();
                     self.connected = false;
                     self.notify("Instruction choice saved for the next connection. Version history is retained for rollback.");
                 }
@@ -140,7 +176,7 @@ impl App {
             );
             self.preferences.workflow = serde_json::from_value(state["mode"].clone())?;
             self.preferences.save(&self.root)?;
-            self.workspace = None;
+            self.retire_workspace();
             self.connected = false;
             self.notify("Task workflow saved for your next connection.");
             return Ok(());
@@ -160,7 +196,7 @@ impl App {
             );
             self.preferences.tool_profile = serde_json::from_value(state["profile"].clone())?;
             self.preferences.save(&self.root)?;
-            self.workspace = None;
+            self.retire_workspace();
             self.connected = false;
             self.notify("Tool focus saved. Your next message connects with the selected tools.");
             return Ok(());
@@ -196,20 +232,24 @@ impl App {
             );
             self.preferences.active_skill = state["id"].as_str().map(str::to_owned);
             self.preferences.save(&self.root)?;
-            self.workspace = None;
+            self.retire_workspace();
             self.connected = false;
             self.notify("Skill choice saved for the next connection.");
             return Ok(());
         }
         if action == "native-probe" {
+            ensure!(
+                !self.busy && !self.connecting,
+                "Stop the current task before testing model tools"
+            );
             let profile = self.current_profile().context("Choose a model")?.1.clone();
             let root = self.root.clone();
             let prefs = self.preferences.clone();
-            let mut previous_workspace = self.workspace.take();
+            let previous_workspace = self.prepare_workspace_shutdown()?;
             self.connected = false;
             self.launch_job("Testing native model tools", move |cancel, _| async move {
-                if let Some(workspace) = previous_workspace.as_mut() {
-                    workspace.stop().await;
+                for stop in previous_workspace {
+                    stop.await.context("Previous workspace shutdown failed")?;
                 }
                 let report =
                     crate::native::probe(&root, &prefs, &profile, 180, false, cancel).await?;
@@ -257,9 +297,14 @@ impl App {
             let root = self.root.clone();
             let prefs = self.preferences.clone();
             let profile = self.current_profile().context("Choose a model")?.1.clone();
+            let previous_workspace = self.prepare_workspace_shutdown()?;
+            self.connected = false;
             self.launch_job(
                 "Qualifying selected model contexts",
                 move |cancel, _| async move {
+                    for stop in previous_workspace {
+                        stop.await.context("Previous workspace shutdown failed")?;
+                    }
                     let result = crate::qualification::run(
                         &root,
                         &prefs,
@@ -448,8 +493,8 @@ impl App {
                 self.manage_candidates("candidates-run",next)?;
             },
             "candidates-run"=> {
-                ensure!(!self.busy&&!self.connecting,"Stop the current task first");let seconds=state["seconds"].as_u64().context("Time allowance")?;let tokens=u32::try_from(state["generated_tokens"].as_u64().context("Token allowance")?)?;let requests=u32::try_from(state["requests"].as_u64().context("Request allowance")?)?;let goal=state["goal"].as_str().context("Goal")?.to_owned();let effort=serde_json::from_value(state["effort"].clone())?;let profile=self.current_profile().context("Choose a model")?.1.clone();let prefs=self.preferences.clone();let data=self.root.clone();let cwd=prefs.project.clone(); let mut previous_workspace=self.workspace.take();self.connected=false;let engine=crate::runtime::find_engine(&data,std::path::Path::new("goose"),&prefs).context("Install the engine first")?;
-                self.launch_job("Exploring verified candidates",move|cancel,_|async move {if let Some(workspace)=previous_workspace.as_mut(){workspace.stop().await;} let result=crate::candidates::run(&data,&cwd,&engine,&profile,&prefs,&goal,effort,seconds,tokens,requests,None,cancel).await?;Ok(JobResult::Manager("candidates-review".into(),serde_json::to_value(result)?))})?;
+                ensure!(!self.busy&&!self.connecting,"Stop the current task first");let seconds=state["seconds"].as_u64().context("Time allowance")?;let tokens=u32::try_from(state["generated_tokens"].as_u64().context("Token allowance")?)?;let requests=u32::try_from(state["requests"].as_u64().context("Request allowance")?)?;let goal=state["goal"].as_str().context("Goal")?.to_owned();let effort=serde_json::from_value(state["effort"].clone())?;let profile=self.current_profile().context("Choose a model")?.1.clone();let prefs=self.preferences.clone();let data=self.root.clone();let cwd=prefs.project.clone(); let engine=crate::runtime::find_engine(&data,std::path::Path::new("goose"),&prefs).context("Install the engine first")?;let previous_workspace=self.prepare_workspace_shutdown()?;self.connected=false;
+                self.launch_job("Exploring verified candidates",move|cancel,_|async move {for stop in previous_workspace {stop.await.context("Previous workspace shutdown failed")?;} let result=crate::candidates::run(&data,&cwd,&engine,&profile,&prefs,&goal,effort,seconds,tokens,requests,None,cancel).await?;Ok(JobResult::Manager("candidates-review".into(),serde_json::to_value(result)?))})?;
             },
             "candidates-review"=> {
                 let id=state["id"].as_str().context("Candidate run id")?;let mut items=vec![("Inspect run evidence".into(),format!("{} · {} generated tokens charged",state["status"],state["spent_generated_tokens"]),"candidates-inspect".into(),state.clone())];
@@ -664,7 +709,7 @@ impl App {
                     .inference = Some(next);
                 config.save(&self.root)?;
                 self.config = config;
-                self.workspace = None;
+                self.retire_workspace();
                 self.connected = false;
                 self.notify("Model allocation saved. For this saved task, open Allowance → Apply saved allocation and reconnect.");
             }
@@ -758,7 +803,7 @@ impl App {
         match action {
             "runtime-settings" => {
                 let settings = &self.preferences.runtime;
-                self.manager_menu("Model and runtime settings",&format!("GPU layers {} · threads {} (0 auto) · batch {} · K/V {} / {}",settings.gpu_layers,settings.threads,settings.batch,settings.cache_k,settings.cache_v),vec![("Reviewed instructions".into(),"Inspect, activate or roll back offline improvements".into(),"instructions-menu".into(),json!({})),("Explore verified candidates".into(),"Quick / Careful / Thorough under one shared allowance".into(),"candidates-start".into(),json!({})),("Test native model tools".into(),"Stream a real call and consume its host result".into(),"native-probe".into(),json!({})),("Task skills".into(),"Select a short procedure with executable helpers".into(),"skills-settings".into(),json!({})),("Task workflow".into(),"Model plan or host inspect/patch/check/recover".into(),"workflow-settings".into(),json!({})),("Model output and sampling".into(),"Set explicit output, thinking headroom and sampling".into(),"inference-settings".into(),json!({})),("GPU layers".into(),"0 CPU; -1 all layers. Requires compatible runtime/GPU.".into(),"runtime-field".into(),json!({"field":"gpu_layers","current":settings.gpu_layers.to_string()})),("CPU threads".into(),"0 uses automatic conservative choice.".into(),"runtime-field".into(),json!({"field":"threads","current":settings.threads.to_string()})),("Batch size".into(),"Lower reduces working memory; 128 is the default.".into(),"runtime-field".into(),json!({"field":"batch","current":settings.batch.to_string()})),("K cache".into(),"f16, q8_0 or q4_0; test exact runtime support.".into(),"runtime-field".into(),json!({"field":"cache_k","current":settings.cache_k})),("V cache".into(),"Quantization requires compatible flash attention.".into(),"runtime-field".into(),json!({"field":"cache_v","current":settings.cache_v})),("Flash attention".into(),"true or false; hardware support varies.".into(),"runtime-field".into(),json!({"field":"flash_attention","current":settings.flash_attention.to_string()})),("Reasoning mode".into(),format!("Current: {}. Only applies to templates with enable_thinking.",settings.thinking.map(|v|if v{"on"}else{"off"}).unwrap_or("model default")),"runtime-thinking".into(),json!({}))]);
+                self.manager_menu("Model and runtime settings",&format!("GPU layers {} · threads {} (0 auto) · batch {} · K/V {} / {}",settings.gpu_layers,settings.threads,settings.batch,settings.cache_k,settings.cache_v),vec![("Reviewed instructions".into(),"Inspect, activate or roll back offline improvements".into(),"instructions-menu".into(),json!({})),("Explore verified candidates".into(),"Quick / Careful / Thorough under one shared allowance".into(),"candidates-start".into(),json!({})),("Test native model tools".into(),"Stream a real call and consume its host result".into(),"native-probe".into(),json!({})),("Task skills".into(),"Select a short procedure with executable helpers".into(),"skills-settings".into(),json!({})),("Task workflow".into(),"Model plan or host inspect/patch/check/recover".into(),"workflow-settings".into(),json!({})),("Model output and sampling".into(),"Set explicit output, thinking headroom and sampling".into(),"inference-settings".into(),json!({})),("GPU layers".into(),"0 CPU; -1 all layers. Requires compatible runtime/GPU.".into(),"runtime-field".into(),json!({"field":"gpu_layers","current":settings.gpu_layers.to_string()})),("CPU threads".into(),"0 uses automatic conservative choice.".into(),"runtime-field".into(),json!({"field":"threads","current":settings.threads.to_string()})),("Batch size".into(),"Lower reduces working memory; 128 is the default.".into(),"runtime-field".into(),json!({"field":"batch","current":settings.batch.to_string()})),("K cache".into(),"f16, q8_0 or q4_0; test exact runtime support.".into(),"runtime-field".into(),json!({"field":"cache_k","current":settings.cache_k})),("V cache".into(),"Quantization requires compatible flash attention.".into(),"runtime-field".into(),json!({"field":"cache_v","current":settings.cache_v})),("Flash attention".into(),"true or false; hardware support varies.".into(),"runtime-field".into(),json!({"field":"flash_attention","current":settings.flash_attention.to_string()})),("Reasoning mode".into(),format!("Current: {}. Only applies to templates with enable_thinking.",settings.thinking.map(|v|if v{"on"}else{"off"}).unwrap_or("model default")),"runtime-thinking".into(),json!({})),("Loading deadline".into(),"5 to 3600 seconds; stopping a slow load never switches the model.".into(),"runtime-field".into(),json!({"field":"startup_timeout_secs","current":settings.startup_timeout_secs.to_string()})),("Fit selected model".into(),"Estimate 4K/8K memory; review before applying any setting.".into(),"model-fit".into(),json!({}))]);
             }
             "runtime-thinking" => self.manager_menu("Choose the model's reasoning mode","Only templates that use enable_thinking honor this setting. Off may reduce long reasoning output; compare independent task results before relying on it.",vec![("Model default".into(),"No override".into(),"runtime-thinking-save".into(),json!({"thinking":null})),("Reasoning on".into(),"May use more output tokens and time".into(),"runtime-thinking-save".into(),json!({"thinking":true})),("Reasoning off".into(),"Test task accuracy with shorter reasoning output".into(),"runtime-thinking-save".into(),json!({"thinking":false}))]),
             "runtime-thinking-save" => {
@@ -780,6 +825,7 @@ impl App {
             "runtime-save" => {
                 let mut s = self.preferences.runtime.clone();
                 match state["field"].as_str().unwrap_or("") {
+                    "startup_timeout_secs" => s.startup_timeout_secs = value.parse()?,
                     "gpu_layers" => s.gpu_layers = value.parse()?,
                     "threads" => s.threads = value.parse()?,
                     "batch" => s.batch = value.parse()?,
@@ -804,11 +850,15 @@ impl App {
                 self.manager_confirm("Benchmark this exact model?",format!("{} · {} tokens\nLoads the managed model if selected and runs three short generation trials. Results describe this computer and do not establish coding-task accuracy.",p.model,p.context_tokens),"benchmark-run",json!({}));
             }
             "benchmark-run" => {
+                ensure!(!self.busy && !self.connecting, "Stop the current task before benchmarking");
                 let root = self.root.clone();
                 let preferences = self.preferences.clone();
                 let (_, p) = self.current_profile().context("Select a model")?;
                 let profile = p.clone();
+                let previous_workspace = self.prepare_workspace_shutdown()?;
+                self.connected = false;
                 self.launch_job("Measuring model performance", move |cancel, _| async move {
+                    for stop in previous_workspace {stop.await.context("Previous workspace shutdown failed")?;}
                     let result =
                         crate::benchmark::run(&root, &preferences, &profile, cancel).await?;
                     Ok(JobResult::Notice(
@@ -824,9 +874,9 @@ impl App {
     fn manage_storage(&mut self, action: &str, mut state: Value) -> Result<()> {
         let value = state["value"].as_str().unwrap_or("").to_owned();
         match action {
-"manage-storage"=>self.manager_menu("Storage and recovery","Backups include Alt state; project files and model weights stay where they are.",vec![("Storage usage".into(),"Inspect disk use by category".into(),"storage-usage".into(),json!({})),("Create state backup".into(),"Consistent conversation and checkpoint archive".into(),"backup".into(),json!({})),("Restore state backup".into(),"Choose a new data folder; existing state stays intact".into(),"restore".into(),json!({})),("Review diagnostics".into(),"Credentials, prompts, logs and project paths omitted".into(),"diagnostics".into(),json!({})),("Archive old conversations".into(),"Only user-archived conversations; compressed recovery copy before removal".into(),"history-days".into(),json!({})),("Restore a retained conversation".into(),"Choose a .jsonl.gz recovery archive".into(),"history-restore".into(),json!({})),("Clean old reports and finished jobs".into(),"Preview first; conversations and checkpoints are preserved".into(),"retention".into(),json!({}))]),
+"manage-storage"=>self.manager_menu("Storage and recovery","Backups include Alt state; project files and model weights stay where they are.",vec![("Storage usage".into(),"Inspect disk use by category".into(),"storage-usage".into(),json!({})),("Create state backup".into(),"Consistent conversation and checkpoint archive".into(),"backup".into(),json!({})),("Restore state backup".into(),"Choose a new data folder; existing state stays intact".into(),"restore".into(),json!({})),("Review diagnostics".into(),"Credentials, prompts, logs and project paths omitted".into(),"diagnostics".into(),json!({})),("Archive old conversations".into(),"Only user-archived conversations; compressed recovery copy before removal".into(),"history-days".into(),json!({})),("Restore a retained conversation".into(),"Choose a .jsonl.gz recovery archive".into(),"history-restore".into(),json!({})),("Clean old reports and finished jobs".into(),"Preview first; conversations and checkpoints are preserved".into(),"retention".into(),json!({})),("Evidence storage budget".into(),"Warning threshold; never automatic deletion".into(),"storage-budget".into(),json!({})),("Export inference evidence".into(),"A verified archive for the selected connection".into(),"inference-export".into(),json!({}))]),
 "storage-usage"|"diagnostics"=>{let root=self.root.clone();let diagnostics=action=="diagnostics";self.launch_job("Preparing storage report",move|_,_|async move {let result=tokio::task::spawn_blocking(move||if diagnostics{storage::diagnostics(&root)}else{storage::usage(&root)}).await??;Ok(JobResult::Manager("storage-report".into(),json!({"report":result,"diagnostics":diagnostics})))})?;},
-"storage-report"=>{if state["diagnostics"]==true {self.manager_confirm("Save this redacted diagnostics report?",serde_json::to_string_pretty(&state["report"])?,"save-diagnostics",state);}else{self.dialog=Some(Dialog::Notice{title:"Storage usage in bytes".into(),body:serde_json::to_string_pretty(&state["report"])?,scroll:0});}},
+"storage-report"=>{if state["diagnostics"]==true {self.manager_confirm("Save this redacted diagnostics report?",serde_json::to_string_pretty(&state["report"])?,"save-diagnostics",state);}else{let r=&state["report"];let mut body=format!("Total saved state: {}\nInference warning budget: {}\n\n{}\n\n{}\n\nCategories\n",models::human_bytes(r["total_bytes"].as_u64().unwrap_or(0)),models::human_bytes(r["inference_warning_bytes"].as_u64().unwrap_or(0)),r["action"].as_str().unwrap_or(""),r["backup_scope"].as_str().unwrap_or(""));for (name,bytes) in r["categories"].as_object().into_iter().flatten(){body.push_str(&format!("{name}: {}\n",models::human_bytes(bytes.as_u64().unwrap_or(0))));}body.push_str("\nCtrl+P → Evidence storage budget changes the warning threshold. Export inference evidence keeps a verified archive. Storage and recovery previews retention before any deletion.");self.dialog=Some(Dialog::Notice{title:"Storage usage".into(),body,scroll:0});}},
 "save-diagnostics"=>{let path=self.root.join("exports").join(format!("diagnostics-{}.json",uuid::Uuid::new_v4()));crate::config::atomic_write(&path,&serde_json::to_vec_pretty(&state["report"])?)?;self.notify(format!("Saved {}",path.display()));},
 "backup"=>self.manager_input("Save a state backup","Enter an archive path outside Alt's data folder. Existing files are never overwritten.","backup-run",json!({}),""),
 "backup-run"=>{let root=self.root.clone();let to=std::path::PathBuf::from(value);self.launch_job("Backing up saved state",move|_,_|async move{let r=tokio::task::spawn_blocking(move||storage::backup(&root,&to)).await??;Ok(JobResult::Notice("Backup saved".into(),serde_json::to_string_pretty(&r)?))})?;},
@@ -840,10 +890,15 @@ impl App {
 "history-run"=>{ensure!(!self.busy&&!self.connecting,"Stop the active task before retaining conversation history");let root=self.root.clone();let days=state["days"].as_u64().context("Days")?;self.launch_job("Archiving old conversations",move|_,_|async move {let result=tokio::task::spawn_blocking(move||crate::store::Store::open(&root)?.retain_archived(&root,days,true)).await??;Ok(JobResult::Notice("Conversations retained in recovery archives".into(),serde_json::to_string_pretty(&result)?))})?;},
 "history-restore"=>self.manager_input("Conversation archive path","A .jsonl.gz file from history-archives; existing conversations are never overwritten.","history-restore-run",json!({}),""),
 "history-restore-run"=>{let root=self.root.clone();self.launch_io("Restoring archived conversation",move || {let id=crate::store::Store::open(&root)?.restore_history(std::path::Path::new(&value))?;Ok(JobResult::Saved(format!("Conversation {id} restored under archived conversations.")))})?;self.pending_sessions=true;},
-"retention"=>self.manager_input("Keep how many days of reports?","Preview removes only old exports, evaluation reports and finished jobs; never checkpoints or conversations.","retention-preview",json!({}),"30"),
+"storage-budget"=>self.manager_input("Inference evidence warning budget","Enter MiB (1 to 1048576). This sets a warning; it does not delete files or stop inference.","storage-budget-save",json!({}),"1024"),
+"storage-budget-save"=>{let mib:u64=value.parse().context("Enter a whole MiB amount")?;let bytes=mib.checked_mul(1024*1024).context("Budget too large")?;let root=self.root.clone();self.launch_io("Saving storage warning budget",move||{storage::set_budget(&root,bytes)?;Ok(JobResult::Saved("Evidence warning budget saved. Retention remains an explicit choice.".into()))})?;},
+"inference-export"=>{let root=self.root.clone();self.launch_io("Reading inference evidence",move||{let directory=root.join("inference");let mut items=Vec::new();if directory.exists(){for entry in std::fs::read_dir(directory)?{let entry=entry?;if !entry.file_type()?.is_dir(){continue;}let id=entry.file_name().to_string_lossy().into_owned();items.push((format!("Connection {}",id),"Exports a completed connection; active connections remain protected".into(),MenuAction::Manager{action:"inference-export-path".into(),state:json!({"value":id})}));}}ensure!(!items.is_empty(),"No inference evidence has been recorded yet");Ok(JobResult::Dialog(Dialog::Menu{title:"Choose inference evidence to export".into(),description:"Choose a saved connection. Nothing is deleted; active connections must be disconnected before export.".into(),items,selected:0}))})?;},
+"inference-export-path"=>{ensure!(!value.trim().is_empty(),"Enter the connection identifier");self.manager_input("Save inference archive","Enter a new archive path outside the state folder. Existing files are never overwritten.","inference-export-run",json!({"connection":value}),"");},
+"inference-export-run"=>{let root=self.root.clone();let connection=state["connection"].as_str().context("Connection")?.to_owned();let destination=std::path::PathBuf::from(value);self.launch_io("Exporting inference evidence",move||{let report=storage::export_inference(&root,&connection,&destination)?;Ok(JobResult::Notice("Inference archive saved".into(),serde_json::to_string_pretty(&report)?))})?;},
+"retention"=>self.manager_input("Keep how many days of reports?","Preview old reports, finished jobs and inactive inference payloads. Payloads are archived before removal; receipts, active work and checkpoints stay.","retention-preview",json!({}),"30"),
 "retention-preview"=>{let days:u64=value.parse().context("Enter a whole number of days")?;let root=self.root.clone();self.launch_io("Previewing report retention",move || Ok(JobResult::Manager("retention-preview-result".into(),json!({"days":days,"report":storage::retain(&root,days,false)?}))))?;},
 "retention-preview-result"=>self.manager_confirm("Delete the listed old reports?",serde_json::to_string_pretty(&state["report"])?,"retention-run",state),
-"retention-run"=>{let root=self.root.clone();self.launch_io("Removing selected old reports",move || {storage::retain(&root,state["days"].as_u64().context("Days")?,true)?;Ok(JobResult::Saved("Old reports removed. Conversation databases, checkpoints and model files preserved.".into()))})?;},
+"retention-run"=>{let root=self.root.clone();self.launch_io("Removing selected old reports",move || {storage::retain(&root,state["days"].as_u64().context("Days")?,true)?;Ok(JobResult::Saved("Retention completed. Inactive inference payloads were archived before removal. Receipts, active work, conversations, checkpoints and model files stay.".into()))})?;},
             _=>anyhow::bail!("Unknown management action {action}"),
         }
         Ok(())
@@ -872,7 +927,7 @@ impl App {
 "extension-auth"=>{state["url"]=json!(value);self.manager_input("Authentication variable (optional)","Enter a variable name, such as MY_MCP_TOKEN, not the token. Leave blank for no authentication.","extension-save-http",state,"");},
 "extension-save-http"|"extension-save-stdio"=>{let name=state["name"].as_str().context("Name")?.to_owned();let transport=if action=="extension-save-http"{extensions::Transport::Http{url:state["url"].as_str().context("URL")?.into(),auth_env:(!value.trim().is_empty()).then(||value.trim().into())}}else{ensure!(!value.trim().is_empty(),"Enter a server command");extensions::Transport::Stdio{command:"/bin/bash".into(),args:vec!["-c".into(),value],env_names:vec![]}};extensions::save(&self.root,&extensions::Connection{name:name.clone(),transport,enabled:false,selected_tools:vec![]})?;self.manager_action("extension-menu",json!({"name":name}))?;},
 "extension-menu"=>{let name=state["name"].as_str().context("Connection")?.to_owned();self.manager_menu(&name,"Check the server, then choose a small set of tools.",vec![("Check connection and choose tools".into(),"Starts the server; discovers its capabilities".into(),"extension-probe".into(),state.clone()),("Disable tools".into(),"Preserve configuration for later".into(),"extension-disable".into(),state.clone()),("Remove connection".into(),"Remove saved configuration".into(),"extension-remove".into(),state)]);},
-"extension-probe"=>{ensure!(self.preferences.access_policy==Policy::Trusted,"Choose Full access to start external tools");let root=self.root.clone();let name=state["name"].as_str().context("Connection")?.to_owned();self.launch_job("Checking external server",move|cancel,_|async move{tokio::select!{r=extensions::probe(&root,&name)=>{r?;},_=models::cancelled(&cancel)=>anyhow::bail!("Connection check cancelled")};Ok(JobResult::Manager("extension-tools".into(),json!({"name":name})))})?;},
+"extension-probe"=>{ensure!(self.preferences.access_policy==Policy::Trusted,"Choose Full access to start external tools");let root=self.root.clone();let policy=self.preferences.access_policy;let name=state["name"].as_str().context("Connection")?.to_owned();self.launch_job("Checking external server",move|cancel,_|async move{tokio::select!{r=extensions::probe_with_policy(&root,&name,policy)=>{r?;},_=models::cancelled(&cancel)=>anyhow::bail!("Connection check cancelled")};Ok(JobResult::Manager("extension-tools".into(),json!({"name":name})))})?;},
 "extension-tools"=>{let name=state["name"].as_str().context("Connection")?;let c=extensions::load(&self.root,name)?;let inventory:Value=serde_json::from_slice(&std::fs::read(self.root.join("extensions/cache").join(format!("{name}.json")))?)?;let items=inventory["tools"].as_array().context("Tool inventory")?.iter().map(|t|{let tool=t["name"].as_str().unwrap_or("");(format!("{} {tool}",if c.selected_tools.iter().any(|s|s==tool){"[selected]"}else{"[ ]"}),t["description"].as_str().unwrap_or("").into(),"extension-toggle".into(),json!({"name":name,"tool":tool}))}).collect();self.manager_menu("Choose tools to expose","Select to toggle. Esc finishes. Changes apply to the next conversation connection.",items);},
 "extension-toggle"=>{ensure!(!self.busy&&!self.connecting,"Stop the active model before changing external tools");let name=state["name"].as_str().context("Name")?;let tool=state["tool"].as_str().context("Tool")?;let mut c=extensions::load(&self.root,name)?;if c.selected_tools.iter().any(|s|s==tool){c.selected_tools.retain(|s|s!=tool);}else{c.selected_tools.push(tool.into());}extensions::select(&self.root,name,c.selected_tools)?;self.workspace=None;self.connected=false;self.manager_action("extension-tools",state)?;},
 "extension-disable"|"extension-remove"=>{ensure!(!self.busy&&!self.connecting,"Stop the active model before changing external tools");let name=state["name"].as_str().context("Name")?;if action=="extension-remove"{extensions::remove(&self.root,name)?;}else{let mut c=extensions::load(&self.root,name)?;c.enabled=false;extensions::save(&self.root,&c)?;}self.workspace=None;self.connected=false;self.manager_action("extensions",json!({}))?;},

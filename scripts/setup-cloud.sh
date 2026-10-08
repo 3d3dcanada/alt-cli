@@ -57,6 +57,8 @@ cargo test --locked
 cargo fmt --all --check
 cargo clippy --locked --all-targets -- -D warnings
 python3 scripts/smoke_tui.py
+python3 scripts/smoke_draft_tui.py
+python3 scripts/smoke_recovery_tui.py
 python3 scripts/smoke_task_tui.py
 python3 scripts/smoke_workbench_tui.py
 python3 scripts/smoke_verification_tui.py
@@ -71,13 +73,18 @@ python3 scripts/test_campaign.py -v
 python3 scripts/test_evaluation_preflight.py -v
 python3 scripts/test_process_state.py -v
 python3 scripts/test_release_verification.py -v
+python3 scripts/test_install_generation.py -v
+python3 scripts/test_ci_stage.py -v
+python3 scripts/test_research_package.py -v
+python3 scripts/test_harness_feedback.py -v
+python3 scripts/test_qualification_campaign.py -v
 python3 -m unittest discover -s training/tests -v
 python3 scripts/smoke_skills.py
 python3 scripts/smoke_analysis.py
 python3 scripts/smoke_native.py
 python3 scripts/smoke_acceptance_collection.py
 python3 scripts/smoke_goose.py --goose /workspace/.alt-tools/goose
-python3 scripts/smoke_goose.py --goose /workspace/.alt-tools/goose --provider ollama
+python3 scripts/smoke_goose.py --goose /workspace/.alt-tools/goose --provider ollama --authenticated
 compact_probe() {
   local probe_name="$1"
   shift

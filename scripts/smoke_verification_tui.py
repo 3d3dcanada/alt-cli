@@ -14,7 +14,7 @@ with tempfile.TemporaryDirectory(prefix='alt-contract-tui-') as d:
  try:
   t.wait('Connect your first model');t.send(b'\x1b8');t.wait('What happened');t.send(b'c');t.wait('Choose what should prove');t.send(b'\x1b[B\r');t.wait('Which check needs evidence?');t.send(b'\r');t.wait('What does this check establish?');t.send(b'\r');t.wait('Test report format');t.send(b'\r');t.wait('Where will the report');t.send(b'\r');t.wait('Who owns the behavioral assertion?');t.send(b'\x1b[B\r');t.wait('Independent assertion file');t.paste(str(assertion));t.send(b'\r');t.wait('Save this verification contract?');t.send(b'\t\r');t.wait('Contract saved');t.send(b'r');t.wait('Run checks again');t.send(b'\r');t.wait('Independent assertion passed')
   # Independently inspect persisted evidence, not just UI text.
-  result=json.loads(subprocess.check_output(base+['task','verify'],cwd=project,text=True));assert result['behavioral_acceptance'] and result['complete'],result
+  result=json.loads(subprocess.check_output(base+['task','verify'],cwd=project,text=True,env={**os.environ,'TERM':'xterm-256color'}));assert result['behavioral_acceptance'] and result['complete'],result
   t.send(b'e');t.wait('Check evidence');t.send(b'\r')
   t.send(b'\x1b6');t.wait('Preferences');t.send(b'\x1b[B'*15+b'\r');t.wait('Which tools fit this task?');t.send(b'\x1b[B'*2+b'\r');t.wait('Tool focus saved')
   t.send(b'\x1b[A'*2+b'\r');t.wait('Model and runtime settings');t.send(b'\x1b[B'*12+b'\r');t.wait("Choose the model's reasoning mode");t.send(b'\x1b[B'*2+b'\r');t.wait('Reasoning choice saved')

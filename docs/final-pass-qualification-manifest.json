@@ -1,0 +1,4005 @@
+{
+  "schema": 1,
+  "created_unix": 1791447636.6228979,
+  "baseline_sha256": "37a6e2eb0768411de9b51447c35f75e07b273a9da3b5ff83fbdae899abd76164",
+  "engine": {
+    "path": "/workspace/.alt-tools/goose",
+    "sha256": "59655719cd9b098dab59b6e2c50f1e565a935992fae2e539f52018a960e0512a"
+  },
+  "runtime": {
+    "path": "/workspace/.alt-tools/llama-b11429/llama-b11429/llama-server",
+    "sha256": "5faf410bbbc00a1b94b09ee01623699f255365628dfa73b1ee552d9e52a2231d"
+  },
+  "evaluator_sha256": {
+    "acceptance_extra.py": "2a724e6da5673cb581b3b2c54d338a62bbc917f1753b7edf2774f9e2e005148d",
+    "acceptance_final.py": "21aa4423e358bc30a5765acc553115322538b2de036f445e8747fd1c7fa7fa0f",
+    "acceptance_projects.py": "f10c755fa08f7476c9c2774f262039047b67efd7f071f3c199c07e431c888ba1",
+    "acceptance_v5.py": "0f669daa7bbe060b131d79e2294ec026e419467be38d969c77f5dfefb897dea7",
+    "evaluation_preflight.py": "2b08976afad22a42f81a9142b1786181a06a7243c6b95ede4ce238ec4a11c4fb",
+    "live_acceptance.py": "af97fc0b103fb6106ffd53a85b5ed24ab38b39101d6cb30dbad99266b4981ee3",
+    "live_tui_turn.py": "ff284fbffaaaccdd7d597590cf447e76b18757247b14678b63c332e11b8a0425",
+    "qualification_campaign.py": "e5d9cc213e7faf5a84aacfd6e8c6f930c91aeaaca98461331242ac11dc4e220d"
+  },
+  "models": {
+    "mimo9b-heretic-q4": {
+      "path": "/tmp/alt-native-requalification/MiMo-V2.6-Distill-Qwen-9B-heretic.Q4_K_M.gguf",
+      "sha256": "00877ff79174b79f72c5ec704901fc958400a0b0d390fb61a068281618116dd1",
+      "uncensored": true,
+      "selection": "Explicit publisher-labelled uncensored/abliterated Q4; never substituted"
+    },
+    "josiefied7b-abliterated-q4": {
+      "path": "/tmp/alt-native-requalification/Josiefied-Qwen2.5-7B-Instruct-abliterated.Q4_K_M.gguf",
+      "sha256": "d7d626d96cc2d3567e8266101b4211b17634012dd99a0c9b28f475ce4eb620b6",
+      "uncensored": true,
+      "selection": "Explicit publisher-labelled uncensored/abliterated Q4; never substituted"
+    }
+  },
+  "conditions": {
+    "context": 8192,
+    "output_tokens": 1024,
+    "generated_tokens": 8192,
+    "requests": 12,
+    "temperature": 0.2,
+    "top_p": 0.95,
+    "thinking": "default",
+    "threads": 2,
+    "batch": 128,
+    "timeout_seconds": 600,
+    "tool_profile": "compact",
+    "workflow": "model-plan",
+    "gpu_layers": 0,
+    "provider": "openai"
+  },
+  "repeats": 3,
+  "tasks": [
+    {
+      "case": "final-base64url-codec",
+      "family": "final-base64url-codec",
+      "partition": "final-holdout",
+      "category": "feature",
+      "interface": "cli",
+      "contract_sha256": "bc627ca9f634cc229395acfebe09758092369764d8f5a75a44bbfdbf1434c836"
+    },
+    {
+      "case": "final-binary-int-boundary",
+      "family": "final-binary-int-boundary",
+      "partition": "final-holdout",
+      "category": "numeric-boundary",
+      "interface": "cli",
+      "contract_sha256": "4cd1f249ff0f9be87d8620de0db18020ac5cd19ff5f02a36f4fdfced2f11290b"
+    },
+    {
+      "case": "final-bracket-stack",
+      "family": "final-bracket-stack",
+      "partition": "final-holdout",
+      "category": "feature",
+      "interface": "cli",
+      "contract_sha256": "56df42e0d33139c6110d3b520073e87d1cb188ea4cc050a2dfe6b63914d0be69"
+    },
+    {
+      "case": "final-clock-duration",
+      "family": "final-clock-duration",
+      "partition": "final-holdout",
+      "category": "feature",
+      "interface": "cli",
+      "contract_sha256": "22202c81f1f6acdc29f42bfbd53cebd0e65fb66e3d2af4890aa25373f4b17a82"
+    },
+    {
+      "case": "final-correction-byte-rendering",
+      "family": "final-correction-byte-rendering",
+      "partition": "final-holdout",
+      "category": "middle-turn-correction",
+      "interface": "tui",
+      "contract_sha256": "cfb40df2d3e5d0eb855e3abda1d2add64de83321ca4720e86db624e675f92798"
+    },
+    {
+      "case": "final-correction-feature-toggle",
+      "family": "final-correction-feature-toggle",
+      "partition": "final-holdout",
+      "category": "middle-turn-correction",
+      "interface": "tui",
+      "contract_sha256": "6c0d0ccf0af2c35130abae12194662f7417b83a0370e17861c8d0573c40e59ec"
+    },
+    {
+      "case": "final-correction-weekday-origin",
+      "family": "final-correction-weekday-origin",
+      "partition": "final-holdout",
+      "category": "middle-turn-correction",
+      "interface": "tui",
+      "contract_sha256": "f147583f8fa2e41c94633d1925b36071ac629645ddaf02a75de14797659ee676"
+    },
+    {
+      "case": "final-dirty-inventory-transfer",
+      "family": "final-dirty-inventory-transfer",
+      "partition": "final-holdout",
+      "category": "dirty-workspace",
+      "interface": "cli",
+      "contract_sha256": "a528ca92af97a1cedabee6382563f58ff6da29e2997c1fe3910e8a48a7d0a657"
+    },
+    {
+      "case": "final-dirty-priority-queue",
+      "family": "final-dirty-priority-queue",
+      "partition": "final-holdout",
+      "category": "dirty-workspace",
+      "interface": "cli",
+      "contract_sha256": "a1fd33bc7029695b988369f9f33da6eacbd966acc6b86539f8fd2e7facb01994"
+    },
+    {
+      "case": "final-display-width",
+      "family": "final-display-width",
+      "partition": "final-holdout",
+      "category": "feature",
+      "interface": "cli",
+      "contract_sha256": "8105fe904ee5353841fc32c26c70a511bddfcdd5a74f73effb29bb3b52873560"
+    },
+    {
+      "case": "final-edit-distance",
+      "family": "final-edit-distance",
+      "partition": "final-holdout",
+      "category": "feature",
+      "interface": "cli",
+      "contract_sha256": "b920f2f00d167a36bd40f5a9a93f9df34018cbfe9f96e875dc5e54be5fcdbec3"
+    },
+    {
+      "case": "final-explicit-null-configuration",
+      "family": "final-explicit-null-configuration",
+      "partition": "final-holdout",
+      "category": "configuration",
+      "interface": "cli",
+      "contract_sha256": "fb263c9b8ba84c54e674596ec77d289573eeb9f748843b155673ef288495ba5e"
+    },
+    {
+      "case": "final-filename-suffix-chain",
+      "family": "final-filename-suffix-chain",
+      "partition": "final-holdout",
+      "category": "feature",
+      "interface": "cli",
+      "contract_sha256": "a4a8cd4f628cacfedbb91b692e4312c7209c2fdcef243a65aa0233461caf5942"
+    },
+    {
+      "case": "final-hex-color",
+      "family": "final-hex-color",
+      "partition": "final-holdout",
+      "category": "repair",
+      "interface": "cli",
+      "contract_sha256": "010a3e4c412175328f34499be021ce462fd730d1b96fd066f8035a0023f70156"
+    },
+    {
+      "case": "final-integer-range-format",
+      "family": "final-integer-range-format",
+      "partition": "final-holdout",
+      "category": "feature",
+      "interface": "cli",
+      "contract_sha256": "c3690c351de788cc2abf5490b1bb89f0017bb864888777a3435ff2ce5419d6f6"
+    },
+    {
+      "case": "final-integer-tax-rounding",
+      "family": "final-integer-tax-rounding",
+      "partition": "final-holdout",
+      "category": "numeric-boundary",
+      "interface": "cli",
+      "contract_sha256": "115a5fa7e6deb049acbc42f04c0aea10e5d5fa6a26f3f5032879052a2900922b"
+    },
+    {
+      "case": "final-literal-template-expansion",
+      "family": "final-literal-template-expansion",
+      "partition": "final-holdout",
+      "category": "feature",
+      "interface": "cli",
+      "contract_sha256": "61539ebcfc5a52f89047b841165f9a9046a0fdbf69ebdc51703ab1d2accb05a6"
+    },
+    {
+      "case": "final-multifile-unit-conversion",
+      "family": "final-multifile-unit-conversion",
+      "partition": "final-holdout",
+      "category": "multi-file",
+      "interface": "cli",
+      "contract_sha256": "d53ee6ba765497f3a98133340479c4cc7685934577b0e92930e27ed1904b2b81"
+    },
+    {
+      "case": "final-ordered-intersection",
+      "family": "final-ordered-intersection",
+      "partition": "final-holdout",
+      "category": "feature",
+      "interface": "cli",
+      "contract_sha256": "7605f07462e80c63ed08bfe887d303d26382feae73fadec55cb9ddd3fbe54c89"
+    },
+    {
+      "case": "final-piecewise-interpolation",
+      "family": "final-piecewise-interpolation",
+      "partition": "final-holdout",
+      "category": "feature",
+      "interface": "cli",
+      "contract_sha256": "6795f66218d58ff77e392ac9df0d28f355bb9d78f98047882c40d6e02fc45237"
+    },
+    {
+      "case": "final-rational-normalization",
+      "family": "final-rational-normalization",
+      "partition": "final-holdout",
+      "category": "numeric-boundary",
+      "interface": "cli",
+      "contract_sha256": "31b6417b66c1686436fdc132e426b3885d7ad4cca9cb93778f47764273babb44"
+    },
+    {
+      "case": "final-rectangle-intersection",
+      "family": "final-rectangle-intersection",
+      "partition": "final-holdout",
+      "category": "feature",
+      "interface": "cli",
+      "contract_sha256": "dfd5f79561fe6427327c64c40b0cf52d8ec9373779fcbcff9584c84bf50a90e6"
+    },
+    {
+      "case": "final-repository-mime-navigation",
+      "family": "final-repository-mime-navigation",
+      "partition": "final-holdout",
+      "category": "navigation",
+      "interface": "cli",
+      "contract_sha256": "375a4d826dd9437871d82a50a61d19e34fa9d0720d165b6a8aa33d0169239198"
+    },
+    {
+      "case": "final-roman-parser",
+      "family": "final-roman-parser",
+      "partition": "final-holdout",
+      "category": "feature",
+      "interface": "cli",
+      "contract_sha256": "f3cf6ba26f8da4c5b777487d04a7261b6aac57b3d1e28005b148942fe6701a29"
+    },
+    {
+      "case": "final-run-length-pairs",
+      "family": "final-run-length-pairs",
+      "partition": "final-holdout",
+      "category": "feature",
+      "interface": "cli",
+      "contract_sha256": "ac9982451df75aebc149d08391215a51f4d45b2e4d81bf0013879d3e1fbec46d"
+    },
+    {
+      "case": "final-sparse-dot-product",
+      "family": "final-sparse-dot-product",
+      "partition": "final-holdout",
+      "category": "feature",
+      "interface": "cli",
+      "contract_sha256": "6654f2968f127dbde927ae098db7c6f99762d58279215e352a0197bff42e313f"
+    },
+    {
+      "case": "final-unicode-frequency",
+      "family": "final-unicode-frequency",
+      "partition": "final-holdout",
+      "category": "feature",
+      "interface": "cli",
+      "contract_sha256": "d7c22e4d9ee5eabd6cbfa46cc192adf01edf2716799c53b5061f9e5f51f6108a"
+    },
+    {
+      "case": "final-unified-diff-counts",
+      "family": "final-unified-diff-counts",
+      "partition": "final-holdout",
+      "category": "feature",
+      "interface": "cli",
+      "contract_sha256": "bde4af4fc6c2273095f72f7431af33fdb0b5af14375afa40b209f4ec6c44edc8"
+    },
+    {
+      "case": "final-utf8-secret-compare",
+      "family": "final-utf8-secret-compare",
+      "partition": "final-holdout",
+      "category": "feature",
+      "interface": "cli",
+      "contract_sha256": "5ec68ab37f6691503ec3afec5444fc75e35056864df0f5d0cb0cea1e0a92382c"
+    },
+    {
+      "case": "final-window-event-counts",
+      "family": "final-window-event-counts",
+      "partition": "final-holdout",
+      "category": "feature",
+      "interface": "cli",
+      "contract_sha256": "57122c8201dcdf479065b76de0bf2a31b423ed82d444f591e7f27ff2d169d3aa"
+    },
+    {
+      "case": "javascript-config",
+      "family": "javascript-config",
+      "partition": "validation",
+      "category": "historical-development",
+      "interface": "cli",
+      "contract_sha256": "3171243c1abdf9fd5b7b93530533cc3d2e48e3f3e8e4336fc84d161af2dc2700"
+    },
+    {
+      "case": "python-dependency",
+      "family": "python-dependency",
+      "partition": "development",
+      "category": "historical-development",
+      "interface": "cli",
+      "contract_sha256": "2b3b95c9f73aff9e24f72c40bf19ba908a730aceb0e598a8801c66d989aa226a"
+    },
+    {
+      "case": "python-multifile",
+      "family": "python-multifile",
+      "partition": "development",
+      "category": "historical-development",
+      "interface": "cli",
+      "contract_sha256": "c0a756b80d784f2aecb165f5ea1041c0781cde2739df9c32423052a8b67e7b57"
+    },
+    {
+      "case": "rust-feature",
+      "family": "rust-feature",
+      "partition": "validation",
+      "category": "historical-development",
+      "interface": "cli",
+      "contract_sha256": "4285b837ad2593568ccaf611b0f307656f58811278fa195add814d087dccc194"
+    }
+  ],
+  "attempts": [
+    {
+      "id": "final-base64url-codec--josiefied7b-abliterated-q4--r1--baseline",
+      "case": "final-base64url-codec",
+      "family": "final-base64url-codec",
+      "partition": "final-holdout",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 1,
+      "arm": "baseline"
+    },
+    {
+      "id": "final-base64url-codec--josiefied7b-abliterated-q4--r1--candidate",
+      "case": "final-base64url-codec",
+      "family": "final-base64url-codec",
+      "partition": "final-holdout",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 1,
+      "arm": "candidate"
+    },
+    {
+      "id": "final-base64url-codec--josiefied7b-abliterated-q4--r2--candidate",
+      "case": "final-base64url-codec",
+      "family": "final-base64url-codec",
+      "partition": "final-holdout",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 2,
+      "arm": "candidate"
+    },
+    {
+      "id": "final-base64url-codec--josiefied7b-abliterated-q4--r2--baseline",
+      "case": "final-base64url-codec",
+      "family": "final-base64url-codec",
+      "partition": "final-holdout",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 2,
+      "arm": "baseline"
+    },
+    {
+      "id": "final-base64url-codec--josiefied7b-abliterated-q4--r3--baseline",
+      "case": "final-base64url-codec",
+      "family": "final-base64url-codec",
+      "partition": "final-holdout",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 3,
+      "arm": "baseline"
+    },
+    {
+      "id": "final-base64url-codec--josiefied7b-abliterated-q4--r3--candidate",
+      "case": "final-base64url-codec",
+      "family": "final-base64url-codec",
+      "partition": "final-holdout",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 3,
+      "arm": "candidate"
+    },
+    {
+      "id": "final-base64url-codec--mimo9b-heretic-q4--r1--baseline",
+      "case": "final-base64url-codec",
+      "family": "final-base64url-codec",
+      "partition": "final-holdout",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 1,
+      "arm": "baseline"
+    },
+    {
+      "id": "final-base64url-codec--mimo9b-heretic-q4--r1--candidate",
+      "case": "final-base64url-codec",
+      "family": "final-base64url-codec",
+      "partition": "final-holdout",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 1,
+      "arm": "candidate"
+    },
+    {
+      "id": "final-base64url-codec--mimo9b-heretic-q4--r2--candidate",
+      "case": "final-base64url-codec",
+      "family": "final-base64url-codec",
+      "partition": "final-holdout",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 2,
+      "arm": "candidate"
+    },
+    {
+      "id": "final-base64url-codec--mimo9b-heretic-q4--r2--baseline",
+      "case": "final-base64url-codec",
+      "family": "final-base64url-codec",
+      "partition": "final-holdout",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 2,
+      "arm": "baseline"
+    },
+    {
+      "id": "final-base64url-codec--mimo9b-heretic-q4--r3--baseline",
+      "case": "final-base64url-codec",
+      "family": "final-base64url-codec",
+      "partition": "final-holdout",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 3,
+      "arm": "baseline"
+    },
+    {
+      "id": "final-base64url-codec--mimo9b-heretic-q4--r3--candidate",
+      "case": "final-base64url-codec",
+      "family": "final-base64url-codec",
+      "partition": "final-holdout",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 3,
+      "arm": "candidate"
+    },
+    {
+      "id": "final-binary-int-boundary--josiefied7b-abliterated-q4--r1--baseline",
+      "case": "final-binary-int-boundary",
+      "family": "final-binary-int-boundary",
+      "partition": "final-holdout",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 1,
+      "arm": "baseline"
+    },
+    {
+      "id": "final-binary-int-boundary--josiefied7b-abliterated-q4--r1--candidate",
+      "case": "final-binary-int-boundary",
+      "family": "final-binary-int-boundary",
+      "partition": "final-holdout",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 1,
+      "arm": "candidate"
+    },
+    {
+      "id": "final-binary-int-boundary--josiefied7b-abliterated-q4--r2--candidate",
+      "case": "final-binary-int-boundary",
+      "family": "final-binary-int-boundary",
+      "partition": "final-holdout",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 2,
+      "arm": "candidate"
+    },
+    {
+      "id": "final-binary-int-boundary--josiefied7b-abliterated-q4--r2--baseline",
+      "case": "final-binary-int-boundary",
+      "family": "final-binary-int-boundary",
+      "partition": "final-holdout",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 2,
+      "arm": "baseline"
+    },
+    {
+      "id": "final-binary-int-boundary--josiefied7b-abliterated-q4--r3--baseline",
+      "case": "final-binary-int-boundary",
+      "family": "final-binary-int-boundary",
+      "partition": "final-holdout",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 3,
+      "arm": "baseline"
+    },
+    {
+      "id": "final-binary-int-boundary--josiefied7b-abliterated-q4--r3--candidate",
+      "case": "final-binary-int-boundary",
+      "family": "final-binary-int-boundary",
+      "partition": "final-holdout",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 3,
+      "arm": "candidate"
+    },
+    {
+      "id": "final-binary-int-boundary--mimo9b-heretic-q4--r1--baseline",
+      "case": "final-binary-int-boundary",
+      "family": "final-binary-int-boundary",
+      "partition": "final-holdout",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 1,
+      "arm": "baseline"
+    },
+    {
+      "id": "final-binary-int-boundary--mimo9b-heretic-q4--r1--candidate",
+      "case": "final-binary-int-boundary",
+      "family": "final-binary-int-boundary",
+      "partition": "final-holdout",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 1,
+      "arm": "candidate"
+    },
+    {
+      "id": "final-binary-int-boundary--mimo9b-heretic-q4--r2--candidate",
+      "case": "final-binary-int-boundary",
+      "family": "final-binary-int-boundary",
+      "partition": "final-holdout",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 2,
+      "arm": "candidate"
+    },
+    {
+      "id": "final-binary-int-boundary--mimo9b-heretic-q4--r2--baseline",
+      "case": "final-binary-int-boundary",
+      "family": "final-binary-int-boundary",
+      "partition": "final-holdout",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 2,
+      "arm": "baseline"
+    },
+    {
+      "id": "final-binary-int-boundary--mimo9b-heretic-q4--r3--baseline",
+      "case": "final-binary-int-boundary",
+      "family": "final-binary-int-boundary",
+      "partition": "final-holdout",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 3,
+      "arm": "baseline"
+    },
+    {
+      "id": "final-binary-int-boundary--mimo9b-heretic-q4--r3--candidate",
+      "case": "final-binary-int-boundary",
+      "family": "final-binary-int-boundary",
+      "partition": "final-holdout",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 3,
+      "arm": "candidate"
+    },
+    {
+      "id": "final-bracket-stack--josiefied7b-abliterated-q4--r1--baseline",
+      "case": "final-bracket-stack",
+      "family": "final-bracket-stack",
+      "partition": "final-holdout",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 1,
+      "arm": "baseline"
+    },
+    {
+      "id": "final-bracket-stack--josiefied7b-abliterated-q4--r1--candidate",
+      "case": "final-bracket-stack",
+      "family": "final-bracket-stack",
+      "partition": "final-holdout",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 1,
+      "arm": "candidate"
+    },
+    {
+      "id": "final-bracket-stack--josiefied7b-abliterated-q4--r2--candidate",
+      "case": "final-bracket-stack",
+      "family": "final-bracket-stack",
+      "partition": "final-holdout",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 2,
+      "arm": "candidate"
+    },
+    {
+      "id": "final-bracket-stack--josiefied7b-abliterated-q4--r2--baseline",
+      "case": "final-bracket-stack",
+      "family": "final-bracket-stack",
+      "partition": "final-holdout",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 2,
+      "arm": "baseline"
+    },
+    {
+      "id": "final-bracket-stack--josiefied7b-abliterated-q4--r3--baseline",
+      "case": "final-bracket-stack",
+      "family": "final-bracket-stack",
+      "partition": "final-holdout",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 3,
+      "arm": "baseline"
+    },
+    {
+      "id": "final-bracket-stack--josiefied7b-abliterated-q4--r3--candidate",
+      "case": "final-bracket-stack",
+      "family": "final-bracket-stack",
+      "partition": "final-holdout",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 3,
+      "arm": "candidate"
+    },
+    {
+      "id": "final-bracket-stack--mimo9b-heretic-q4--r1--baseline",
+      "case": "final-bracket-stack",
+      "family": "final-bracket-stack",
+      "partition": "final-holdout",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 1,
+      "arm": "baseline"
+    },
+    {
+      "id": "final-bracket-stack--mimo9b-heretic-q4--r1--candidate",
+      "case": "final-bracket-stack",
+      "family": "final-bracket-stack",
+      "partition": "final-holdout",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 1,
+      "arm": "candidate"
+    },
+    {
+      "id": "final-bracket-stack--mimo9b-heretic-q4--r2--candidate",
+      "case": "final-bracket-stack",
+      "family": "final-bracket-stack",
+      "partition": "final-holdout",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 2,
+      "arm": "candidate"
+    },
+    {
+      "id": "final-bracket-stack--mimo9b-heretic-q4--r2--baseline",
+      "case": "final-bracket-stack",
+      "family": "final-bracket-stack",
+      "partition": "final-holdout",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 2,
+      "arm": "baseline"
+    },
+    {
+      "id": "final-bracket-stack--mimo9b-heretic-q4--r3--baseline",
+      "case": "final-bracket-stack",
+      "family": "final-bracket-stack",
+      "partition": "final-holdout",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 3,
+      "arm": "baseline"
+    },
+    {
+      "id": "final-bracket-stack--mimo9b-heretic-q4--r3--candidate",
+      "case": "final-bracket-stack",
+      "family": "final-bracket-stack",
+      "partition": "final-holdout",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 3,
+      "arm": "candidate"
+    },
+    {
+      "id": "final-clock-duration--josiefied7b-abliterated-q4--r1--baseline",
+      "case": "final-clock-duration",
+      "family": "final-clock-duration",
+      "partition": "final-holdout",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 1,
+      "arm": "baseline"
+    },
+    {
+      "id": "final-clock-duration--josiefied7b-abliterated-q4--r1--candidate",
+      "case": "final-clock-duration",
+      "family": "final-clock-duration",
+      "partition": "final-holdout",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 1,
+      "arm": "candidate"
+    },
+    {
+      "id": "final-clock-duration--josiefied7b-abliterated-q4--r2--candidate",
+      "case": "final-clock-duration",
+      "family": "final-clock-duration",
+      "partition": "final-holdout",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 2,
+      "arm": "candidate"
+    },
+    {
+      "id": "final-clock-duration--josiefied7b-abliterated-q4--r2--baseline",
+      "case": "final-clock-duration",
+      "family": "final-clock-duration",
+      "partition": "final-holdout",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 2,
+      "arm": "baseline"
+    },
+    {
+      "id": "final-clock-duration--josiefied7b-abliterated-q4--r3--baseline",
+      "case": "final-clock-duration",
+      "family": "final-clock-duration",
+      "partition": "final-holdout",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 3,
+      "arm": "baseline"
+    },
+    {
+      "id": "final-clock-duration--josiefied7b-abliterated-q4--r3--candidate",
+      "case": "final-clock-duration",
+      "family": "final-clock-duration",
+      "partition": "final-holdout",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 3,
+      "arm": "candidate"
+    },
+    {
+      "id": "final-clock-duration--mimo9b-heretic-q4--r1--baseline",
+      "case": "final-clock-duration",
+      "family": "final-clock-duration",
+      "partition": "final-holdout",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 1,
+      "arm": "baseline"
+    },
+    {
+      "id": "final-clock-duration--mimo9b-heretic-q4--r1--candidate",
+      "case": "final-clock-duration",
+      "family": "final-clock-duration",
+      "partition": "final-holdout",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 1,
+      "arm": "candidate"
+    },
+    {
+      "id": "final-clock-duration--mimo9b-heretic-q4--r2--candidate",
+      "case": "final-clock-duration",
+      "family": "final-clock-duration",
+      "partition": "final-holdout",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 2,
+      "arm": "candidate"
+    },
+    {
+      "id": "final-clock-duration--mimo9b-heretic-q4--r2--baseline",
+      "case": "final-clock-duration",
+      "family": "final-clock-duration",
+      "partition": "final-holdout",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 2,
+      "arm": "baseline"
+    },
+    {
+      "id": "final-clock-duration--mimo9b-heretic-q4--r3--baseline",
+      "case": "final-clock-duration",
+      "family": "final-clock-duration",
+      "partition": "final-holdout",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 3,
+      "arm": "baseline"
+    },
+    {
+      "id": "final-clock-duration--mimo9b-heretic-q4--r3--candidate",
+      "case": "final-clock-duration",
+      "family": "final-clock-duration",
+      "partition": "final-holdout",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 3,
+      "arm": "candidate"
+    },
+    {
+      "id": "final-correction-byte-rendering--josiefied7b-abliterated-q4--r1--baseline",
+      "case": "final-correction-byte-rendering",
+      "family": "final-correction-byte-rendering",
+      "partition": "final-holdout",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 1,
+      "arm": "baseline"
+    },
+    {
+      "id": "final-correction-byte-rendering--josiefied7b-abliterated-q4--r1--candidate",
+      "case": "final-correction-byte-rendering",
+      "family": "final-correction-byte-rendering",
+      "partition": "final-holdout",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 1,
+      "arm": "candidate"
+    },
+    {
+      "id": "final-correction-byte-rendering--josiefied7b-abliterated-q4--r2--candidate",
+      "case": "final-correction-byte-rendering",
+      "family": "final-correction-byte-rendering",
+      "partition": "final-holdout",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 2,
+      "arm": "candidate"
+    },
+    {
+      "id": "final-correction-byte-rendering--josiefied7b-abliterated-q4--r2--baseline",
+      "case": "final-correction-byte-rendering",
+      "family": "final-correction-byte-rendering",
+      "partition": "final-holdout",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 2,
+      "arm": "baseline"
+    },
+    {
+      "id": "final-correction-byte-rendering--josiefied7b-abliterated-q4--r3--baseline",
+      "case": "final-correction-byte-rendering",
+      "family": "final-correction-byte-rendering",
+      "partition": "final-holdout",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 3,
+      "arm": "baseline"
+    },
+    {
+      "id": "final-correction-byte-rendering--josiefied7b-abliterated-q4--r3--candidate",
+      "case": "final-correction-byte-rendering",
+      "family": "final-correction-byte-rendering",
+      "partition": "final-holdout",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 3,
+      "arm": "candidate"
+    },
+    {
+      "id": "final-correction-byte-rendering--mimo9b-heretic-q4--r1--baseline",
+      "case": "final-correction-byte-rendering",
+      "family": "final-correction-byte-rendering",
+      "partition": "final-holdout",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 1,
+      "arm": "baseline"
+    },
+    {
+      "id": "final-correction-byte-rendering--mimo9b-heretic-q4--r1--candidate",
+      "case": "final-correction-byte-rendering",
+      "family": "final-correction-byte-rendering",
+      "partition": "final-holdout",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 1,
+      "arm": "candidate"
+    },
+    {
+      "id": "final-correction-byte-rendering--mimo9b-heretic-q4--r2--candidate",
+      "case": "final-correction-byte-rendering",
+      "family": "final-correction-byte-rendering",
+      "partition": "final-holdout",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 2,
+      "arm": "candidate"
+    },
+    {
+      "id": "final-correction-byte-rendering--mimo9b-heretic-q4--r2--baseline",
+      "case": "final-correction-byte-rendering",
+      "family": "final-correction-byte-rendering",
+      "partition": "final-holdout",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 2,
+      "arm": "baseline"
+    },
+    {
+      "id": "final-correction-byte-rendering--mimo9b-heretic-q4--r3--baseline",
+      "case": "final-correction-byte-rendering",
+      "family": "final-correction-byte-rendering",
+      "partition": "final-holdout",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 3,
+      "arm": "baseline"
+    },
+    {
+      "id": "final-correction-byte-rendering--mimo9b-heretic-q4--r3--candidate",
+      "case": "final-correction-byte-rendering",
+      "family": "final-correction-byte-rendering",
+      "partition": "final-holdout",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 3,
+      "arm": "candidate"
+    },
+    {
+      "id": "final-correction-feature-toggle--josiefied7b-abliterated-q4--r1--baseline",
+      "case": "final-correction-feature-toggle",
+      "family": "final-correction-feature-toggle",
+      "partition": "final-holdout",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 1,
+      "arm": "baseline"
+    },
+    {
+      "id": "final-correction-feature-toggle--josiefied7b-abliterated-q4--r1--candidate",
+      "case": "final-correction-feature-toggle",
+      "family": "final-correction-feature-toggle",
+      "partition": "final-holdout",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 1,
+      "arm": "candidate"
+    },
+    {
+      "id": "final-correction-feature-toggle--josiefied7b-abliterated-q4--r2--candidate",
+      "case": "final-correction-feature-toggle",
+      "family": "final-correction-feature-toggle",
+      "partition": "final-holdout",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 2,
+      "arm": "candidate"
+    },
+    {
+      "id": "final-correction-feature-toggle--josiefied7b-abliterated-q4--r2--baseline",
+      "case": "final-correction-feature-toggle",
+      "family": "final-correction-feature-toggle",
+      "partition": "final-holdout",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 2,
+      "arm": "baseline"
+    },
+    {
+      "id": "final-correction-feature-toggle--josiefied7b-abliterated-q4--r3--baseline",
+      "case": "final-correction-feature-toggle",
+      "family": "final-correction-feature-toggle",
+      "partition": "final-holdout",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 3,
+      "arm": "baseline"
+    },
+    {
+      "id": "final-correction-feature-toggle--josiefied7b-abliterated-q4--r3--candidate",
+      "case": "final-correction-feature-toggle",
+      "family": "final-correction-feature-toggle",
+      "partition": "final-holdout",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 3,
+      "arm": "candidate"
+    },
+    {
+      "id": "final-correction-feature-toggle--mimo9b-heretic-q4--r1--baseline",
+      "case": "final-correction-feature-toggle",
+      "family": "final-correction-feature-toggle",
+      "partition": "final-holdout",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 1,
+      "arm": "baseline"
+    },
+    {
+      "id": "final-correction-feature-toggle--mimo9b-heretic-q4--r1--candidate",
+      "case": "final-correction-feature-toggle",
+      "family": "final-correction-feature-toggle",
+      "partition": "final-holdout",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 1,
+      "arm": "candidate"
+    },
+    {
+      "id": "final-correction-feature-toggle--mimo9b-heretic-q4--r2--candidate",
+      "case": "final-correction-feature-toggle",
+      "family": "final-correction-feature-toggle",
+      "partition": "final-holdout",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 2,
+      "arm": "candidate"
+    },
+    {
+      "id": "final-correction-feature-toggle--mimo9b-heretic-q4--r2--baseline",
+      "case": "final-correction-feature-toggle",
+      "family": "final-correction-feature-toggle",
+      "partition": "final-holdout",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 2,
+      "arm": "baseline"
+    },
+    {
+      "id": "final-correction-feature-toggle--mimo9b-heretic-q4--r3--baseline",
+      "case": "final-correction-feature-toggle",
+      "family": "final-correction-feature-toggle",
+      "partition": "final-holdout",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 3,
+      "arm": "baseline"
+    },
+    {
+      "id": "final-correction-feature-toggle--mimo9b-heretic-q4--r3--candidate",
+      "case": "final-correction-feature-toggle",
+      "family": "final-correction-feature-toggle",
+      "partition": "final-holdout",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 3,
+      "arm": "candidate"
+    },
+    {
+      "id": "final-correction-weekday-origin--josiefied7b-abliterated-q4--r1--baseline",
+      "case": "final-correction-weekday-origin",
+      "family": "final-correction-weekday-origin",
+      "partition": "final-holdout",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 1,
+      "arm": "baseline"
+    },
+    {
+      "id": "final-correction-weekday-origin--josiefied7b-abliterated-q4--r1--candidate",
+      "case": "final-correction-weekday-origin",
+      "family": "final-correction-weekday-origin",
+      "partition": "final-holdout",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 1,
+      "arm": "candidate"
+    },
+    {
+      "id": "final-correction-weekday-origin--josiefied7b-abliterated-q4--r2--candidate",
+      "case": "final-correction-weekday-origin",
+      "family": "final-correction-weekday-origin",
+      "partition": "final-holdout",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 2,
+      "arm": "candidate"
+    },
+    {
+      "id": "final-correction-weekday-origin--josiefied7b-abliterated-q4--r2--baseline",
+      "case": "final-correction-weekday-origin",
+      "family": "final-correction-weekday-origin",
+      "partition": "final-holdout",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 2,
+      "arm": "baseline"
+    },
+    {
+      "id": "final-correction-weekday-origin--josiefied7b-abliterated-q4--r3--baseline",
+      "case": "final-correction-weekday-origin",
+      "family": "final-correction-weekday-origin",
+      "partition": "final-holdout",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 3,
+      "arm": "baseline"
+    },
+    {
+      "id": "final-correction-weekday-origin--josiefied7b-abliterated-q4--r3--candidate",
+      "case": "final-correction-weekday-origin",
+      "family": "final-correction-weekday-origin",
+      "partition": "final-holdout",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 3,
+      "arm": "candidate"
+    },
+    {
+      "id": "final-correction-weekday-origin--mimo9b-heretic-q4--r1--baseline",
+      "case": "final-correction-weekday-origin",
+      "family": "final-correction-weekday-origin",
+      "partition": "final-holdout",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 1,
+      "arm": "baseline"
+    },
+    {
+      "id": "final-correction-weekday-origin--mimo9b-heretic-q4--r1--candidate",
+      "case": "final-correction-weekday-origin",
+      "family": "final-correction-weekday-origin",
+      "partition": "final-holdout",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 1,
+      "arm": "candidate"
+    },
+    {
+      "id": "final-correction-weekday-origin--mimo9b-heretic-q4--r2--candidate",
+      "case": "final-correction-weekday-origin",
+      "family": "final-correction-weekday-origin",
+      "partition": "final-holdout",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 2,
+      "arm": "candidate"
+    },
+    {
+      "id": "final-correction-weekday-origin--mimo9b-heretic-q4--r2--baseline",
+      "case": "final-correction-weekday-origin",
+      "family": "final-correction-weekday-origin",
+      "partition": "final-holdout",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 2,
+      "arm": "baseline"
+    },
+    {
+      "id": "final-correction-weekday-origin--mimo9b-heretic-q4--r3--baseline",
+      "case": "final-correction-weekday-origin",
+      "family": "final-correction-weekday-origin",
+      "partition": "final-holdout",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 3,
+      "arm": "baseline"
+    },
+    {
+      "id": "final-correction-weekday-origin--mimo9b-heretic-q4--r3--candidate",
+      "case": "final-correction-weekday-origin",
+      "family": "final-correction-weekday-origin",
+      "partition": "final-holdout",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 3,
+      "arm": "candidate"
+    },
+    {
+      "id": "final-dirty-inventory-transfer--josiefied7b-abliterated-q4--r1--baseline",
+      "case": "final-dirty-inventory-transfer",
+      "family": "final-dirty-inventory-transfer",
+      "partition": "final-holdout",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 1,
+      "arm": "baseline"
+    },
+    {
+      "id": "final-dirty-inventory-transfer--josiefied7b-abliterated-q4--r1--candidate",
+      "case": "final-dirty-inventory-transfer",
+      "family": "final-dirty-inventory-transfer",
+      "partition": "final-holdout",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 1,
+      "arm": "candidate"
+    },
+    {
+      "id": "final-dirty-inventory-transfer--josiefied7b-abliterated-q4--r2--candidate",
+      "case": "final-dirty-inventory-transfer",
+      "family": "final-dirty-inventory-transfer",
+      "partition": "final-holdout",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 2,
+      "arm": "candidate"
+    },
+    {
+      "id": "final-dirty-inventory-transfer--josiefied7b-abliterated-q4--r2--baseline",
+      "case": "final-dirty-inventory-transfer",
+      "family": "final-dirty-inventory-transfer",
+      "partition": "final-holdout",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 2,
+      "arm": "baseline"
+    },
+    {
+      "id": "final-dirty-inventory-transfer--josiefied7b-abliterated-q4--r3--baseline",
+      "case": "final-dirty-inventory-transfer",
+      "family": "final-dirty-inventory-transfer",
+      "partition": "final-holdout",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 3,
+      "arm": "baseline"
+    },
+    {
+      "id": "final-dirty-inventory-transfer--josiefied7b-abliterated-q4--r3--candidate",
+      "case": "final-dirty-inventory-transfer",
+      "family": "final-dirty-inventory-transfer",
+      "partition": "final-holdout",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 3,
+      "arm": "candidate"
+    },
+    {
+      "id": "final-dirty-inventory-transfer--mimo9b-heretic-q4--r1--baseline",
+      "case": "final-dirty-inventory-transfer",
+      "family": "final-dirty-inventory-transfer",
+      "partition": "final-holdout",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 1,
+      "arm": "baseline"
+    },
+    {
+      "id": "final-dirty-inventory-transfer--mimo9b-heretic-q4--r1--candidate",
+      "case": "final-dirty-inventory-transfer",
+      "family": "final-dirty-inventory-transfer",
+      "partition": "final-holdout",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 1,
+      "arm": "candidate"
+    },
+    {
+      "id": "final-dirty-inventory-transfer--mimo9b-heretic-q4--r2--candidate",
+      "case": "final-dirty-inventory-transfer",
+      "family": "final-dirty-inventory-transfer",
+      "partition": "final-holdout",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 2,
+      "arm": "candidate"
+    },
+    {
+      "id": "final-dirty-inventory-transfer--mimo9b-heretic-q4--r2--baseline",
+      "case": "final-dirty-inventory-transfer",
+      "family": "final-dirty-inventory-transfer",
+      "partition": "final-holdout",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 2,
+      "arm": "baseline"
+    },
+    {
+      "id": "final-dirty-inventory-transfer--mimo9b-heretic-q4--r3--baseline",
+      "case": "final-dirty-inventory-transfer",
+      "family": "final-dirty-inventory-transfer",
+      "partition": "final-holdout",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 3,
+      "arm": "baseline"
+    },
+    {
+      "id": "final-dirty-inventory-transfer--mimo9b-heretic-q4--r3--candidate",
+      "case": "final-dirty-inventory-transfer",
+      "family": "final-dirty-inventory-transfer",
+      "partition": "final-holdout",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 3,
+      "arm": "candidate"
+    },
+    {
+      "id": "final-dirty-priority-queue--josiefied7b-abliterated-q4--r1--baseline",
+      "case": "final-dirty-priority-queue",
+      "family": "final-dirty-priority-queue",
+      "partition": "final-holdout",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 1,
+      "arm": "baseline"
+    },
+    {
+      "id": "final-dirty-priority-queue--josiefied7b-abliterated-q4--r1--candidate",
+      "case": "final-dirty-priority-queue",
+      "family": "final-dirty-priority-queue",
+      "partition": "final-holdout",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 1,
+      "arm": "candidate"
+    },
+    {
+      "id": "final-dirty-priority-queue--josiefied7b-abliterated-q4--r2--candidate",
+      "case": "final-dirty-priority-queue",
+      "family": "final-dirty-priority-queue",
+      "partition": "final-holdout",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 2,
+      "arm": "candidate"
+    },
+    {
+      "id": "final-dirty-priority-queue--josiefied7b-abliterated-q4--r2--baseline",
+      "case": "final-dirty-priority-queue",
+      "family": "final-dirty-priority-queue",
+      "partition": "final-holdout",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 2,
+      "arm": "baseline"
+    },
+    {
+      "id": "final-dirty-priority-queue--josiefied7b-abliterated-q4--r3--baseline",
+      "case": "final-dirty-priority-queue",
+      "family": "final-dirty-priority-queue",
+      "partition": "final-holdout",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 3,
+      "arm": "baseline"
+    },
+    {
+      "id": "final-dirty-priority-queue--josiefied7b-abliterated-q4--r3--candidate",
+      "case": "final-dirty-priority-queue",
+      "family": "final-dirty-priority-queue",
+      "partition": "final-holdout",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 3,
+      "arm": "candidate"
+    },
+    {
+      "id": "final-dirty-priority-queue--mimo9b-heretic-q4--r1--baseline",
+      "case": "final-dirty-priority-queue",
+      "family": "final-dirty-priority-queue",
+      "partition": "final-holdout",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 1,
+      "arm": "baseline"
+    },
+    {
+      "id": "final-dirty-priority-queue--mimo9b-heretic-q4--r1--candidate",
+      "case": "final-dirty-priority-queue",
+      "family": "final-dirty-priority-queue",
+      "partition": "final-holdout",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 1,
+      "arm": "candidate"
+    },
+    {
+      "id": "final-dirty-priority-queue--mimo9b-heretic-q4--r2--candidate",
+      "case": "final-dirty-priority-queue",
+      "family": "final-dirty-priority-queue",
+      "partition": "final-holdout",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 2,
+      "arm": "candidate"
+    },
+    {
+      "id": "final-dirty-priority-queue--mimo9b-heretic-q4--r2--baseline",
+      "case": "final-dirty-priority-queue",
+      "family": "final-dirty-priority-queue",
+      "partition": "final-holdout",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 2,
+      "arm": "baseline"
+    },
+    {
+      "id": "final-dirty-priority-queue--mimo9b-heretic-q4--r3--baseline",
+      "case": "final-dirty-priority-queue",
+      "family": "final-dirty-priority-queue",
+      "partition": "final-holdout",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 3,
+      "arm": "baseline"
+    },
+    {
+      "id": "final-dirty-priority-queue--mimo9b-heretic-q4--r3--candidate",
+      "case": "final-dirty-priority-queue",
+      "family": "final-dirty-priority-queue",
+      "partition": "final-holdout",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 3,
+      "arm": "candidate"
+    },
+    {
+      "id": "final-display-width--josiefied7b-abliterated-q4--r1--baseline",
+      "case": "final-display-width",
+      "family": "final-display-width",
+      "partition": "final-holdout",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 1,
+      "arm": "baseline"
+    },
+    {
+      "id": "final-display-width--josiefied7b-abliterated-q4--r1--candidate",
+      "case": "final-display-width",
+      "family": "final-display-width",
+      "partition": "final-holdout",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 1,
+      "arm": "candidate"
+    },
+    {
+      "id": "final-display-width--josiefied7b-abliterated-q4--r2--candidate",
+      "case": "final-display-width",
+      "family": "final-display-width",
+      "partition": "final-holdout",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 2,
+      "arm": "candidate"
+    },
+    {
+      "id": "final-display-width--josiefied7b-abliterated-q4--r2--baseline",
+      "case": "final-display-width",
+      "family": "final-display-width",
+      "partition": "final-holdout",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 2,
+      "arm": "baseline"
+    },
+    {
+      "id": "final-display-width--josiefied7b-abliterated-q4--r3--baseline",
+      "case": "final-display-width",
+      "family": "final-display-width",
+      "partition": "final-holdout",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 3,
+      "arm": "baseline"
+    },
+    {
+      "id": "final-display-width--josiefied7b-abliterated-q4--r3--candidate",
+      "case": "final-display-width",
+      "family": "final-display-width",
+      "partition": "final-holdout",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 3,
+      "arm": "candidate"
+    },
+    {
+      "id": "final-display-width--mimo9b-heretic-q4--r1--baseline",
+      "case": "final-display-width",
+      "family": "final-display-width",
+      "partition": "final-holdout",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 1,
+      "arm": "baseline"
+    },
+    {
+      "id": "final-display-width--mimo9b-heretic-q4--r1--candidate",
+      "case": "final-display-width",
+      "family": "final-display-width",
+      "partition": "final-holdout",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 1,
+      "arm": "candidate"
+    },
+    {
+      "id": "final-display-width--mimo9b-heretic-q4--r2--candidate",
+      "case": "final-display-width",
+      "family": "final-display-width",
+      "partition": "final-holdout",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 2,
+      "arm": "candidate"
+    },
+    {
+      "id": "final-display-width--mimo9b-heretic-q4--r2--baseline",
+      "case": "final-display-width",
+      "family": "final-display-width",
+      "partition": "final-holdout",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 2,
+      "arm": "baseline"
+    },
+    {
+      "id": "final-display-width--mimo9b-heretic-q4--r3--baseline",
+      "case": "final-display-width",
+      "family": "final-display-width",
+      "partition": "final-holdout",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 3,
+      "arm": "baseline"
+    },
+    {
+      "id": "final-display-width--mimo9b-heretic-q4--r3--candidate",
+      "case": "final-display-width",
+      "family": "final-display-width",
+      "partition": "final-holdout",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 3,
+      "arm": "candidate"
+    },
+    {
+      "id": "final-edit-distance--josiefied7b-abliterated-q4--r1--baseline",
+      "case": "final-edit-distance",
+      "family": "final-edit-distance",
+      "partition": "final-holdout",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 1,
+      "arm": "baseline"
+    },
+    {
+      "id": "final-edit-distance--josiefied7b-abliterated-q4--r1--candidate",
+      "case": "final-edit-distance",
+      "family": "final-edit-distance",
+      "partition": "final-holdout",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 1,
+      "arm": "candidate"
+    },
+    {
+      "id": "final-edit-distance--josiefied7b-abliterated-q4--r2--candidate",
+      "case": "final-edit-distance",
+      "family": "final-edit-distance",
+      "partition": "final-holdout",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 2,
+      "arm": "candidate"
+    },
+    {
+      "id": "final-edit-distance--josiefied7b-abliterated-q4--r2--baseline",
+      "case": "final-edit-distance",
+      "family": "final-edit-distance",
+      "partition": "final-holdout",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 2,
+      "arm": "baseline"
+    },
+    {
+      "id": "final-edit-distance--josiefied7b-abliterated-q4--r3--baseline",
+      "case": "final-edit-distance",
+      "family": "final-edit-distance",
+      "partition": "final-holdout",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 3,
+      "arm": "baseline"
+    },
+    {
+      "id": "final-edit-distance--josiefied7b-abliterated-q4--r3--candidate",
+      "case": "final-edit-distance",
+      "family": "final-edit-distance",
+      "partition": "final-holdout",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 3,
+      "arm": "candidate"
+    },
+    {
+      "id": "final-edit-distance--mimo9b-heretic-q4--r1--baseline",
+      "case": "final-edit-distance",
+      "family": "final-edit-distance",
+      "partition": "final-holdout",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 1,
+      "arm": "baseline"
+    },
+    {
+      "id": "final-edit-distance--mimo9b-heretic-q4--r1--candidate",
+      "case": "final-edit-distance",
+      "family": "final-edit-distance",
+      "partition": "final-holdout",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 1,
+      "arm": "candidate"
+    },
+    {
+      "id": "final-edit-distance--mimo9b-heretic-q4--r2--candidate",
+      "case": "final-edit-distance",
+      "family": "final-edit-distance",
+      "partition": "final-holdout",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 2,
+      "arm": "candidate"
+    },
+    {
+      "id": "final-edit-distance--mimo9b-heretic-q4--r2--baseline",
+      "case": "final-edit-distance",
+      "family": "final-edit-distance",
+      "partition": "final-holdout",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 2,
+      "arm": "baseline"
+    },
+    {
+      "id": "final-edit-distance--mimo9b-heretic-q4--r3--baseline",
+      "case": "final-edit-distance",
+      "family": "final-edit-distance",
+      "partition": "final-holdout",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 3,
+      "arm": "baseline"
+    },
+    {
+      "id": "final-edit-distance--mimo9b-heretic-q4--r3--candidate",
+      "case": "final-edit-distance",
+      "family": "final-edit-distance",
+      "partition": "final-holdout",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 3,
+      "arm": "candidate"
+    },
+    {
+      "id": "final-explicit-null-configuration--josiefied7b-abliterated-q4--r1--baseline",
+      "case": "final-explicit-null-configuration",
+      "family": "final-explicit-null-configuration",
+      "partition": "final-holdout",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 1,
+      "arm": "baseline"
+    },
+    {
+      "id": "final-explicit-null-configuration--josiefied7b-abliterated-q4--r1--candidate",
+      "case": "final-explicit-null-configuration",
+      "family": "final-explicit-null-configuration",
+      "partition": "final-holdout",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 1,
+      "arm": "candidate"
+    },
+    {
+      "id": "final-explicit-null-configuration--josiefied7b-abliterated-q4--r2--candidate",
+      "case": "final-explicit-null-configuration",
+      "family": "final-explicit-null-configuration",
+      "partition": "final-holdout",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 2,
+      "arm": "candidate"
+    },
+    {
+      "id": "final-explicit-null-configuration--josiefied7b-abliterated-q4--r2--baseline",
+      "case": "final-explicit-null-configuration",
+      "family": "final-explicit-null-configuration",
+      "partition": "final-holdout",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 2,
+      "arm": "baseline"
+    },
+    {
+      "id": "final-explicit-null-configuration--josiefied7b-abliterated-q4--r3--baseline",
+      "case": "final-explicit-null-configuration",
+      "family": "final-explicit-null-configuration",
+      "partition": "final-holdout",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 3,
+      "arm": "baseline"
+    },
+    {
+      "id": "final-explicit-null-configuration--josiefied7b-abliterated-q4--r3--candidate",
+      "case": "final-explicit-null-configuration",
+      "family": "final-explicit-null-configuration",
+      "partition": "final-holdout",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 3,
+      "arm": "candidate"
+    },
+    {
+      "id": "final-explicit-null-configuration--mimo9b-heretic-q4--r1--baseline",
+      "case": "final-explicit-null-configuration",
+      "family": "final-explicit-null-configuration",
+      "partition": "final-holdout",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 1,
+      "arm": "baseline"
+    },
+    {
+      "id": "final-explicit-null-configuration--mimo9b-heretic-q4--r1--candidate",
+      "case": "final-explicit-null-configuration",
+      "family": "final-explicit-null-configuration",
+      "partition": "final-holdout",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 1,
+      "arm": "candidate"
+    },
+    {
+      "id": "final-explicit-null-configuration--mimo9b-heretic-q4--r2--candidate",
+      "case": "final-explicit-null-configuration",
+      "family": "final-explicit-null-configuration",
+      "partition": "final-holdout",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 2,
+      "arm": "candidate"
+    },
+    {
+      "id": "final-explicit-null-configuration--mimo9b-heretic-q4--r2--baseline",
+      "case": "final-explicit-null-configuration",
+      "family": "final-explicit-null-configuration",
+      "partition": "final-holdout",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 2,
+      "arm": "baseline"
+    },
+    {
+      "id": "final-explicit-null-configuration--mimo9b-heretic-q4--r3--baseline",
+      "case": "final-explicit-null-configuration",
+      "family": "final-explicit-null-configuration",
+      "partition": "final-holdout",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 3,
+      "arm": "baseline"
+    },
+    {
+      "id": "final-explicit-null-configuration--mimo9b-heretic-q4--r3--candidate",
+      "case": "final-explicit-null-configuration",
+      "family": "final-explicit-null-configuration",
+      "partition": "final-holdout",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 3,
+      "arm": "candidate"
+    },
+    {
+      "id": "final-filename-suffix-chain--josiefied7b-abliterated-q4--r1--baseline",
+      "case": "final-filename-suffix-chain",
+      "family": "final-filename-suffix-chain",
+      "partition": "final-holdout",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 1,
+      "arm": "baseline"
+    },
+    {
+      "id": "final-filename-suffix-chain--josiefied7b-abliterated-q4--r1--candidate",
+      "case": "final-filename-suffix-chain",
+      "family": "final-filename-suffix-chain",
+      "partition": "final-holdout",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 1,
+      "arm": "candidate"
+    },
+    {
+      "id": "final-filename-suffix-chain--josiefied7b-abliterated-q4--r2--candidate",
+      "case": "final-filename-suffix-chain",
+      "family": "final-filename-suffix-chain",
+      "partition": "final-holdout",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 2,
+      "arm": "candidate"
+    },
+    {
+      "id": "final-filename-suffix-chain--josiefied7b-abliterated-q4--r2--baseline",
+      "case": "final-filename-suffix-chain",
+      "family": "final-filename-suffix-chain",
+      "partition": "final-holdout",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 2,
+      "arm": "baseline"
+    },
+    {
+      "id": "final-filename-suffix-chain--josiefied7b-abliterated-q4--r3--baseline",
+      "case": "final-filename-suffix-chain",
+      "family": "final-filename-suffix-chain",
+      "partition": "final-holdout",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 3,
+      "arm": "baseline"
+    },
+    {
+      "id": "final-filename-suffix-chain--josiefied7b-abliterated-q4--r3--candidate",
+      "case": "final-filename-suffix-chain",
+      "family": "final-filename-suffix-chain",
+      "partition": "final-holdout",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 3,
+      "arm": "candidate"
+    },
+    {
+      "id": "final-filename-suffix-chain--mimo9b-heretic-q4--r1--baseline",
+      "case": "final-filename-suffix-chain",
+      "family": "final-filename-suffix-chain",
+      "partition": "final-holdout",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 1,
+      "arm": "baseline"
+    },
+    {
+      "id": "final-filename-suffix-chain--mimo9b-heretic-q4--r1--candidate",
+      "case": "final-filename-suffix-chain",
+      "family": "final-filename-suffix-chain",
+      "partition": "final-holdout",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 1,
+      "arm": "candidate"
+    },
+    {
+      "id": "final-filename-suffix-chain--mimo9b-heretic-q4--r2--candidate",
+      "case": "final-filename-suffix-chain",
+      "family": "final-filename-suffix-chain",
+      "partition": "final-holdout",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 2,
+      "arm": "candidate"
+    },
+    {
+      "id": "final-filename-suffix-chain--mimo9b-heretic-q4--r2--baseline",
+      "case": "final-filename-suffix-chain",
+      "family": "final-filename-suffix-chain",
+      "partition": "final-holdout",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 2,
+      "arm": "baseline"
+    },
+    {
+      "id": "final-filename-suffix-chain--mimo9b-heretic-q4--r3--baseline",
+      "case": "final-filename-suffix-chain",
+      "family": "final-filename-suffix-chain",
+      "partition": "final-holdout",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 3,
+      "arm": "baseline"
+    },
+    {
+      "id": "final-filename-suffix-chain--mimo9b-heretic-q4--r3--candidate",
+      "case": "final-filename-suffix-chain",
+      "family": "final-filename-suffix-chain",
+      "partition": "final-holdout",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 3,
+      "arm": "candidate"
+    },
+    {
+      "id": "final-hex-color--josiefied7b-abliterated-q4--r1--baseline",
+      "case": "final-hex-color",
+      "family": "final-hex-color",
+      "partition": "final-holdout",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 1,
+      "arm": "baseline"
+    },
+    {
+      "id": "final-hex-color--josiefied7b-abliterated-q4--r1--candidate",
+      "case": "final-hex-color",
+      "family": "final-hex-color",
+      "partition": "final-holdout",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 1,
+      "arm": "candidate"
+    },
+    {
+      "id": "final-hex-color--josiefied7b-abliterated-q4--r2--candidate",
+      "case": "final-hex-color",
+      "family": "final-hex-color",
+      "partition": "final-holdout",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 2,
+      "arm": "candidate"
+    },
+    {
+      "id": "final-hex-color--josiefied7b-abliterated-q4--r2--baseline",
+      "case": "final-hex-color",
+      "family": "final-hex-color",
+      "partition": "final-holdout",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 2,
+      "arm": "baseline"
+    },
+    {
+      "id": "final-hex-color--josiefied7b-abliterated-q4--r3--baseline",
+      "case": "final-hex-color",
+      "family": "final-hex-color",
+      "partition": "final-holdout",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 3,
+      "arm": "baseline"
+    },
+    {
+      "id": "final-hex-color--josiefied7b-abliterated-q4--r3--candidate",
+      "case": "final-hex-color",
+      "family": "final-hex-color",
+      "partition": "final-holdout",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 3,
+      "arm": "candidate"
+    },
+    {
+      "id": "final-hex-color--mimo9b-heretic-q4--r1--baseline",
+      "case": "final-hex-color",
+      "family": "final-hex-color",
+      "partition": "final-holdout",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 1,
+      "arm": "baseline"
+    },
+    {
+      "id": "final-hex-color--mimo9b-heretic-q4--r1--candidate",
+      "case": "final-hex-color",
+      "family": "final-hex-color",
+      "partition": "final-holdout",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 1,
+      "arm": "candidate"
+    },
+    {
+      "id": "final-hex-color--mimo9b-heretic-q4--r2--candidate",
+      "case": "final-hex-color",
+      "family": "final-hex-color",
+      "partition": "final-holdout",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 2,
+      "arm": "candidate"
+    },
+    {
+      "id": "final-hex-color--mimo9b-heretic-q4--r2--baseline",
+      "case": "final-hex-color",
+      "family": "final-hex-color",
+      "partition": "final-holdout",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 2,
+      "arm": "baseline"
+    },
+    {
+      "id": "final-hex-color--mimo9b-heretic-q4--r3--baseline",
+      "case": "final-hex-color",
+      "family": "final-hex-color",
+      "partition": "final-holdout",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 3,
+      "arm": "baseline"
+    },
+    {
+      "id": "final-hex-color--mimo9b-heretic-q4--r3--candidate",
+      "case": "final-hex-color",
+      "family": "final-hex-color",
+      "partition": "final-holdout",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 3,
+      "arm": "candidate"
+    },
+    {
+      "id": "final-integer-range-format--josiefied7b-abliterated-q4--r1--baseline",
+      "case": "final-integer-range-format",
+      "family": "final-integer-range-format",
+      "partition": "final-holdout",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 1,
+      "arm": "baseline"
+    },
+    {
+      "id": "final-integer-range-format--josiefied7b-abliterated-q4--r1--candidate",
+      "case": "final-integer-range-format",
+      "family": "final-integer-range-format",
+      "partition": "final-holdout",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 1,
+      "arm": "candidate"
+    },
+    {
+      "id": "final-integer-range-format--josiefied7b-abliterated-q4--r2--candidate",
+      "case": "final-integer-range-format",
+      "family": "final-integer-range-format",
+      "partition": "final-holdout",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 2,
+      "arm": "candidate"
+    },
+    {
+      "id": "final-integer-range-format--josiefied7b-abliterated-q4--r2--baseline",
+      "case": "final-integer-range-format",
+      "family": "final-integer-range-format",
+      "partition": "final-holdout",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 2,
+      "arm": "baseline"
+    },
+    {
+      "id": "final-integer-range-format--josiefied7b-abliterated-q4--r3--baseline",
+      "case": "final-integer-range-format",
+      "family": "final-integer-range-format",
+      "partition": "final-holdout",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 3,
+      "arm": "baseline"
+    },
+    {
+      "id": "final-integer-range-format--josiefied7b-abliterated-q4--r3--candidate",
+      "case": "final-integer-range-format",
+      "family": "final-integer-range-format",
+      "partition": "final-holdout",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 3,
+      "arm": "candidate"
+    },
+    {
+      "id": "final-integer-range-format--mimo9b-heretic-q4--r1--baseline",
+      "case": "final-integer-range-format",
+      "family": "final-integer-range-format",
+      "partition": "final-holdout",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 1,
+      "arm": "baseline"
+    },
+    {
+      "id": "final-integer-range-format--mimo9b-heretic-q4--r1--candidate",
+      "case": "final-integer-range-format",
+      "family": "final-integer-range-format",
+      "partition": "final-holdout",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 1,
+      "arm": "candidate"
+    },
+    {
+      "id": "final-integer-range-format--mimo9b-heretic-q4--r2--candidate",
+      "case": "final-integer-range-format",
+      "family": "final-integer-range-format",
+      "partition": "final-holdout",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 2,
+      "arm": "candidate"
+    },
+    {
+      "id": "final-integer-range-format--mimo9b-heretic-q4--r2--baseline",
+      "case": "final-integer-range-format",
+      "family": "final-integer-range-format",
+      "partition": "final-holdout",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 2,
+      "arm": "baseline"
+    },
+    {
+      "id": "final-integer-range-format--mimo9b-heretic-q4--r3--baseline",
+      "case": "final-integer-range-format",
+      "family": "final-integer-range-format",
+      "partition": "final-holdout",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 3,
+      "arm": "baseline"
+    },
+    {
+      "id": "final-integer-range-format--mimo9b-heretic-q4--r3--candidate",
+      "case": "final-integer-range-format",
+      "family": "final-integer-range-format",
+      "partition": "final-holdout",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 3,
+      "arm": "candidate"
+    },
+    {
+      "id": "final-integer-tax-rounding--josiefied7b-abliterated-q4--r1--baseline",
+      "case": "final-integer-tax-rounding",
+      "family": "final-integer-tax-rounding",
+      "partition": "final-holdout",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 1,
+      "arm": "baseline"
+    },
+    {
+      "id": "final-integer-tax-rounding--josiefied7b-abliterated-q4--r1--candidate",
+      "case": "final-integer-tax-rounding",
+      "family": "final-integer-tax-rounding",
+      "partition": "final-holdout",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 1,
+      "arm": "candidate"
+    },
+    {
+      "id": "final-integer-tax-rounding--josiefied7b-abliterated-q4--r2--candidate",
+      "case": "final-integer-tax-rounding",
+      "family": "final-integer-tax-rounding",
+      "partition": "final-holdout",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 2,
+      "arm": "candidate"
+    },
+    {
+      "id": "final-integer-tax-rounding--josiefied7b-abliterated-q4--r2--baseline",
+      "case": "final-integer-tax-rounding",
+      "family": "final-integer-tax-rounding",
+      "partition": "final-holdout",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 2,
+      "arm": "baseline"
+    },
+    {
+      "id": "final-integer-tax-rounding--josiefied7b-abliterated-q4--r3--baseline",
+      "case": "final-integer-tax-rounding",
+      "family": "final-integer-tax-rounding",
+      "partition": "final-holdout",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 3,
+      "arm": "baseline"
+    },
+    {
+      "id": "final-integer-tax-rounding--josiefied7b-abliterated-q4--r3--candidate",
+      "case": "final-integer-tax-rounding",
+      "family": "final-integer-tax-rounding",
+      "partition": "final-holdout",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 3,
+      "arm": "candidate"
+    },
+    {
+      "id": "final-integer-tax-rounding--mimo9b-heretic-q4--r1--baseline",
+      "case": "final-integer-tax-rounding",
+      "family": "final-integer-tax-rounding",
+      "partition": "final-holdout",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 1,
+      "arm": "baseline"
+    },
+    {
+      "id": "final-integer-tax-rounding--mimo9b-heretic-q4--r1--candidate",
+      "case": "final-integer-tax-rounding",
+      "family": "final-integer-tax-rounding",
+      "partition": "final-holdout",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 1,
+      "arm": "candidate"
+    },
+    {
+      "id": "final-integer-tax-rounding--mimo9b-heretic-q4--r2--candidate",
+      "case": "final-integer-tax-rounding",
+      "family": "final-integer-tax-rounding",
+      "partition": "final-holdout",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 2,
+      "arm": "candidate"
+    },
+    {
+      "id": "final-integer-tax-rounding--mimo9b-heretic-q4--r2--baseline",
+      "case": "final-integer-tax-rounding",
+      "family": "final-integer-tax-rounding",
+      "partition": "final-holdout",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 2,
+      "arm": "baseline"
+    },
+    {
+      "id": "final-integer-tax-rounding--mimo9b-heretic-q4--r3--baseline",
+      "case": "final-integer-tax-rounding",
+      "family": "final-integer-tax-rounding",
+      "partition": "final-holdout",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 3,
+      "arm": "baseline"
+    },
+    {
+      "id": "final-integer-tax-rounding--mimo9b-heretic-q4--r3--candidate",
+      "case": "final-integer-tax-rounding",
+      "family": "final-integer-tax-rounding",
+      "partition": "final-holdout",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 3,
+      "arm": "candidate"
+    },
+    {
+      "id": "final-literal-template-expansion--josiefied7b-abliterated-q4--r1--baseline",
+      "case": "final-literal-template-expansion",
+      "family": "final-literal-template-expansion",
+      "partition": "final-holdout",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 1,
+      "arm": "baseline"
+    },
+    {
+      "id": "final-literal-template-expansion--josiefied7b-abliterated-q4--r1--candidate",
+      "case": "final-literal-template-expansion",
+      "family": "final-literal-template-expansion",
+      "partition": "final-holdout",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 1,
+      "arm": "candidate"
+    },
+    {
+      "id": "final-literal-template-expansion--josiefied7b-abliterated-q4--r2--candidate",
+      "case": "final-literal-template-expansion",
+      "family": "final-literal-template-expansion",
+      "partition": "final-holdout",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 2,
+      "arm": "candidate"
+    },
+    {
+      "id": "final-literal-template-expansion--josiefied7b-abliterated-q4--r2--baseline",
+      "case": "final-literal-template-expansion",
+      "family": "final-literal-template-expansion",
+      "partition": "final-holdout",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 2,
+      "arm": "baseline"
+    },
+    {
+      "id": "final-literal-template-expansion--josiefied7b-abliterated-q4--r3--baseline",
+      "case": "final-literal-template-expansion",
+      "family": "final-literal-template-expansion",
+      "partition": "final-holdout",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 3,
+      "arm": "baseline"
+    },
+    {
+      "id": "final-literal-template-expansion--josiefied7b-abliterated-q4--r3--candidate",
+      "case": "final-literal-template-expansion",
+      "family": "final-literal-template-expansion",
+      "partition": "final-holdout",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 3,
+      "arm": "candidate"
+    },
+    {
+      "id": "final-literal-template-expansion--mimo9b-heretic-q4--r1--baseline",
+      "case": "final-literal-template-expansion",
+      "family": "final-literal-template-expansion",
+      "partition": "final-holdout",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 1,
+      "arm": "baseline"
+    },
+    {
+      "id": "final-literal-template-expansion--mimo9b-heretic-q4--r1--candidate",
+      "case": "final-literal-template-expansion",
+      "family": "final-literal-template-expansion",
+      "partition": "final-holdout",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 1,
+      "arm": "candidate"
+    },
+    {
+      "id": "final-literal-template-expansion--mimo9b-heretic-q4--r2--candidate",
+      "case": "final-literal-template-expansion",
+      "family": "final-literal-template-expansion",
+      "partition": "final-holdout",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 2,
+      "arm": "candidate"
+    },
+    {
+      "id": "final-literal-template-expansion--mimo9b-heretic-q4--r2--baseline",
+      "case": "final-literal-template-expansion",
+      "family": "final-literal-template-expansion",
+      "partition": "final-holdout",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 2,
+      "arm": "baseline"
+    },
+    {
+      "id": "final-literal-template-expansion--mimo9b-heretic-q4--r3--baseline",
+      "case": "final-literal-template-expansion",
+      "family": "final-literal-template-expansion",
+      "partition": "final-holdout",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 3,
+      "arm": "baseline"
+    },
+    {
+      "id": "final-literal-template-expansion--mimo9b-heretic-q4--r3--candidate",
+      "case": "final-literal-template-expansion",
+      "family": "final-literal-template-expansion",
+      "partition": "final-holdout",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 3,
+      "arm": "candidate"
+    },
+    {
+      "id": "final-multifile-unit-conversion--josiefied7b-abliterated-q4--r1--baseline",
+      "case": "final-multifile-unit-conversion",
+      "family": "final-multifile-unit-conversion",
+      "partition": "final-holdout",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 1,
+      "arm": "baseline"
+    },
+    {
+      "id": "final-multifile-unit-conversion--josiefied7b-abliterated-q4--r1--candidate",
+      "case": "final-multifile-unit-conversion",
+      "family": "final-multifile-unit-conversion",
+      "partition": "final-holdout",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 1,
+      "arm": "candidate"
+    },
+    {
+      "id": "final-multifile-unit-conversion--josiefied7b-abliterated-q4--r2--candidate",
+      "case": "final-multifile-unit-conversion",
+      "family": "final-multifile-unit-conversion",
+      "partition": "final-holdout",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 2,
+      "arm": "candidate"
+    },
+    {
+      "id": "final-multifile-unit-conversion--josiefied7b-abliterated-q4--r2--baseline",
+      "case": "final-multifile-unit-conversion",
+      "family": "final-multifile-unit-conversion",
+      "partition": "final-holdout",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 2,
+      "arm": "baseline"
+    },
+    {
+      "id": "final-multifile-unit-conversion--josiefied7b-abliterated-q4--r3--baseline",
+      "case": "final-multifile-unit-conversion",
+      "family": "final-multifile-unit-conversion",
+      "partition": "final-holdout",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 3,
+      "arm": "baseline"
+    },
+    {
+      "id": "final-multifile-unit-conversion--josiefied7b-abliterated-q4--r3--candidate",
+      "case": "final-multifile-unit-conversion",
+      "family": "final-multifile-unit-conversion",
+      "partition": "final-holdout",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 3,
+      "arm": "candidate"
+    },
+    {
+      "id": "final-multifile-unit-conversion--mimo9b-heretic-q4--r1--baseline",
+      "case": "final-multifile-unit-conversion",
+      "family": "final-multifile-unit-conversion",
+      "partition": "final-holdout",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 1,
+      "arm": "baseline"
+    },
+    {
+      "id": "final-multifile-unit-conversion--mimo9b-heretic-q4--r1--candidate",
+      "case": "final-multifile-unit-conversion",
+      "family": "final-multifile-unit-conversion",
+      "partition": "final-holdout",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 1,
+      "arm": "candidate"
+    },
+    {
+      "id": "final-multifile-unit-conversion--mimo9b-heretic-q4--r2--candidate",
+      "case": "final-multifile-unit-conversion",
+      "family": "final-multifile-unit-conversion",
+      "partition": "final-holdout",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 2,
+      "arm": "candidate"
+    },
+    {
+      "id": "final-multifile-unit-conversion--mimo9b-heretic-q4--r2--baseline",
+      "case": "final-multifile-unit-conversion",
+      "family": "final-multifile-unit-conversion",
+      "partition": "final-holdout",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 2,
+      "arm": "baseline"
+    },
+    {
+      "id": "final-multifile-unit-conversion--mimo9b-heretic-q4--r3--baseline",
+      "case": "final-multifile-unit-conversion",
+      "family": "final-multifile-unit-conversion",
+      "partition": "final-holdout",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 3,
+      "arm": "baseline"
+    },
+    {
+      "id": "final-multifile-unit-conversion--mimo9b-heretic-q4--r3--candidate",
+      "case": "final-multifile-unit-conversion",
+      "family": "final-multifile-unit-conversion",
+      "partition": "final-holdout",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 3,
+      "arm": "candidate"
+    },
+    {
+      "id": "final-ordered-intersection--josiefied7b-abliterated-q4--r1--baseline",
+      "case": "final-ordered-intersection",
+      "family": "final-ordered-intersection",
+      "partition": "final-holdout",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 1,
+      "arm": "baseline"
+    },
+    {
+      "id": "final-ordered-intersection--josiefied7b-abliterated-q4--r1--candidate",
+      "case": "final-ordered-intersection",
+      "family": "final-ordered-intersection",
+      "partition": "final-holdout",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 1,
+      "arm": "candidate"
+    },
+    {
+      "id": "final-ordered-intersection--josiefied7b-abliterated-q4--r2--candidate",
+      "case": "final-ordered-intersection",
+      "family": "final-ordered-intersection",
+      "partition": "final-holdout",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 2,
+      "arm": "candidate"
+    },
+    {
+      "id": "final-ordered-intersection--josiefied7b-abliterated-q4--r2--baseline",
+      "case": "final-ordered-intersection",
+      "family": "final-ordered-intersection",
+      "partition": "final-holdout",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 2,
+      "arm": "baseline"
+    },
+    {
+      "id": "final-ordered-intersection--josiefied7b-abliterated-q4--r3--baseline",
+      "case": "final-ordered-intersection",
+      "family": "final-ordered-intersection",
+      "partition": "final-holdout",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 3,
+      "arm": "baseline"
+    },
+    {
+      "id": "final-ordered-intersection--josiefied7b-abliterated-q4--r3--candidate",
+      "case": "final-ordered-intersection",
+      "family": "final-ordered-intersection",
+      "partition": "final-holdout",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 3,
+      "arm": "candidate"
+    },
+    {
+      "id": "final-ordered-intersection--mimo9b-heretic-q4--r1--baseline",
+      "case": "final-ordered-intersection",
+      "family": "final-ordered-intersection",
+      "partition": "final-holdout",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 1,
+      "arm": "baseline"
+    },
+    {
+      "id": "final-ordered-intersection--mimo9b-heretic-q4--r1--candidate",
+      "case": "final-ordered-intersection",
+      "family": "final-ordered-intersection",
+      "partition": "final-holdout",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 1,
+      "arm": "candidate"
+    },
+    {
+      "id": "final-ordered-intersection--mimo9b-heretic-q4--r2--candidate",
+      "case": "final-ordered-intersection",
+      "family": "final-ordered-intersection",
+      "partition": "final-holdout",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 2,
+      "arm": "candidate"
+    },
+    {
+      "id": "final-ordered-intersection--mimo9b-heretic-q4--r2--baseline",
+      "case": "final-ordered-intersection",
+      "family": "final-ordered-intersection",
+      "partition": "final-holdout",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 2,
+      "arm": "baseline"
+    },
+    {
+      "id": "final-ordered-intersection--mimo9b-heretic-q4--r3--baseline",
+      "case": "final-ordered-intersection",
+      "family": "final-ordered-intersection",
+      "partition": "final-holdout",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 3,
+      "arm": "baseline"
+    },
+    {
+      "id": "final-ordered-intersection--mimo9b-heretic-q4--r3--candidate",
+      "case": "final-ordered-intersection",
+      "family": "final-ordered-intersection",
+      "partition": "final-holdout",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 3,
+      "arm": "candidate"
+    },
+    {
+      "id": "final-piecewise-interpolation--josiefied7b-abliterated-q4--r1--baseline",
+      "case": "final-piecewise-interpolation",
+      "family": "final-piecewise-interpolation",
+      "partition": "final-holdout",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 1,
+      "arm": "baseline"
+    },
+    {
+      "id": "final-piecewise-interpolation--josiefied7b-abliterated-q4--r1--candidate",
+      "case": "final-piecewise-interpolation",
+      "family": "final-piecewise-interpolation",
+      "partition": "final-holdout",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 1,
+      "arm": "candidate"
+    },
+    {
+      "id": "final-piecewise-interpolation--josiefied7b-abliterated-q4--r2--candidate",
+      "case": "final-piecewise-interpolation",
+      "family": "final-piecewise-interpolation",
+      "partition": "final-holdout",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 2,
+      "arm": "candidate"
+    },
+    {
+      "id": "final-piecewise-interpolation--josiefied7b-abliterated-q4--r2--baseline",
+      "case": "final-piecewise-interpolation",
+      "family": "final-piecewise-interpolation",
+      "partition": "final-holdout",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 2,
+      "arm": "baseline"
+    },
+    {
+      "id": "final-piecewise-interpolation--josiefied7b-abliterated-q4--r3--baseline",
+      "case": "final-piecewise-interpolation",
+      "family": "final-piecewise-interpolation",
+      "partition": "final-holdout",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 3,
+      "arm": "baseline"
+    },
+    {
+      "id": "final-piecewise-interpolation--josiefied7b-abliterated-q4--r3--candidate",
+      "case": "final-piecewise-interpolation",
+      "family": "final-piecewise-interpolation",
+      "partition": "final-holdout",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 3,
+      "arm": "candidate"
+    },
+    {
+      "id": "final-piecewise-interpolation--mimo9b-heretic-q4--r1--baseline",
+      "case": "final-piecewise-interpolation",
+      "family": "final-piecewise-interpolation",
+      "partition": "final-holdout",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 1,
+      "arm": "baseline"
+    },
+    {
+      "id": "final-piecewise-interpolation--mimo9b-heretic-q4--r1--candidate",
+      "case": "final-piecewise-interpolation",
+      "family": "final-piecewise-interpolation",
+      "partition": "final-holdout",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 1,
+      "arm": "candidate"
+    },
+    {
+      "id": "final-piecewise-interpolation--mimo9b-heretic-q4--r2--candidate",
+      "case": "final-piecewise-interpolation",
+      "family": "final-piecewise-interpolation",
+      "partition": "final-holdout",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 2,
+      "arm": "candidate"
+    },
+    {
+      "id": "final-piecewise-interpolation--mimo9b-heretic-q4--r2--baseline",
+      "case": "final-piecewise-interpolation",
+      "family": "final-piecewise-interpolation",
+      "partition": "final-holdout",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 2,
+      "arm": "baseline"
+    },
+    {
+      "id": "final-piecewise-interpolation--mimo9b-heretic-q4--r3--baseline",
+      "case": "final-piecewise-interpolation",
+      "family": "final-piecewise-interpolation",
+      "partition": "final-holdout",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 3,
+      "arm": "baseline"
+    },
+    {
+      "id": "final-piecewise-interpolation--mimo9b-heretic-q4--r3--candidate",
+      "case": "final-piecewise-interpolation",
+      "family": "final-piecewise-interpolation",
+      "partition": "final-holdout",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 3,
+      "arm": "candidate"
+    },
+    {
+      "id": "final-rational-normalization--josiefied7b-abliterated-q4--r1--baseline",
+      "case": "final-rational-normalization",
+      "family": "final-rational-normalization",
+      "partition": "final-holdout",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 1,
+      "arm": "baseline"
+    },
+    {
+      "id": "final-rational-normalization--josiefied7b-abliterated-q4--r1--candidate",
+      "case": "final-rational-normalization",
+      "family": "final-rational-normalization",
+      "partition": "final-holdout",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 1,
+      "arm": "candidate"
+    },
+    {
+      "id": "final-rational-normalization--josiefied7b-abliterated-q4--r2--candidate",
+      "case": "final-rational-normalization",
+      "family": "final-rational-normalization",
+      "partition": "final-holdout",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 2,
+      "arm": "candidate"
+    },
+    {
+      "id": "final-rational-normalization--josiefied7b-abliterated-q4--r2--baseline",
+      "case": "final-rational-normalization",
+      "family": "final-rational-normalization",
+      "partition": "final-holdout",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 2,
+      "arm": "baseline"
+    },
+    {
+      "id": "final-rational-normalization--josiefied7b-abliterated-q4--r3--baseline",
+      "case": "final-rational-normalization",
+      "family": "final-rational-normalization",
+      "partition": "final-holdout",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 3,
+      "arm": "baseline"
+    },
+    {
+      "id": "final-rational-normalization--josiefied7b-abliterated-q4--r3--candidate",
+      "case": "final-rational-normalization",
+      "family": "final-rational-normalization",
+      "partition": "final-holdout",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 3,
+      "arm": "candidate"
+    },
+    {
+      "id": "final-rational-normalization--mimo9b-heretic-q4--r1--baseline",
+      "case": "final-rational-normalization",
+      "family": "final-rational-normalization",
+      "partition": "final-holdout",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 1,
+      "arm": "baseline"
+    },
+    {
+      "id": "final-rational-normalization--mimo9b-heretic-q4--r1--candidate",
+      "case": "final-rational-normalization",
+      "family": "final-rational-normalization",
+      "partition": "final-holdout",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 1,
+      "arm": "candidate"
+    },
+    {
+      "id": "final-rational-normalization--mimo9b-heretic-q4--r2--candidate",
+      "case": "final-rational-normalization",
+      "family": "final-rational-normalization",
+      "partition": "final-holdout",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 2,
+      "arm": "candidate"
+    },
+    {
+      "id": "final-rational-normalization--mimo9b-heretic-q4--r2--baseline",
+      "case": "final-rational-normalization",
+      "family": "final-rational-normalization",
+      "partition": "final-holdout",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 2,
+      "arm": "baseline"
+    },
+    {
+      "id": "final-rational-normalization--mimo9b-heretic-q4--r3--baseline",
+      "case": "final-rational-normalization",
+      "family": "final-rational-normalization",
+      "partition": "final-holdout",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 3,
+      "arm": "baseline"
+    },
+    {
+      "id": "final-rational-normalization--mimo9b-heretic-q4--r3--candidate",
+      "case": "final-rational-normalization",
+      "family": "final-rational-normalization",
+      "partition": "final-holdout",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 3,
+      "arm": "candidate"
+    },
+    {
+      "id": "final-rectangle-intersection--josiefied7b-abliterated-q4--r1--baseline",
+      "case": "final-rectangle-intersection",
+      "family": "final-rectangle-intersection",
+      "partition": "final-holdout",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 1,
+      "arm": "baseline"
+    },
+    {
+      "id": "final-rectangle-intersection--josiefied7b-abliterated-q4--r1--candidate",
+      "case": "final-rectangle-intersection",
+      "family": "final-rectangle-intersection",
+      "partition": "final-holdout",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 1,
+      "arm": "candidate"
+    },
+    {
+      "id": "final-rectangle-intersection--josiefied7b-abliterated-q4--r2--candidate",
+      "case": "final-rectangle-intersection",
+      "family": "final-rectangle-intersection",
+      "partition": "final-holdout",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 2,
+      "arm": "candidate"
+    },
+    {
+      "id": "final-rectangle-intersection--josiefied7b-abliterated-q4--r2--baseline",
+      "case": "final-rectangle-intersection",
+      "family": "final-rectangle-intersection",
+      "partition": "final-holdout",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 2,
+      "arm": "baseline"
+    },
+    {
+      "id": "final-rectangle-intersection--josiefied7b-abliterated-q4--r3--baseline",
+      "case": "final-rectangle-intersection",
+      "family": "final-rectangle-intersection",
+      "partition": "final-holdout",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 3,
+      "arm": "baseline"
+    },
+    {
+      "id": "final-rectangle-intersection--josiefied7b-abliterated-q4--r3--candidate",
+      "case": "final-rectangle-intersection",
+      "family": "final-rectangle-intersection",
+      "partition": "final-holdout",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 3,
+      "arm": "candidate"
+    },
+    {
+      "id": "final-rectangle-intersection--mimo9b-heretic-q4--r1--baseline",
+      "case": "final-rectangle-intersection",
+      "family": "final-rectangle-intersection",
+      "partition": "final-holdout",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 1,
+      "arm": "baseline"
+    },
+    {
+      "id": "final-rectangle-intersection--mimo9b-heretic-q4--r1--candidate",
+      "case": "final-rectangle-intersection",
+      "family": "final-rectangle-intersection",
+      "partition": "final-holdout",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 1,
+      "arm": "candidate"
+    },
+    {
+      "id": "final-rectangle-intersection--mimo9b-heretic-q4--r2--candidate",
+      "case": "final-rectangle-intersection",
+      "family": "final-rectangle-intersection",
+      "partition": "final-holdout",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 2,
+      "arm": "candidate"
+    },
+    {
+      "id": "final-rectangle-intersection--mimo9b-heretic-q4--r2--baseline",
+      "case": "final-rectangle-intersection",
+      "family": "final-rectangle-intersection",
+      "partition": "final-holdout",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 2,
+      "arm": "baseline"
+    },
+    {
+      "id": "final-rectangle-intersection--mimo9b-heretic-q4--r3--baseline",
+      "case": "final-rectangle-intersection",
+      "family": "final-rectangle-intersection",
+      "partition": "final-holdout",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 3,
+      "arm": "baseline"
+    },
+    {
+      "id": "final-rectangle-intersection--mimo9b-heretic-q4--r3--candidate",
+      "case": "final-rectangle-intersection",
+      "family": "final-rectangle-intersection",
+      "partition": "final-holdout",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 3,
+      "arm": "candidate"
+    },
+    {
+      "id": "final-repository-mime-navigation--josiefied7b-abliterated-q4--r1--baseline",
+      "case": "final-repository-mime-navigation",
+      "family": "final-repository-mime-navigation",
+      "partition": "final-holdout",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 1,
+      "arm": "baseline"
+    },
+    {
+      "id": "final-repository-mime-navigation--josiefied7b-abliterated-q4--r1--candidate",
+      "case": "final-repository-mime-navigation",
+      "family": "final-repository-mime-navigation",
+      "partition": "final-holdout",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 1,
+      "arm": "candidate"
+    },
+    {
+      "id": "final-repository-mime-navigation--josiefied7b-abliterated-q4--r2--candidate",
+      "case": "final-repository-mime-navigation",
+      "family": "final-repository-mime-navigation",
+      "partition": "final-holdout",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 2,
+      "arm": "candidate"
+    },
+    {
+      "id": "final-repository-mime-navigation--josiefied7b-abliterated-q4--r2--baseline",
+      "case": "final-repository-mime-navigation",
+      "family": "final-repository-mime-navigation",
+      "partition": "final-holdout",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 2,
+      "arm": "baseline"
+    },
+    {
+      "id": "final-repository-mime-navigation--josiefied7b-abliterated-q4--r3--baseline",
+      "case": "final-repository-mime-navigation",
+      "family": "final-repository-mime-navigation",
+      "partition": "final-holdout",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 3,
+      "arm": "baseline"
+    },
+    {
+      "id": "final-repository-mime-navigation--josiefied7b-abliterated-q4--r3--candidate",
+      "case": "final-repository-mime-navigation",
+      "family": "final-repository-mime-navigation",
+      "partition": "final-holdout",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 3,
+      "arm": "candidate"
+    },
+    {
+      "id": "final-repository-mime-navigation--mimo9b-heretic-q4--r1--baseline",
+      "case": "final-repository-mime-navigation",
+      "family": "final-repository-mime-navigation",
+      "partition": "final-holdout",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 1,
+      "arm": "baseline"
+    },
+    {
+      "id": "final-repository-mime-navigation--mimo9b-heretic-q4--r1--candidate",
+      "case": "final-repository-mime-navigation",
+      "family": "final-repository-mime-navigation",
+      "partition": "final-holdout",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 1,
+      "arm": "candidate"
+    },
+    {
+      "id": "final-repository-mime-navigation--mimo9b-heretic-q4--r2--candidate",
+      "case": "final-repository-mime-navigation",
+      "family": "final-repository-mime-navigation",
+      "partition": "final-holdout",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 2,
+      "arm": "candidate"
+    },
+    {
+      "id": "final-repository-mime-navigation--mimo9b-heretic-q4--r2--baseline",
+      "case": "final-repository-mime-navigation",
+      "family": "final-repository-mime-navigation",
+      "partition": "final-holdout",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 2,
+      "arm": "baseline"
+    },
+    {
+      "id": "final-repository-mime-navigation--mimo9b-heretic-q4--r3--baseline",
+      "case": "final-repository-mime-navigation",
+      "family": "final-repository-mime-navigation",
+      "partition": "final-holdout",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 3,
+      "arm": "baseline"
+    },
+    {
+      "id": "final-repository-mime-navigation--mimo9b-heretic-q4--r3--candidate",
+      "case": "final-repository-mime-navigation",
+      "family": "final-repository-mime-navigation",
+      "partition": "final-holdout",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 3,
+      "arm": "candidate"
+    },
+    {
+      "id": "final-roman-parser--josiefied7b-abliterated-q4--r1--baseline",
+      "case": "final-roman-parser",
+      "family": "final-roman-parser",
+      "partition": "final-holdout",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 1,
+      "arm": "baseline"
+    },
+    {
+      "id": "final-roman-parser--josiefied7b-abliterated-q4--r1--candidate",
+      "case": "final-roman-parser",
+      "family": "final-roman-parser",
+      "partition": "final-holdout",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 1,
+      "arm": "candidate"
+    },
+    {
+      "id": "final-roman-parser--josiefied7b-abliterated-q4--r2--candidate",
+      "case": "final-roman-parser",
+      "family": "final-roman-parser",
+      "partition": "final-holdout",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 2,
+      "arm": "candidate"
+    },
+    {
+      "id": "final-roman-parser--josiefied7b-abliterated-q4--r2--baseline",
+      "case": "final-roman-parser",
+      "family": "final-roman-parser",
+      "partition": "final-holdout",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 2,
+      "arm": "baseline"
+    },
+    {
+      "id": "final-roman-parser--josiefied7b-abliterated-q4--r3--baseline",
+      "case": "final-roman-parser",
+      "family": "final-roman-parser",
+      "partition": "final-holdout",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 3,
+      "arm": "baseline"
+    },
+    {
+      "id": "final-roman-parser--josiefied7b-abliterated-q4--r3--candidate",
+      "case": "final-roman-parser",
+      "family": "final-roman-parser",
+      "partition": "final-holdout",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 3,
+      "arm": "candidate"
+    },
+    {
+      "id": "final-roman-parser--mimo9b-heretic-q4--r1--baseline",
+      "case": "final-roman-parser",
+      "family": "final-roman-parser",
+      "partition": "final-holdout",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 1,
+      "arm": "baseline"
+    },
+    {
+      "id": "final-roman-parser--mimo9b-heretic-q4--r1--candidate",
+      "case": "final-roman-parser",
+      "family": "final-roman-parser",
+      "partition": "final-holdout",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 1,
+      "arm": "candidate"
+    },
+    {
+      "id": "final-roman-parser--mimo9b-heretic-q4--r2--candidate",
+      "case": "final-roman-parser",
+      "family": "final-roman-parser",
+      "partition": "final-holdout",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 2,
+      "arm": "candidate"
+    },
+    {
+      "id": "final-roman-parser--mimo9b-heretic-q4--r2--baseline",
+      "case": "final-roman-parser",
+      "family": "final-roman-parser",
+      "partition": "final-holdout",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 2,
+      "arm": "baseline"
+    },
+    {
+      "id": "final-roman-parser--mimo9b-heretic-q4--r3--baseline",
+      "case": "final-roman-parser",
+      "family": "final-roman-parser",
+      "partition": "final-holdout",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 3,
+      "arm": "baseline"
+    },
+    {
+      "id": "final-roman-parser--mimo9b-heretic-q4--r3--candidate",
+      "case": "final-roman-parser",
+      "family": "final-roman-parser",
+      "partition": "final-holdout",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 3,
+      "arm": "candidate"
+    },
+    {
+      "id": "final-run-length-pairs--josiefied7b-abliterated-q4--r1--baseline",
+      "case": "final-run-length-pairs",
+      "family": "final-run-length-pairs",
+      "partition": "final-holdout",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 1,
+      "arm": "baseline"
+    },
+    {
+      "id": "final-run-length-pairs--josiefied7b-abliterated-q4--r1--candidate",
+      "case": "final-run-length-pairs",
+      "family": "final-run-length-pairs",
+      "partition": "final-holdout",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 1,
+      "arm": "candidate"
+    },
+    {
+      "id": "final-run-length-pairs--josiefied7b-abliterated-q4--r2--candidate",
+      "case": "final-run-length-pairs",
+      "family": "final-run-length-pairs",
+      "partition": "final-holdout",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 2,
+      "arm": "candidate"
+    },
+    {
+      "id": "final-run-length-pairs--josiefied7b-abliterated-q4--r2--baseline",
+      "case": "final-run-length-pairs",
+      "family": "final-run-length-pairs",
+      "partition": "final-holdout",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 2,
+      "arm": "baseline"
+    },
+    {
+      "id": "final-run-length-pairs--josiefied7b-abliterated-q4--r3--baseline",
+      "case": "final-run-length-pairs",
+      "family": "final-run-length-pairs",
+      "partition": "final-holdout",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 3,
+      "arm": "baseline"
+    },
+    {
+      "id": "final-run-length-pairs--josiefied7b-abliterated-q4--r3--candidate",
+      "case": "final-run-length-pairs",
+      "family": "final-run-length-pairs",
+      "partition": "final-holdout",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 3,
+      "arm": "candidate"
+    },
+    {
+      "id": "final-run-length-pairs--mimo9b-heretic-q4--r1--baseline",
+      "case": "final-run-length-pairs",
+      "family": "final-run-length-pairs",
+      "partition": "final-holdout",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 1,
+      "arm": "baseline"
+    },
+    {
+      "id": "final-run-length-pairs--mimo9b-heretic-q4--r1--candidate",
+      "case": "final-run-length-pairs",
+      "family": "final-run-length-pairs",
+      "partition": "final-holdout",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 1,
+      "arm": "candidate"
+    },
+    {
+      "id": "final-run-length-pairs--mimo9b-heretic-q4--r2--candidate",
+      "case": "final-run-length-pairs",
+      "family": "final-run-length-pairs",
+      "partition": "final-holdout",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 2,
+      "arm": "candidate"
+    },
+    {
+      "id": "final-run-length-pairs--mimo9b-heretic-q4--r2--baseline",
+      "case": "final-run-length-pairs",
+      "family": "final-run-length-pairs",
+      "partition": "final-holdout",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 2,
+      "arm": "baseline"
+    },
+    {
+      "id": "final-run-length-pairs--mimo9b-heretic-q4--r3--baseline",
+      "case": "final-run-length-pairs",
+      "family": "final-run-length-pairs",
+      "partition": "final-holdout",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 3,
+      "arm": "baseline"
+    },
+    {
+      "id": "final-run-length-pairs--mimo9b-heretic-q4--r3--candidate",
+      "case": "final-run-length-pairs",
+      "family": "final-run-length-pairs",
+      "partition": "final-holdout",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 3,
+      "arm": "candidate"
+    },
+    {
+      "id": "final-sparse-dot-product--josiefied7b-abliterated-q4--r1--baseline",
+      "case": "final-sparse-dot-product",
+      "family": "final-sparse-dot-product",
+      "partition": "final-holdout",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 1,
+      "arm": "baseline"
+    },
+    {
+      "id": "final-sparse-dot-product--josiefied7b-abliterated-q4--r1--candidate",
+      "case": "final-sparse-dot-product",
+      "family": "final-sparse-dot-product",
+      "partition": "final-holdout",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 1,
+      "arm": "candidate"
+    },
+    {
+      "id": "final-sparse-dot-product--josiefied7b-abliterated-q4--r2--candidate",
+      "case": "final-sparse-dot-product",
+      "family": "final-sparse-dot-product",
+      "partition": "final-holdout",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 2,
+      "arm": "candidate"
+    },
+    {
+      "id": "final-sparse-dot-product--josiefied7b-abliterated-q4--r2--baseline",
+      "case": "final-sparse-dot-product",
+      "family": "final-sparse-dot-product",
+      "partition": "final-holdout",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 2,
+      "arm": "baseline"
+    },
+    {
+      "id": "final-sparse-dot-product--josiefied7b-abliterated-q4--r3--baseline",
+      "case": "final-sparse-dot-product",
+      "family": "final-sparse-dot-product",
+      "partition": "final-holdout",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 3,
+      "arm": "baseline"
+    },
+    {
+      "id": "final-sparse-dot-product--josiefied7b-abliterated-q4--r3--candidate",
+      "case": "final-sparse-dot-product",
+      "family": "final-sparse-dot-product",
+      "partition": "final-holdout",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 3,
+      "arm": "candidate"
+    },
+    {
+      "id": "final-sparse-dot-product--mimo9b-heretic-q4--r1--baseline",
+      "case": "final-sparse-dot-product",
+      "family": "final-sparse-dot-product",
+      "partition": "final-holdout",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 1,
+      "arm": "baseline"
+    },
+    {
+      "id": "final-sparse-dot-product--mimo9b-heretic-q4--r1--candidate",
+      "case": "final-sparse-dot-product",
+      "family": "final-sparse-dot-product",
+      "partition": "final-holdout",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 1,
+      "arm": "candidate"
+    },
+    {
+      "id": "final-sparse-dot-product--mimo9b-heretic-q4--r2--candidate",
+      "case": "final-sparse-dot-product",
+      "family": "final-sparse-dot-product",
+      "partition": "final-holdout",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 2,
+      "arm": "candidate"
+    },
+    {
+      "id": "final-sparse-dot-product--mimo9b-heretic-q4--r2--baseline",
+      "case": "final-sparse-dot-product",
+      "family": "final-sparse-dot-product",
+      "partition": "final-holdout",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 2,
+      "arm": "baseline"
+    },
+    {
+      "id": "final-sparse-dot-product--mimo9b-heretic-q4--r3--baseline",
+      "case": "final-sparse-dot-product",
+      "family": "final-sparse-dot-product",
+      "partition": "final-holdout",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 3,
+      "arm": "baseline"
+    },
+    {
+      "id": "final-sparse-dot-product--mimo9b-heretic-q4--r3--candidate",
+      "case": "final-sparse-dot-product",
+      "family": "final-sparse-dot-product",
+      "partition": "final-holdout",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 3,
+      "arm": "candidate"
+    },
+    {
+      "id": "final-unicode-frequency--josiefied7b-abliterated-q4--r1--baseline",
+      "case": "final-unicode-frequency",
+      "family": "final-unicode-frequency",
+      "partition": "final-holdout",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 1,
+      "arm": "baseline"
+    },
+    {
+      "id": "final-unicode-frequency--josiefied7b-abliterated-q4--r1--candidate",
+      "case": "final-unicode-frequency",
+      "family": "final-unicode-frequency",
+      "partition": "final-holdout",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 1,
+      "arm": "candidate"
+    },
+    {
+      "id": "final-unicode-frequency--josiefied7b-abliterated-q4--r2--candidate",
+      "case": "final-unicode-frequency",
+      "family": "final-unicode-frequency",
+      "partition": "final-holdout",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 2,
+      "arm": "candidate"
+    },
+    {
+      "id": "final-unicode-frequency--josiefied7b-abliterated-q4--r2--baseline",
+      "case": "final-unicode-frequency",
+      "family": "final-unicode-frequency",
+      "partition": "final-holdout",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 2,
+      "arm": "baseline"
+    },
+    {
+      "id": "final-unicode-frequency--josiefied7b-abliterated-q4--r3--baseline",
+      "case": "final-unicode-frequency",
+      "family": "final-unicode-frequency",
+      "partition": "final-holdout",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 3,
+      "arm": "baseline"
+    },
+    {
+      "id": "final-unicode-frequency--josiefied7b-abliterated-q4--r3--candidate",
+      "case": "final-unicode-frequency",
+      "family": "final-unicode-frequency",
+      "partition": "final-holdout",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 3,
+      "arm": "candidate"
+    },
+    {
+      "id": "final-unicode-frequency--mimo9b-heretic-q4--r1--baseline",
+      "case": "final-unicode-frequency",
+      "family": "final-unicode-frequency",
+      "partition": "final-holdout",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 1,
+      "arm": "baseline"
+    },
+    {
+      "id": "final-unicode-frequency--mimo9b-heretic-q4--r1--candidate",
+      "case": "final-unicode-frequency",
+      "family": "final-unicode-frequency",
+      "partition": "final-holdout",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 1,
+      "arm": "candidate"
+    },
+    {
+      "id": "final-unicode-frequency--mimo9b-heretic-q4--r2--candidate",
+      "case": "final-unicode-frequency",
+      "family": "final-unicode-frequency",
+      "partition": "final-holdout",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 2,
+      "arm": "candidate"
+    },
+    {
+      "id": "final-unicode-frequency--mimo9b-heretic-q4--r2--baseline",
+      "case": "final-unicode-frequency",
+      "family": "final-unicode-frequency",
+      "partition": "final-holdout",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 2,
+      "arm": "baseline"
+    },
+    {
+      "id": "final-unicode-frequency--mimo9b-heretic-q4--r3--baseline",
+      "case": "final-unicode-frequency",
+      "family": "final-unicode-frequency",
+      "partition": "final-holdout",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 3,
+      "arm": "baseline"
+    },
+    {
+      "id": "final-unicode-frequency--mimo9b-heretic-q4--r3--candidate",
+      "case": "final-unicode-frequency",
+      "family": "final-unicode-frequency",
+      "partition": "final-holdout",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 3,
+      "arm": "candidate"
+    },
+    {
+      "id": "final-unified-diff-counts--josiefied7b-abliterated-q4--r1--baseline",
+      "case": "final-unified-diff-counts",
+      "family": "final-unified-diff-counts",
+      "partition": "final-holdout",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 1,
+      "arm": "baseline"
+    },
+    {
+      "id": "final-unified-diff-counts--josiefied7b-abliterated-q4--r1--candidate",
+      "case": "final-unified-diff-counts",
+      "family": "final-unified-diff-counts",
+      "partition": "final-holdout",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 1,
+      "arm": "candidate"
+    },
+    {
+      "id": "final-unified-diff-counts--josiefied7b-abliterated-q4--r2--candidate",
+      "case": "final-unified-diff-counts",
+      "family": "final-unified-diff-counts",
+      "partition": "final-holdout",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 2,
+      "arm": "candidate"
+    },
+    {
+      "id": "final-unified-diff-counts--josiefied7b-abliterated-q4--r2--baseline",
+      "case": "final-unified-diff-counts",
+      "family": "final-unified-diff-counts",
+      "partition": "final-holdout",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 2,
+      "arm": "baseline"
+    },
+    {
+      "id": "final-unified-diff-counts--josiefied7b-abliterated-q4--r3--baseline",
+      "case": "final-unified-diff-counts",
+      "family": "final-unified-diff-counts",
+      "partition": "final-holdout",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 3,
+      "arm": "baseline"
+    },
+    {
+      "id": "final-unified-diff-counts--josiefied7b-abliterated-q4--r3--candidate",
+      "case": "final-unified-diff-counts",
+      "family": "final-unified-diff-counts",
+      "partition": "final-holdout",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 3,
+      "arm": "candidate"
+    },
+    {
+      "id": "final-unified-diff-counts--mimo9b-heretic-q4--r1--baseline",
+      "case": "final-unified-diff-counts",
+      "family": "final-unified-diff-counts",
+      "partition": "final-holdout",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 1,
+      "arm": "baseline"
+    },
+    {
+      "id": "final-unified-diff-counts--mimo9b-heretic-q4--r1--candidate",
+      "case": "final-unified-diff-counts",
+      "family": "final-unified-diff-counts",
+      "partition": "final-holdout",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 1,
+      "arm": "candidate"
+    },
+    {
+      "id": "final-unified-diff-counts--mimo9b-heretic-q4--r2--candidate",
+      "case": "final-unified-diff-counts",
+      "family": "final-unified-diff-counts",
+      "partition": "final-holdout",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 2,
+      "arm": "candidate"
+    },
+    {
+      "id": "final-unified-diff-counts--mimo9b-heretic-q4--r2--baseline",
+      "case": "final-unified-diff-counts",
+      "family": "final-unified-diff-counts",
+      "partition": "final-holdout",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 2,
+      "arm": "baseline"
+    },
+    {
+      "id": "final-unified-diff-counts--mimo9b-heretic-q4--r3--baseline",
+      "case": "final-unified-diff-counts",
+      "family": "final-unified-diff-counts",
+      "partition": "final-holdout",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 3,
+      "arm": "baseline"
+    },
+    {
+      "id": "final-unified-diff-counts--mimo9b-heretic-q4--r3--candidate",
+      "case": "final-unified-diff-counts",
+      "family": "final-unified-diff-counts",
+      "partition": "final-holdout",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 3,
+      "arm": "candidate"
+    },
+    {
+      "id": "final-utf8-secret-compare--josiefied7b-abliterated-q4--r1--baseline",
+      "case": "final-utf8-secret-compare",
+      "family": "final-utf8-secret-compare",
+      "partition": "final-holdout",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 1,
+      "arm": "baseline"
+    },
+    {
+      "id": "final-utf8-secret-compare--josiefied7b-abliterated-q4--r1--candidate",
+      "case": "final-utf8-secret-compare",
+      "family": "final-utf8-secret-compare",
+      "partition": "final-holdout",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 1,
+      "arm": "candidate"
+    },
+    {
+      "id": "final-utf8-secret-compare--josiefied7b-abliterated-q4--r2--candidate",
+      "case": "final-utf8-secret-compare",
+      "family": "final-utf8-secret-compare",
+      "partition": "final-holdout",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 2,
+      "arm": "candidate"
+    },
+    {
+      "id": "final-utf8-secret-compare--josiefied7b-abliterated-q4--r2--baseline",
+      "case": "final-utf8-secret-compare",
+      "family": "final-utf8-secret-compare",
+      "partition": "final-holdout",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 2,
+      "arm": "baseline"
+    },
+    {
+      "id": "final-utf8-secret-compare--josiefied7b-abliterated-q4--r3--baseline",
+      "case": "final-utf8-secret-compare",
+      "family": "final-utf8-secret-compare",
+      "partition": "final-holdout",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 3,
+      "arm": "baseline"
+    },
+    {
+      "id": "final-utf8-secret-compare--josiefied7b-abliterated-q4--r3--candidate",
+      "case": "final-utf8-secret-compare",
+      "family": "final-utf8-secret-compare",
+      "partition": "final-holdout",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 3,
+      "arm": "candidate"
+    },
+    {
+      "id": "final-utf8-secret-compare--mimo9b-heretic-q4--r1--baseline",
+      "case": "final-utf8-secret-compare",
+      "family": "final-utf8-secret-compare",
+      "partition": "final-holdout",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 1,
+      "arm": "baseline"
+    },
+    {
+      "id": "final-utf8-secret-compare--mimo9b-heretic-q4--r1--candidate",
+      "case": "final-utf8-secret-compare",
+      "family": "final-utf8-secret-compare",
+      "partition": "final-holdout",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 1,
+      "arm": "candidate"
+    },
+    {
+      "id": "final-utf8-secret-compare--mimo9b-heretic-q4--r2--candidate",
+      "case": "final-utf8-secret-compare",
+      "family": "final-utf8-secret-compare",
+      "partition": "final-holdout",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 2,
+      "arm": "candidate"
+    },
+    {
+      "id": "final-utf8-secret-compare--mimo9b-heretic-q4--r2--baseline",
+      "case": "final-utf8-secret-compare",
+      "family": "final-utf8-secret-compare",
+      "partition": "final-holdout",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 2,
+      "arm": "baseline"
+    },
+    {
+      "id": "final-utf8-secret-compare--mimo9b-heretic-q4--r3--baseline",
+      "case": "final-utf8-secret-compare",
+      "family": "final-utf8-secret-compare",
+      "partition": "final-holdout",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 3,
+      "arm": "baseline"
+    },
+    {
+      "id": "final-utf8-secret-compare--mimo9b-heretic-q4--r3--candidate",
+      "case": "final-utf8-secret-compare",
+      "family": "final-utf8-secret-compare",
+      "partition": "final-holdout",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 3,
+      "arm": "candidate"
+    },
+    {
+      "id": "final-window-event-counts--josiefied7b-abliterated-q4--r1--baseline",
+      "case": "final-window-event-counts",
+      "family": "final-window-event-counts",
+      "partition": "final-holdout",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 1,
+      "arm": "baseline"
+    },
+    {
+      "id": "final-window-event-counts--josiefied7b-abliterated-q4--r1--candidate",
+      "case": "final-window-event-counts",
+      "family": "final-window-event-counts",
+      "partition": "final-holdout",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 1,
+      "arm": "candidate"
+    },
+    {
+      "id": "final-window-event-counts--josiefied7b-abliterated-q4--r2--candidate",
+      "case": "final-window-event-counts",
+      "family": "final-window-event-counts",
+      "partition": "final-holdout",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 2,
+      "arm": "candidate"
+    },
+    {
+      "id": "final-window-event-counts--josiefied7b-abliterated-q4--r2--baseline",
+      "case": "final-window-event-counts",
+      "family": "final-window-event-counts",
+      "partition": "final-holdout",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 2,
+      "arm": "baseline"
+    },
+    {
+      "id": "final-window-event-counts--josiefied7b-abliterated-q4--r3--baseline",
+      "case": "final-window-event-counts",
+      "family": "final-window-event-counts",
+      "partition": "final-holdout",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 3,
+      "arm": "baseline"
+    },
+    {
+      "id": "final-window-event-counts--josiefied7b-abliterated-q4--r3--candidate",
+      "case": "final-window-event-counts",
+      "family": "final-window-event-counts",
+      "partition": "final-holdout",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 3,
+      "arm": "candidate"
+    },
+    {
+      "id": "final-window-event-counts--mimo9b-heretic-q4--r1--baseline",
+      "case": "final-window-event-counts",
+      "family": "final-window-event-counts",
+      "partition": "final-holdout",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 1,
+      "arm": "baseline"
+    },
+    {
+      "id": "final-window-event-counts--mimo9b-heretic-q4--r1--candidate",
+      "case": "final-window-event-counts",
+      "family": "final-window-event-counts",
+      "partition": "final-holdout",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 1,
+      "arm": "candidate"
+    },
+    {
+      "id": "final-window-event-counts--mimo9b-heretic-q4--r2--candidate",
+      "case": "final-window-event-counts",
+      "family": "final-window-event-counts",
+      "partition": "final-holdout",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 2,
+      "arm": "candidate"
+    },
+    {
+      "id": "final-window-event-counts--mimo9b-heretic-q4--r2--baseline",
+      "case": "final-window-event-counts",
+      "family": "final-window-event-counts",
+      "partition": "final-holdout",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 2,
+      "arm": "baseline"
+    },
+    {
+      "id": "final-window-event-counts--mimo9b-heretic-q4--r3--baseline",
+      "case": "final-window-event-counts",
+      "family": "final-window-event-counts",
+      "partition": "final-holdout",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 3,
+      "arm": "baseline"
+    },
+    {
+      "id": "final-window-event-counts--mimo9b-heretic-q4--r3--candidate",
+      "case": "final-window-event-counts",
+      "family": "final-window-event-counts",
+      "partition": "final-holdout",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 3,
+      "arm": "candidate"
+    },
+    {
+      "id": "javascript-config--josiefied7b-abliterated-q4--r1--baseline",
+      "case": "javascript-config",
+      "family": "javascript-config",
+      "partition": "validation",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 1,
+      "arm": "baseline"
+    },
+    {
+      "id": "javascript-config--josiefied7b-abliterated-q4--r1--candidate",
+      "case": "javascript-config",
+      "family": "javascript-config",
+      "partition": "validation",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 1,
+      "arm": "candidate"
+    },
+    {
+      "id": "javascript-config--josiefied7b-abliterated-q4--r2--candidate",
+      "case": "javascript-config",
+      "family": "javascript-config",
+      "partition": "validation",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 2,
+      "arm": "candidate"
+    },
+    {
+      "id": "javascript-config--josiefied7b-abliterated-q4--r2--baseline",
+      "case": "javascript-config",
+      "family": "javascript-config",
+      "partition": "validation",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 2,
+      "arm": "baseline"
+    },
+    {
+      "id": "javascript-config--josiefied7b-abliterated-q4--r3--baseline",
+      "case": "javascript-config",
+      "family": "javascript-config",
+      "partition": "validation",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 3,
+      "arm": "baseline"
+    },
+    {
+      "id": "javascript-config--josiefied7b-abliterated-q4--r3--candidate",
+      "case": "javascript-config",
+      "family": "javascript-config",
+      "partition": "validation",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 3,
+      "arm": "candidate"
+    },
+    {
+      "id": "javascript-config--mimo9b-heretic-q4--r1--baseline",
+      "case": "javascript-config",
+      "family": "javascript-config",
+      "partition": "validation",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 1,
+      "arm": "baseline"
+    },
+    {
+      "id": "javascript-config--mimo9b-heretic-q4--r1--candidate",
+      "case": "javascript-config",
+      "family": "javascript-config",
+      "partition": "validation",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 1,
+      "arm": "candidate"
+    },
+    {
+      "id": "javascript-config--mimo9b-heretic-q4--r2--candidate",
+      "case": "javascript-config",
+      "family": "javascript-config",
+      "partition": "validation",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 2,
+      "arm": "candidate"
+    },
+    {
+      "id": "javascript-config--mimo9b-heretic-q4--r2--baseline",
+      "case": "javascript-config",
+      "family": "javascript-config",
+      "partition": "validation",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 2,
+      "arm": "baseline"
+    },
+    {
+      "id": "javascript-config--mimo9b-heretic-q4--r3--baseline",
+      "case": "javascript-config",
+      "family": "javascript-config",
+      "partition": "validation",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 3,
+      "arm": "baseline"
+    },
+    {
+      "id": "javascript-config--mimo9b-heretic-q4--r3--candidate",
+      "case": "javascript-config",
+      "family": "javascript-config",
+      "partition": "validation",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 3,
+      "arm": "candidate"
+    },
+    {
+      "id": "python-dependency--josiefied7b-abliterated-q4--r1--baseline",
+      "case": "python-dependency",
+      "family": "python-dependency",
+      "partition": "development",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 1,
+      "arm": "baseline"
+    },
+    {
+      "id": "python-dependency--josiefied7b-abliterated-q4--r1--candidate",
+      "case": "python-dependency",
+      "family": "python-dependency",
+      "partition": "development",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 1,
+      "arm": "candidate"
+    },
+    {
+      "id": "python-dependency--josiefied7b-abliterated-q4--r2--candidate",
+      "case": "python-dependency",
+      "family": "python-dependency",
+      "partition": "development",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 2,
+      "arm": "candidate"
+    },
+    {
+      "id": "python-dependency--josiefied7b-abliterated-q4--r2--baseline",
+      "case": "python-dependency",
+      "family": "python-dependency",
+      "partition": "development",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 2,
+      "arm": "baseline"
+    },
+    {
+      "id": "python-dependency--josiefied7b-abliterated-q4--r3--baseline",
+      "case": "python-dependency",
+      "family": "python-dependency",
+      "partition": "development",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 3,
+      "arm": "baseline"
+    },
+    {
+      "id": "python-dependency--josiefied7b-abliterated-q4--r3--candidate",
+      "case": "python-dependency",
+      "family": "python-dependency",
+      "partition": "development",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 3,
+      "arm": "candidate"
+    },
+    {
+      "id": "python-dependency--mimo9b-heretic-q4--r1--baseline",
+      "case": "python-dependency",
+      "family": "python-dependency",
+      "partition": "development",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 1,
+      "arm": "baseline"
+    },
+    {
+      "id": "python-dependency--mimo9b-heretic-q4--r1--candidate",
+      "case": "python-dependency",
+      "family": "python-dependency",
+      "partition": "development",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 1,
+      "arm": "candidate"
+    },
+    {
+      "id": "python-dependency--mimo9b-heretic-q4--r2--candidate",
+      "case": "python-dependency",
+      "family": "python-dependency",
+      "partition": "development",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 2,
+      "arm": "candidate"
+    },
+    {
+      "id": "python-dependency--mimo9b-heretic-q4--r2--baseline",
+      "case": "python-dependency",
+      "family": "python-dependency",
+      "partition": "development",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 2,
+      "arm": "baseline"
+    },
+    {
+      "id": "python-dependency--mimo9b-heretic-q4--r3--baseline",
+      "case": "python-dependency",
+      "family": "python-dependency",
+      "partition": "development",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 3,
+      "arm": "baseline"
+    },
+    {
+      "id": "python-dependency--mimo9b-heretic-q4--r3--candidate",
+      "case": "python-dependency",
+      "family": "python-dependency",
+      "partition": "development",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 3,
+      "arm": "candidate"
+    },
+    {
+      "id": "python-multifile--josiefied7b-abliterated-q4--r1--baseline",
+      "case": "python-multifile",
+      "family": "python-multifile",
+      "partition": "development",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 1,
+      "arm": "baseline"
+    },
+    {
+      "id": "python-multifile--josiefied7b-abliterated-q4--r1--candidate",
+      "case": "python-multifile",
+      "family": "python-multifile",
+      "partition": "development",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 1,
+      "arm": "candidate"
+    },
+    {
+      "id": "python-multifile--josiefied7b-abliterated-q4--r2--candidate",
+      "case": "python-multifile",
+      "family": "python-multifile",
+      "partition": "development",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 2,
+      "arm": "candidate"
+    },
+    {
+      "id": "python-multifile--josiefied7b-abliterated-q4--r2--baseline",
+      "case": "python-multifile",
+      "family": "python-multifile",
+      "partition": "development",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 2,
+      "arm": "baseline"
+    },
+    {
+      "id": "python-multifile--josiefied7b-abliterated-q4--r3--baseline",
+      "case": "python-multifile",
+      "family": "python-multifile",
+      "partition": "development",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 3,
+      "arm": "baseline"
+    },
+    {
+      "id": "python-multifile--josiefied7b-abliterated-q4--r3--candidate",
+      "case": "python-multifile",
+      "family": "python-multifile",
+      "partition": "development",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 3,
+      "arm": "candidate"
+    },
+    {
+      "id": "python-multifile--mimo9b-heretic-q4--r1--baseline",
+      "case": "python-multifile",
+      "family": "python-multifile",
+      "partition": "development",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 1,
+      "arm": "baseline"
+    },
+    {
+      "id": "python-multifile--mimo9b-heretic-q4--r1--candidate",
+      "case": "python-multifile",
+      "family": "python-multifile",
+      "partition": "development",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 1,
+      "arm": "candidate"
+    },
+    {
+      "id": "python-multifile--mimo9b-heretic-q4--r2--candidate",
+      "case": "python-multifile",
+      "family": "python-multifile",
+      "partition": "development",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 2,
+      "arm": "candidate"
+    },
+    {
+      "id": "python-multifile--mimo9b-heretic-q4--r2--baseline",
+      "case": "python-multifile",
+      "family": "python-multifile",
+      "partition": "development",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 2,
+      "arm": "baseline"
+    },
+    {
+      "id": "python-multifile--mimo9b-heretic-q4--r3--baseline",
+      "case": "python-multifile",
+      "family": "python-multifile",
+      "partition": "development",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 3,
+      "arm": "baseline"
+    },
+    {
+      "id": "python-multifile--mimo9b-heretic-q4--r3--candidate",
+      "case": "python-multifile",
+      "family": "python-multifile",
+      "partition": "development",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 3,
+      "arm": "candidate"
+    },
+    {
+      "id": "rust-feature--josiefied7b-abliterated-q4--r1--baseline",
+      "case": "rust-feature",
+      "family": "rust-feature",
+      "partition": "validation",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 1,
+      "arm": "baseline"
+    },
+    {
+      "id": "rust-feature--josiefied7b-abliterated-q4--r1--candidate",
+      "case": "rust-feature",
+      "family": "rust-feature",
+      "partition": "validation",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 1,
+      "arm": "candidate"
+    },
+    {
+      "id": "rust-feature--josiefied7b-abliterated-q4--r2--candidate",
+      "case": "rust-feature",
+      "family": "rust-feature",
+      "partition": "validation",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 2,
+      "arm": "candidate"
+    },
+    {
+      "id": "rust-feature--josiefied7b-abliterated-q4--r2--baseline",
+      "case": "rust-feature",
+      "family": "rust-feature",
+      "partition": "validation",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 2,
+      "arm": "baseline"
+    },
+    {
+      "id": "rust-feature--josiefied7b-abliterated-q4--r3--baseline",
+      "case": "rust-feature",
+      "family": "rust-feature",
+      "partition": "validation",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 3,
+      "arm": "baseline"
+    },
+    {
+      "id": "rust-feature--josiefied7b-abliterated-q4--r3--candidate",
+      "case": "rust-feature",
+      "family": "rust-feature",
+      "partition": "validation",
+      "model": "josiefied7b-abliterated-q4",
+      "repetition": 3,
+      "arm": "candidate"
+    },
+    {
+      "id": "rust-feature--mimo9b-heretic-q4--r1--baseline",
+      "case": "rust-feature",
+      "family": "rust-feature",
+      "partition": "validation",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 1,
+      "arm": "baseline"
+    },
+    {
+      "id": "rust-feature--mimo9b-heretic-q4--r1--candidate",
+      "case": "rust-feature",
+      "family": "rust-feature",
+      "partition": "validation",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 1,
+      "arm": "candidate"
+    },
+    {
+      "id": "rust-feature--mimo9b-heretic-q4--r2--candidate",
+      "case": "rust-feature",
+      "family": "rust-feature",
+      "partition": "validation",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 2,
+      "arm": "candidate"
+    },
+    {
+      "id": "rust-feature--mimo9b-heretic-q4--r2--baseline",
+      "case": "rust-feature",
+      "family": "rust-feature",
+      "partition": "validation",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 2,
+      "arm": "baseline"
+    },
+    {
+      "id": "rust-feature--mimo9b-heretic-q4--r3--baseline",
+      "case": "rust-feature",
+      "family": "rust-feature",
+      "partition": "validation",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 3,
+      "arm": "baseline"
+    },
+    {
+      "id": "rust-feature--mimo9b-heretic-q4--r3--candidate",
+      "case": "rust-feature",
+      "family": "rust-feature",
+      "partition": "validation",
+      "model": "mimo9b-heretic-q4",
+      "repetition": 3,
+      "arm": "candidate"
+    }
+  ],
+  "freeze_rule": "Candidate and presets must be sealed before either final baseline or candidate is inspected.",
+  "training_rule": "Every final-holdout family is forbidden for corpus/prompt/adapter selection.",
+  "preset_promoted": false
+}

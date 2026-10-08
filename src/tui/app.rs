@@ -1,4 +1,8 @@
-use super::{input::Editor, view};
+use super::{
+    drafts::{Book as DraftBook, Submission},
+    input::Editor,
+    view,
+};
 use crate::{
     config::{Config, Preferences, Profile, Provider, private_dir},
     display_text,
@@ -187,13 +191,14 @@ pub enum MenuAction {
     Preset(usize),
     Template(usize),
     Page(Page),
-    New,
-    Brief,
-    Project,
 }
 
 #[derive(Debug, Clone)]
 pub enum Dialog {
+    Palette {
+        query: Editor,
+        selected: usize,
+    },
     Menu {
         title: String,
         description: String,
@@ -250,7 +255,7 @@ pub enum JobResult {
     ProjectFiles(Vec<String>),
     ManagedJob(crate::jobs::Record),
     Task(Box<super::task::TaskView>),
-    Check(crate::project::CheckResult),
+    Check(Box<crate::project::CheckResult>),
     Notice(String, String),
     Hardware(crate::hardware::Report),
     Inventory(String, Vec<String>),
@@ -316,6 +321,7 @@ pub struct App {
     pub hub_query: String,
     pub variants_only: bool,
     pub workspace: Option<Workspace>,
+    pub retiring_workspaces: Vec<tokio::task::JoinHandle<()>>,
     pub session: Option<Session>,
     pub connected: bool,
     pub connecting: bool,
@@ -325,7 +331,13 @@ pub struct App {
     pub turn_tools: usize,
     pub messages: VecDeque<Message>,
     pub composer: Editor,
-    pub pending_prompt: Option<String>,
+    pub pending_prompt: Option<Submission>,
+    pub send_pending_on_ready: bool,
+    pub composer_message_id: Option<String>,
+    pub drafts: DraftBook,
+    pub draft_lease: Arc<std::fs::File>,
+    pub flush_drafts: bool,
+    pub draft_saved: bool,
     pub tools: Vec<Tool>,
     pub tool_selected: usize,
     pub tools_focus: bool,
@@ -334,6 +346,8 @@ pub struct App {
     pub permissions: VecDeque<(Value, Value)>,
     pub permission_selected: usize,
     pub permission_scroll: u16,
+    pub modal_scroll: u16,
+    pub confirm_stamp: String,
     pub trust_session: bool,
     pub context_used: Option<u64>,
     pub context_size: Option<u64>,
@@ -395,6 +409,10 @@ impl App {
                 Vec::new()
             }
         };
+        let draft_lease = super::drafts::lease(&root)?;
+        let drafts = DraftBook::load(&root, &preferences.project)?;
+        let restored = drafts.current().clone();
+        let restored_session = restored.session.as_ref().and_then(|id| store.get(id).ok());
         let (tx, rx) = mpsc::channel(32);
         let mut app = Self {
             workbench: Default::default(),
@@ -432,7 +450,8 @@ impl App {
             hub_query: "Qwen3 4B heretic".into(),
             variants_only: true,
             workspace: None,
-            session: None,
+            retiring_workspaces: Vec::new(),
+            session: restored_session,
             connected: false,
             connecting: false,
             busy: false,
@@ -440,8 +459,14 @@ impl App {
             turn_started: None,
             turn_tools: 0,
             messages: VecDeque::new(),
-            composer: Editor::default(),
-            pending_prompt: None,
+            composer: Editor::new(restored.text),
+            pending_prompt: restored.pending,
+            send_pending_on_ready: false,
+            composer_message_id: restored.composer_message_id,
+            drafts,
+            draft_lease,
+            flush_drafts: false,
+            draft_saved: true,
             tools: Vec::new(),
             tool_selected: 0,
             tools_focus: false,
@@ -450,6 +475,8 @@ impl App {
             permissions: VecDeque::new(),
             permission_selected: 0,
             permission_scroll: 0,
+            modal_scroll: 0,
+            confirm_stamp: String::new(),
             trust_session: false,
             context_used: None,
             context_size: None,
@@ -464,6 +491,9 @@ impl App {
             pending_sessions: false,
             pending_task_notice: None,
         };
+        if app.pending_prompt.is_some() || !app.composer.text.is_empty() {
+            app.notify("Draft restored. Saved drafts keeps any interrupted submission; nothing is sent automatically.");
+        }
         if let Some(name) = profile {
             ensure!(
                 app.config.profiles.contains_key(&name),
@@ -678,21 +708,40 @@ impl App {
             profile,
             resume,
         };
-        self.launch_io("Loading conversation and project brief", move || {
-            let store = Store::open(&options.root)?;
-            let history = if let Some(saved) = &options.resume {
-                options.preferences.choose_project(Path::new(&saved.cwd))?;
-                store.recent_history(&saved.id)?
-            } else {
-                Vec::new()
-            };
-            let brief = store.brief(&options.preferences.project)?;
-            Ok(JobResult::PreparedWorkspace(
-                Box::new(options),
-                history,
-                brief,
-            ))
-        })
+        ensure!(
+            self.job.as_ref().is_none_or(|job| job.replaceable),
+            "Wait for the current operation to finish before reconnecting"
+        );
+        let previous = self.prepare_workspace_shutdown()?;
+        self.connected = false;
+        self.launch_job(
+            "Loading conversation and project brief",
+            move |cancel, _| async move {
+                for stop in previous {
+                    stop.await.context("Previous workspace shutdown failed")?;
+                }
+                tokio::task::spawn_blocking(move || {
+                    ensure!(
+                        !cancel.load(Ordering::Relaxed),
+                        "Conversation loading cancelled"
+                    );
+                    let store = Store::open(&options.root)?;
+                    let history = if let Some(saved) = &options.resume {
+                        options.preferences.choose_project(Path::new(&saved.cwd))?;
+                        store.recent_history(&saved.id)?
+                    } else {
+                        Vec::new()
+                    };
+                    let brief = store.brief(&options.preferences.project)?;
+                    Ok(JobResult::PreparedWorkspace(
+                        Box::new(options),
+                        history,
+                        brief,
+                    ))
+                })
+                .await?
+            },
+        )
     }
 
     pub fn resume_workspace(&mut self, id: String) -> Result<()> {
@@ -712,13 +761,15 @@ impl App {
         history: Vec<Value>,
         brief: String,
     ) -> Result<()> {
+        self.remember_draft();
         ensure!(
             !self.busy && !self.connecting,
             "Stop the current task before opening another conversation"
         );
-        if let Some(old) = self.workspace.take() {
-            drop(old);
-        }
+        ensure!(
+            self.workspace.is_none() && self.retiring_workspaces.is_empty(),
+            "Previous workspace shutdown is still pending; reconnect after it finishes"
+        );
         self.messages.clear();
         self.tools.clear();
         self.permissions.clear();
@@ -728,6 +779,17 @@ impl App {
         self.inference_status = None;
         self.chat_scroll = 0;
         if options.resume.is_some() {
+            if self.session.as_ref().map(|s| &s.id) != options.resume.as_ref().map(|s| &s.id) {
+                self.drafts.activate(
+                    &options.preferences.project,
+                    options.resume.as_ref().map(|s| s.id.as_str()),
+                );
+                let draft = self.drafts.current().clone();
+                self.composer = Editor::new(draft.text);
+                self.composer_message_id = draft.composer_message_id;
+                self.pending_prompt = draft.pending;
+                self.send_pending_on_ready = false;
+            }
             for event in history {
                 match event["type"].as_str() {
                     Some("user") => self.add_message("You", event["text"].as_str().unwrap_or("")),
@@ -770,19 +832,34 @@ impl App {
             return Ok(());
         }
         if !self.connected {
-            self.pending_prompt = Some(self.composer.text.clone());
+            if self.pending_prompt.is_some() {
+                anyhow::bail!(
+                    "An interrupted submission is retained. Open Saved drafts (Ctrl+D) to restore or discard it before sending another request"
+                );
+            }
             self.start_workspace(self.session.clone())?;
+            self.pending_prompt = Some(self.submitted());
+            self.send_pending_on_ready = true;
+            self.composer.clear();
+            self.remember_draft();
             return Ok(());
         }
-        let text = self.composer.text.clone();
+        let submission = self.submitted();
+        self.submit_message(submission)?;
+        self.composer.clear();
+        Ok(())
+    }
+
+    fn submit_message(&mut self, submission: Submission) -> Result<()> {
+        let text = submission.text;
         self.workspace
             .as_ref()
             .context("Reconnect your workspace")?
             .send(workspace::Command::Prompt {
                 text: text.clone(),
                 brief: self.brief.clone(),
+                message_id: Some(submission.id),
             })?;
-        self.composer.clear();
         self.add_message("You", text);
         self.busy = true;
         self.turn_tools = 0;
@@ -795,13 +872,16 @@ impl App {
 
     pub fn stop_turn(&mut self) -> Result<()> {
         if self.connecting {
-            if let Some(workspace) = self.workspace.take() {
-                drop(workspace);
+            if let Some(mut workspace) = self.workspace.take() {
+                self.launch_job("Stopping connection",move|_,_|async move {
+                    workspace.stop().await;
+                    Ok(JobResult::Saved("Connection cancelled. Saved drafts retains the submitted message and your next draft.".into()))
+                })?;
             }
             self.connecting = false;
             self.connected = false;
-            self.pending_prompt = None;
-            self.notify("Connection cancelled. Your message is still here.");
+            self.send_pending_on_ready = false;
+            self.notify("Connection cancelled. Saved drafts retains the submitted message and your next draft.");
             return Ok(());
         }
         if let Some(workspace) = &self.workspace
@@ -826,13 +906,19 @@ impl App {
             workspace::Update::Ready(session) => {
                 let session = *session;
                 self.session = Some(session);
+                self.remember_draft();
                 self.connecting = false;
                 self.connected = true;
                 self.notify("Ready. Describe what you want to do.");
                 self.refresh_sessions()?;
-                if let Some(prompt) = self.pending_prompt.take() {
-                    self.composer.replace(prompt);
-                    self.send_prompt()?;
+                if self.send_pending_on_ready
+                    && let Some(prompt) = self.pending_prompt.take()
+                {
+                    self.send_pending_on_ready = false;
+                    if let Err(error) = self.submit_message(prompt.clone()) {
+                        self.pending_prompt = Some(prompt);
+                        return Err(error);
+                    }
                 }
             }
             workspace::Update::Event(Event::Update(params)) => self.apply_update(&params),
@@ -887,9 +973,9 @@ impl App {
                 self.busy = false;
                 self.connecting = false;
                 self.permissions.clear();
-                if let Some(prompt) = self.pending_prompt.take() {
-                    self.composer.replace(prompt);
-                }
+                self.send_pending_on_ready = false;
+                // Interrupted submissions remain separate from edits typed during startup.
+                self.remember_draft();
                 self.add_message("Notice", &error);
                 self.error(error);
             }
@@ -900,7 +986,7 @@ impl App {
                 self.connecting = false;
                 self.busy = false;
                 self.permissions.clear();
-                self.workspace = None;
+                self.retire_workspace();
             }
         }
         Ok(())
@@ -1039,8 +1125,23 @@ impl App {
                     .is_some_and(|job| job.cancel.load(Ordering::Relaxed));
                 let submitted = self.job.take().and_then(|j| j.recovery);
                 match *result {
-                    Ok(JobResult::Resume(_) | JobResult::PreparedWorkspace(..)) if cancelled => {
-                        self.notify("Conversation loading cancelled. Your message is kept.");
+                    Ok(
+                        JobResult::Resume(_)
+                        | JobResult::PreparedWorkspace(..)
+                        | JobResult::Tested(..)
+                        | JobResult::Inventory(..)
+                        | JobResult::Search(_)
+                        | JobResult::Files(_)
+                        | JobResult::Dialog(_)
+                        | JobResult::Context(_)
+                        | JobResult::ProjectFiles(_),
+                    ) if cancelled => {
+                        self.send_pending_on_ready = false;
+                        self.notify("Operation cancelled. Your message and settings are kept.");
+                    }
+                    Err(_) if cancelled => {
+                        self.send_pending_on_ready = false;
+                        self.notify("Operation cancelled. Your message and settings are kept.");
                     }
                     Ok(JobResult::Resume(session)) => self.start_workspace(Some(session))?,
                     Ok(JobResult::PreparedWorkspace(options, history, brief)) => {
@@ -1116,9 +1217,7 @@ impl App {
                     Ok(JobResult::Task(view)) => {
                         if view.announce_verification {
                             let notice = match &view.verification {
-                                Some(v) if v.behavioral_acceptance => {
-                                    "Required independent behavioral assertions passed on current files. Review their stated coverage in Task."
-                                }
+                                Some(v) if v.behavioral_acceptance => v.scope.as_str(),
                                 Some(v) if v.complete => {
                                     "Required commands passed on current files. Behavioral coverage remains unknown; review their contracts in Task."
                                 }
@@ -1140,6 +1239,7 @@ impl App {
                             .min(self.task_view.changes.len().saturating_sub(1));
                     }
                     Ok(JobResult::Check(result)) => {
+                        let result = *result;
                         let message = if let Some(e) = &result.error {
                             e.clone()
                         } else {
@@ -1232,10 +1332,14 @@ impl App {
                         if models.is_empty() {
                             self.error("The server is reachable but has no models. Load one in your model application, then test again.");
                         } else {
+                            let selected = models
+                                .iter()
+                                .position(|m| m == &draft.profile.model)
+                                .unwrap_or(0);
                             self.dialog = Some(Dialog::PickModel {
                                 draft,
                                 models,
-                                selected: 0,
+                                selected,
                             });
                         }
                     }
@@ -1363,20 +1467,32 @@ impl App {
                 }));
             }
             MenuAction::Template(index) => {
+                if !self.composer.text.is_empty() || self.pending_prompt.is_some() { self.new_conversation()?; }
                 self.composer.replace(TEMPLATES[index].2);
                 self.set_page(Page::Chat);
                 self.notify("Edit the message to describe your goal, then press Enter to send.");
             }
             MenuAction::Page(page) => self.set_page(page),
-            MenuAction::New => {
-                self.new_conversation()?;
-            }
-            MenuAction::Brief => self.edit_brief(),
-            MenuAction::Project => {
-                self.open_browser(BrowserKind::Project, self.preferences.project.clone())?
-            }
         }
         Ok(())
+    }
+
+    /// Stop old connections immediately without polling their stale updates.
+    /// Every new owned-runtime operation joins these stops before loading again.
+    pub fn retire_workspace(&mut self) {
+        if let Some(mut workspace) = self.workspace.take() {
+            self.retiring_workspaces.push(tokio::spawn(async move {
+                workspace.stop().await;
+            }));
+        }
+    }
+    pub fn prepare_workspace_shutdown(&mut self) -> Result<Vec<tokio::task::JoinHandle<()>>> {
+        ensure!(
+            self.job.as_ref().is_none_or(|job| job.replaceable),
+            "Wait for the current operation before starting another model operation"
+        );
+        self.retire_workspace();
+        Ok(std::mem::take(&mut self.retiring_workspaces))
     }
 
     pub fn new_conversation(&mut self) -> Result<()> {
@@ -1384,12 +1500,18 @@ impl App {
             !self.busy && !self.connecting,
             "Stop the current task before opening a new conversation"
         );
+        self.remember_draft();
+        self.drafts.current_mut().archived = true;
+        self.drafts.fresh(&self.preferences.project);
+        self.pending_prompt = None;
+        self.send_pending_on_ready = false;
+        self.composer_message_id = None;
         self.generation = self.generation.wrapping_add(1);
         self.pending_task_notice = None;
         if let Some(job) = &self.job {
             job.cancel.store(true, Ordering::Relaxed);
         }
-        self.workspace = None;
+        self.retire_workspace();
         self.session = None;
         self.connected = false;
         self.messages.clear();
@@ -1398,7 +1520,7 @@ impl App {
         self.trust_session = false;
         self.set_page(Page::Chat);
         self.notify(
-            "New conversation. Describe what you want to do, or choose a starting task from Home.",
+            "New conversation. Earlier drafts are kept in Saved drafts (Ctrl+D). Describe what you want to do.",
         );
         Ok(())
     }
@@ -1466,8 +1588,15 @@ impl App {
             !self.busy && !self.connecting,
             "Stop your current task before changing projects"
         );
+        self.remember_draft();
         self.task_view = Default::default();
         self.preferences.choose_project(path)?;
+        self.drafts.activate(&self.preferences.project, None);
+        let draft = self.drafts.current().clone();
+        self.composer = Editor::new(draft.text);
+        self.composer_message_id = draft.composer_message_id;
+        self.pending_prompt = draft.pending;
+        self.send_pending_on_ready = false;
         self.generation = self.generation.wrapping_add(1);
         self.pending_task_notice = None;
         self.workbench = Default::default();
@@ -1476,7 +1605,7 @@ impl App {
         }
         self.preferences.save(&self.root)?;
         self.brief.clear();
-        self.workspace = None;
+        self.retire_workspace();
         self.session = None;
         self.connected = false;
         self.messages.clear();
@@ -1539,8 +1668,9 @@ impl App {
                         .context("Search Hugging Face or enter a repository first")?
                         .id
                         .clone();
-                    self.launch_job("Reading model files", move |_, _| async move {
-                        Ok(JobResult::Files(models::files(&repo).await?))
+                    self.launch_job("Reading model files", move |cancel, _| async move {
+                        let files = tokio::select! { result = models::files(&repo) => result?, _ = models::cancelled(&cancel) => anyhow::bail!("Model file listing cancelled") };
+                        Ok(JobResult::Files(files))
                     })?;
                 } else {
                     let file = self
@@ -1589,18 +1719,17 @@ impl App {
                     profile.local_model.is_none(),
                     "This is a managed local-file connection. Choose a server connection to browse its models"
                 );
-                self.launch_job("Checking available models", move |_, _| async move {
-                    Ok(JobResult::Inventory(
-                        name,
-                        models::inventory(&profile).await?,
-                    ))
+                self.launch_job("Checking available models", move |cancel, _| async move {
+                    let models = tokio::select! { result = models::inventory(&profile) => result?, _ = models::cancelled(&cancel) => anyhow::bail!("Model inventory cancelled") };
+                    Ok(JobResult::Inventory(name, models))
                 })?;
             }
             _ => {
                 let query = self.hub_query.clone();
                 let variants = self.variants_only;
-                self.launch_job("Searching Hugging Face", move |_, _| async move {
-                    Ok(JobResult::Search(models::search(&query, variants).await?))
+                self.launch_job("Searching Hugging Face", move |cancel, _| async move {
+                    let found = tokio::select! { result = models::search(&query, variants) => result?, _ = models::cancelled(&cancel) => anyhow::bail!("Model search cancelled") };
+                    Ok(JobResult::Search(found))
                 })?;
             }
         }
@@ -1640,12 +1769,19 @@ impl App {
                 })?;
             }
             ConfirmAction::Evaluate => {
+                ensure!(
+                    !self.busy && !self.connecting,
+                    "Stop the current task before evaluating the model"
+                );
                 let root = self.root.clone();
                 let preferences = self.preferences.clone();
                 let profile = self.current_profile().context("Choose a model")?.1.clone();
-                self.workspace = None;
+                let previous_workspace = self.prepare_workspace_shutdown()?;
                 self.connected = false;
                 self.launch_job("Checking model tool use", move |cancel, _| async move {
+                    for stop in previous_workspace {
+                        stop.await.context("Previous workspace shutdown failed")?;
+                    }
                     let result =
                         crate::hardware::evaluate(&root, &preferences, &profile, cancel).await?;
                     Ok(JobResult::Notice(
@@ -1890,8 +2026,9 @@ impl App {
             InputAction::DirectRepo => {
                 let repo = text.trim().to_string();
                 self.model_tab = 2;
-                self.launch_job("Reading repository", move |_, _| async move {
-                    Ok(JobResult::Files(models::files(&repo).await?))
+                self.launch_job("Reading repository", move |cancel, _| async move {
+                    let files = tokio::select! { result = models::files(&repo) => result?, _ = models::cancelled(&cancel) => anyhow::bail!("Model file search cancelled") };
+                    Ok(JobResult::Files(files))
                 })?;
             }
             InputAction::ImportPath => self.import_path(expand_path(&text))?,
@@ -1914,7 +2051,10 @@ impl App {
             }
             InputAction::EnginePath | InputAction::RuntimePath => {
                 let path = expand_path(&text);
-                ensure!(path.is_file(), "Choose an existing executable file");
+                ensure!(
+                    runtime::find_executable(&path).is_some(),
+                    "Choose an existing executable file with execute permission. The selected path is authoritative; Alt will not silently fall back"
+                );
                 if matches!(action, InputAction::EnginePath) {
                     self.preferences.engine_path = Some(path);
                 } else {
@@ -2070,6 +2210,11 @@ pub async fn run(
     if app.preferences.mouse {
         execute!(std::io::stdout(), EnableMouseCapture)?;
     }
+    if let Err(error) = app.refresh_task() {
+        app.error(error);
+    }
+    let mut draft_writer = super::drafts::Writer::start(app.root.clone(), app.draft_lease.clone());
+    let mut queued_drafts = app.drafts.clone();
     let mut events = EventStream::new();
     let mut tick = tokio::time::interval(Duration::from_millis(60));
     let mut hardware = tokio::spawn(runtime::hardware());
@@ -2082,10 +2227,19 @@ pub async fn run(
     while !app.quit {
         tokio::select! {
             _=&mut shutdown=>{app.quit=true;},
-            _=tick.tick()=>{terminal.draw(|frame|view::draw(frame,&mut app))?;},
+            _=tick.tick()=>{
+                app.remember_draft();
+                if app.drafts != queued_drafts {
+                    app.draft_saved = false;
+                    match draft_writer.queue(app.drafts.clone()) { Ok(()) => queued_drafts = app.drafts.clone(), Err(error) => app.error(error) }
+                }
+                terminal.draw(|frame|view::draw(frame,&mut app))?;
+            },
+            Some(error)=draft_writer.errors.recv()=>{app.draft_saved=false;app.error(error);},
+            changed=draft_writer.saved.changed()=>{if changed.is_ok(){app.remember_draft();app.draft_saved=app.drafts==queued_drafts && *draft_writer.saved.borrow()==Some(draft_writer.current_revision());}},
             result=&mut hardware,if hardware_pending=>{hardware_pending=false;if let Ok(info)=result{app.hardware=info;}},
             update=async{app.workspace.as_mut().expect("guarded workspace").updates.recv().await},if app.workspace.is_some()=>{
-                let result=if let Some(update)=update{app.workspace_update(update)}else{app.workspace=None;app.connected=false;app.connecting=false;app.busy=false;Ok(())};
+                let result=if let Some(update)=update{app.workspace_update(update)}else{app.retire_workspace();app.connected=false;app.connecting=false;app.busy=false;Ok(())};
                 if let Err(error)=result{app.error(error);}
             },
             update=async{app.workbench.terminal.as_mut().expect("guarded terminal").rx.recv().await},if app.workbench.terminal.is_some()=>{
@@ -2103,6 +2257,24 @@ pub async fn run(
                 if let Err(error)=result{app.error(error);}
             }
         }
+        if app.quit || app.flush_drafts {
+            app.remember_draft();
+            match draft_writer.flush(app.drafts.clone()).await {
+                Ok(()) => {
+                    queued_drafts = app.drafts.clone();
+                    app.draft_saved = true;
+                    if app.flush_drafts {
+                        app.notify("Drafts saved to local storage.");
+                    }
+                }
+                Err(error) => {
+                    app.quit = false;
+                    while draft_writer.errors.try_recv().is_ok() {}
+                    app.error(format!("Could not save drafts: {error:#}. Your text remains here; repair storage and choose Save drafts before leaving."));
+                }
+            }
+            app.flush_drafts = false;
+        }
     }
     if let Some(job) = app.job.take() {
         job.cancel.store(true, Ordering::Relaxed);
@@ -2112,8 +2284,9 @@ pub async fn run(
             tokio::select! { _ = &mut handle => break, _ = app.job_rx.recv() => {} }
         }
     }
-    if let Some(mut workspace) = app.workspace.take() {
-        workspace.stop().await;
+    app.retire_workspace();
+    for stop in app.retiring_workspaces.drain(..) {
+        let _ = stop.await;
     }
     app.workbench.terminal = None;
     crate::jobs::stop_owned(&app.root).await?;

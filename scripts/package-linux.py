@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Create a local, unpublished Linux package with dependency license notices."""
+import importlib.util
 import argparse
 import gzip
 import os
@@ -33,6 +34,10 @@ build = verify(repo,binary)
 name = f"alt-{version}-linux-x86_64"
 dist = repo / "dist"
 dist.mkdir(exist_ok=True)
+research_spec = importlib.util.spec_from_file_location("package_research", repo / "scripts/package-research.py")
+research_module = importlib.util.module_from_spec(research_spec)
+research_spec.loader.exec_module(research_module)
+research = research_module.package_research(repo, dist, version, build)
 with tempfile.TemporaryDirectory(prefix="alt-package-") as temp:
     package = Path(temp) / name
     package.mkdir()
@@ -44,12 +49,26 @@ with tempfile.TemporaryDirectory(prefix="alt-package-") as temp:
         subprocess.run(['openssl','dgst','-sha256','-sign',os.environ['ALT_SIGNING_KEY'],'-out',str(package/'PLATFORM.json.sig'),str(package/'PLATFORM.json')],check=True)
     for doc in ["README.md", "LICENSE", "THIRD_PARTY.md"]:
         shutil.copy2(repo / doc, package / doc)
-    shutil.copytree(repo / "docs", package / "docs")
+    # Keep user-facing top-level help offline; historical payloads remain complete
+    # in the separately hashed research archive and its commit-indexed manifest.
+    (package / "docs").mkdir()
+    for document in sorted((repo / "docs").glob("*.md")):
+        shutil.copy2(document, package / "docs" / document.name)
+    (package / "RESEARCH.json").write_text(json.dumps(research, sort_keys=True, indent=2) + "\n")
+    (package / "docs/RESEARCH_ARCHIVE.md").write_text(
+        "# Research and historical evidence\n\n"
+        "The complete research/evidence collection is distributed separately as `" + research['archive'] + "`. "
+        "Its SHA256 is `" + research['sha256'] + "`. Every historical document is recorded in `" + research['index'] + "`.\n\n"
+        "Download the matching assets from https://github.com/3d3dcanada/alt-cli/releases. "
+        "Extract the verified research archive into this package folder to resolve historical evidence links. "
+        "Core installation, recovery, model and PC-testing help remains available offline.\n")
     shutil.copytree(repo / "prompts", package / "prompts")
     shutil.copytree(repo / "skills", package / "skills")
     shutil.copytree(repo / "training", package / "training",ignore=shutil.ignore_patterns('__pycache__','*.pyc'))
     shutil.copy2(repo / "scripts/install-package.sh", package / "install.sh")
     shutil.copy2(repo / "scripts/test-my-pc.py", package / "test-my-pc.py")
+    for helper in ["install-generation.py", "verify-package.py"]:
+        shutil.copy2(repo / "scripts" / helper, package / helper)
     (package / "install.sh").chmod(0o755)
     licenses = package / "licenses"
     licenses.mkdir()

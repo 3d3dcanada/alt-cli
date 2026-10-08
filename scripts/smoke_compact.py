@@ -22,6 +22,7 @@ BROKEN_SYNTAX = False
 HTTP_FAILURE = False
 FOLLOWUP_GOAL = None
 FOLLOWUP_TEXT = 'CONTINUE_SAVED_TASK_FIXTURE: Continue the task.'
+FOLLOWUP_EXPECTED = []
 EDITOR = 'edit_text'
 CREATE_BODY = "VALUE = '☃\\n'\n"
 
@@ -57,6 +58,10 @@ class Provider(BaseProvider):
                 assert 'Original task request (context; the latest user message takes precedence)' in content
             else:
                 assert 'Original task request (context;' not in content, 'First request was needlessly duplicated'
+            current = [int(value) for value in re.findall(r'KEEP_INTERVENING_(\d{2})', content)]
+            if current:
+                for requirement in FOLLOWUP_EXPECTED[:max(current)]:
+                    assert requirement in content, 'An exact intervening user requirement was lost from the actual provider request'
         elif any(m['role'] == 'user' and 'CREATE_DELETE_FIXTURE' in str(m.get('content')) for m in body['messages']):
             if not results:
                 tool = 'create_file' if EDITOR == 'edit_text' else 'create_lines'
@@ -79,6 +84,7 @@ class Provider(BaseProvider):
                 BAD_PATCH = False
             if BROKEN_SYNTAX:
                 arguments['lines'] = [' return x * 3']
+                arguments['intentional'] = True  # Deliberate incomplete source tests explicit rewrites and recovery.
                 BROKEN_SYNTAX = False
         else:
             last = str(results[-1]['content'])
@@ -117,7 +123,7 @@ class Provider(BaseProvider):
 
 
 def main():
-    global SOURCE, DRIFT, BAD_PATCH, BROKEN_SYNTAX, EDITOR, HTTP_FAILURE, FOLLOWUP_GOAL
+    global SOURCE, DRIFT, BAD_PATCH, BROKEN_SYNTAX, EDITOR, HTTP_FAILURE, FOLLOWUP_GOAL, FOLLOWUP_EXPECTED
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--alt', type=Path, default=Path('target/debug/alt'))
     parser.add_argument('--goose', type=Path, required=True)
@@ -216,11 +222,12 @@ def main():
             request_offset = len(REQUESTS)
             original_source = SOURCE.read_text()
             FOLLOWUP_GOAL = 'Repair scaled(x) in repair.py. ' + 'Preserve its original public interface. ' * 10 + 'FINAL_SCOPE_MARKER ☃.'
+            FOLLOWUP_EXPECTED = [f'{FOLLOWUP_TEXT} Preserve KEEP_INTERVENING_{turn:02} ☃.' for turn in range(1, args.conversation_turns)]
             if args.interface == 'tui':
                 from live_tui_turn import run_turn
                 destination = args.output.parent / f'{args.output.stem}-tui-scope' if args.output else root / 'tui-scope'
                 destination.mkdir(parents=True)
-                receipt = run_turn(base, project, state, FOLLOWUP_GOAL, 60, destination, lambda _: 0, followup_prompts=[FOLLOWUP_TEXT]*(args.conversation_turns-1))
+                receipt = run_turn(base, project, state, FOLLOWUP_GOAL, 60, destination, lambda _: 0, followup_prompts=FOLLOWUP_EXPECTED)
                 assert receipt['error'] is None and receipt['terminal_restored'] and receipt['response_ready_visible'] and not receipt['quit_signal_fallback'], receipt
                 assert receipt['turns_completed'] == receipt['prompts_sent'] == receipt['turns_requested'] == args.conversation_turns, receipt
                 events = [json.loads(line) for line in (destination / 'turn.jsonl').read_text().splitlines()]
@@ -228,12 +235,12 @@ def main():
                 first = [json.loads(line) for line in run('run', FOLLOWUP_GOAL, '--json').splitlines()]
                 session = next(e['session']['id'] for e in first if e.get('type') == 'session')
                 events=first
-                for _ in range(args.conversation_turns-1):
-                    events += [json.loads(line) for line in run('run', FOLLOWUP_TEXT, '--json', '--resume', session).splitlines()]
+                for prompt in FOLLOWUP_EXPECTED:
+                    events += [json.loads(line) for line in run('run', prompt, '--json', '--resume', session).splitlines()]
                 assert sum(e.get('type') == 'turn_end' and e.get('data', {}).get('stopReason') == 'end_turn' for e in events) == args.conversation_turns
             assert len(REQUESTS[request_offset:]) == args.conversation_turns, 'Scope fixture requires one actual model request per turn'
             assert SOURCE.read_text() == original_source, 'Scope-only fixture must not manufacture a repair'
-            rows.append({'scenario':'continuation-keeps-original-goal','scope':'Actual continuation context/transport; source intentionally unchanged; no model weights','turns':args.conversation_turns,'events':events,'requests':REQUESTS[request_offset:],'original_goal':FOLLOWUP_GOAL})
+            rows.append({'scenario':'continuation-keeps-original-goal','scope':'Actual continuation context/transport with distinct intervening requirements; source intentionally unchanged; no model weights','turns':args.conversation_turns,'events':events,'requests':REQUESTS[request_offset:],'original_goal':FOLLOWUP_GOAL,'exact_intervening_requests':FOLLOWUP_EXPECTED})
             FOLLOWUP_GOAL = None
             SOURCE.write_text('def scaled(x):\n return x * 2\n')
             run('inference', '--requests', '1')

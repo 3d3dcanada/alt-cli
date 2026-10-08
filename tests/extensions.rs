@@ -1,5 +1,13 @@
 use alt_cli::extensions::{self, Connection, Manager, Transport};
 use serde_json::json;
+fn trust(root: &std::path::Path) {
+    alt_cli::config::Preferences {
+        access_policy: alt_cli::project::Policy::Trusted,
+        ..Default::default()
+    }
+    .save(root)
+    .unwrap();
+}
 fn connection() -> Connection {
     Connection {
         name: "fixture".into(),
@@ -18,6 +26,7 @@ fn connection() -> Connection {
 #[tokio::test]
 async fn selected_stdio_tools_keep_state_and_reconnect_without_replay() {
     let root = tempfile::tempdir().unwrap();
+    trust(root.path());
     extensions::save(root.path(), &connection()).unwrap();
     assert_eq!(
         extensions::probe(root.path(), "fixture").await.unwrap()["tools"]
@@ -110,6 +119,7 @@ async fn http_session_fixture(variants: bool) {
         .await
         .unwrap();
     let root = tempfile::tempdir().unwrap();
+    trust(root.path());
     let mut c = connection();
     c.transport = Transport::Http {
         url: format!("http://127.0.0.1:{}/mcp", line.trim()),
@@ -153,6 +163,7 @@ async fn external_calls_require_actual_alt_approval_and_respect_access() {
     };
     use tokio::io::{AsyncReadExt, AsyncWriteExt};
     let root = tempfile::tempdir().unwrap();
+    trust(root.path());
     let cwd = tempfile::tempdir().unwrap();
     extensions::save(root.path(), &connection()).unwrap();
     extensions::probe(root.path(), "fixture").await.unwrap();

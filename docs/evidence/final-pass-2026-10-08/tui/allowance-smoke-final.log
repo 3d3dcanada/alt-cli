@@ -1,0 +1,29 @@
+PASS: 120x40 observed stages, exhaustion, finite addition, continued task and saved-allocation reconnect
+PASS: 80x24 observed stages, exhaustion, finite addition, continued task and saved-allocation reconnect
+Traceback (most recent call last):
+  File "/workspace/alt-cli/scripts/smoke_allowance_tui.py", line 106, in <module>
+    main()
+  File "/workspace/alt-cli/scripts/smoke_allowance_tui.py", line 65, in main
+    term.paste('First request'); term.send(b'\r'); term.wait('Waiting for model output'); term.wait('Receiving model output'); term.wait('Response ready'); term.wait('Calls left: 0')
+                                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/alt-cli/scripts/terminal_harness.py", line 15, in wait
+    raise AssertionError('Missing '+repr(text)+'\n'+'\n'.join(self.screen.display))
+AssertionError: Missing 'Waiting for model output'
+  ALT  /  LOCAL WORKSPACE       allowance-protocol-fixture  
+  Workspace                      Connected · saved locally  
+  0.6.0 source b6d6e71                                      
+Home      Chat      Models    Links     Saved     Settings  
+                                                            
+ ╭ Conversation ──────────────────────────────────────────╮ 
+ │Calls left: 0 · generated tokens left: 88               │ 
+ │Prompt: unknown / 8064 · output reserve: 128            │ 
+ │                                                        │ 
+ │                                                        │ 
+ ╰────────────────────────────────────────────────────────╯ 
+ ╭ Describe what you want · draft saved ──────────────────╮ 
+ │                                                        │ 
+ ╰────────────────────────────────────────────────────────╯ 
+  Send   New   Reconnect   Allowance   Task progress   Star 
+  Response ready. No tools ran in this turn.                
+  Enter Send · Esc Stop · Ctrl+P Actions · Ctrl+L           
+                                                            

@@ -1,7 +1,9 @@
 # Final-pass implementation work orders
 
-Baseline and evidence: [final audit](FINAL_AUDIT_2026-10-08.md). These are planned
-work orders, not implemented fixes. User-facing dates follow the 2026-10-08 client
+Baseline and evidence: [final audit](FINAL_AUDIT_2026-10-08.md). The approved work
+orders below define acceptance; [implementation delivery](FINAL_PASS_DELIVERY.md)
+records the resulting source changes, checks and remaining qualification gates.
+These changes are not in the previously published beta 3. User-facing dates follow the 2026-10-08 client
 context. The target remains Linux, 16 GB RAM, GTX 1070 8 GB VRAM and user-selected
 7B/9B Q4 uncensored/abliterated models, with CPU and newer hardware supported.
 

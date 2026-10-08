@@ -16,8 +16,13 @@
 
 ## Developing and evaluating
 
+- [Final-pass delivery](FINAL_PASS_DELIVERY.md): implementation of all 14 audit
+  work orders, cloud validation and remaining model/hardware/human gates.
+- [Final-pass qualification](FINAL_PASS_QUALIFICATION.md): frozen comparison,
+  complete attempt accounting, longevity and training readiness.
+- [Runtime fit](RUNTIME_FIT.md): metadata, provider capabilities and measured loading.
 - [Final beta 3 audit](FINAL_AUDIT_2026-10-08.md) and
-  [next improvement work orders](FINAL_PASS_WORK_ORDERS.md): open findings,
+  [approved improvement work orders](FINAL_PASS_WORK_ORDERS.md): baseline findings,
   bounded reproductions and measurable acceptance criteria.
 - [Small-model implementation plan](SMALL_MODEL_IMPLEMENTATION_PLAN.md): combined
   harness/reasoning work orders and 7B/9B Q4 qualification.

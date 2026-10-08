@@ -97,6 +97,7 @@ impl Config {
     }
 
     pub fn save(&self, root: &Path) -> Result<()> {
+        let _generation = crate::storage::StateWriteGuard::acquire(root)?;
         for (name, profile) in &self.profiles {
             if name.trim().is_empty() || name.chars().any(char::is_control) {
                 bail!("Give the connection a readable name");
@@ -236,6 +237,7 @@ impl Preferences {
         Ok(preferences)
     }
     pub fn save(&self, root: &Path) -> Result<()> {
+        let _generation = crate::storage::StateWriteGuard::acquire(root)?;
         self.runtime.validate()?;
         atomic_write(
             &root.join("preferences.toml"),
@@ -258,6 +260,7 @@ impl Preferences {
 }
 
 pub fn atomic_write(path: &Path, bytes: &[u8]) -> Result<()> {
+    let _generation = crate::storage::write_guard_for_path(path)?;
     use std::io::Write;
     let parent = path.parent().context("File has no parent directory")?;
     private_dir(parent)?;

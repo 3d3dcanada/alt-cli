@@ -200,3 +200,172 @@ fn mutated_archive_corpus_preserves_atomic_restore_boundary() {
         }
     }
 }
+
+#[test]
+fn inference_retention_exports_inactive_payloads_but_protects_active_and_receipts() {
+    use std::{
+        fs::OpenOptions,
+        time::{Duration, SystemTime},
+    };
+    let root = tempfile::tempdir().unwrap();
+    for id in ["old", "active"] {
+        let directory = root.path().join("inference").join(id);
+        fs::create_dir_all(&directory).unwrap();
+        for (name, data) in [
+            ("effective.json", "{}"),
+            ("call-request.json", "private input"),
+            ("call-response.raw", "model output"),
+            (
+                "call-receipt.json",
+                "{\"complete\":true,\"charged_generated_tokens\":12}",
+            ),
+            ("active.lock", ""),
+        ] {
+            let path = directory.join(name);
+            fs::write(&path, data).unwrap();
+            let old = SystemTime::now() - Duration::from_secs(86400 * 10);
+            fs::File::options()
+                .write(true)
+                .open(&path)
+                .unwrap()
+                .set_times(fs::FileTimes::new().set_modified(old))
+                .unwrap();
+        }
+    }
+    let active = OpenOptions::new()
+        .read(true)
+        .write(true)
+        .open(root.path().join("inference/active/active.lock"))
+        .unwrap();
+    fs2::FileExt::lock_shared(&active).unwrap();
+    let preview = alt_cli::storage::retain(root.path(), 1, false).unwrap();
+    assert_eq!(
+        preview["inference"]["connections"]
+            .as_array()
+            .unwrap()
+            .len(),
+        1
+    );
+    assert!(root.path().join("inference/old/call-request.json").exists());
+    let result = alt_cli::storage::retain(root.path(), 1, true).unwrap();
+    assert!(!root.path().join("inference/old/call-request.json").exists());
+    assert!(!root.path().join("inference/old/call-response.raw").exists());
+    assert!(root.path().join("inference/old/call-receipt.json").exists());
+    assert!(
+        root.path()
+            .join("inference/active/call-request.json")
+            .exists()
+    );
+    let export = &result["inference"]["connections"][0]["export"];
+    let mut archive = tar::Archive::new(flate2::read::GzDecoder::new(
+        fs::File::open(export["archive"].as_str().unwrap()).unwrap(),
+    ));
+    let names: Vec<_> = archive
+        .entries()
+        .unwrap()
+        .map(|entry| entry.unwrap().path().unwrap().to_string_lossy().to_string())
+        .collect();
+    assert!(names.contains(&"inference/call-request.json".to_string()));
+    assert!(names.contains(&"INFERENCE-MANIFEST.json".to_string()));
+    assert!(
+        alt_cli::storage::export_inference(
+            root.path(),
+            "active",
+            &root.path().join("active.tar.gz")
+        )
+        .is_err()
+    );
+}
+
+#[test]
+fn large_archival_payload_cannot_block_core_backup_and_receipts_survive_restore() {
+    let root = tempfile::tempdir().unwrap();
+    let outside = tempfile::tempdir().unwrap();
+    let directory = root.path().join("inference/old");
+    fs::create_dir_all(&directory).unwrap();
+    let payload = fs::File::create(directory.join("call-response.raw")).unwrap();
+    payload.set_len(600 * 1024 * 1024).unwrap();
+    fs::write(directory.join("call-receipt.json"), "{\"complete\":true}").unwrap();
+    fs::write(
+        root.path().join("preferences.toml"),
+        "context_tokens=8192\n",
+    )
+    .unwrap();
+    let archive = outside.path().join("core.tar.gz");
+    let receipt = alt_cli::storage::backup(root.path(), &archive).unwrap();
+    assert!(receipt["generation"].is_string());
+    assert!(archive.metadata().unwrap().len() < 1024 * 1024);
+    let restored = outside.path().join("restored");
+    alt_cli::storage::restore(&archive, &restored).unwrap();
+    assert_eq!(
+        fs::read(restored.join("inference/old/call-receipt.json")).unwrap(),
+        b"{\"complete\":true}"
+    );
+    assert!(!restored.join("inference/old/call-response.raw").exists());
+    assert!(directory.join("call-response.raw").exists());
+}
+
+#[test]
+fn snapshot_refuses_mutating_generation_and_active_execution_without_publishing() {
+    let root = tempfile::tempdir().unwrap();
+    let outside = tempfile::tempdir().unwrap();
+    let destination = outside.path().join("backup.tar.gz");
+    let guard = alt_cli::storage::StateWriteGuard::acquire(root.path()).unwrap();
+    assert!(
+        alt_cli::storage::backup(root.path(), &destination)
+            .unwrap_err()
+            .to_string()
+            .contains("State is changing")
+    );
+    assert!(!destination.exists());
+    drop(guard);
+    let execution = root.path().join("projects/project/execution/run");
+    fs::create_dir_all(&execution).unwrap();
+    let lease = fs::OpenOptions::new()
+        .create(true)
+        .truncate(false)
+        .read(true)
+        .write(true)
+        .open(execution.join("active.lock"))
+        .unwrap();
+    fs2::FileExt::lock_shared(&lease).unwrap();
+    assert!(
+        alt_cli::storage::backup(root.path(), &destination)
+            .unwrap_err()
+            .to_string()
+            .contains("execution receipt")
+    );
+    assert!(!destination.exists());
+    drop(lease);
+    alt_cli::storage::backup(root.path(), &destination).unwrap();
+}
+
+#[test]
+fn state_writers_return_bounded_busy_without_changing_settings() {
+    use std::time::{Duration, Instant};
+    let root = tempfile::tempdir().unwrap();
+    alt_cli::config::Preferences::default()
+        .save(root.path())
+        .unwrap();
+    let original = fs::read(root.path().join("preferences.toml")).unwrap();
+    let barrier = fs::OpenOptions::new()
+        .read(true)
+        .write(true)
+        .open(root.path().join("state-generation.lock"))
+        .unwrap();
+    fs2::FileExt::lock_exclusive(&barrier).unwrap();
+    let started = Instant::now();
+    let error = alt_cli::config::Preferences::default()
+        .save(root.path())
+        .unwrap_err();
+    assert!(error.to_string().contains("backup is freezing state"));
+    assert!(started.elapsed() < Duration::from_secs(2));
+    assert_eq!(
+        fs::read(root.path().join("preferences.toml")).unwrap(),
+        original
+    );
+    drop(barrier);
+    alt_cli::config::Preferences::default()
+        .save(root.path())
+        .unwrap();
+}

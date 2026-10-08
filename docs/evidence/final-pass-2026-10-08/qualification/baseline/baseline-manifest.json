@@ -1,0 +1,75 @@
+{
+  "schema": 1,
+  "source_commit": "fa0c8e4130ec4d13c59193436679c4e059c22dee",
+  "binary_sha256": "37a6e2eb0768411de9b51447c35f75e07b273a9da3b5ff83fbdae899abd76164",
+  "evaluator_sha256": {
+    "live_acceptance.py": "62308c56a9a76ed9ca6a1977489fdcd1f707fb097045e64da338365638cc0e6b",
+    "live_tui_turn.py": "ff284fbffaaaccdd7d597590cf447e76b18757247b14678b63c332e11b8a0425",
+    "acceptance_projects.py": "453f27af5b3cc558a2190620cee195a392e0a0a45889f43569b96e85765cd32a",
+    "acceptance_extra.py": "2a724e6da5673cb581b3b2c54d338a62bbc917f1753b7edf2774f9e2e005148d",
+    "acceptance_v5.py": "0f669daa7bbe060b131d79e2294ec026e419467be38d969c77f5dfefb897dea7",
+    "evaluation_preflight.py": "2b08976afad22a42f81a9142b1786181a06a7243c6b95ede4ce238ec4a11c4fb"
+  },
+  "engine": "/workspace/.alt-tools/goose",
+  "engine_sha256": "59655719cd9b098dab59b6e2c50f1e565a935992fae2e539f52018a960e0512a",
+  "runtime": "/workspace/.alt-tools/llama-b11429/llama-b11429/llama-server",
+  "runtime_sha256": "5faf410bbbc00a1b94b09ee01623699f255365628dfa73b1ee552d9e52a2231d",
+  "models": [
+    {
+      "id": "mimo9b-heretic-q4",
+      "path": "/tmp/alt-native-requalification/MiMo-V2.6-Distill-Qwen-9B-heretic.Q4_K_M.gguf",
+      "sha256": "00877ff79174b79f72c5ec704901fc958400a0b0d390fb61a068281618116dd1"
+    },
+    {
+      "id": "josiefied7b-abliterated-q4",
+      "path": "/tmp/alt-native-requalification/Josiefied-Qwen2.5-7B-Instruct-abliterated.Q4_K_M.gguf",
+      "sha256": "d7d626d96cc2d3567e8266101b4211b17634012dd99a0c9b28f475ce4eb620b6"
+    }
+  ],
+  "conditions": {
+    "native_context": 8192,
+    "output_tokens": 1024,
+    "generated_tokens": 8192,
+    "requests": 12,
+    "temperature": 0.2,
+    "top_p": 0.95,
+    "thinking": "default",
+    "threads": 2,
+    "batch": 128,
+    "timeout_seconds": 600,
+    "tool_profile": "compact",
+    "provider": "openai",
+    "gpu_layers": 0
+  },
+  "attempts": [
+    {
+      "id": "mimo9b-heretic-q4-python-multifile",
+      "model": "mimo9b-heretic-q4",
+      "case": "python-multifile",
+      "partition": "development",
+      "repetition": 1
+    },
+    {
+      "id": "mimo9b-heretic-q4-rust-feature",
+      "model": "mimo9b-heretic-q4",
+      "case": "rust-feature",
+      "partition": "validation",
+      "repetition": 1
+    },
+    {
+      "id": "josiefied7b-abliterated-q4-python-multifile",
+      "model": "josiefied7b-abliterated-q4",
+      "case": "python-multifile",
+      "partition": "development",
+      "repetition": 1
+    },
+    {
+      "id": "josiefied7b-abliterated-q4-rust-feature",
+      "model": "josiefied7b-abliterated-q4",
+      "case": "rust-feature",
+      "partition": "validation",
+      "repetition": 1
+    }
+  ],
+  "scope": "Pre-change development/validation pilot only; historical tasks already inspected. No final held-out inspection, candidate or quality promotion."
+}

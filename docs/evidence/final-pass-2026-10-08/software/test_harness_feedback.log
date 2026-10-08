@@ -1,0 +1,16 @@
+test_quote_only_valid_observations_and_mark_truncation (__main__.FeedbackTests.test_quote_only_valid_observations_and_mark_truncation) ... ok
+test_real_rust_failure_quotes_unchanged_assertion_then_gold_still_passes (__main__.FeedbackTests.test_real_rust_failure_quotes_unchanged_assertion_then_gold_still_passes) ... FAIL
+test_stdout_assertion_and_stderr_remain_distinct (__main__.FeedbackTests.test_stdout_assertion_and_stderr_remain_distinct) ... ok
+
+======================================================================
+FAIL: test_real_rust_failure_quotes_unchanged_assertion_then_gold_still_passes (__main__.FeedbackTests.test_real_rust_failure_quotes_unchanged_assertion_then_gold_still_passes)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/alt-cli/scripts/test_harness_feedback.py", line 35, in test_real_rust_failure_quotes_unchanged_assertion_then_gold_still_passes
+    self.assertEqual(len(observations), 1, before)
+AssertionError: 0 != 1 : {'passed': False, 'completion_observed': False, 'exit': 1, 'stdout': '', 'stderr': 'Traceback (most recent call last):\n  File "/tmp/alt-feedback-rust-1cjlgvdb/independent/check.py", line 10, in <module>\n    result=subprocess.run([\'cargo\',\'test\',\'--offline\',\'--message-format=json\',\'--manifest-path\',str(crate/\'Cargo.toml\')],env=env,capture_output=True,text=True)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/subprocess.py", line 548, in run\n    with Popen(*popenargs, **kwargs) as process:\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/subprocess.py", line 1026, in __init__\n    self._execute_child(args, executable, preexec_fn, close_fds,\n  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/subprocess.py", line 1955, in _execute_child\n    raise child_exception_type(errno_num, err_msg, err_filename)\nFileNotFoundError: [Errno 2] No such file or directory: \'cargo\'\n'}
+
+----------------------------------------------------------------------
+Ran 3 tests in 0.041s
+
+FAILED (failures=1)

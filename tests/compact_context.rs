@@ -270,7 +270,7 @@ fn migration_retains_legacy_handles_and_short_handles_survive_restart() {
     assert_eq!(
         db.query_row("PRAGMA user_version", [], |r| r.get::<_, i64>(0))
             .unwrap(),
-        4
+        5
     );
 }
 
@@ -377,7 +377,7 @@ fn named_source_prefetch_does_not_index_unrelated_archives() {
     let memory = p.compact_memory("t", "Repair calc.py.", 1400).unwrap();
     assert!(memory.contains("def calc(x): return x"));
     let view = p.context_view("t").unwrap();
-    assert_eq!(view["retrieval_method"], "explicit-file-read");
+    assert_eq!(view["retrieval_method"], "merged-path-symbol-diagnostic-v2");
     let db = Connection::open(p.state.join("project.db")).unwrap();
     assert_eq!(
         db.query_row("SELECT count(*) FROM index_meta", [], |r| r

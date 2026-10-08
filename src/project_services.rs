@@ -58,7 +58,7 @@ pub fn environment_cancellable(
     let mut result = BTreeMap::new();
     // Old records counted only saved output and can miss a trailing zero-test
     // summary. A verifier correction must require new evidence after upgrade.
-    result.insert("verification_contract".into(), "3".into());
+    result.insert("verification_contract".into(), "4".into());
     match crate::verification::dependencies_cancellable(cwd, cancel) {
         Ok(hash) => {
             result.insert("installed_dependencies".into(), hash);
@@ -91,22 +91,30 @@ pub fn environment_cancellable(
             result.insert(name.into(), digest(&bytes));
         }
     }
-    for name in [
-        "PATH",
-        "PYTHONPATH",
-        "VIRTUAL_ENV",
-        "NODE_ENV",
-        "CARGO_HOME",
-        "RUSTUP_HOME",
-        "RUSTUP_TOOLCHAIN",
-    ] {
-        if let Some(value) = std::env::var_os(name) {
-            result.insert(
-                format!("environment_{name}_sha256"),
-                digest(value.as_encoded_bytes()),
-            );
-        }
-    }
+    // Full commands inherit the whole environment, including project-specific
+    // flags. Store one aggregate hash, never raw names/credentials. Exclude only
+    // values the runner replaces deterministically or per-run output paths.
+    let effective = std::env::vars_os()
+        .filter(|(name, _)| {
+            !matches!(
+                name.to_str(),
+                Some("LANG" | "PYTHONDONTWRITEBYTECODE" | "ALT_CHECK_REPORT")
+            )
+        })
+        .map(|(name, value)| {
+            (
+                name.as_encoded_bytes().to_vec(),
+                value.as_encoded_bytes().to_vec(),
+            )
+        })
+        .collect::<BTreeMap<_, _>>();
+    result.insert(
+        "inherited_environment_sha256".into(),
+        digest(
+            &serde_json::to_vec(&effective.into_iter().collect::<Vec<_>>())
+                .expect("environment bytes serialize"),
+        ),
+    );
     if let Some(program) = argv.first() {
         let paths = std::env::var_os("PATH").unwrap_or_default();
         let path = if program.contains('/') {
@@ -119,9 +127,72 @@ pub fn environment_cancellable(
         if let Some(path) = path.and_then(|p| p.canonicalize().ok()) {
             result.insert("executable".into(), path.display().to_string());
             if let Ok(m) = path.metadata() {
+                #[cfg(unix)]
+                let identity = {
+                    use std::os::unix::fs::MetadataExt;
+                    format!(
+                        "{}:{}:{}:{}:{}:{}:{}",
+                        m.dev(),
+                        m.ino(),
+                        m.len(),
+                        m.mode(),
+                        m.mtime_nsec(),
+                        m.ctime(),
+                        m.ctime_nsec()
+                    )
+                };
+                #[cfg(not(unix))]
+                let identity = format!("{}:{:?}", m.len(), m.modified());
+                result.insert("executable_metadata".into(), identity);
+            }
+        }
+    }
+    result
+}
+
+pub fn check_environment(
+    cwd: &Path,
+    argv: &[String],
+    contract: &crate::verification::Contract,
+) -> BTreeMap<String, String> {
+    check_environment_cancellable(cwd, argv, contract, None)
+}
+fn check_environment_cancellable(
+    cwd: &Path,
+    argv: &[String],
+    contract: &crate::verification::Contract,
+    cancel: Option<&AtomicBool>,
+) -> BTreeMap<String, String> {
+    let mut result = environment_cancellable(cwd, argv, cancel);
+    for (index, path) in contract.inputs.files.iter().enumerate() {
+        let resolved = if path.is_absolute() {
+            path.clone()
+        } else {
+            cwd.join(path)
+        };
+        let observed = (|| -> Result<String> {
+            ensure!(
+                !cancel.is_some_and(|v| v.load(Ordering::Relaxed)),
+                "Input inventory cancelled"
+            );
+            let mut bytes = Vec::new();
+            std::fs::File::open(resolved)?
+                .take(16 * 1024 * 1024 + 1)
+                .read_to_end(&mut bytes)?;
+            ensure!(
+                bytes.len() <= 16 * 1024 * 1024,
+                "Declared input exceeds 16 MiB"
+            );
+            Ok(digest(&bytes))
+        })();
+        match observed {
+            Ok(hash) => {
+                result.insert(format!("declared_input_{index}_sha256"), hash);
+            }
+            Err(error) => {
                 result.insert(
-                    "executable_metadata".into(),
-                    format!("{}:{:?}", m.len(), m.modified()),
+                    format!("unavailable_declared_input_{index}"),
+                    error.to_string(),
                 );
             }
         }
@@ -151,7 +222,7 @@ pub fn environment_current_cancellable(
         .filter(|(key, _)| !key.starts_with("observed_version_"))
         .map(|(key, value)| (key.clone(), value.clone()))
         .collect::<BTreeMap<_, _>>()
-        == environment_cancellable(cwd, argv, cancel)
+        == check_environment_cancellable(cwd, argv, &check.contract, cancel)
 }
 /// Recognize explicit test-run summaries; unknown command output remains unknown.
 pub fn test_count(output: &str) -> Option<u64> {
@@ -404,7 +475,7 @@ impl Project {
         Ok(Verification {
             complete,
             behavioral_acceptance,
-            scope:if behavioral_acceptance{"Pinned independent assertions passed on current files; review their behavioral coverage"}else if complete{"Required commands passed; independent behavioral acceptance is not established"}else{"Required checks are incomplete"}.into(),
+            scope:if behavioral_acceptance{"Pinned independent assertions passed with unchanged observed input bytes and metadata. Execution inputs were writable; this does not establish immutable execution. Review behavioral coverage and the execution receipt."}else if complete{"Required commands passed; independent behavioral acceptance is not established"}else{"Required checks are incomplete"}.into(),
             requirements: statuses,
             source_snapshot: snapshot,
         })

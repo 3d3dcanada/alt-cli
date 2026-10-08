@@ -1,0 +1,23 @@
+error: unrecognized subcommand 'storage'
+
+  tip: a similar subcommand exists: 'state'
+
+Usage: frozen-alt-7 [OPTIONS] [COMMAND]
+
+For more information, try '--help'.
+Traceback (most recent call last):
+  File "/workspace/alt-cli/scripts/smoke_recovery_tui.py", line 74, in <module>
+    if __name__=='__main__':main()
+                            ^^^^^^
+  File "/workspace/alt-cli/scripts/smoke_recovery_tui.py", line 44, in main
+    assert json.loads(cli('storage','usage'))['inference_warning_bytes']==64*1024*1024
+                      ^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/alt-cli/scripts/smoke_recovery_tui.py", line 31, in cli
+    def cli(*items):return subprocess.check_output(base+list(items),cwd=project,text=True)
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/subprocess.py", line 466, in check_output
+    return run(*popenargs, stdout=PIPE, timeout=timeout, check=True,
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/subprocess.py", line 571, in run
+    raise CalledProcessError(retcode, process.args,
+subprocess.CalledProcessError: Command '['/workspace/.alt-audit-ux/frozen-alt-7', '--data-dir', '/tmp/alt-recovery-ui-z2bcxc2g/state', 'storage', 'usage']' returned non-zero exit status 2.

@@ -153,6 +153,8 @@ enum Action {
     /// Configure managed inference without changing the selected model.
     Runtime {
         #[arg(long)]
+        startup_timeout_secs: Option<u64>,
+        #[arg(long)]
         gpu_layers: Option<i32>,
         #[arg(long)]
         threads: Option<usize>,
@@ -204,7 +206,14 @@ enum Action {
     },
 
     /// Hardware, runtime ABI, isolation, and conservative memory guidance; no inference.
-    Hardware,
+    Hardware {
+        /// Estimate memory fit for the exact selected local model; does not load it.
+        #[arg(long)]
+        fit: bool,
+        /// Inspect observed server capabilities without generating a response.
+        #[arg(long)]
+        provider: bool,
+    },
     /// Evaluate native tool use with the explicitly selected uncensored model.
     Evaluate,
     /// Project progress, check configuration, memory, diffs and undo.
@@ -290,6 +299,16 @@ enum ExtensionAction {
 
 #[derive(Subcommand)]
 enum StateAction {
+    /// Export a stopped connection's full inference evidence without deleting it.
+    ExportInference {
+        connection: String,
+        destination: PathBuf,
+    },
+    /// Set a storage warning budget; this never automatically deletes evidence.
+    Budget {
+        #[arg(long)]
+        inference_mib: u64,
+    },
     /// Preview or archive old conversations already marked archived by the user.
     History {
         #[arg(long, default_value_t = 30)]
@@ -362,14 +381,8 @@ enum TaskAction {
     /// Declare check purpose and structured evidence; pins an optional external assertion.
     Contract {
         name: String,
-        #[arg(long, value_enum)]
-        kind: alt_cli::verification::Kind,
-        #[arg(long, value_enum)]
-        format: Option<alt_cli::verification::Format>,
-        #[arg(long, requires = "format")]
-        report: Option<String>,
-        #[arg(long)]
-        assertion: Option<PathBuf>,
+        #[command(flatten)]
+        contract: CheckContractArgs,
     },
     /// Define a required outcome and the configured check that verifies it.
     Require {
@@ -397,6 +410,35 @@ enum TaskAction {
     Index,
 
     Status,
+    /// Inspect exact active and superseded user requests for the current task.
+    Requests,
+    /// Explicitly replace a user requirement, preserving its original text.
+    CorrectRequest {
+        seq: i64,
+        replacement: String,
+        #[arg(long)]
+        reason: String,
+    },
+    /// List preserved file versions captured at tracked replacement boundaries.
+    Recovered,
+    /// Preview a retained file as a new tracked proposal; --apply explicitly restores it.
+    RestoreRecovered {
+        change: String,
+        operation: String,
+        sha256: String,
+        #[arg(long)]
+        apply: bool,
+    },
+    /// Read retained check output; omitted --offset selects its tail.
+    Logs {
+        id: String,
+        #[arg(long, default_value = "stdout")]
+        stream: String,
+        #[arg(long)]
+        offset: Option<u64>,
+        #[arg(long, default_value_t = 16384)]
+        limit: usize,
+    },
     Changes,
     Diff {
         id: String,
@@ -410,8 +452,10 @@ enum TaskAction {
     Checks,
     ConfigureCheck {
         name: String,
-        #[arg(long, default_value_t = 120)]
-        timeout: u64,
+        #[arg(long)]
+        timeout: Option<u64>,
+        #[command(flatten)]
+        contract: CheckContractArgs,
         #[arg(required = true, last = true)]
         argv: Vec<String>,
     },
@@ -425,6 +469,57 @@ enum TaskAction {
         text: String,
     },
     Export,
+}
+
+#[derive(clap::Args)]
+struct CheckContractArgs {
+    #[arg(long, value_enum)]
+    kind: Option<alt_cli::verification::Kind>,
+    #[arg(long, value_enum, requires = "report")]
+    format: Option<alt_cli::verification::Format>,
+    #[arg(long, requires = "format")]
+    report: Option<String>,
+    #[arg(long)]
+    assertion: Option<PathBuf>,
+    #[arg(long)]
+    input_file: Vec<PathBuf>,
+    #[arg(long)]
+    generated_output: Vec<String>,
+    /// Start from an empty contract instead of preserving the existing fields.
+    #[arg(long)]
+    reset_contract: bool,
+}
+
+fn patch_check_contract(
+    spec: &mut alt_cli::project::CheckSpec,
+    changes: CheckContractArgs,
+) -> Result<()> {
+    if changes.reset_contract {
+        spec.contract = Default::default();
+    }
+    if let Some(kind) = changes.kind {
+        spec.contract.kind = kind;
+    }
+    if let Some((format, path)) = changes.format.zip(changes.report) {
+        spec.contract.report = Some(alt_cli::verification::ReportSpec { format, path });
+    }
+    if let Some(assertion) = changes.assertion {
+        spec.contract.assertion = Some(alt_cli::verification::Contract::pin(&assertion)?);
+    }
+    if !changes.input_file.is_empty() {
+        spec.contract.inputs.files = changes.input_file;
+    }
+    if !changes.generated_output.is_empty() {
+        spec.contract.inputs.generated = changes.generated_output;
+    }
+    if let Some(assertion) = &spec.contract.assertion {
+        for arg in spec.argv.iter_mut().take(2) {
+            if std::path::Path::new(arg).canonicalize().ok().as_ref() == Some(&assertion.path) {
+                *arg = "{assertion}".into();
+            }
+        }
+    }
+    Ok(())
 }
 
 #[derive(Subcommand)]
@@ -494,6 +589,8 @@ enum InstructionAction {
 
 #[derive(Subcommand)]
 enum ModelAction {
+    /// Read bounded GGUF architecture/context metadata without loading the model.
+    Inspect { path: PathBuf },
     /// Unregister a model; optionally delete verified managed weights, never imported originals.
     Remove {
         id: String,
@@ -721,6 +818,7 @@ async fn run() -> Result<()> {
             return Ok(());
         }
         Action::Runtime {
+            startup_timeout_secs,
             gpu_layers,
             threads,
             batch,
@@ -748,6 +846,9 @@ async fn run() -> Result<()> {
             }
             if let Some(v) = flash_attention {
                 p.runtime.flash_attention = v;
+            }
+            if let Some(seconds) = startup_timeout_secs {
+                p.runtime.startup_timeout_secs = seconds;
             }
             if thinking_default {
                 p.runtime.thinking = None;
@@ -1045,7 +1146,15 @@ async fn run() -> Result<()> {
                     alt_cli::extensions::save(&root, &c)?;
                     json!({"saved":true,"enabled":false})
                 }
-                ExtensionAction::Check { name } => alt_cli::extensions::probe(&root, &name).await?,
+                ExtensionAction::Check { name } => {
+                    alt_cli::extensions::probe_with_policy(
+                        &root,
+                        &name,
+                        args.access
+                            .unwrap_or(Preferences::load(&root)?.access_policy),
+                    )
+                    .await?
+                }
                 ExtensionAction::Select { name, tools } => {
                     alt_cli::extensions::select(&root, &name, tools)?;
                     json!({"saved":true,"scope":"Selected tools are available in Full access after reconnect"})
@@ -1081,6 +1190,16 @@ async fn run() -> Result<()> {
                 StateAction::RestoreHistory { archive } => {
                     json!({"restored_session":Store::open(&root)?.restore_history(&archive)?})
                 }
+                StateAction::ExportInference {
+                    connection,
+                    destination,
+                } => alt_cli::storage::export_inference(&root, &connection, &destination)?,
+                StateAction::Budget { inference_mib } => alt_cli::storage::set_budget(
+                    &root,
+                    inference_mib
+                        .checked_mul(1024 * 1024)
+                        .context("Storage budget is too large")?,
+                )?,
                 StateAction::Usage => alt_cli::storage::usage(&root)?,
                 StateAction::Diagnostics => alt_cli::storage::diagnostics(&root)?,
                 StateAction::Retain { days, apply } => {
@@ -1090,11 +1209,21 @@ async fn run() -> Result<()> {
             println!("{}", serde_json::to_string_pretty(&value)?);
             return Ok(());
         }
-        Action::Hardware => {
-            println!(
-                "{}",
-                serde_json::to_string_pretty(&alt_cli::hardware::inspect().await)?
-            );
+        Action::Hardware { fit, provider } => {
+            let mut report = serde_json::to_value(alt_cli::hardware::inspect().await)?;
+            if fit || provider {
+                let config = Config::read(&root)?;
+                let profile = config.profile(args.profile.as_deref())?.1;
+                if fit {
+                    report["model_fit"] =
+                        alt_cli::hardware::model_fit(&root, &Preferences::load(&root)?, profile)
+                            .await?;
+                }
+                if provider {
+                    report["provider"] = alt_cli::hardware::provider_capabilities(profile).await?;
+                }
+            }
+            println!("{}", serde_json::to_string_pretty(&report)?);
             return Ok(());
         }
         Action::Task { command } => return task_action(&root, command, args.access).await,
@@ -1448,6 +1577,13 @@ fn transfer_status() -> (models::Cancel, impl FnMut(models::Progress)) {
 }
 
 async fn model_action(root: &std::path::Path, command: ModelAction) -> Result<()> {
+    if let ModelAction::Inspect { ref path } = command {
+        println!(
+            "{}",
+            serde_json::to_string_pretty(&models::inspect_gguf(path).await?)?
+        );
+        return Ok(());
+    }
     let (artifact, select) = match command {
         ModelAction::Remove { id, delete_weights } => {
             models::remove(root, &id, delete_weights)?;
@@ -1471,6 +1607,7 @@ async fn model_action(root: &std::path::Path, command: ModelAction) -> Result<()
             );
             return Ok(());
         }
+        ModelAction::Inspect { .. } => unreachable!("metadata inspection handled above"),
         ModelAction::Local => {
             println!("{}", serde_json::to_string_pretty(&models::library(root)?)?);
             return Ok(());
@@ -1705,42 +1842,11 @@ async fn task_action(
         p.start_task(&task, "Manual project checks and changes")?;
     }
     let value = match action {
-        TaskAction::Contract {
-            name,
-            kind,
-            format,
-            report,
-            assertion,
-        } => {
-            let mut spec = p
-                .checks()?
-                .into_iter()
-                .find(|s| s.name == name)
-                .context("Configure the command first")?;
-            ensure!(
-                format.is_some() == report.is_some(),
-                "Supply both --format and --report"
-            );
-            spec.contract = alt_cli::verification::Contract {
-                kind,
-                report: format
-                    .zip(report)
-                    .map(|(format, path)| alt_cli::verification::ReportSpec { format, path }),
-                assertion: assertion
-                    .as_deref()
-                    .map(alt_cli::verification::Contract::pin)
-                    .transpose()?,
-            };
-            if let Some(assertion) = &spec.contract.assertion {
-                // Pin the script already named by the user; never substitute an unrelated command.
-                for arg in spec.argv.iter_mut().take(2) {
-                    if std::path::Path::new(arg).canonicalize().ok().as_ref()
-                        == Some(&assertion.path)
-                    {
-                        *arg = "{assertion}".into();
-                    }
-                }
-            }
+        TaskAction::Contract { name, contract } => {
+            let mut spec = p.checks()?.into_iter().find(|s| s.name == name).context(
+                "Configure the command first, or use configure-check with its contract flags",
+            )?;
+            patch_check_contract(&mut spec, contract)?;
             p.set_check(&spec)?;
             json!(spec)
         }
@@ -1797,6 +1903,41 @@ async fn task_action(
         TaskAction::Context => p.context_view(&task)?,
         TaskAction::Map => p.repository_map()?,
         TaskAction::Index => json!(p.index_incremental(None)?),
+        TaskAction::Requests => {
+            json!({"task":task,"active":p.active_requests(&task)?,"history":p.request_history(&task)?})
+        }
+        TaskAction::CorrectRequest {
+            seq,
+            replacement,
+            reason,
+        } => {
+            json!({"replacement_seq":p.supersede_request(&task,seq,&replacement,&reason)?,"active":p.active_requests(&task)?})
+        }
+        TaskAction::Recovered => json!({"project":cwd,"versions":p.displaced_versions()?}),
+        TaskAction::RestoreRecovered {
+            change,
+            operation,
+            sha256,
+            apply,
+        } => {
+            let proposal = p.prepare_displaced_restore(&change, &operation, &sha256)?;
+            let diff = proposal.diff();
+            let proposal = if apply {
+                p.apply(
+                    &proposal.id,
+                    access.unwrap_or(Preferences::load(root)?.access_policy),
+                )?
+            } else {
+                proposal
+            };
+            json!({"change":proposal,"diff":diff,"applied":apply})
+        }
+        TaskAction::Logs {
+            id,
+            stream,
+            offset,
+            limit,
+        } => alt_cli::verification::read_execution_log(&p, &id, &stream, offset, limit)?,
         TaskAction::Status => {
             json!({"task":p.task(&task)?,"verification":p.verification()?,"workflow":alt_cli::workflow::packet(&p,&task)?})
         }
@@ -1813,14 +1954,19 @@ async fn task_action(
         TaskAction::ConfigureCheck {
             name,
             timeout,
+            contract,
             argv,
         } => {
-            let spec = CheckSpec {
+            let previous = p.checks()?.into_iter().find(|s| s.name == name);
+            let mut spec = CheckSpec {
                 name,
                 argv,
-                timeout_secs: timeout,
-                contract: Default::default(),
+                timeout_secs: timeout
+                    .or_else(|| previous.as_ref().map(|s| s.timeout_secs))
+                    .unwrap_or(120),
+                contract: previous.map(|s| s.contract).unwrap_or_default(),
             };
+            patch_check_contract(&mut spec, contract)?;
             p.set_check(&spec)?;
             json!(spec)
         }

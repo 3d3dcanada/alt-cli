@@ -11,6 +11,19 @@ use std::{
     time::Duration,
 };
 use tokio::process::{Child, Command};
+#[path = "runtime_endpoint.rs"]
+mod private_endpoint;
+
+/// Owned loopback capability URLs must never leave this machine via an inherited
+/// HTTP proxy. External endpoints retain the operator's proxy configuration.
+pub fn http_client(profile: &Profile) -> reqwest::ClientBuilder {
+    let builder = reqwest::Client::builder();
+    if profile.local_model.is_some() {
+        builder.no_proxy()
+    } else {
+        builder
+    }
+}
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(default, deny_unknown_fields)]
@@ -22,6 +35,7 @@ pub struct Settings {
     pub cache_v: String,
     pub flash_attention: bool,
     pub thinking: Option<bool>,
+    pub startup_timeout_secs: u64,
 }
 impl Default for Settings {
     fn default() -> Self {
@@ -33,11 +47,16 @@ impl Default for Settings {
             cache_v: "f16".into(),
             flash_attention: false,
             thinking: None,
+            startup_timeout_secs: 180,
         }
     }
 }
 impl Settings {
     pub fn validate(&self) -> Result<()> {
+        ensure!(
+            (5..=3600).contains(&self.startup_timeout_secs),
+            "Model loading deadline must be 5–3600 seconds"
+        );
         ensure!(
             (-1..=200).contains(&self.gpu_layers)
                 && self.threads <= 1024
@@ -63,6 +82,8 @@ pub struct Hardware {
     pub available_ram: u64,
     pub threads: usize,
     pub gpu: String,
+    pub vram_total: Option<u64>,
+    pub vram_free: Option<u64>,
 }
 
 // Container usage includes reclaimable disk cache. Match the conservative
@@ -116,6 +137,8 @@ pub async fn hardware() -> Hardware {
             .map(usize::from)
             .unwrap_or(1),
         gpu: "No NVIDIA GPU detected; CPU mode is available".into(),
+        vram_total: None,
+        vram_free: None,
     };
     if let Ok(limit) = std::fs::read_to_string("/sys/fs/cgroup/memory.max")
         && let Ok(limit) = limit.trim().parse::<u64>()
@@ -128,21 +151,31 @@ pub async fn hardware() -> Hardware {
         let statistics = std::fs::read_to_string("/sys/fs/cgroup/memory.stat").unwrap_or_default();
         data.available_ram = cgroup_available(data.available_ram, limit, used, &statistics);
     }
-    let result = tokio::time::timeout(
+    let result = crate::process::bounded_output(
+        Command::new("nvidia-smi").args([
+            "--query-gpu=name,memory.total,memory.free",
+            "--format=csv,noheader,nounits",
+        ]),
         Duration::from_secs(2),
-        Command::new("nvidia-smi")
-            .args([
-                "--query-gpu=name,memory.total",
-                "--format=csv,noheader,nounits",
-            ])
-            .kill_on_drop(true)
-            .output(),
+        64 * 1024,
     )
     .await;
-    if let Ok(Ok(result)) = result
+    if let Ok(result) = result
         && result.status.success()
     {
         data.gpu = crate::display_text(String::from_utf8_lossy(&result.stdout).trim());
+        // Conservative single-device guidance; never sum disjoint VRAM budgets.
+        if let Some(line) = String::from_utf8_lossy(&result.stdout).lines().next() {
+            let fields: Vec<_> = line.rsplitn(3, ',').map(str::trim).collect();
+            data.vram_free = fields
+                .first()
+                .and_then(|s| s.parse::<u64>().ok())
+                .and_then(|n| n.checked_mul(1024 * 1024));
+            data.vram_total = fields
+                .get(1)
+                .and_then(|s| s.parse::<u64>().ok())
+                .and_then(|n| n.checked_mul(1024 * 1024));
+        }
     }
     data
 }
@@ -151,21 +184,19 @@ pub fn find_engine(root: &Path, requested: &Path, preferences: &Preferences) -> 
     if requested != Path::new("goose") {
         return find_executable(requested);
     }
-    preferences
-        .engine_path
-        .as_deref()
-        .and_then(find_executable)
-        .or_else(|| find_executable(&root.join("tools/goose")))
+    if let Some(path) = preferences.engine_path.as_deref() {
+        return find_executable(path);
+    }
+    find_executable(&root.join("tools/goose"))
         .or_else(|| find_executable(Path::new("goose")))
         .or_else(|| find_executable(Path::new("/workspace/.alt-tools/goose")))
 }
 
 pub fn find_runtime(root: &Path, preferences: &Preferences) -> Option<PathBuf> {
-    preferences
-        .runtime_path
-        .as_deref()
-        .and_then(find_executable)
-        .or_else(|| find_executable(&root.join("tools/llama-b11429/llama-server")))
+    if let Some(path) = preferences.runtime_path.as_deref() {
+        return find_executable(path);
+    }
+    find_executable(&root.join("tools/llama-b11429/llama-server"))
         .or_else(|| find_executable(Path::new("llama-server")))
         .or_else(|| {
             find_executable(Path::new(
@@ -174,7 +205,7 @@ pub fn find_runtime(root: &Path, preferences: &Preferences) -> Option<PathBuf> {
         })
 }
 
-fn find_executable(path: &Path) -> Option<PathBuf> {
+pub fn find_executable(path: &Path) -> Option<PathBuf> {
     let valid = |path: &Path| {
         if !path.is_file() {
             return false;
@@ -293,8 +324,38 @@ pub async fn install(
 
 pub struct LocalRuntime {
     child: Child,
+    group: crate::process::OwnedGroup,
     pub endpoint: String,
     log: PathBuf,
+    _private_endpoint: private_endpoint::Endpoint,
+    lease: Option<std::fs::File>,
+    source_identity: Vec<(PathBuf, FileIdentity)>,
+}
+#[derive(PartialEq, Eq)]
+struct FileIdentity {
+    bytes: u64,
+    modified: std::time::SystemTime,
+    #[cfg(unix)]
+    dev: u64,
+    #[cfg(unix)]
+    ino: u64,
+    #[cfg(unix)]
+    ctime: (i64, i64),
+}
+fn file_identity(path: &Path) -> Result<FileIdentity> {
+    let m = std::fs::metadata(path)?;
+    #[cfg(unix)]
+    use std::os::unix::fs::MetadataExt;
+    Ok(FileIdentity {
+        bytes: m.len(),
+        modified: m.modified()?,
+        #[cfg(unix)]
+        dev: m.dev(),
+        #[cfg(unix)]
+        ino: m.ino(),
+        #[cfg(unix)]
+        ctime: (m.ctime(), m.ctime_nsec()),
+    })
 }
 
 impl LocalRuntime {
@@ -321,6 +382,14 @@ impl LocalRuntime {
             .context("No local model selected")?;
         let artifact = models::artifact(root, id)?;
         preferences.runtime.validate()?;
+        private_dir(root)?;
+        let lease = std::fs::OpenOptions::new()
+            .create(true)
+            .truncate(false)
+            .read(true)
+            .write(true)
+            .open(root.join("owned-runtime.lock"))?;
+        fs2::FileExt::try_lock_exclusive(&lease).context("Another owned model is already running for this Alt state. Disconnect it before loading or benchmarking another model")?;
         let detected = hardware().await;
         ensure!(
             detected.available_ram == 0
@@ -329,17 +398,28 @@ impl LocalRuntime {
         );
         models::verify_artifact(&artifact, &cancel, &mut progress).await?;
         let binary = find_runtime(root, preferences)
-            .context("Install the local runtime from Models, or set llama-server in Settings")?;
+            .with_context(|| match &preferences.runtime_path {
+                Some(path)=>format!("Selected runtime {} is missing or not executable. Restore it or explicitly choose another runtime in Settings; no fallback was launched",path.display()),
+                None=>"Install the local runtime from Models, or set llama-server in Settings".into(),
+            })?;
+        let mut paths = if artifact.pieces.is_empty() {
+            vec![artifact.path.clone()]
+        } else {
+            artifact.pieces.iter().map(|p| p.path.clone()).collect()
+        };
+        paths.push(binary.clone());
+        let source_identity = paths
+            .into_iter()
+            .map(|p| Ok((p.clone(), file_identity(&p)?)))
+            .collect::<Result<Vec<_>>>()?;
         if preferences.runtime.gpu_layers != 0 {
-            let devices = tokio::time::timeout(
+            let devices = crate::process::bounded_output(
+                Command::new(&binary).arg("--list-devices"),
                 Duration::from_secs(10),
-                Command::new(&binary)
-                    .arg("--list-devices")
-                    .kill_on_drop(true)
-                    .output(),
+                1024 * 1024,
             )
             .await
-            .context("GPU device discovery timed out; use CPU layers 0 or inspect the runtime")??;
+            .context("GPU device discovery failed; use CPU layers 0 or inspect the runtime")?;
             let output = format!(
                 "{}\n{}",
                 String::from_utf8_lossy(&devices.stdout),
@@ -357,9 +437,7 @@ impl LocalRuntime {
                     .collect::<String>()
             );
         }
-        let listener = std::net::TcpListener::bind(("127.0.0.1", 0))?;
-        let port = listener.local_addr()?.port();
-        drop(listener);
+        let private_endpoint = private_endpoint::Endpoint::reserve().await?;
         let logs = root.join("logs");
         private_dir(&logs)?;
         let log = logs.join(format!("runtime-{}.log", uuid::Uuid::new_v4()));
@@ -380,9 +458,12 @@ impl LocalRuntime {
                 "--ctx-size",
                 &profile.context_tokens.to_string(),
                 "--host",
-                "127.0.0.1",
+                private_endpoint
+                    .socket
+                    .to_str()
+                    .context("Private runtime socket path is not UTF-8")?,
                 "--port",
-                &port.to_string(),
+                "0",
                 "--threads",
                 &threads.to_string(),
                 "--parallel",
@@ -419,15 +500,13 @@ impl LocalRuntime {
         }
         if let Some(tokens) = profile.effective_inference().reasoning_tokens {
             // Fail visibly on older runtimes rather than claiming an unsupported allocation.
-            let help = tokio::time::timeout(
+            let help = crate::process::bounded_output(
+                Command::new(&binary).arg("--help"),
                 Duration::from_secs(5),
-                Command::new(&binary)
-                    .arg("--help")
-                    .kill_on_drop(true)
-                    .output(),
+                1024 * 1024,
             )
             .await
-            .context("Runtime capability probe timed out")??;
+            .context("Runtime capability probe failed")?;
             ensure!(
                 String::from_utf8_lossy(&help.stdout).contains("--reasoning-budget"),
                 "Selected runtime does not support --reasoning-budget; upgrade or clear this setting"
@@ -438,22 +517,30 @@ impl LocalRuntime {
         let child = command
             .spawn()
             .context("The local runtime could not start. Check its executable in Settings")?;
+        let group = crate::process::OwnedGroup::capture(&child);
         if let Some(pid) = child.id() {
             started(pid);
         }
         let mut runtime = Self {
             child,
-            endpoint: format!("http://127.0.0.1:{port}/v1"),
+            group,
+            endpoint: private_endpoint.url.clone(),
             log,
+            _private_endpoint: private_endpoint,
+            lease: Some(lease),
+            source_identity,
         };
-        let client = reqwest::Client::builder()
-            .timeout(Duration::from_secs(1))
-            .build()?;
-        let deadline = tokio::time::Instant::now() + Duration::from_secs(120);
+        let client = runtime._private_endpoint.client()?;
+        let deadline = tokio::time::Instant::now()
+            + Duration::from_secs(preferences.runtime.startup_timeout_secs);
         while tokio::time::Instant::now() < deadline {
-            ensure!(!cancel.load(Ordering::Relaxed), "Model loading cancelled");
+            if cancel.load(Ordering::Relaxed) {
+                runtime.stop().await;
+                bail!("Model loading cancelled");
+            }
             if let Some(status) = runtime.child.try_wait()? {
                 let details = runtime.log_tail();
+                runtime.stop().await;
                 if details.contains("error while loading shared libraries") {
                     bail!(
                         "Local runtime could not load a required system library. On Debian/Ubuntu, libgomp.so.1 is supplied by libgomp1 and libnuma.so.1 by libnuma1; install the package named by the error or choose a runtime compatible with your system in Settings. The selected model was not changed. Details: {details}"
@@ -463,12 +550,10 @@ impl LocalRuntime {
                     "Local runtime stopped ({status}). If GPU initialization failed, choose a compatible runtime in Settings or select CPU (0 GPU layers); for allocation failures reduce context, batch or layers. The selected model was not changed. Details: {details}"
                 );
             }
-            if let Ok(response) = client
-                .get(format!("http://127.0.0.1:{port}/health"))
-                .send()
-                .await
+            if let Ok(response) = client.get("http://localhost/health").send().await
                 && response.status().is_success()
             {
+                runtime.check_warm_identity()?;
                 progress(Progress {
                     received: 1,
                     total: 1,
@@ -486,16 +571,57 @@ impl LocalRuntime {
             });
             tokio::time::sleep(Duration::from_millis(250)).await;
         }
+        runtime.stop().await;
         bail!(
-            "The model did not become ready within two minutes. Try a smaller model or inspect {}",
+            "The model did not become ready within {} seconds. Increase the loading deadline in Runtime settings if this disk/CPU needs longer, or inspect {}",
+            preferences.runtime.startup_timeout_secs,
             runtime.log.display()
         )
     }
     pub fn pid(&self) -> Option<u32> {
         self.child.id()
     }
+    /// Reuse is limited to this already verified owned process. Reconnecting
+    /// always performs full verification; changed on-disk identities never
+    /// silently inherit the earlier integrity result.
+    pub fn check_warm_identity(&mut self) -> Result<()> {
+        ensure!(
+            self.child.try_wait()?.is_none(),
+            "Owned runtime exited; reconnect before continuing"
+        );
+        for (path, original) in &self.source_identity {
+            ensure!(
+                &file_identity(path)? == original,
+                "Model or runtime file changed while loaded: {}. Disconnect, verify the selected files and reconnect before reuse",
+                path.display()
+            );
+        }
+        Ok(())
+    }
     pub fn log_path(&self) -> &Path {
         &self.log
+    }
+    pub fn offload_observation(&self) -> serde_json::Value {
+        use std::io::{Read, Seek, SeekFrom};
+        let observed = (|| -> Result<serde_json::Value> {
+            let mut file = std::fs::File::open(&self.log)?;
+            let length = file.metadata()?.len();
+            file.seek(SeekFrom::Start(length.saturating_sub(256 * 1024)))?;
+            let mut text = String::new();
+            file.take(256 * 1024).read_to_string(&mut text)?;
+            let pattern = regex::Regex::new(r"offloaded (\d+)/(\d+) layers to GPU")?;
+            if let Some(c) = pattern.captures(&text) {
+                Ok(
+                    serde_json::json!({"offloaded_layers":c[1].parse::<u32>()?,"total_layers":c[2].parse::<u32>()?,"source":"Owned runtime log; reported by the selected runtime, not inferred from requested layers"}),
+                )
+            } else {
+                Ok(
+                    serde_json::json!({"offloaded_layers":null,"source":"Selected runtime did not emit a recognized layer count; requested GPU settings are not a measurement"}),
+                )
+            }
+        })();
+        observed
+            .unwrap_or_else(|e| serde_json::json!({"offloaded_layers":null,"error":e.to_string()}))
     }
     fn log_tail(&self) -> String {
         use std::io::{Read, Seek, SeekFrom};
@@ -508,17 +634,11 @@ impl LocalRuntime {
         crate::display_text(&text)
     }
     pub async fn stop(&mut self) {
-        self.kill();
-        let _ = self.child.wait().await;
+        self.group.stop(&mut self.child).await;
+        self.lease.take();
     }
     fn kill(&mut self) {
-        #[cfg(unix)]
-        if let Some(id) = self.child.id() {
-            let _ = nix::sys::signal::killpg(
-                nix::unistd::Pid::from_raw(id as i32),
-                nix::sys::signal::Signal::SIGKILL,
-            );
-        }
+        self.group.kill();
         let _ = self.child.start_kill();
     }
 }
