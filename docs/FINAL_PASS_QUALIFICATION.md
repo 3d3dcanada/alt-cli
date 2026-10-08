@@ -37,6 +37,37 @@ binary SHA-256 `54b0cf02702df83afa96c3c31b5905e2c5311d787b9400f7ac9ac745e0486e51
 Its four historical matched cells run against the same beta.3 evaluator. The
 [final candidate seal](evidence/final-pass-2026-10-08/qualification/final-candidate-seal.json)
 binds that binary to the corrected final campaign before any final attempt.
+Holding the old oracle wrapper fixed keeps both pilot arms matched. It also means
+the added final-suite assertion-observation metadata is not exercised in this
+pilot. The final-pass-2 campaign gives both arms that same new instrumentation.
+This scope difference does not turn any observed pilot failure into a success.
+
+The completed candidate pilot is **1/4 independent behavioral passes, matching
+the baseline's 1/4**. No success-rate gain was observed:
+
+| Model | Historical task | Candidate independent result | Turn seconds | Charged output tokens |
+| --- | --- | --- | --- | --- |
+| MiMo 9B Heretic Q4 | Python multi-file | Passed; normal completion | 302.68 | 398 |
+| MiMo 9B Heretic Q4 | Rust feature | Failed: nonexistent `i64.swap_with`; cancelled | 611.60 | 1,792 |
+| Josiefied 7B Q4 | Python multi-file | Failed: tax still uses original price; cancelled | 609.27 | 2,239 |
+| Josiefied 7B Q4 | Rust feature | Failed: function unchanged; asked permission and ended | 215.66 | 237 |
+
+The [candidate reports and complete attempt hashes](evidence/final-pass-2026-10-08/qualification/candidate/candidate-summary.json)
+retain all four outcomes. Charged counts for interrupted turns include conservative
+allowance accounting; their actual generated-token totals are unknown. Candidate
+native completion was 2/4 versus 1/4 in the baseline, but the additional normal
+completion left the task undone. It is not a coding-success gain. The separate
+[manual prose review](evidence/final-pass-2026-10-08/qualification/pilot-claim-review.json)
+distinguishes final completion claims, intermediate incorrect assertions and the
+unnecessary permission question; it does not approve any training data.
+
+These observations identify remaining development work: measure bounded automatic
+continuation when a model ends before acting on an already authorized task;
+compare immediate compiler/check feedback after edits; and test concrete numeric
+counterexamples and concise implementation guidance. These are future experiments
+on development families, not changes to this frozen candidate. The candidate was
+not tuned or retried after these observations. The full final matrix is still
+needed before claiming stronger coding ability.
 
 The new [campaign manifest](final-pass-qualification-manifest.json) declares
 34 disjoint family IDs: two development, two validation and 30 final holdouts.
@@ -55,7 +86,9 @@ The exact Q4_K_M artifacts are:
 The shared condition uses CPU inference, two threads, batch 128, 8,192 native
 context, compact tools, OpenAI adapter, model-authored plans, 1,024 tokens per
 response, 8,192 generated-token allowance, 12 requests, temperature 0.2, top-p
-0.95 and a 600-second turn cap. The manifest hashes Goose, llama.cpp b11429,
+0.95 and a 600-second turn cap. Inference seeds were not separately fixed;
+repetitions use the pinned runtime's stochastic default, not deterministic replay.
+The manifest hashes Goose, llama.cpp b11429,
 the models, evaluator, controller and baseline. These CPU conditions do not
 certify 8 GB Pascal VRAM, fit at larger context or latency on a GTX 1070.
 

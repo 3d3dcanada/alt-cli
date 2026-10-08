@@ -1,0 +1,53 @@
+{
+  "schema": 1,
+  "candidate_sha256": "54b0cf02702df83afa96c3c31b5905e2c5311d787b9400f7ac9ac745e0486e51",
+  "baseline_manifest_sha256": "65766d5023d8d744b73287f335d476ff7a59cc9d0018bff01bdb87a953c1b087",
+  "source_identity": "commit=16a51866306efd7fb22270181eafca2cf6bcd5f6;dirty=false;source_sha256=662fd9f11392d39d05d6cea1185c8652830af4579cc3e34b248a3fccf782ecb1",
+  "conditions": {
+    "native_context": 8192,
+    "output_tokens": 1024,
+    "generated_tokens": 8192,
+    "requests": 12,
+    "temperature": 0.2,
+    "top_p": 0.95,
+    "thinking": "default",
+    "threads": 2,
+    "batch": 128,
+    "timeout_seconds": 600,
+    "tool_profile": "compact",
+    "provider": "openai",
+    "gpu_layers": 0
+  },
+  "attempts": [
+    {
+      "id": "mimo9b-heretic-q4-python-multifile",
+      "model": "mimo9b-heretic-q4",
+      "case": "python-multifile",
+      "partition": "development",
+      "repetition": 1
+    },
+    {
+      "id": "mimo9b-heretic-q4-rust-feature",
+      "model": "mimo9b-heretic-q4",
+      "case": "rust-feature",
+      "partition": "validation",
+      "repetition": 1
+    },
+    {
+      "id": "josiefied7b-abliterated-q4-python-multifile",
+      "model": "josiefied7b-abliterated-q4",
+      "case": "python-multifile",
+      "partition": "development",
+      "repetition": 1
+    },
+    {
+      "id": "josiefied7b-abliterated-q4-rust-feature",
+      "model": "josiefied7b-abliterated-q4",
+      "case": "rust-feature",
+      "partition": "validation",
+      "repetition": 1
+    }
+  ],
+  "sealed_unix": 1791449255.5021517,
+  "scope": "Historical development/validation pilot; no final holdout inspection. Shared-cloud compilation confounds latency; no population quality or speed claim."
+}

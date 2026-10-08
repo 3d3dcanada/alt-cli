@@ -1,0 +1,7 @@
+# GitHub verification
+
+The complete Verify Alt run [37754641320](https://github.com/3d3dcanada/alt-cli/actions/runs/37754641320) passed on source commit `8af9e1ef38c7e765c3e47145dfb6f4490253a330`. Both Linux and training-handoff jobs succeeded, including the full setup, dependency audit and package gates. Application inputs are identical to the frozen portable candidate; subsequent final evidence/documentation changes do not alter application or test code.
+
+An earlier run failed during the setup/test stage. Its metadata is retained. The log and artifact download redirects were blocked by this cloud environment's network proxy (HTTP CONNECT 403), so that original failure remains unclassified; it is not claimed to have been diagnosed as an application defect or repaired by an application change. Bounded escaped CI failure annotations now expose future failure tails through the available checks API while retaining full logs. The subsequent complete fresh run passed.
+
+GitGuardian reported an independent false positive for the 64-character SHA-256 of `protocols/goose-ollama-authenticated.log`. It was independently recomputed and matches that file exactly. The manifest now uses explicit `path`/`sha256` fields; all original digest values and evidence remain unchanged. The service still reports the earlier PR-history occurrence. No credentials were rotated, scanner disabled, history rewritten or generic exclusion added. Dismissal of incident 38001251 requires the connected GitGuardian service's false-positive review; no dismissal is claimed here.

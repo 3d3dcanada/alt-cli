@@ -1,0 +1,39 @@
+{
+  "passed": true,
+  "checks": [
+    {
+      "command": [
+        "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python3",
+        "--version"
+      ],
+      "executable": "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python3",
+      "passed": true,
+      "exit": 0,
+      "stdout": "Python 3.12.14\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "cargo",
+        "--version"
+      ],
+      "executable": "/workspace/.cargo/bin/cargo",
+      "passed": true,
+      "exit": 0,
+      "stdout": "cargo 1.99.0 (5f94df478 2026-08-27)\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "rustc",
+        "--version"
+      ],
+      "executable": "/workspace/.cargo/bin/rustc",
+      "passed": true,
+      "exit": 0,
+      "stdout": "rustc 1.99.0 (b940084d7 2026-09-28)\n",
+      "stderr": ""
+    }
+  ],
+  "scope": "Language tool startup only; this does not verify source behavior or model quality"
+}

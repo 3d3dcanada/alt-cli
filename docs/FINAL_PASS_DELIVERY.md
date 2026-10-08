@@ -9,6 +9,12 @@ This is a substantial reliability and usability change. It does not establish
 that a small model is unlimited, ten times smarter, or qualified on a GTX 1070.
 Model quality, hardware fit and novice usability have separate acceptance gates.
 
+The completed matched development/validation pilot passed **1/4 tasks on each
+version**. No coding-success gain was observed. The stronger reliability checks
+and added tools should not be described as a proven model-intelligence upgrade.
+All candidate failures, including a normal response that left its task undone,
+are retained in the [qualification report](FINAL_PASS_QUALIFICATION.md).
+
 ## Delivered work
 
 | Work order | Implementation | Evidence and limits |
@@ -45,6 +51,14 @@ controller tests and 55 training-gate tests also passed. The dependency audit fo
 no denied advisory. Initial test-helper failures and their corrected retries are
 retained in the [terminal](evidence/final-pass-2026-10-08/tui/final-debug/final-summary.json)
 and [protocol](evidence/final-pass-2026-10-08/protocols/README.md) records.
+
+The complete [GitHub verification run](https://github.com/3d3dcanada/alt-cli/actions/runs/37754641320)
+passed both jobs on code commit `8af9e1ef38c7e765c3e47145dfb6f4490253a330`.
+[GitHub evidence](evidence/final-pass-2026-10-08/github/) retains an earlier
+unclassified setup-stage failure whose download hosts were blocked from this
+environment, and the subsequent fresh pass. A separate GitGuardian check still
+flags the verified public SHA-256 of a protocol log in prior PR history. Its
+false-positive dismissal is external to the application; no scanner was disabled.
 
 The clean portable candidate is commit
 `16a51866306efd7fb22270181eafca2cf6bcd5f6`, binary SHA-256
