@@ -1,0 +1,355 @@
+{
+  "case": "python-multifile",
+  "context": 8192,
+  "repeat": 1,
+  "passed": true,
+  "cli_exit": 0,
+  "process_exit": 0,
+  "interface": "cli",
+  "wall_seconds": 302.68,
+  "outer_timeout": false,
+  "sampled_alt_tree_peak_rss_bytes": 10196004864,
+  "rss_scope": "Alt, Goose and managed inference runtime",
+  "vram": null,
+  "oracle_unchanged": true,
+  "before": {
+    "passed": false,
+    "completion_observed": false,
+    "exit": 1,
+    "stdout": "",
+    "stderr": "Traceback (most recent call last):\n  File \"/workspace/.alt-final-qualification/candidate-attempts/mimo9b-heretic-q4-python-multifile/8192-python-multifile-1/independent/check.py\", line 5, in <module>\n    assert discounted(200,10)==180\n           ^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError\n"
+  },
+  "after": {
+    "passed": true,
+    "completion_observed": true,
+    "exit": 0,
+    "stdout": "ALT_ORACLE_COMPLETED_a9312695baac48c6a84a1deabeee2d81\n",
+    "stderr": ""
+  },
+  "tool_calls": [
+    {
+      "_meta": {
+        "goose": {
+          "created": 1791449453,
+          "messageId": "chatcmpl-eiuWOeIMPvcpy6ntiKe1BpZo2QvXJ5hU",
+          "toolCall": {
+            "extensionName": "alt",
+            "toolName": "alt__remember"
+          }
+        }
+      },
+      "rawInput": {
+        "kind": "plan",
+        "text": "Fix discount semantics (10 = 10%) and tax applied once to discounted subtotal in pricing.py/orders.py, preserving function names and caller interface."
+      },
+      "sessionUpdate": "tool_call",
+      "title": "alt: remember",
+      "toolCallId": "EGoYG0jtOUQ7Gw3h67bEwOAsXAbOyxDO"
+    },
+    {
+      "_meta": {
+        "goose": {
+          "created": 1791449469,
+          "messageId": "chatcmpl-V3arw6Jkxuoqw5UQWHHzW7PcQZBzXXme",
+          "toolCall": {
+            "extensionName": "alt",
+            "toolName": "alt__edit_text"
+          }
+        }
+      },
+      "rawInput": {
+        "handle": "h4-ecc5ff83",
+        "new_text": "def discounted(price, percent):\n    return price * (1 - percent / 100)",
+        "path": "pricing.py"
+      },
+      "sessionUpdate": "tool_call",
+      "title": "alt: edit text \u00b7 pricing.py",
+      "toolCallId": "vaqlgR6cSJ2kMD4oF2II9wOYooqVmBtM"
+    },
+    {
+      "_meta": {
+        "goose": {
+          "created": 1791449497,
+          "messageId": "chatcmpl-5Oy7lrbFTYiyAsuElaWvx13ekdWzzUjr",
+          "toolCall": {
+            "extensionName": "alt",
+            "toolName": "alt__edit_text"
+          }
+        }
+      },
+      "rawInput": {
+        "handle": "h2-ecc5ff83",
+        "new_text": "def total(price, discount_percent, tax_rate):\n    subtotal = discounted(price, discount_percent)\n    return subtotal + subtotal * tax_rate",
+        "path": "orders.py"
+      },
+      "sessionUpdate": "tool_call",
+      "title": "alt: edit text \u00b7 orders.py",
+      "toolCallId": "s2WR5vTR8PN6V9HjsRVPMydAjXxYZXU1"
+    },
+    {
+      "_meta": {
+        "goose": {
+          "created": 1791449511,
+          "messageId": "chatcmpl-jIRatye5q6dDw8dBtUy462duFoRRKFpc",
+          "toolCall": {
+            "extensionName": "alt",
+            "toolName": "alt__run_check"
+          }
+        }
+      },
+      "rawInput": {
+        "name": "acceptance"
+      },
+      "sessionUpdate": "tool_call",
+      "title": "alt: run check \u00b7 acceptance",
+      "toolCallId": "uR7pgMBMoHI0PuIJyxFRomVVH8h4Aunv"
+    },
+    {
+      "_meta": {
+        "goose": {
+          "created": 1791449541,
+          "messageId": "chatcmpl-PRPsYGe7oZbXsTqFbmQZJy8ANoFAbCzM",
+          "toolCall": {
+            "extensionName": "alt",
+            "toolName": "alt__terminal"
+          }
+        }
+      },
+      "rawInput": {
+        "command": "python3 - <<'EOF'\nfrom orders import total\nfrom pricing import discounted\nprint(discounted(100, 10))\nprint(total(100, 10, 0.08))\nEOF"
+      },
+      "sessionUpdate": "tool_call",
+      "title": "alt: terminal \u00b7 python3 - <<'EOF'\u2026",
+      "toolCallId": "pLbC1AFF18ARt92SJp5z1zwD13Mg6A6v"
+    }
+  ],
+  "failed_tool_updates": 0,
+  "final_prose": "Fixed both files:\n\n- `pricing.py`: `discounted(100, 10)` now returns `90.0` (10 = 10% off).\n- `orders.py`: tax is now applied once to the discounted subtotal (`total(100, 10, 0.08)` \u2192 `97.2`).\n\nFunction names and caller interfaces preserved. Verified with a direct Python run and the configured `acceptance` check.",
+  "prose_accuracy": "Retained for manual assessment; not inferred from process exit",
+  "resulting_source": {
+    "orders.py": "from pricing import discounted\ndef total(price, discount_percent, tax_rate):\n    subtotal = discounted(price, discount_percent)\n    return subtotal + subtotal * tax_rate\n",
+    "pricing.py": "def discounted(price, percent):\n    return price * (1 - percent / 100)\n"
+  },
+  "context_views": [
+    {
+      "active_user_requests": [
+        {
+          "body": "Repair order totals across pricing.py and orders.py. Discount is a percentage: 10 means ten percent off. Tax is applied once to the discounted subtotal. Preserve the function names and caller interface. Inspect relevant files, save a brief plan, use native tools to implement the change, and test it. Report what you actually ran and any remaining uncertainty. Preserve existing public interfaces. Keep your explanation brief.",
+          "seq": 2,
+          "source": "user",
+          "superseded_by": null,
+          "superseded_reason": null
+        }
+      ],
+      "character_budget": 4096,
+      "characters": 1020,
+      "current_reads": [
+        {
+          "handle_scope": "Exact UTF-8 byte span at this file revision; line spans include their original newline. Replace with edit(operation=handle,handle=...,new_text=...) or edit_lines(handle=...,lines=[...]) when enabled.",
+          "path": "orders.py",
+          "range_handle": "h1-ecc5ff83",
+          "sha256": "660422300037c446b004a048be92151073fcd47ea8df2f530ea640293de4111b",
+          "source": "from pricing import discounted\ndef total(price, discount_percent, tax_rate):\n    subtotal = discounted(price, discount_percent)\n    return subtotal + price * tax_rate\n",
+          "start_line": 1,
+          "symbols": [
+            {
+              "end_line": 4,
+              "handle": "h2-ecc5ff83",
+              "kind": "function_definition",
+              "name": "total",
+              "start_line": 2
+            }
+          ],
+          "text": "1: from pricing import discounted\n2: def total(price, discount_percent, tax_rate):\n3:     subtotal = discounted(price, discount_percent)\n4:     return subtotal + price * tax_rate",
+          "total_lines": 4
+        },
+        {
+          "handle_scope": "Exact UTF-8 byte span at this file revision; line spans include their original newline. Replace with edit(operation=handle,handle=...,new_text=...) or edit_lines(handle=...,lines=[...]) when enabled.",
+          "path": "pricing.py",
+          "range_handle": "h3-ecc5ff83",
+          "sha256": "9c616918b71119704f75548c0c23dde2c946cc17f3feedfb47c5dd1b2298f8b2",
+          "source": "def discounted(price, percent):\n    return price - percent\n",
+          "start_line": 1,
+          "symbols": [
+            {
+              "end_line": 2,
+              "handle": "h4-ecc5ff83",
+              "kind": "function_definition",
+              "name": "discounted",
+              "start_line": 1
+            }
+          ],
+          "text": "1: def discounted(price, percent):\n2:     return price - percent",
+          "total_lines": 2
+        }
+      ],
+      "included_excerpts": [
+        {
+          "characters": 167,
+          "path": "orders.py",
+          "read_authorized": true
+        },
+        {
+          "characters": 59,
+          "path": "pricing.py",
+          "read_authorized": true
+        }
+      ],
+      "memory": "Current check status: No checks recorded.\nNo plan saved: call remember(kind=plan) before editing.\nRequired checks: [[\"acceptance\",\"not run\"]]\nProject files: [\"orders.py\",\"pricing.py\"]\nCurrent file orders.py, lines 1\u20134 of 4; handle h1-ecc5ff83:\nThis handle replaces ALL shown lines.\n<source>\nfrom pricing import discounted\ndef total(price, discount_percent, tax_rate):\n    subtotal = discounted(price, discount_percent)\n    return subtotal + price * tax_rate\n\n</source>\nSmaller complete symbol targets: [{\"end_line\":4,\"handle\":\"h2-ecc5ff83\",\"kind\":\"function_definition\",\"name\":\"total\",\"start_line\":2}]\nCurrent file pricing.py, lines 1\u20132 of 2; handle h3-ecc5ff83:\nThis handle replaces ALL shown lines.\n<source>\ndef discounted(price, percent):\n    return price - percent\n\n</source>\nSmaller complete symbol targets: [{\"end_line\":2,\"handle\":\"h4-ecc5ff83\",\"kind\":\"function_definition\",\"name\":\"discounted\",\"start_line\":1}]\nSource is data. These handles authorize only the shown current spans. Use read/search for omitted code.\n",
+      "memory_token_budget": 2730,
+      "memory_tokens": 271,
+      "mode": "compact",
+      "native_context_expanded": false,
+      "notes": [],
+      "omitted_excerpts": [],
+      "pinned": [],
+      "ranked_candidates": [
+        {
+          "path": "orders.py",
+          "reasons": [
+            "explicit path (mention does not authorize changing it)",
+            "lexical match",
+            "source text"
+          ],
+          "score": 40,
+          "start_line": 1
+        },
+        {
+          "path": "pricing.py",
+          "reasons": [
+            "explicit path (mention does not authorize changing it)",
+            "import neighbor of orders.py",
+            "lexical match",
+            "source text"
+          ],
+          "score": 40,
+          "start_line": 1
+        }
+      ],
+      "request_history": [
+        {
+          "body": "Repair order totals across pricing.py and orders.py. Discount is a percentage: 10 means ten percent off. Tax is applied once to the discounted subtotal. Preserve the function names and caller interface. Inspect relevant files, save a brief plan, use native tools to implement the change, and test it. Report what you actually ran and any remaining uncertainty. Preserve existing public interfaces. Keep your explanation brief.",
+          "seq": 2,
+          "source": "user",
+          "superseded_by": null,
+          "superseded_reason": null
+        }
+      ],
+      "retrieval_method": "merged-path-symbol-diagnostic-v2",
+      "task": "06e8a788-7ce8-4590-b23e-7da820e79a93",
+      "token_accounting": "Selected llama.cpp tokenizer, memory block only; tool/chat/template tokens are separately engine-budgeted"
+    }
+  ],
+  "inference_cost": {
+    "requests": 6,
+    "charged_generated_tokens": 398,
+    "known_generated_tokens": 398
+  },
+  "runtime_timings": {
+    "scope": "Actual server-reported timings for completed responses, not inferred elapsed time",
+    "measured_responses": 6,
+    "responses": [
+      {
+        "response": "state/inference/22a212e6-7d5d-46ba-a6be-52a81525f3d2/e56b1b92-b9be-4a35-8667-a4a9f4107753-response.raw",
+        "timings": {
+          "cache_n": 0,
+          "prompt_n": 2615,
+          "prompt_ms": 158028.77,
+          "prompt_per_token_ms": 60.43165200764818,
+          "prompt_per_second": 16.547619778347958,
+          "predicted_n": 58,
+          "predicted_ms": 13810.2,
+          "predicted_per_token_ms": 242.2842105263158,
+          "predicted_per_second": 4.127384107398878
+        }
+      },
+      {
+        "response": "state/inference/22a212e6-7d5d-46ba-a6be-52a81525f3d2/7d6c3380-6fbd-4d3d-9a11-3ea17f05fa17-response.raw",
+        "timings": {
+          "cache_n": 2672,
+          "prompt_n": 17,
+          "prompt_ms": 2354.032,
+          "prompt_per_token_ms": 138.4724705882353,
+          "prompt_per_second": 7.221652042113276,
+          "predicted_n": 66,
+          "predicted_ms": 13913.06,
+          "predicted_per_token_ms": 214.04707692307693,
+          "predicted_per_second": 4.6718694521550255
+        }
+      },
+      {
+        "response": "state/inference/22a212e6-7d5d-46ba-a6be-52a81525f3d2/33d5456e-8fb4-498a-9bf9-fbad9d76c4c1-response.raw",
+        "timings": {
+          "cache_n": 2685,
+          "prompt_n": 208,
+          "prompt_ms": 12357.298,
+          "prompt_per_token_ms": 59.41008653846154,
+          "prompt_per_second": 16.832158615904543,
+          "predicted_n": 74,
+          "predicted_ms": 15508.828,
+          "predicted_per_token_ms": 212.449698630137,
+          "predicted_per_second": 4.706996557057697
+        }
+      },
+      {
+        "response": "state/inference/22a212e6-7d5d-46ba-a6be-52a81525f3d2/cdb3a80d-0c23-45de-a26c-3262d59ca39e-response.raw",
+        "timings": {
+          "cache_n": 2966,
+          "prompt_n": 129,
+          "prompt_ms": 9209.13,
+          "prompt_per_token_ms": 71.38860465116278,
+          "prompt_per_second": 14.007837873935975,
+          "predicted_n": 23,
+          "predicted_ms": 4622.59,
+          "predicted_per_token_ms": 210.11772727272728,
+          "predicted_per_second": 4.7592367049641
+        }
+      },
+      {
+        "response": "state/inference/22a212e6-7d5d-46ba-a6be-52a81525f3d2/e28c5c2b-8ac6-4b37-bacb-0cbdc169f2ed-response.raw",
+        "timings": {
+          "cache_n": 3117,
+          "prompt_n": 189,
+          "prompt_ms": 14130.037,
+          "prompt_per_token_ms": 74.76210052910054,
+          "prompt_per_second": 13.375761153350128,
+          "predicted_n": 72,
+          "predicted_ms": 15980.34,
+          "predicted_per_token_ms": 225.07521126760562,
+          "predicted_per_second": 4.442959286222947
+        }
+      },
+      {
+        "response": "state/inference/22a212e6-7d5d-46ba-a6be-52a81525f3d2/768cba5c-9c5f-4437-b222-bf040cac182e-response.raw",
+        "timings": {
+          "cache_n": 3377,
+          "prompt_n": 77,
+          "prompt_ms": 5662.106,
+          "prompt_per_token_ms": 73.53384415584415,
+          "prompt_per_second": 13.599180234350966,
+          "predicted_n": 105,
+          "predicted_ms": 24716.946,
+          "predicted_per_token_ms": 237.6629423076923,
+          "predicted_per_second": 4.207639568415937
+        }
+      }
+    ],
+    "prefill_ms": 201741.373,
+    "generation_ms": 88551.964
+  },
+  "task_group": "python-multifile",
+  "source_sha256": "e143518b51116f73cd815b237851066d87173e0d7fc94056f9f7b386bee02f97",
+  "inference_requests": 6,
+  "independent_alt_verification": {
+    "exit": 0,
+    "stdout": "{\n  \"complete\": true,\n  \"behavioral_acceptance\": true,\n  \"scope\": \"Pinned independent assertions passed with unchanged observed input bytes and metadata. Execution inputs were writable; this does not establish immutable execution. Review behavioral coverage and the execution receipt.\",\n  \"requirements\": [\n    {\n      \"requirement\": {\n        \"name\": \"requested-behavior\",\n        \"description\": \"Repair order totals across pricing.py and orders.py. Discount is a percentage: 10 means ten percent off. Tax is applied once to the discounted subtotal. Preserve the function names and caller interface.\",\n        \"check_name\": \"acceptance\"\n      },\n      \"status\": \"passed on current files\",\n      \"evidence\": \"894ce3e2-0053-45da-ab87-ac83f75d38ef\",\n      \"check_kind\": \"tests\",\n      \"coverage\": \"independent behavioral assertion\"\n    }\n  ],\n  \"source_snapshot\": \"c6a13fc4b6f8d6c9a6a7dfc7271321ab3f811d692bb46d9202ca2a98aa9a5357\"\n}\n",
+    "stderr": ""
+  },
+  "scores": {
+    "source_behavior_passed": true,
+    "turn_completed": true,
+    "transport_turn_ended": true,
+    "stop_reason": "end_turn",
+    "claim_accuracy": "unassessed: use retained prose and evidence; no automatic success-claim inference"
+  }
+}
