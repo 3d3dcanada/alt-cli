@@ -1,6 +1,6 @@
 # Compatibility and qualification
 
-Alt 0.6.0 beta 2 is a Linux x86_64 supervised beta. A compatible endpoint can
+Alt 0.6.0 beta 3 is a Linux x86_64 supervised beta. A compatible endpoint can
 connect successfully while its selected model still makes incorrect tool calls
 or changes. Check the exact artifact, template, runtime, context and task together.
 The [PC recorder](PC_TESTING.md) performs that check using your own selection.

@@ -52,6 +52,9 @@ jobs:
           python3 scripts/release_gate.py dist/alt-*.tar.gz --previous "$RUNNER_TEMP/previous.tar.gz" --require-upgrade --output dist/release-gate.json
           cargo install cargo-audit --version 0.22.2 --locked --root /workspace/.alt-tools/audit
           /workspace/.alt-tools/audit/bin/cargo-audit audit --db /workspace/.alt-tools/advisory-db --deny warnings --json > dist/dependency-audit.json
+      - name: Require successful verification of the exact release tag
+        run: |
+          python3 scripts/wait_release_verification.py --repo "$GITHUB_REPOSITORY" --tag "$RELEASE_TAG" --sha "$(git rev-parse HEAD)" --timeout 1800 > dist/tag-verification.json
       - name: Sign provenance using GitHub's short-lived workflow identity
         id: attest
         uses: actions/attest-build-provenance@43d14bc2b83dec42d39ecae14e916627a18bb661
@@ -68,7 +71,7 @@ jobs:
           cp "$BUNDLE_PATH" "${package[0]}.sigstore.jsonl"
           notes="docs/releases/${RELEASE_TAG#v}.md"
           test -f "$notes"
-          gh release create "$RELEASE_TAG" --verify-tag --prerelease --title "Alt $RELEASE_TAG" --notes-file "$notes" "${package[0]}" "${package[0]}.sha256" "${package[0]}.sigstore.jsonl" dist/release-gate.json dist/dependency-audit.json dist/attestation-verification.json
+          gh release create "$RELEASE_TAG" --verify-tag --prerelease --title "Alt $RELEASE_TAG" --notes-file "$notes" "${package[0]}" "${package[0]}.sha256" "${package[0]}.sigstore.jsonl" dist/release-gate.json dist/dependency-audit.json dist/attestation-verification.json dist/tag-verification.json
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()
         with:

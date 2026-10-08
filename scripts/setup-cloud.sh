@@ -69,6 +69,8 @@ python3 scripts/acceptance_v5.py
 python3 scripts/test_research_adapters.py -v
 python3 scripts/test_campaign.py -v
 python3 scripts/test_evaluation_preflight.py -v
+python3 scripts/test_process_state.py -v
+python3 scripts/test_release_verification.py -v
 python3 -m unittest discover -s training/tests -v
 python3 scripts/smoke_skills.py
 python3 scripts/smoke_analysis.py

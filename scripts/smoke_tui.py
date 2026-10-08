@@ -17,6 +17,7 @@ import threading
 import time
 import tomllib
 import pyte
+from process_state import running
 
 repo = Path(__file__).resolve().parents[1]
 binary = Path(os.environ.get("ALT_TEST_BINARY", repo / "target/debug/alt")).resolve()
@@ -228,11 +229,6 @@ with tempfile.TemporaryDirectory(prefix="alt-tui-smoke-") as directory:
         assert children
         process.kill()
         process.wait(timeout=8)
-        def running(pid):
-            try:
-                return "\nState:\tZ" not in Path(f"/proc/{pid}/status").read_text()
-            except FileNotFoundError:
-                return False
         deadline = time.monotonic() + 3
         while time.monotonic() < deadline and any(running(pid) for pid in children): time.sleep(0.05)
         assert not any(running(pid) for pid in children), "Abrupt parent death left a running engine"

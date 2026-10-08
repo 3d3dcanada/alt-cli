@@ -6,7 +6,7 @@ the exact model you choose; Alt does not need to switch providers to run them.
 ## Install and check the application
 
 Download the Linux x86_64 package from
-[v0.6.0-beta.2](https://github.com/3d3dcanada/alt-cli/releases/tag/v0.6.0-beta.2),
+[v0.6.0-beta.3](https://github.com/3d3dcanada/alt-cli/releases/tag/v0.6.0-beta.3),
 verify it as described in [Installation](INSTALLATION.md), extract it, and run
 `bash install.sh`. No Rust compiler is needed. Python 3.8+ is required for the
 installer, practice checks and test recorder. Beta 1 predates the latest harness
