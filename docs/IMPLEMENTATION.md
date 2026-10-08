@@ -8,7 +8,7 @@ The later [small-model delivery](SMALL_MODEL_DELIVERY.md) and
 CPU repairs, later-build qualification, protocol regressions and pending training
 traces alongside all failed screens.
 
-[Beta 2 completion work orders](PC_READY_WORK_ORDERS.md) add the disposable PC
+[PC completion work orders](PC_READY_WORK_ORDERS.md) add the disposable PC
 repair/recovery recorder, observed inference stages, explicit allowance and saved
 allocation recovery, and actual failed-case feedback. The current Rust suite
 passed 123 tests; the [completion evidence](evidence/pc-ready/README.md) records

@@ -17,12 +17,12 @@ installation and external tools with your normal account permissions.
 
 ![Alt's actual 80×24 TUI after a MiMo 9B Q4 model repair and independent checks](docs/screenshots/v6/native-model-repair-80x24.png)
 
-**Status: 0.6.0 beta 2 · Linux x86_64 · Apache-2.0.** The screenshot shows an actual
+**Status: 0.6.0 beta 3 · Linux x86_64 · Apache-2.0.** The screenshot shows an actual
 CPU MiMo 9B Q4 repair through the TUI, after the unchanged independent checks passed.
 Model reliability and hardware support are measured separately from
 application tests. [Read the results and remaining gaps](docs/IMPLEMENTATION.md).
 
-**Included in beta 2:** explicit inference allocation, host task workflows, bounded
+**Included in beta 3:** explicit inference allocation, host task workflows, bounded
 skills, source handles, serial checked candidates, reviewed instruction trials
 and offline training tools. Compact text/line-array tool choices reduce repeated
 context and provide updated source handles after edits. The current beta includes these additions. See [the usage guide](docs/SMALL_MODEL_USAGE.md)
@@ -50,7 +50,7 @@ and model-quality outcomes.
 
 ## Try it on your computer
 
-Download [Alt v0.6.0-beta.2](https://github.com/3d3dcanada/alt-cli/releases/tag/v0.6.0-beta.2)
+Download [Alt v0.6.0-beta.3](https://github.com/3d3dcanada/alt-cli/releases/tag/v0.6.0-beta.3)
 for Linux x86_64. See [Installation](docs/INSTALLATION.md) for archive and GitHub
 provenance verification, then follow [PC testing](docs/PC_TESTING.md). You can also
 build from source below.

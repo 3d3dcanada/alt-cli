@@ -1,7 +1,7 @@
 # Using the small-model harness
 
 These additions are included in
-[v0.6.0-beta.2](https://github.com/3d3dcanada/alt-cli/releases/tag/v0.6.0-beta.2).
+[v0.6.0-beta.3](https://github.com/3d3dcanada/alt-cli/releases/tag/v0.6.0-beta.3).
 Read the [compatibility record](COMPATIBILITY.md) and
 [delivery record](SMALL_MODEL_DELIVERY.md) for what was tested and what remains
 unqualified. A useful tool harness does not guarantee that every model can solve

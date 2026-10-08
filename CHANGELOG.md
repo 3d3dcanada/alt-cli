@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.6.0 beta 3 — corrected release validation
+
+- Handle a child exiting during a procfs status/identity read in terminal and
+  streamed-recovery cleanup checks; unexpected I/O errors still fail validation.
+- Add five regression checks for vanished processes, zombies, live children, PID
+  reuse and unexpected read errors, including an actual child-process lifecycle.
+- Require successful exact-tag Verify CI before publishing, with five gate
+  regressions and an attached verification receipt.
+- Retain the failed beta 2 tag-verification log and leave that unpublished tag
+  unchanged. Update downloads to this corrected candidate. Application behavior
+  and the previously recorded live-model outcomes are unchanged.
+
 ## 0.6.0 beta 2 — small-model harness and PC completion
 
 - Added a disposable PC recorder for actual repair, independent four-case

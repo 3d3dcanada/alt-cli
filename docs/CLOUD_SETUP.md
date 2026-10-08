@@ -13,7 +13,8 @@ project oracles, training/schema/adapter boundaries, executable skill helpers,
 bounded analysis and real-Goose provider/candidate fixtures, including both compact
 edit formats through both adapters, twelve-turn Git projects preserving dirty
 user files, allowance/reconnect UI journeys and the disposable PC recorder's
-correct/incorrect model-response fixtures. It downloads no model weights. Package and
+correct/incorrect model-response fixtures. It also runs child-exit race and
+exact-tag publication-gate regressions. It downloads no model weights. Package and
 model-quality tests are separate because they take longer and need specific tools.
 
 To retain raw compact protocol and TUI receipts, choose a fresh output directory:

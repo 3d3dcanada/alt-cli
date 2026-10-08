@@ -7,6 +7,7 @@ recovery, never model intelligence. Every subprocess has a bounded lifetime.
 import argparse, ctypes, hashlib, json, os, signal, subprocess, tempfile, threading, time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
+from process_state import identity_exists
 
 p=argparse.ArgumentParser(description=__doc__)
 p.add_argument('--binary',type=Path,default=Path('target/debug/alt'))
@@ -53,9 +54,6 @@ def descendants(pid):
         frontier={child for child,parent in parents.items() if parent in frontier}-seen
         seen.update(frontier)
     return [identities[child] for child in seen if child!=pid and child in identities]
-def exists(identity):
-    try: return Path(f'/proc/{identity[0]}/stat').read_text().rsplit(') ',1)[1].split()[19]==identity[1]
-    except FileNotFoundError: return False
 def reap():
     while True:
         try:
@@ -98,7 +96,7 @@ try:
                     assert 'STREAM_RECEIPT_0' in exported and f'Stream recovery round {round+1}' in exported, 'Persisted history missing'
                     deadline=time.monotonic()+3
                     while True:
-                        reap(); remaining=[identity for identity in owned if exists(identity)]
+                        reap(); remaining=[identity for identity in owned if identity_exists(identity)]
                         if not remaining or time.monotonic()>=deadline: break
                         time.sleep(.03)
                     assert not remaining, f'Owned descendants leaked: {remaining}'

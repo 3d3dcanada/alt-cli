@@ -30,3 +30,8 @@ development archive.
 Language-tool preflight now distinguishes missing/broken Rust or Node from model
 behavior before issuing a request. An initial Rust infrastructure failure and
 the exact saved-source recheck are preserved separately from the requalification.
+
+Beta 2 publication was cancelled after tag verification exposed a procfs race
+in a cleanup probe. The corrected beta 3 adds five regression checks and repeats
+clean-tag publication; the failed log and correction are retained in
+[release finalization evidence](evidence/beta3-finalization/README.md).
