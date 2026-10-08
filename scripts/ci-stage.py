@@ -12,6 +12,31 @@ import sys
 import time
 
 
+ANNOTATION_CHAR_LIMIT = 4000
+TAIL_BYTE_LIMIT = ANNOTATION_CHAR_LIMIT * 4
+
+
+def workflow_escape(text, property_value=False):
+    """Escape workflow-command data without interpreting child output as commands."""
+    text = text.replace('%', '%25').replace('\r', '%0D').replace('\n', '%0A')
+    if property_value:
+        text = text.replace(':', '%3A').replace(',', '%2C')
+    return text
+
+
+def failure_annotation(name, receipt, tail):
+    prefix = 'Stage failed (exit {}). Full output remains in the stage log and receipt.\n'.format(receipt['exit'])
+    detail = tail.decode('utf-8', errors='replace').rstrip('\n')
+    if receipt.get('error'):
+        detail += '\nStage runner error: ' + receipt['error']
+    if not detail:
+        detail = 'No command output was captured.'
+    message = prefix + detail[-(ANNOTATION_CHAR_LIMIT - len(prefix)):]
+    title = workflow_escape(name[:128], property_value=True)
+    # Start a fresh line even if the child ended with an unterminated progress line.
+    return '\n::error title={}::{}\n'.format(title, workflow_escape(message))
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--name', required=True)
@@ -43,6 +68,7 @@ def main():
     signal.signal(signal.SIGTERM, stop)
     signal.signal(signal.SIGINT, stop)
     code = 1
+    tail = b''
     try:
         with base.with_suffix('.log').open('wb') as log:
             child = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, start_new_session=True)
@@ -51,6 +77,9 @@ def main():
                 chunk = child.stdout.read1(65536)
                 if not chunk:
                     break
+                # Four UTF-8 bytes per character retain a bounded final 4K-character
+                # annotation without loading the potentially very large full log.
+                tail = (tail + chunk)[-TAIL_BYTE_LIMIT:]
                 log.write(chunk)
                 log.flush()
                 digest.update(chunk)
@@ -66,6 +95,9 @@ def main():
         receipt.update(status='completed', exit=code, passed=code == 0 and not interrupted,
                        seconds=round(time.monotonic() - started, 3), interrupted=interrupted)
         save()
+        if not receipt['passed']:
+            sys.stdout.write(failure_annotation(args.name, receipt, tail))
+            sys.stdout.flush()
     return code if code >= 0 else 128 - code
 
 
