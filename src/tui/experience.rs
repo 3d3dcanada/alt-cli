@@ -187,13 +187,6 @@ impl App {
         Ok(())
     }
     pub fn next_step(&self) -> (&'static str, &'static str, &'static str) {
-        if self.preferences.recent_projects.is_empty() {
-            return (
-                "Choose the project or try a practice project",
-                "Pick the files you want to work on. A practice project provides real checks and undo.",
-                "project",
-            );
-        }
         let Some((_, profile)) = self.current_profile() else {
             return (
                 "Choose where your model runs",
@@ -201,6 +194,13 @@ impl App {
                 "connect",
             );
         };
+        if self.preferences.recent_projects.is_empty() {
+            return (
+                "Choose the project or try a practice project",
+                "Pick the files you want to work on. A practice project provides real checks and undo.",
+                "project",
+            );
+        }
         if !self.engine_ready() {
             return (
                 "Install the agent engine",
@@ -215,18 +215,18 @@ impl App {
                 "runtime",
             );
         }
-        if self.task_view.checks.is_empty() {
-            return (
-                "Prepare a check for this project",
-                "Choose an actual command that should prove the result.",
-                "task-configure",
-            );
-        }
         if self.session.is_none() && self.messages.is_empty() {
             return (
                 "Send your first request",
-                "Describe the change. Connecting a workspace proves the selected model is usable.",
+                "Ask a question or describe your goal. You can prepare project checks when you need them.",
                 "page-chat",
+            );
+        }
+        if self.task_view.checks.is_empty() {
+            return (
+                "Optional: prepare a project check",
+                "For code changes, choose a command that should prove the result. You can keep chatting without one.",
+                "task-configure",
             );
         }
         (
@@ -406,5 +406,47 @@ impl App {
             }
             submission
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::config::{Profile, Provider};
+
+    #[test]
+    fn first_request_needs_no_project_check_or_programming_command() {
+        let directory = tempfile::tempdir().unwrap();
+        let mut app = App::load(
+            directory.path().join("state"),
+            std::env::current_exe().unwrap(),
+            None,
+        )
+        .unwrap();
+        assert_eq!(app.next_step().2, "connect");
+        app.config.profiles.insert(
+            "test".into(),
+            Profile {
+                provider: Provider::Openai,
+                endpoint: "http://127.0.0.1:8080/v1".into(),
+                model: "fixture".into(),
+                context_tokens: 4096,
+                max_turns: 12,
+                uncensored: false,
+                api_key_env: None,
+                local_model: None,
+                inference: None,
+            },
+        );
+        app.config.default_profile = "test".into();
+        assert_eq!(app.next_step().2, "project");
+        app.preferences
+            .recent_projects
+            .push(directory.path().into());
+        assert_eq!(app.next_step().2, "page-chat");
+        assert!(app.task_view.checks.is_empty());
+        app.add_message("You", "Please explain this folder.");
+        assert!(app.next_step().0.starts_with("Optional:"));
+        assert!(app.next_step().1.contains("keep chatting"));
     }
 }

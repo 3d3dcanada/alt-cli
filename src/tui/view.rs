@@ -59,9 +59,6 @@ fn button(
     action: &'static str,
     active: bool,
 ) {
-    let label = super::actions::get(action)
-        .map(|entry| entry.label)
-        .unwrap_or(label);
     frame.render_widget(
         Paragraph::new(format!(" {label} ")).style(
             Style::default()
@@ -75,9 +72,6 @@ fn button(
 fn buttons(frame: &mut Frame, app: &mut App, area: Rect, items: &[(&str, &'static str)]) {
     let mut x = area.x;
     for (label, action) in items {
-        let label = super::actions::get(action)
-            .map(|entry| entry.label)
-            .unwrap_or(label);
         let width = (label.chars().count() as u16 + 2).min(area.right().saturating_sub(x));
         if width < 3 {
             break;
@@ -86,6 +80,32 @@ fn buttons(frame: &mut Frame, app: &mut App, area: Rect, items: &[(&str, &'stati
         button(frame, app, rect, label, action, false);
         x = x.saturating_add(width + 1);
     }
+}
+
+pub fn startup(frame: &mut Frame) {
+    frame.render_widget(
+        Block::default().style(Style::default().bg(BG).fg(TEXT)),
+        frame.area(),
+    );
+    let area = centered(frame.area(), 66, 12);
+    frame.render_widget(
+        Paragraph::new(vec![
+            line("", TEXT),
+            line("     ▄▀█  █   ▀█▀", ACCENT),
+            line("     █▀█  █▄▄  █", ACCENT),
+            line("", TEXT),
+            line("     Your models. Your workspace.", TEXT),
+            line("", TEXT),
+            line(
+                "     Opening settings, conversations and saved drafts…",
+                MUTED,
+            ),
+            line("", TEXT),
+            line(format!("     Alt {}", env!("CARGO_PKG_VERSION")), MUTED),
+        ])
+        .block(block(" Welcome to Alt ", true)),
+        area,
+    );
 }
 
 pub fn draw(frame: &mut Frame, app: &mut App) {
@@ -124,10 +144,10 @@ pub fn draw(frame: &mut Frame, app: &mut App) {
         vec![
             Line::from(vec![
                 Span::styled("ALT", style(ACCENT).add_modifier(Modifier::BOLD)),
-                Span::styled("  /  LOCAL WORKSPACE", style(MUTED)),
+                Span::styled("  /  YOUR WORKSPACE", style(MUTED)),
             ]),
             line(app.page.name(), TEXT),
-            line(crate::BUILD_LABEL, MUTED),
+            line(format!("{} · F1 Help", env!("CARGO_PKG_VERSION")), MUTED),
         ],
     );
     let model = app
@@ -157,7 +177,7 @@ pub fn draw(frame: &mut Frame, app: &mut App) {
         header[1],
     );
     let content = if area.width >= 85 {
-        let cols = Layout::horizontal([Constraint::Length(21), Constraint::Min(30)]).split(root[1]);
+        let cols = Layout::horizontal([Constraint::Length(24), Constraint::Min(30)]).split(root[1]);
         nav(frame, app, cols[0]);
         inset(cols[1], 1, 0)
     } else {
@@ -168,18 +188,24 @@ pub fn draw(frame: &mut Frame, app: &mut App) {
         ];
         let visible = (area.width as usize / 10).clamp(3, 7);
         let active = Page::ALL.iter().position(|p| *p == app.page).unwrap_or(0);
-        let start = active
+        let focus = if app.nav_focus { app.nav_index } else { active };
+        let start = focus
             .saturating_sub(visible / 2)
             .min(Page::ALL.len() - visible);
         let cols = Layout::horizontal(vec![Constraint::Fill(1); visible]).split(parts[0]);
         for (column, i) in (start..start + visible).enumerate() {
             let page = &Page::ALL[i];
+            let focused = app.nav_focus && app.nav_index == i;
             frame.render_widget(
-                Paragraph::new(labels[i]).style(Style::default().fg(if *page == app.page {
-                    ACCENT
-                } else {
-                    MUTED
-                })),
+                Paragraph::new(format!("{}{}", if focused { "› " } else { "" }, labels[i])).style(
+                    Style::default().bg(if focused { SELECT } else { BG }).fg(
+                        if focused || *page == app.page {
+                            ACCENT
+                        } else {
+                            MUTED
+                        },
+                    ),
+                ),
                 cols[column],
             );
             app.hits.push((cols[column], Hit::Nav(*page)));
@@ -220,13 +246,14 @@ fn nav(frame: &mut Frame, app: &mut App, area: Rect) {
             inner.x,
             inner.y + i as u16 * spacing,
             inner.width.saturating_sub(1),
-            2,
+            spacing,
         );
         let active = *page == app.page;
         let focused = app.nav_focus && app.nav_index == i;
         frame.render_widget(
             Paragraph::new(format!(
-                " {}  {}",
+                "{}{}  {}",
+                if focused { "›" } else { " " },
                 if i < 9 {
                     (i + 1).to_string()
                 } else if i == 9 {
@@ -252,7 +279,14 @@ fn nav(frame: &mut Frame, app: &mut App, area: Rect) {
             Rect::new(inner.x, start, inner.width, 5),
             vec![
                 line("ON THIS COMPUTER", MUTED),
-                line(format!("{} RAM", human_bytes(app.hardware.ram)), TEXT),
+                line(
+                    if app.hardware.ram == 0 {
+                        "Detecting hardware…".into()
+                    } else {
+                        format!("{} RAM", human_bytes(app.hardware.ram))
+                    },
+                    TEXT,
+                ),
                 line(format!("{} CPU threads", app.hardware.threads), TEXT),
                 line("Ctrl+P  Actions", MUTED),
                 line("F1      Help", MUTED),
@@ -326,9 +360,7 @@ fn footer(frame: &mut Frame, app: &mut App, area: Rect) {
             Page::Files => "↑↓ Select  Enter View  E Edit  S Find  G Line  / Filter",
             Page::Jobs => "Enter Attach  Ctrl+] Detach  N Start  S Stop  R Restart  L Logs",
             Page::Context => "I Understands · C Correct · P Pin · U Unpin · R Refresh",
-            Page::Home => {
-                "↑↓ Choose   Enter Open   Tab Navigation   Ctrl+P Quick actions   Ctrl+Q Quit"
-            }
+            Page::Home => "↑↓ Move · Enter · Tab Pages · Ctrl+P Find · Ctrl+Q Quit",
             Page::Chat => {
                 "Enter Send · Esc Stop · Ctrl+P Actions · Ctrl+L Allowance · Ctrl+D Drafts"
             }
@@ -343,9 +375,7 @@ fn footer(frame: &mut Frame, app: &mut App, area: Rect) {
                 "R Checks · U Undo · C Configure · I Understands · F Recovered · E Evidence"
             }
             Page::Settings => "↑↓ Choose setting   Enter Change   Settings are saved automatically",
-            Page::Help => {
-                "Alt+1…8 Switch page   Tab Navigation   Ctrl+P Quick actions   Ctrl+Q Quit"
-            }
+            Page::Help => "Alt+1…0 Pages   Tab Navigation   Ctrl+P Actions   Ctrl+Q Quit",
         }
     };
     paragraph(
@@ -356,43 +386,52 @@ fn footer(frame: &mut Frame, app: &mut App, area: Rect) {
 }
 
 fn home(frame: &mut Frame, app: &mut App, area: Rect) {
+    let compact = area.height < 19;
+    let tiny = area.height < 13;
     let parts = Layout::vertical([
-        Constraint::Length(5),
-        Constraint::Min(8),
+        Constraint::Length(if tiny {
+            2
+        } else if compact {
+            4
+        } else {
+            5
+        }),
+        Constraint::Min(4),
         Constraint::Length(2),
     ])
     .split(area);
     let connection = app
         .current_profile()
         .map(|(name, p)| format!("Model: {} · {}", name, p.model))
-        .unwrap_or_else(|| "1  Choose a model connection to get started".into());
-    paragraph(
-        frame,
-        parts[0],
-        vec![
-            Line::styled(
-                "Make something. Understand it. Make it work.",
-                style(TEXT).add_modifier(Modifier::BOLD),
-            ),
-            line(
-                "Describe your goal in ordinary language. Alt helps with the steps.",
-                MUTED,
-            ),
-            line(connection, ACCENT),
-            line(
-                format!("Project: {}", app.preferences.project.display()),
-                TEXT,
-            ),
-            line(
-                if app.engine_ready() {
-                    "Agent engine ready · conversations stay on this computer"
-                } else {
-                    "Agent engine missing · install it below when you are ready"
-                },
-                if app.engine_ready() { GOOD } else { WARN },
-            ),
-        ],
-    );
+        .unwrap_or_else(|| "Connect a model, or explore a practice project first.".into());
+    let mut welcome = vec![Line::styled(
+        "Your models. Your workspace.",
+        style(TEXT).add_modifier(Modifier::BOLD),
+    )];
+    if !compact {
+        welcome.push(line(
+            "Describe your goal in ordinary language. Alt helps with the steps.",
+            MUTED,
+        ));
+    }
+    if !tiny {
+        welcome.push(line(connection, ACCENT));
+    }
+    welcome.push(line(
+        format!("Project: {}", app.preferences.project.display()),
+        MUTED,
+    ));
+    if !tiny {
+        welcome.push(line(
+            if app.engine_ready() {
+                "Agent engine ready · conversations stay on this computer"
+            } else {
+                "Agent engine missing · install it below when you are ready"
+            },
+            if app.engine_ready() { GOOD } else { WARN },
+        ));
+    }
+    paragraph(frame, parts[0], welcome);
     let labels = [
         (
             if app.config.profiles.is_empty() {
@@ -400,7 +439,11 @@ fn home(frame: &mut Frame, app: &mut App, area: Rect) {
             } else {
                 "Start a new conversation"
             },
-            "Tell the assistant what you want to accomplish.",
+            if app.config.profiles.is_empty() {
+                "Choose your model app or a GGUF file. Setup guides you."
+            } else {
+                "Tell the assistant what you want to accomplish."
+            },
         ),
         (
             "Try a practice project",
@@ -412,7 +455,7 @@ fn home(frame: &mut Frame, app: &mut App, area: Rect) {
         ),
         (
             "Prepare project checks",
-            "Choose how to test changes before asking your model to work.",
+            "Optional: choose how to verify changes to this project.",
         ),
         (
             "Choose a connection",
@@ -441,28 +484,42 @@ fn home(frame: &mut Frame, app: &mut App, area: Rect) {
     } else {
         (parts[1], None)
     };
+    let row_height = if compact { 1 } else { 2 };
     let rows = labels
         .iter()
-        .map(|(title, hint)| ListItem::new(vec![line(*title, TEXT), line(*hint, MUTED)]))
+        .map(|(title, hint)| {
+            ListItem::new(if compact {
+                vec![line(*title, TEXT)]
+            } else {
+                vec![line(*title, TEXT), line(*hint, MUTED)]
+            })
+        })
         .collect::<Vec<_>>();
     let mut state = ListState::default().with_selected(Some(app.home_selected));
     frame.render_stateful_widget(
         List::new(rows)
             .highlight_style(Style::default().bg(SELECT))
             .highlight_symbol("› ")
-            .block(block(" Start here ", !app.nav_focus)),
+            .block(block(
+                format!(
+                    " Start here · {} / {} ",
+                    app.home_selected + 1,
+                    labels.len()
+                ),
+                !app.nav_focus,
+            )),
         choices,
         &mut state,
     );
     let list = inset(choices, 1, 1);
     let offset = state.offset();
     for i in offset..labels.len() {
-        let y = list.y + (i - offset) as u16 * 2;
+        let y = list.y + (i - offset) as u16 * row_height;
         if y >= list.bottom() {
             break;
         }
         app.hits.push((
-            Rect::new(list.x, y, list.width, 2.min(list.bottom() - y)),
+            Rect::new(list.x, y, list.width, row_height.min(list.bottom() - y)),
             Hit::Home(i),
         ));
     }
@@ -500,7 +557,7 @@ fn home(frame: &mut Frame, app: &mut App, area: Rect) {
                 ),
                 line("", TEXT),
                 line(
-                    "An existing model server can use your GPU. Alt's built-in runtime uses CPU.",
+                    "Use a compatible GPU server, or the bundled CPU runtime.",
                     MUTED,
                 ),
             ])
@@ -515,10 +572,26 @@ fn home(frame: &mut Frame, app: &mut App, area: Rect) {
         parts[2],
         vec![
             line(format!("Next: {next}"), ACCENT),
-            line("Ctrl+P → Continue next step · Saved drafts: Ctrl+D", MUTED),
+            line(
+                if compact {
+                    labels[app.home_selected].1
+                } else {
+                    "Ctrl+P → Continue next step · Saved drafts: Ctrl+D"
+                },
+                MUTED,
+            ),
         ],
     );
-    app.hits.push((parts[2], Hit::Button("next-step")));
+    app.hits.push((
+        Rect::new(parts[2].x, parts[2].y, parts[2].width, 1),
+        Hit::Button("next-step"),
+    ));
+    if compact && parts[2].height > 1 {
+        app.hits.push((
+            Rect::new(parts[2].x, parts[2].y + 1, parts[2].width, 1),
+            Hit::Home(app.home_selected),
+        ));
+    }
 }
 
 fn chat(frame: &mut Frame, app: &mut App, area: Rect) {
@@ -1359,11 +1432,27 @@ fn help(frame: &mut Frame, area: Rect, scroll: u16) {
             TEXT,
         ),
         line("", TEXT),
+        line("COPY, PASTE AND MOUSE", ACCENT),
+        line(
+            "Paste with your terminal shortcut (usually Ctrl+Shift+V). To select text while mouse support is on, hold Shift while dragging, or turn Mouse off in Settings. Copy with your terminal shortcut (usually Ctrl+Shift+C). Ctrl+C stops work or exits. Mouse wheels scroll lists; keyboard arrows select items.",
+            TEXT,
+        ),
+        line("", TEXT),
+        line("YOUR CHOICE OF MODEL", ACCENT),
+        line(
+            "Alt works with compatible ordinary, uncensored and abliterated models. Your chosen server or GGUF file provides the model; the engine provides tools. Downloads and installs start when you choose them. Start with a modest context budget on an older computer.",
+            TEXT,
+        ),
+        line("", TEXT),
         line("WHEN SOMETHING GOES WRONG", ACCENT),
         line(
             "Your conversation stays saved. Drafts autosave every 250 ms while storage responds, and flush on orderly exit. Abrupt termination can lose changes since the last completed save. Save errors are shown; retained submissions never resend automatically. Check the server, memory and tool evidence. Ctrl+O enters a model ID without inventory. Paused downloads resume when you choose the same file.",
             TEXT,
         ),
+        line("", TEXT),
+        line("ABOUT ALT", ACCENT),
+        line(format!("Build: {}", crate::BUILD_LABEL), TEXT),
+        line("github.com/3d3dcanada/alt-cli · Apache-2.0", MUTED),
     ];
     frame.render_widget(
         Paragraph::new(text)
@@ -1456,7 +1545,7 @@ fn modal(frame: &mut Frame, app: &mut App, area: Rect) {
             .split(inset(rect, 2, 1));
             frame.render_widget(block(" Search actions ", true), rows[0]);
             editor(frame, inset(rows[0], 1, 1), &query, false, true);
-            let choices = super::actions::search(&query.text)
+            let choices: Vec<_> = super::actions::search(&query.text)
                 .iter()
                 .map(|a| {
                     (
@@ -1471,7 +1560,17 @@ fn modal(frame: &mut Frame, app: &mut App, area: Rect) {
                     )
                 })
                 .collect();
-            selectable_list(frame, app, rows[1], "Available actions", choices, selected);
+            if choices.is_empty() {
+                frame.render_widget(
+                    Paragraph::new("No matching actions. Try a shorter name.")
+                        .wrap(Wrap { trim: false })
+                        .style(style(MUTED))
+                        .block(block(" Available actions ", false)),
+                    rows[1],
+                );
+            } else {
+                selectable_list(frame, app, rows[1], "Available actions", choices, selected);
+            }
             for (_, hit) in &mut app.hits {
                 if let Hit::Row(index) = hit {
                     *hit = Hit::Choice(*index);
@@ -1741,8 +1840,8 @@ fn modal(frame: &mut Frame, app: &mut App, area: Rect) {
             selectable_list(frame, app, rows[1], "Files and folders", labels, selected);
             let choices = if matches!(kind, BrowserKind::Project) {
                 vec![
-                    ("Choose this folder", "choose-folder"),
-                    ("Open selected", "modal-submit"),
+                    ("Use folder", "choose-folder"),
+                    ("Open", "modal-submit"),
                     ("Type path", "type-path"),
                     ("Cancel", "modal-cancel"),
                 ]
@@ -2252,6 +2351,87 @@ mod tests {
             .collect::<Vec<_>>()
             .join("\n")
     }
+    #[tokio::test]
+    async fn compact_home_keeps_guidance_and_every_choice_reachable() {
+        let (_dir, mut app) = setup();
+        for (width, height) in [(60, 18), (80, 24)] {
+            app.home_selected = 0;
+            let text = render(&mut app, width, height);
+            assert!(text.contains("Project:"));
+            assert!(text.contains("Next:"));
+            assert!(text.contains("Connect your first model"));
+            assert!(text.contains("Ctrl+Q Quit"));
+            for _ in 0..7 {
+                app.key(KeyEvent::new(KeyCode::Down, KeyModifiers::NONE))
+                    .unwrap();
+            }
+            let text = render(&mut app, width, height);
+            assert!(text.contains("Keep a project brief"));
+            assert!(text.contains("8 / 8"));
+            let hint_row = text
+                .lines()
+                .position(|row| row.contains("Save goals,"))
+                .unwrap() as u16;
+            app.mouse(
+                crossterm::event::MouseEventKind::Down(crossterm::event::MouseButton::Left),
+                2,
+                hint_row,
+            )
+            .unwrap();
+            while app.job.is_some() {
+                let event = app.job_rx.recv().await.unwrap();
+                app.job_event(event).unwrap();
+            }
+            assert!(
+                matches!(&app.dialog, Some(Dialog::Input { title, .. }) if title == "Project brief")
+            );
+            app.dialog = None;
+        }
+    }
+
+    #[tokio::test]
+    async fn navigation_focus_is_visible_and_sidebar_clicks_have_unique_targets() {
+        let (_dir, mut app) = setup();
+        for (width, height) in [(60, 18), (80, 24), (100, 24), (120, 40)] {
+            app.set_page(Page::Home);
+            app.key(KeyEvent::new(KeyCode::Tab, KeyModifiers::NONE))
+                .unwrap();
+            for _ in 0..10 {
+                app.key(KeyEvent::new(KeyCode::Down, KeyModifiers::NONE))
+                    .unwrap();
+            }
+            let text = render(&mut app, width, height);
+            assert!(text.contains(if width < 85 {
+                "› Memory"
+            } else {
+                "›·  Context & memory"
+            }));
+            app.key(KeyEvent::new(KeyCode::Enter, KeyModifiers::NONE))
+                .unwrap();
+            assert_eq!(app.page, Page::Context);
+            render(&mut app, width, height);
+            let nav: Vec<_> = app
+                .hits
+                .iter()
+                .filter_map(|(rect, hit)| {
+                    if let Hit::Nav(page) = hit {
+                        Some((*rect, *page))
+                    } else {
+                        None
+                    }
+                })
+                .collect();
+            for (rect, page) in &nav {
+                let position = (rect.x, rect.y).into();
+                let matches: Vec<_> = nav
+                    .iter()
+                    .filter(|(other, _)| other.contains(position))
+                    .collect();
+                assert_eq!(matches.len(), 1, "ambiguous mouse target for {page:?}");
+            }
+        }
+    }
+
     #[tokio::test]
     async fn every_page_and_dialog_renders_at_supported_sizes() {
         let (_dir, mut app) = setup();

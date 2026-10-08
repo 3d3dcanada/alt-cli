@@ -2203,9 +2203,12 @@ pub async fn run(
         std::io::stdin().is_terminal() && std::io::stdout().is_terminal(),
         "Open Alt in a terminal, or use `alt run` in a script"
     );
-    let mut app = App::load(root, engine, profile)?;
     let mut terminal = ratatui::try_init()?;
     let _restore = Restore;
+    // Paint before opening persistent state. Fast starts proceed immediately;
+    // slower disks still show what Alt is doing, without a timed splash screen.
+    terminal.draw(view::startup)?;
+    let mut app = App::load(root, engine, profile)?;
     execute!(std::io::stdout(), EnableBracketedPaste)?;
     if app.preferences.mouse {
         execute!(std::io::stdout(), EnableMouseCapture)?;

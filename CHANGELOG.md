@@ -2,6 +2,13 @@
 
 ## Unreleased — final-pass implementation
 
+- Add a real startup screen, responsive Home, visible compact navigation, complete
+  action search and mouse-wheel lists. Fix clipped folder-picker actions and
+  compact Home click routing. Explain `alt` launch and PATH after installation;
+  reject invalid API key variable names without echoing their contents.
+- Exercise all pages by keyboard and mouse and all Settings entries at three
+  terminal sizes in a new repeatable product journey. See the
+  [UX walkthrough and screenshots](docs/UX_FINALIZATION.md).
 - Retain exact evolving user requirements, explicit corrections, ranked source
   retrieval, actual failing-case feedback, typed edits and distinct checked candidates.
 - Bind verification to observed source, environment and declared inputs; retain

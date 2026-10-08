@@ -30,6 +30,7 @@ python3 -m venv .venv
 source .venv/bin/activate
 python3 -m pip install -r requirements-dev.txt
 python3 scripts/smoke_tui.py
+python3 scripts/smoke_product_tui.py
 python3 scripts/smoke_task_tui.py
 python3 scripts/smoke_workbench_tui.py
 python3 scripts/smoke_verification_tui.py

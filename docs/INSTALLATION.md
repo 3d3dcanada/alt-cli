@@ -1,5 +1,10 @@
 # Install Alt on Linux
 
+The app is **Alt**; **Alt CLI** is the repository and package name. Once installed
+on your shell's PATH, type `alt` and press Enter to open the full terminal
+workspace. You do not need to type `alt tui`, hold the Alt key, or choose a model
+before opening it. Press **Ctrl+Q** to exit.
+
 The supported package target is Linux x86_64. Start with CPU inference or a model
 server you already use; a GPU is not required to open Alt. Model weights and the
 agent engine are installed separately, after you choose them in the interface.
@@ -8,6 +13,10 @@ Use [Alt v0.6.0-beta.3](https://github.com/3d3dcanada/alt-cli/releases/tag/v0.6.
 for the current packaged beta, including the repair/recovery PC recorder. Its tag
 appears in the TUI header and `alt build-info`; ordinary `alt --version` reports
 the package version.
+
+On the final-pass source branch, the header shows the version; **F1 → About Alt**
+and `alt build-info` show the complete build identity. Its latest interface and
+launch changes are documented in the [UX walkthrough](UX_FINALIZATION.md).
 
 ## Build from GitHub
 
@@ -24,7 +33,7 @@ The repository's `rust-toolchain.toml` selects Rust 1.99.0; an older distributio
 Rust package may not meet that requirement.
 
 ```bash
-git clone https://github.com/3d3dcanada/alt-cli.git
+git clone --branch build/final-pass-2026-10-08 https://github.com/3d3dcanada/alt-cli.git
 cd alt-cli
 cargo build --locked --release
 ./target/release/alt
@@ -48,6 +57,9 @@ alt
 The PATH change applies to this terminal. Add that same `export` to your shell's
 startup configuration if `~/.local/bin` is not already there. This copies the
 executable only; keep the checkout for its documentation and future builds.
+For Bash the startup file is usually `~/.bashrc`; for zsh it is `~/.zshrc`.
+In Fish, use `set -gx PATH "$HOME/.local/bin" $PATH` and keep the setting in
+`~/.config/fish/config.fish` instead.
 
 ## Download a versioned beta
 
@@ -64,6 +76,15 @@ After verification, extract the archive and run `bash install.sh`. Its default
 prefix is `~/.local`. For custom state pass `--data-dir /your/alt/state` so the
 installer backs up the folder you actually use. Start with **Try a practice
 project** on Home, then follow [PC testing](PC_TESTING.md).
+
+The installer prints a launch command for your installation. If its `bin` folder
+is missing from PATH, it gives the exact PATH setting to copy into your terminal.
+If another command named `alt` comes first, it identifies that path and gives the
+full path to this Alt executable. It never edits your shell configuration. Shell
+aliases and functions can also override `alt`; use the printed full path if you
+have one. With custom state, keep the printed `--data-dir` argument when launching;
+an exported `ALT_DATA_DIR` setting also selects that folder. The printed argument
+works in new terminals without relying on a previous environment setting.
 
 ## Download a CI package
 

@@ -10,6 +10,7 @@ import importlib.util
 import json
 import os
 from pathlib import Path
+import shlex
 import shutil
 import subprocess
 import sys
@@ -61,6 +62,51 @@ def current_identity(control):
     return os.readlink(current) if current.is_symlink() else None
 
 
+def launch_help(executable, state=None):
+    """Explain the command the current PATH will actually run; never edit a shell."""
+    resolved = shutil.which('alt')
+    try:
+        on_path = bool(resolved and os.path.samefile(resolved, executable))
+    except OSError:
+        on_path = False
+    arguments = ['alt' if on_path else str(executable)]
+    if state is not None:
+        arguments += ['--data-dir', str(state)]
+    shell = Path(os.environ.get('SHELL', '/bin/sh')).name
+    def quote(value):
+        # Fish single quotes interpret escaped backslashes and quotes differently
+        # from POSIX shells; keep custom prefixes literal in either shell.
+        if shlex.quote(value) == value:
+            return value
+        if shell == 'fish':
+            return "'" + value.replace('\\', '\\\\').replace("'", "\\'") + "'"
+        return shlex.quote(value)
+    print('\nStart Alt\'s terminal workspace:')
+    print('  ' + ' '.join(quote(argument) for argument in arguments))
+    print('No model download is needed to open it. On Home, try a practice project first.')
+    if on_path:
+        print('The command is the word alt, then Enter. Exit the workspace with Ctrl+Q.')
+    else:
+        if resolved:
+            print('\nAnother alt command comes first on PATH: ' + resolved)
+            print('Use the full path above to launch this installation.')
+        else:
+            print('\nYour terminal does not yet find this installation as alt.')
+        if shell == 'fish':
+            print('To enable the short command in this Fish terminal:')
+            print('  set -gx PATH ' + quote(str(executable.parent)) + ' $PATH')
+            startup = '~/.config/fish/config.fish'
+        else:
+            print('To enable the short command in Bash, sh or zsh:')
+            print('  export PATH=' + quote(str(executable.parent)) + ':"$PATH"')
+            print('  hash -r')
+            startup = '~/.zshrc' if shell == 'zsh' else '~/.bashrc' if shell == 'bash' else 'your shell startup file'
+        print('Keep that PATH setting in ' + startup + ' for new terminals. No shell files were changed.')
+        print('Then type alt' + (' with the --data-dir option shown above' if state is not None else '') + ' and press Enter.')
+        print('If you have an alt shell alias or function, use the full path above.')
+    print('Offline help: ' + str(executable.parent.parent / 'share/doc/alt/docs/INSTALLATION.md'))
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--package', type=Path, required=True)
@@ -71,7 +117,8 @@ def main():
     args = parser.parse_args()
     package = args.package.resolve()
     prefix = Path(os.environ.get('ALT_PREFIX', str(Path.home() / '.local'))).absolute()
-    state = args.data_dir or Path(os.environ.get('ALT_DATA_DIR', str(Path(os.environ.get('XDG_DATA_HOME', str(Path.home() / '.local/share'))) / 'alt-cli')))
+    state = (args.data_dir or Path(os.environ.get('ALT_DATA_DIR', str(Path(os.environ.get('XDG_DATA_HOME', str(Path.home() / '.local/share'))) / 'alt-cli')))).absolute()
+    launch_state = state if args.data_dir is not None or os.environ.get('ALT_DATA_DIR') else None
     control = prefix / 'share/alt'
     generations = control / 'installations'
     bindir = prefix / 'bin'
@@ -174,6 +221,7 @@ def main():
         if previous_id == target:
             record('complete', operation='already-installed')
             print('This complete Alt generation is already installed: ' + str(executable))
+            launch_help(executable, launch_state)
             return
         backup = None
         if executable.is_file() and state.is_dir():
@@ -211,6 +259,7 @@ def main():
         print('Installed complete Alt generation: ' + str(executable))
         if backup:
             print('Saved pre-upgrade state backup: ' + str(backup))
+        launch_help(executable, launch_state)
 
 
 if __name__ == '__main__':
