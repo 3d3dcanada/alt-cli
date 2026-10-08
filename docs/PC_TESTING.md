@@ -3,6 +3,11 @@
 These checks supply the physical measurements unavailable in the cloud. Keep
 the exact model you choose; Alt does not need to switch providers to run them.
 
+The [final-pass branch](https://github.com/3d3dcanada/alt-cli/tree/build/final-pass-2026-10-08)
+contains the latest audit fixes. Published beta 3 is the earlier build. Use the
+source branch or a matching successful CI artifact when testing these changes;
+record `alt build-info` with your results.
+
 ## Install and check the application
 
 Download the Linux x86_64 package from
@@ -25,7 +30,7 @@ stays in the report; the recorder does not change settings to make a check pass.
 You can also build the current source with Rust 1.99.0:
 
 ```bash
-git clone https://github.com/3d3dcanada/alt-cli.git
+git clone --branch build/final-pass-2026-10-08 https://github.com/3d3dcanada/alt-cli.git
 cd alt-cli
 cargo build --locked --release
 python3 scripts/test-my-pc.py --alt target/release/alt
@@ -53,6 +58,23 @@ Manual editing is also supported from Project files. This distinguishes problems
 with the application from a selected model's ability to implement the repair.
 The example uses Python's standard library and requires no package downloads.
 Full access uses host permissions; Guided checks need working Bubblewrap.
+
+For the final-pass candidate, also try these short recovery checks in the practice
+project before opening your own work:
+
+1. Type a distinctive unsent message, quit, and restart. Confirm the draft returns.
+2. Submit a request and type the next message while it is running. Cancel or
+   disconnect; the submitted text and next draft should remain separately recoverable.
+3. In Task, inspect the exact requests. Correct one explicitly and confirm the
+   original text and reason remain visible in history.
+4. Run a check and inspect both raw output streams. If you change source or a
+   declared external input afterward, the old result should become stale.
+5. Edit an Alt-tracked file in your editor, then try to undo its earlier checkpoint.
+   Expect an explicit conflict. Inspect any retained versions before choosing a
+   restoration proposal; Alt must not silently overwrite your editor's change.
+
+Automated cloud journeys cover these mechanisms. Your results establish their
+behavior in your terminal, filesystem, editor and runtime combination.
 
 ## Measure the selected model
 
