@@ -1,0 +1,8 @@
+Traceback (most recent call last):
+  File "/workspace/alt-cli/scripts/acceptance_v5.py", line 207, in <module>
+    if __name__=='__main__': self_test()
+                             ^^^^^^^^^^^
+  File "/workspace/alt-cli/scripts/acceptance_v5.py", line 191, in self_test
+    assert check(project,command)['passed'], (name,'reference rejected',check(project,command))
+           ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^
+AssertionError: ('rust-feature', 'reference rejected', {'passed': False, 'completion_observed': False, 'exit': 1, 'stdout': '', 'stderr': 'Traceback (most recent call last):\n  File "/tmp/alt-v5-qphdc1jd/independent/check.py", line 10, in <module>\n    result=subprocess.run([\'cargo\',\'test\',\'--offline\',\'--message-format=json\',\'--manifest-path\',str(crate/\'Cargo.toml\')],env=env,capture_output=True,text=True)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/subprocess.py", line 548, in run\n    with Popen(*popenargs, **kwargs) as process:\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/subprocess.py", line 1026, in __init__\n    self._execute_child(args, executable, preexec_fn, close_fds,\n  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/subprocess.py", line 1955, in _execute_child\n    raise child_exception_type(errno_num, err_msg, err_filename)\nFileNotFoundError: [Errno 2] No such file or directory: \'cargo\'\n'})

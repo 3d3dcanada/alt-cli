@@ -23,6 +23,7 @@ pub enum Command {
     Prompt {
         text: String,
         brief: String,
+        message_id: Option<String>,
     },
     Permission {
         id: Value,
@@ -225,8 +226,9 @@ async fn worker(
                 if disconnected {break;}
             }
             command=commands.recv()=> match command {
-                Some(Command::Prompt{text,brief}) if response.is_none()=>{
-                    store.append(&session.id,&json!({"type":"user","text":text}))?;
+                Some(Command::Prompt{text,brief,message_id}) if response.is_none()=>{
+                    if let Some(runtime)=local_runtime.as_mut() { runtime.check_warm_identity()?; }
+                    store.append(&session.id,&json!({"type":"user","text":text,"message_id":message_id}))?;
                     if !brief.trim().is_empty() {store.append(&session.id,&json!({"type":"project_brief","text":brief}))?;}
                     response=Some(engine.prompt_with_brief(&session.engine_id,&text,&brief).await?);
                     deadline=tokio::time::Instant::now()+Duration::from_secs(1200);cancelling=false;

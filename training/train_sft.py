@@ -116,6 +116,9 @@ def validate_resume(directory,receipt_path,config,dataset_sha):
 def run(args):
     config = load_config(args.config)
     partitions, manifest = load_prepared(args.dataset, config)
+    if args.train:
+        from readiness import require_training_readiness
+        require_training_readiness(getattr(args, "readiness_receipt", None), args.config, args.dataset)
     resume=getattr(args,"resume_from",None)
     if resume:
         require(args.train,"Checkpoint resume is a training operation")
@@ -272,6 +275,7 @@ def main():
     parser.add_argument("--config", type=Path, required=True)
     parser.add_argument("--dataset", type=Path, required=True)
     parser.add_argument("--cache-dir", type=Path, default=Path(".alt-training/cache"))
+    parser.add_argument("--readiness-receipt",type=Path,help="Fresh reviewed corpus, complete attempt ledger and exact GPU-loader qualification")
     parser.add_argument("--resume-from",type=Path,help="Exact checkpoint directory from a recorded prior run")
     parser.add_argument("--resume-receipt",type=Path,help="Prior run receipt with immutable checkpoint file hashes")
     parser.add_argument("--output", type=Path, help="New receipt file for tokenization; new run directory for training")

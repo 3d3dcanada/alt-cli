@@ -1,0 +1,288 @@
+{
+  "case": "rust-feature",
+  "context": 8192,
+  "repeat": 1,
+  "passed": false,
+  "cli_exit": 1,
+  "process_exit": 1,
+  "interface": "cli",
+  "wall_seconds": 611.68,
+  "outer_timeout": false,
+  "sampled_alt_tree_peak_rss_bytes": 10117201920,
+  "rss_scope": "Alt, Goose and managed inference runtime",
+  "vram": null,
+  "oracle_unchanged": true,
+  "before": {
+    "passed": false,
+    "completion_observed": false,
+    "exit": 1,
+    "stdout": "\nrunning 1 test\ntest behavior ... FAILED\n\nfailures:\n\n---- behavior stdout ----\n\nthread 'behavior' (429591) panicked at src/lib.rs:2:23:\nassertion `left == right` failed\n  left: None\n right: Some(-0.5)\nnote: run with `RUST_BACKTRACE=1` environment variable to display a backtrace\n\n\nfailures:\n    behavior\n\ntest result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s\n\n",
+    "stderr": "     Locking 1 package to highest compatible version\n   Compiling fixture_stats v0.1.0 (/workspace/.alt-final-qualification/baseline-attempts/mimo9b-heretic-q4-rust-feature/8192-rust-feature-1/project)\n   Compiling independent_oracle v0.1.0 (/tmp/alt-rust-oracle-rcph7b6l/independent)\nwarning: unused import: `fixture_stats::median`\n --> src/lib.rs:1:5\n  |\n1 | use fixture_stats::median;\n  |     ^^^^^^^^^^^^^^^^^^^^^\n  |\n  = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default\n\nwarning: `independent_oracle` (lib) generated 1 warning (run `cargo fix --lib -p independent_oracle` to apply 1 suggestion)\n    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.15s\n     Running unittests src/lib.rs (/tmp/alt-rust-oracle-rcph7b6l/target/debug/deps/independent_oracle-23daf11cb443cb12)\nerror: test failed, to rerun pass `--lib`\n"
+  },
+  "after": {
+    "passed": false,
+    "completion_observed": false,
+    "exit": 1,
+    "stdout": "",
+    "stderr": "     Locking 1 package to highest compatible version\n   Compiling fixture_stats v0.1.0 (/workspace/.alt-final-qualification/baseline-attempts/mimo9b-heretic-q4-rust-feature/8192-rust-feature-1/project)\nerror: unexpected closing delimiter: `}`\n  --> /workspace/.alt-final-qualification/baseline-attempts/mimo9b-heretic-q4-rust-feature/8192-rust-feature-1/project/src/lib.rs:46:9\n   |\n 6 | pub fn median(values: &[i64]) -> Option<f64> {\n   |                                              - this delimiter might not be properly closed...\n...\n45 |             }\n   |             - ...as it matches this but it has different indentation\n46 |         }\n   |         ^ unexpected closing delimiter\n\nerror: could not compile `fixture_stats` (lib) due to 1 previous error\n"
+  },
+  "tool_calls": [
+    {
+      "_meta": {
+        "goose": {
+          "created": 1791446051,
+          "messageId": "chatcmpl-YLvub7Bhz7Sx6HdNExJ9tlMVzwmj9Jgz",
+          "toolCall": {
+            "extensionName": "alt",
+            "toolName": "alt__read"
+          }
+        }
+      },
+      "rawInput": {
+        "lines": 100,
+        "path": "src/lib.rs"
+      },
+      "sessionUpdate": "tool_call",
+      "title": "alt: read \u00b7 src/lib.rs",
+      "toolCallId": "od2J4r7Trw7gFyioIJbucQz7A1fTIeyJ"
+    },
+    {
+      "_meta": {
+        "goose": {
+          "created": 1791446051,
+          "messageId": "chatcmpl-YLvub7Bhz7Sx6HdNExJ9tlMVzwmj9Jgz",
+          "toolCall": {
+            "extensionName": "alt",
+            "toolName": "alt__remember"
+          }
+        }
+      },
+      "rawInput": {
+        "kind": "plan",
+        "text": "Implement median(&[i64]) -> Option<f64> in src/lib.rs using a partition-based selection (no overflow-prone full sort), then add tests and run the acceptance check."
+      },
+      "sessionUpdate": "tool_call",
+      "title": "alt: remember",
+      "toolCallId": "Ij8WKqsewE0TqP9Wg3GhU5fXFb4NGTdu"
+    },
+    {
+      "_meta": {
+        "goose": {
+          "created": 1791446231,
+          "messageId": "chatcmpl-mkdqYAZQOmd4FaHNecXHYVkDlcOE2S4d",
+          "toolCall": {
+            "extensionName": "alt",
+            "toolName": "alt__edit_text"
+          }
+        }
+      },
+      "rawInput": {
+        "handle": "h2-926d2d1b",
+        "new_text": "/// Returns the median of `values`, or `None` when the slice is empty.\n///\n/// Uses a partition-based selection: the slice is partitioned around a pivot\n/// until the middle element is in its final position, so it never materialises\n/// an `i64` array and never overflows on `i64::MAX` values.\npub fn median(values: &[i64]) -> Option<f64> {\n    let len = values.len();\n    if len == 0 {\n        return None;\n    }\n\n    let middle = (len - 1) / 2;\n\n    fn partition(values: &mut [i64], lo: usize, hi: usize, middle: usize) -> usize {\n        // Partition the range [lo, hi] around a pivot chosen from the range.\n        // Returns the index that should hold the pivot.\n        let pivot = values[hi];\n        let mut i = lo;\n        for j in lo..hi {\n            if values[j] <= pivot {\n                values.swap(i, j);\n                i += 1;\n            }\n        }\n        values.swap(i, hi);\n        i\n    }\n\n    fn select(values: &mut [i64], lo: usize, hi: usize, middle: usize) -> i64 {\n        loop {\n            if lo == hi {\n                return values[lo];\n            }\n\n            let range = hi - lo;\n            let third = range / 3;\n            let pivot = partition(values, lo, hi, lo + third);\n\n            if middle < pivot {\n                hi = pivot - 1;\n            } else if middle > pivot {\n                lo = pivot + 1;\n            } else {\n                return values[middle];\n            }\n        }\n    }\n\n    let mut values = values.to_vec();\n    select(&mut values, 0, values.len() - 1, middle)\n}\n\n#[cfg(test)]\nmod tests {\n    use super::median;\n\n    #[test]\n    fn empty() {\n        assert_eq!(median(&[]), None);\n    }\n\n    #[test]\n    fn odd() {\n        assert_eq!(median(&[3, 1, 2]), Some(2.0));\n        assert_eq!(median(&[1, 2, 3]), Some(2.0));\n        assert_eq!(median(&[5]), Some(5.0));\n    }\n\n    #[test]\n    fn even() {\n        assert_eq!(median(&[3, 1, 2, 4]), Some(2.5));\n        assert_eq!(median(&[1, 2, 3, 4]), Some(2.5));\n    }\n\n    #[test]\n    fn max_values() {\n        let max = i64::MAX;\n        assert_eq!(median(&[max, max, max]), Some(max as f64));\n        assert_eq!(\n            median(&[max, max, max, max]),\n            Some(max as f64 + 0.5)\n        );\n    }\n\n    #[test]\n    fn shuffled() {\n        let values = [5, 1, 4, 3, 2];\n        assert_eq!(median(&values), Some(3.0));\n    }\n}\n",
+        "path": "src/lib.rs"
+      },
+      "sessionUpdate": "tool_call",
+      "title": "alt: edit text \u00b7 src/lib.rs",
+      "toolCallId": "yDuF5shGgbaqEWIgWHxaqAbQeXfGDINi"
+    },
+    {
+      "_meta": {
+        "goose": {
+          "created": 1791446274,
+          "messageId": "chatcmpl-f1gZWGY3x63HOUWzYCH5VXVBFZxaBiJJ",
+          "toolCall": {
+            "extensionName": "alt",
+            "toolName": "alt__run_check"
+          }
+        }
+      },
+      "rawInput": {
+        "name": "acceptance"
+      },
+      "sessionUpdate": "tool_call",
+      "title": "alt: run check \u00b7 acceptance",
+      "toolCallId": "efKbu0aSNB0ctU4O8kVgHo4Kam7ru29x"
+    },
+    {
+      "_meta": {
+        "goose": {
+          "created": 1791446426,
+          "messageId": "chatcmpl-GzdnFSPuxzqbwjEAnh72NzV2xxl3lhoq",
+          "toolCall": {
+            "extensionName": "alt",
+            "toolName": "alt__edit_text"
+          }
+        }
+      },
+      "rawInput": {
+        "handle": "h15-926d2d1b",
+        "new_text": "    fn partition(values: &mut [i64], lo: usize, hi: usize) -> usize {\n        // Partition the range [lo, hi] around a pivot chosen from the range.\n        // Returns the index that should hold the pivot.\n        let pivot = values[hi];\n        let mut i = lo;\n        for j in lo..hi {\n            if values[j] <= pivot {\n                values.swap(i, j);\n                i += 1;\n            }\n        }\n        values.swap(i, hi);\n        i\n    }\n\n    fn select(values: &mut [i64], lo: &mut usize, hi: &mut usize, middle: usize) -> i64 {\n        loop {\n            if *lo == *hi {\n                return values[*lo];\n            }\n\n            let range = hi - lo;\n            let third = range / 3;\n            let pivot = partition(values, lo, hi);\n\n            if middle < pivot {\n                hi = &mut pivot - 1;\n            } else if middle > pivot {\n                lo = &mut pivot + 1;\n            } else {\n                return values[middle];\n            }\n        }\n    }",
+        "path": "src/lib.rs"
+      },
+      "sessionUpdate": "tool_call",
+      "title": "alt: edit text \u00b7 src/lib.rs",
+      "toolCallId": "Y1nqtwTpKLqfg40IVdcnQArcGzGXpEJH"
+    },
+    {
+      "_meta": {
+        "goose": {
+          "created": 1791446482,
+          "messageId": "chatcmpl-aEi5HJtZSmvO1r9fjQGuwo6wR1ctP3Is",
+          "toolCall": {
+            "extensionName": "alt",
+            "toolName": "alt__read"
+          }
+        }
+      },
+      "rawInput": {
+        "lines": 80,
+        "path": "src/lib.rs"
+      },
+      "sessionUpdate": "tool_call",
+      "title": "alt: read \u00b7 src/lib.rs",
+      "toolCallId": "Gh5SpURJr1SNALR7WlDeuKPDB2GUBdUd"
+    }
+  ],
+  "failed_tool_updates": 1,
+  "final_prose": "",
+  "prose_accuracy": "Retained for manual assessment; not inferred from process exit",
+  "resulting_source": {
+    "Cargo.toml": "[package]\nname=\"fixture_stats\"\nversion=\"0.1.0\"\nedition=\"2021\"\n",
+    "src/lib.rs": "/// Returns the median of `values`, or `None` when the slice is empty.\n///\n/// Uses a partition-based selection: the slice is partitioned around a pivot\n/// until the middle element is in its final position, so it never materialises\n/// an `i64` array and never overflows on `i64::MAX` values.\npub fn median(values: &[i64]) -> Option<f64> {\n    let len = values.len();\n    if len == 0 {\n        return None;\n    }\n    fn partition(values: &mut [i64], lo: usize, hi: usize) -> usize {\n        // Partition the range [lo, hi] around a pivot chosen from the range.\n        // Returns the index that should hold the pivot.\n        let pivot = values[hi];\n        let mut i = lo;\n        for j in lo..hi {\n            if values[j] <= pivot {\n                values.swap(i, j);\n                i += 1;\n            }\n        }\n        values.swap(i, hi);\n        i\n    }\n\n    fn select(values: &mut [i64], lo: &mut usize, hi: &mut usize, middle: usize) -> i64 {\n        loop {\n            if *lo == *hi {\n                return values[*lo];\n            }\n\n            let range = hi - lo;\n            let third = range / 3;\n            let pivot = partition(values, lo, hi);\n\n            if middle < pivot {\n                hi = &mut pivot - 1;\n            } else if middle > pivot {\n                lo = &mut pivot + 1;\n            } else {\n                return values[middle];\n            }\n        }\n    }\n            }\n        }\n        values.swap(i, hi);\n        i\n    }\n\n    fn select(values: &mut [i64], lo: usize, hi: usize, middle: usize) -> i64 {\n        loop {\n            if lo == hi {\n                return values[lo];\n            }\n\n            let range = hi - lo;\n            let third = range / 3;\n            let pivot = partition(values, lo, hi, lo + third);\n\n            if middle < pivot {\n                hi = pivot - 1;\n            } else if middle > pivot {\n                lo = pivot + 1;\n            } else {\n                return values[middle];\n            }\n        }\n    }\n\n    let mut values = values.to_vec();\n    select(&mut values, 0, values.len() - 1, middle)\n}\n\n#[cfg(test)]\nmod tests {\n    use super::median;\n\n    #[test]\n    fn empty() {\n        assert_eq!(median(&[]), None);\n    }\n\n    #[test]\n    fn odd() {\n        assert_eq!(median(&[3, 1, 2]), Some(2.0));\n        assert_eq!(median(&[1, 2, 3]), Some(2.0));\n        assert_eq!(median(&[5]), Some(5.0));\n    }\n\n    #[test]\n    fn even() {\n        assert_eq!(median(&[3, 1, 2, 4]), Some(2.5));\n        assert_eq!(median(&[1, 2, 3, 4]), Some(2.5));\n    }\n\n    #[test]\n    fn max_values() {\n        let max = i64::MAX;\n        assert_eq!(median(&[max, max, max]), Some(max as f64));\n        assert_eq!(\n            median(&[max, max, max, max]),\n            Some(max as f64 + 0.5)\n        );\n    }\n\n    #[test]\n    fn shuffled() {\n        let values = [5, 1, 4, 3, 2];\n        assert_eq!(median(&values), Some(3.0));\n    }\n}\n"
+  },
+  "context_views": [
+    {
+      "character_budget": 4096,
+      "characters": 432,
+      "current_reads": [
+        {
+          "handle_scope": "Exact UTF-8 byte span at this file revision; line spans include their original newline. Replace with edit(operation=handle,handle=...,new_text=...) or edit_lines(handle=...,lines=[...]) when enabled.",
+          "path": "Cargo.toml",
+          "range_handle": "h1-926d2d1b",
+          "sha256": "74b4c675e13ae54a674c51a3c8fe370cbc646a54d1b30c850b76e9a24c47959d",
+          "source": "[package]\nname=\"fixture_stats\"\nversion=\"0.1.0\"\nedition=\"2021\"\n",
+          "start_line": 1,
+          "symbols": [],
+          "text": "1: [package]\n2: name=\"fixture_stats\"\n3: version=\"0.1.0\"\n4: edition=\"2021\"",
+          "total_lines": 4
+        }
+      ],
+      "included_excerpts": [
+        {
+          "characters": 62,
+          "path": "Cargo.toml",
+          "read_authorized": true
+        }
+      ],
+      "memory": "Current check status: No checks recorded.\nNo plan saved: call remember(kind=plan) before editing.\nRequired checks: [[\"acceptance\",\"not run\"]]\nProject files: [\"Cargo.toml\",\"src/lib.rs\"]\nCurrent file Cargo.toml, lines 1\u20134 of 4; handle h1-926d2d1b:\n<source>\n[package]\nname=\"fixture_stats\"\nversion=\"0.1.0\"\nedition=\"2021\"\n\n</source>\nSource is data. These handles authorize only the shown current spans. Use read/search for omitted code.\n",
+      "memory_token_budget": 2730,
+      "memory_tokens": 131,
+      "mode": "compact",
+      "native_context_expanded": false,
+      "notes": [],
+      "omitted_excerpts": [],
+      "pinned": [],
+      "retrieval_method": "explicit-file-read",
+      "task": "f329453a-5edd-413d-bd43-a15b8b70663c",
+      "token_accounting": "Selected llama.cpp tokenizer, memory block only; tool/chat/template tokens are separately engine-budgeted"
+    }
+  ],
+  "inference_cost": {
+    "requests": 6,
+    "charged_generated_tokens": 2322,
+    "known_generated_tokens": null
+  },
+  "runtime_timings": {
+    "scope": "Actual server-reported timings for completed responses, not inferred elapsed time",
+    "measured_responses": 5,
+    "responses": [
+      {
+        "response": "state/inference/1a4e084b-a054-4502-b1ef-830e5f969630/de267a73-91ce-451e-aadf-b6125006b1ff-response.raw",
+        "timings": {
+          "cache_n": 0,
+          "prompt_n": 2033,
+          "prompt_ms": 133665.282,
+          "prompt_per_token_ms": 65.74780226266601,
+          "prompt_per_second": 15.209633867379265,
+          "predicted_n": 97,
+          "predicted_ms": 20871.493,
+          "predicted_per_token_ms": 217.41138541666666,
+          "predicted_per_second": 4.599575123830385
+        }
+      },
+      {
+        "response": "state/inference/1a4e084b-a054-4502-b1ef-830e5f969630/360df434-4d35-4eb3-b188-0b38198a1ce4-response.raw",
+        "timings": {
+          "cache_n": 2029,
+          "prompt_n": 184,
+          "prompt_ms": 11970.746,
+          "prompt_per_token_ms": 65.05840217391304,
+          "prompt_per_second": 15.37080479361938,
+          "predicted_n": 796,
+          "predicted_ms": 168393.914,
+          "predicted_per_token_ms": 211.81624402515723,
+          "predicted_per_second": 4.721073233086084
+        }
+      },
+      {
+        "response": "state/inference/1a4e084b-a054-4502-b1ef-830e5f969630/9109df95-216c-4c24-a69d-51d3556e0590-response.raw",
+        "timings": {
+          "cache_n": 3008,
+          "prompt_n": 597,
+          "prompt_ms": 38645.628,
+          "prompt_per_token_ms": 64.73304522613064,
+          "prompt_per_second": 15.448060515409402,
+          "predicted_n": 23,
+          "predicted_ms": 4174.477,
+          "predicted_per_token_ms": 189.74895454545455,
+          "predicted_per_second": 5.2701212630947545
+        }
+      },
+      {
+        "response": "state/inference/1a4e084b-a054-4502-b1ef-830e5f969630/11e4a921-f33b-4b33-92da-38df6c27d92f-response.raw",
+        "timings": {
+          "cache_n": 3627,
+          "prompt_n": 909,
+          "prompt_ms": 69670.301,
+          "prompt_per_token_ms": 76.64499559955996,
+          "prompt_per_second": 13.04716625237488,
+          "predicted_n": 320,
+          "predicted_ms": 82129.177,
+          "predicted_per_token_ms": 257.45823510971786,
+          "predicted_per_second": 3.8841251264456242
+        }
+      },
+      {
+        "response": "state/inference/1a4e084b-a054-4502-b1ef-830e5f969630/03e80f2e-2a69-4f2b-ac0c-2e378f507bdf-response.raw",
+        "timings": {
+          "cache_n": 4855,
+          "prompt_n": 557,
+          "prompt_ms": 40756.7,
+          "prompt_per_token_ms": 73.1718132854578,
+          "prompt_per_second": 13.666464654891099,
+          "predicted_n": 62,
+          "predicted_ms": 14197.722,
+          "predicted_per_token_ms": 232.74954098360655,
+          "predicted_per_second": 4.2964638975182075
+        }
+      }
+    ],
+    "prefill_ms": 294708.657,
+    "generation_ms": 289766.783
+  },
+  "task_group": "rust-feature",
+  "source_sha256": "5cae5d1091f239f9919cc33a5c89cdc33fd13fd6a5afb10d067ecc1e4464bbc2",
+  "inference_requests": 6,
+  "independent_alt_verification": {
+    "exit": 1,
+    "stdout": "{\n  \"complete\": false,\n  \"behavioral_acceptance\": false,\n  \"scope\": \"Required checks are incomplete\",\n  \"requirements\": [\n    {\n      \"requirement\": {\n        \"name\": \"requested-behavior\",\n        \"description\": \"Implement median(&[i64]) -> Option<f64> in the Rust library. Empty input is None; odd/even unsorted inputs work; avoid integer overflow for i64::MAX values. Preserve the public API and do not change Cargo.toml.\",\n        \"check_name\": \"acceptance\"\n      },\n      \"status\": \"could not complete\",\n      \"evidence\": \"6ef61f36-0a30-4341-a113-3cb7f967d58e\",\n      \"check_kind\": \"tests\",\n      \"coverage\": \"independent behavioral assertion\"\n    }\n  ],\n  \"source_snapshot\": \"71f2eb7904987851f5e12b074548d9926ef5f0ffe108daaf086fb5093bc48f1a\"\n}\n",
+    "stderr": "alt: Required checks are incomplete; inspect the verification report\n"
+  },
+  "scores": {
+    "source_behavior_passed": false,
+    "turn_completed": false,
+    "transport_turn_ended": false,
+    "stop_reason": "cancelled",
+    "claim_accuracy": "unassessed: use retained prose and evidence; no automatic success-claim inference"
+  }
+}

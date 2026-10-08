@@ -30,6 +30,7 @@ pub enum Event {
 
 pub struct Engine {
     child: Child,
+    group: crate::process::OwnedGroup,
     stdin: ChildStdin,
     pending: Pending,
     events: mpsc::Receiver<Event>,
@@ -132,12 +133,24 @@ impl Engine {
         crate::config::private_dir(&goose_root.join("config"))?;
         crate::config::atomic_write(&goose_root.join("config/config.yaml"),b"extensions:\n  developer:\n    enabled: false\n    type: platform\n    name: developer\n    description: Disabled by Alt; Alt owns execution\n")?;
         let mut command = Command::new(binary);
+        // Goose always talks to Alt's loopback relay, including external model
+        // profiles. Keep its per-connection capability out of inherited proxies.
+        let mut no_proxy = std::env::var("NO_PROXY").unwrap_or_default();
+        if let Ok(lower) = std::env::var("no_proxy")
+            && !lower.is_empty()
+        {
+            no_proxy.push(',');
+            no_proxy.push_str(&lower);
+        }
+        no_proxy.push_str(",127.0.0.1,localhost,::1");
         command
             .arg("acp")
             .current_dir(cwd)
             .env("GOOSE_PATH_ROOT", goose_root)
             .env("GOOSE_MODEL", &profile.model)
             .env("GOOSE_MODE", "auto")
+            .env("NO_PROXY", &no_proxy)
+            .env("no_proxy", no_proxy)
             .env_remove("GOOSE_ADDITIONAL_CONFIG_FILES")
             .env("GOOSE_MAX_TURNS", profile.max_turns.to_string())
             .env(
@@ -179,10 +192,6 @@ impl Engine {
                 command
                     .env("GOOSE_PROVIDER", "openai")
                     .env("OPENAI_BASE_URL", &relay.endpoint);
-                ensure!(
-                    profile.api_key_env.is_none(),
-                    "Ollama authentication is not implemented in this slice"
-                );
             }
         }
         let mut engine = Self::spawn(command).await?;
@@ -204,6 +213,7 @@ impl Engine {
         let mut child = command
             .spawn()
             .context("Cannot launch engine; install Goose 1.53.0 or pass --engine PATH")?;
+        let group = crate::process::OwnedGroup::capture(&child);
         let stdin = child.stdin.take().context("Missing engine stdin")?;
         let stdout = child.stdout.take().context("Missing engine stdout")?;
         let stderr = child.stderr.take().context("Missing engine stderr")?;
@@ -284,6 +294,7 @@ impl Engine {
         });
         Ok(Self {
             child,
+            group,
             stdin,
             pending,
             events,
@@ -654,25 +665,11 @@ impl Engine {
             .await;
         }
         let _ = self.stdin.shutdown().await;
-        if tokio::time::timeout(Duration::from_millis(800), self.child.wait())
-            .await
-            .is_ok()
-        {
-            return;
-        }
-        self.kill_group();
-        let _ = self.child.start_kill();
-        let _ = tokio::time::timeout(Duration::from_secs(3), self.child.wait()).await;
+        self.group.stop(&mut self.child).await;
     }
 
     fn kill_group(&self) {
-        #[cfg(unix)]
-        if let Some(id) = self.child.id() {
-            let _ = nix::sys::signal::killpg(
-                nix::unistd::Pid::from_raw(id as i32),
-                nix::sys::signal::Signal::SIGKILL,
-            );
-        }
+        self.group.kill();
     }
 }
 

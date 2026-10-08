@@ -77,14 +77,15 @@ pub fn packet(p: &Project, task: &str) -> Result<Value> {
         .map(|c| diagnostic_locations(p, c))
         .transpose()?
         .unwrap_or_default();
+    let failure_packet = check.as_ref().map(|c| failure_packet(p, c)).transpose()?;
     let diagnostic=check.map(|c| {
-        let locations=observed_lines(&c);
-        json!({"evidence_id":c.id,"source_revision":c.snapshot,"current_source":Some(&c.snapshot)==source.as_ref(),"name":c.name,"exit_code":c.exit_code,"timed_out":c.timed_out,"cancelled":c.cancelled,"error":c.error,"tests_run":c.tests_run,"observed_lines":locations,"source_locations":source_locations,"output_preview":crate::project::bounded(&c.output,1600),"captured_output_truncated":c.output_truncated,"raw_reference":format!("task evidence/export: check {}",c.id),"scope":"Locations and expected/actual strings are quoted from the actual output. Missing values remain unknown."})
+        let locations=failure_packet.as_ref().map(|v|v["observed_diagnostics"].clone()).unwrap_or(json!([]));
+        json!({"evidence_id":c.id,"source_revision":c.snapshot,"current_source":Some(&c.snapshot)==source.as_ref(),"name":c.name,"exit_code":c.exit_code,"timed_out":c.timed_out,"cancelled":c.cancelled,"error":c.error,"tests_run":c.tests_run,"observed_lines":locations,"source_locations":source_locations,"output_preview":failure_packet.as_ref().map(|v|v["captured_output_preview"].clone()).unwrap_or_else(||json!(crate::project::bounded(&c.output,1600))),"captured_output_truncated":c.output_truncated,"raw_reference":format!("task evidence/export: check {}",c.id),"scope":"Locations and expected/actual strings are quoted from the actual output. Missing values remain unknown."})
     });
     let mut stmt=p.db.prepare("SELECT body,source FROM notes WHERE task=?1 AND kind='hypothesis' ORDER BY seq DESC LIMIT 3")?;
     let hypotheses=stmt.query_map([task],|r|Ok(json!({"text":r.get::<_,String>(0)?,"source":r.get::<_,String>(1)?,"verified":false})))?.collect::<rusqlite::Result<Vec<_>>>()?;
     Ok(
-        json!({"schema":1,"task":task,"goal":state.goal,"stage":stage,"source_revision":source,"next_decision":decision,"facts":{"applied_changes":state.changes,"check_status":state.check_status,"verification":verification,"diagnostic":diagnostic,"recovery":recovery},"hypotheses":hypotheses,"budget_scope":"Provider requests record actual allocations; this packet does not invent consumed tokens."}),
+        json!({"schema":1,"task":task,"goal":state.goal,"stage":stage,"source_revision":source,"next_decision":decision,"facts":{"applied_changes":state.changes,"check_status":state.check_status,"verification":verification,"diagnostic":diagnostic,"failure_packet":failure_packet,"recovery":recovery},"hypotheses":hypotheses,"budget_scope":"Provider requests record actual allocations; this packet does not invent consumed tokens."}),
     )
 }
 
@@ -180,14 +181,40 @@ fn observed_lines(c: &crate::project::CheckResult) -> Vec<String> {
                 || l.contains("actual")
                 || l.contains("SyntaxError")
                 || l.contains("TypeError")
+                || l.contains("panicked at ")
+                || l.trim_start().starts_with("left:")
+                || l.trim_start().starts_with("right:")
+                || l.starts_with("ALT_OBSERVATION ")
         })
         .take(12)
         .map(|l| crate::project::bounded(l, 320))
         .collect()
 }
 
+fn diagnostic_text(p: &Project, c: &crate::project::CheckResult) -> String {
+    if !c.output_truncated {
+        return c.output.clone();
+    }
+    let mut text = String::new();
+    for stream in ["stderr", "stdout"] {
+        match crate::verification::read_execution_log(p, &c.id, stream, None, 6000) {
+            Ok(log) => text.push_str(&format!(
+                "Retained {stream} tail, byte offset {} (integrity checked):\n{}\n",
+                log["offset"],
+                log["text"].as_str().unwrap_or("")
+            )),
+            Err(error) => text.push_str(&format!("Retained {stream} tail unavailable: {error}\n")),
+        }
+    }
+    text.push_str("Original captured preview:\n");
+    text.push_str(&c.output);
+    text
+}
+
 fn failure_identity(p: &Project, c: &crate::project::CheckResult) -> Result<String> {
-    let lines = observed_lines(c);
+    let mut actual = c.clone();
+    actual.output = diagnostic_text(p, c);
+    let lines = observed_lines(&actual);
     // Temporary copy paths are not a changed diagnosis. Raw paths remain intact
     // in evidence; normalization is used only for this advisory comparison.
     let copies = regex::Regex::new(r#"/(?:tmp|var/tmp)/[^\s\"')]+"#)?;
@@ -250,38 +277,134 @@ pub fn recovery(p: &Project, task: &str) -> Result<Option<Value>> {
     ))
 }
 
-pub fn diagnostic_locations(p: &Project, c: &crate::project::CheckResult) -> Result<Vec<Value>> {
+/// Keep every location's origin. Relative paths from another test crate are
+/// observations, never an authorization to edit an identically named local file.
+pub fn diagnostic_observations(p: &Project, c: &crate::project::CheckResult) -> Result<Vec<Value>> {
+    use std::path::{Component, Path};
     let files = p.browse()?;
-    let expression =
-        regex::Regex::new(r#"(?:File \"([^\"]+)\", line (\d+)|-->\s+(.+?):(\d+):(\d+))"#)?;
-    let mut locations = Vec::new();
-    for capture in expression.captures_iter(&c.output) {
-        let raw = capture
-            .get(1)
-            .or_else(|| capture.get(3))
-            .map(|m| m.as_str())
-            .unwrap_or("");
-        let candidates = files
-            .iter()
-            .filter(|path| raw == path.as_str() || raw.ends_with(&format!("/{path}")))
-            .collect::<Vec<_>>();
-        if candidates.len() != 1 {
-            continue;
-        }
-        let line = capture
-            .get(2)
-            .or_else(|| capture.get(4))
-            .and_then(|m| m.as_str().parse::<u32>().ok());
-        let Some(line) = line.filter(|n| *n > 0) else {
-            continue;
+    let serialized = serde_json::to_value(c)?;
+    let snapshot_root = serialized["execution"]["snapshot_root"].as_str();
+    let namespace_root = serialized["execution"]["namespace_root"].as_str();
+    let plain = regex::Regex::new(
+        r#"(?:File \"([^\"]+)\", line (\d+)|-->\s+(.+?):(\d+):(\d+)|panicked at (.+?):(\d+):(\d+))"#,
+    )?;
+    let mut rows = Vec::new();
+    let mut observe = |raw: &str,
+                       line: u64,
+                       column: Option<u64>,
+                       crate_root: Option<&str>,
+                       origin: &str| {
+        let raw_path = Path::new(raw);
+        let resolved = if raw_path.is_absolute() {
+            Some(raw_path.to_path_buf())
+        } else {
+            crate_root.map(|root| Path::new(root).join(raw_path))
         };
-        let item = json!({"path":candidates[0],"line":line,"column":capture.get(5).and_then(|m|m.as_str().parse::<u32>().ok()),"source_revision":c.snapshot,"scope":"Location quoted from actual diagnostics and uniquely matched to a repository path; current source may differ from the checked snapshot."});
-        if !locations.contains(&item) {
-            locations.push(item);
+        let mapped = resolved
+            .as_ref()
+            .filter(|path| !path.components().any(|c| matches!(c, Component::ParentDir)))
+            .and_then(|path| {
+                [
+                    Some(p.root.as_path()),
+                    snapshot_root.map(Path::new),
+                    namespace_root.map(Path::new),
+                ]
+                .into_iter()
+                .flatten()
+                .find_map(|root| path.strip_prefix(root).ok())
+                .and_then(|path| path.to_str())
+                .filter(|path| files.iter().any(|p| p == *path))
+                .map(str::to_owned)
+            });
+        let item = json!({"raw_path":raw,"path":mapped,"line":line,"column":column,"crate_root":crate_root,"diagnostic_origin":origin,"mapping":if mapped.is_some(){"verified project/snapshot root"}else{"unresolved; no editable handle"},"source_revision":c.snapshot,"scope":"Quoted diagnostic location. Only a known project root authorizes a local source mapping; relative test/dependency paths stay unresolved."});
+        if line > 0 && !rows.contains(&item) && rows.len() < 24 {
+            rows.push(item);
         }
-        if locations.len() == 4 {
-            break;
+    };
+    let output = diagnostic_text(p, c);
+    for line in output.lines() {
+        // cargo --message-format=json supplies crate provenance independently of
+        // its human rendered diagnostic. Do not infer a root from a filename.
+        if let Ok(value) = serde_json::from_str::<Value>(line)
+            && value["reason"] == "compiler-message"
+        {
+            let root = value["manifest_path"]
+                .as_str()
+                .and_then(|p| Path::new(p).parent())
+                .and_then(|p| p.to_str());
+            if let Some(spans) = value["message"]["spans"].as_array() {
+                for span in spans.iter().filter(|s| s["is_primary"] == true).take(4) {
+                    if let (Some(path), Some(line)) =
+                        (span["file_name"].as_str(), span["line_start"].as_u64())
+                    {
+                        observe(
+                            path,
+                            line,
+                            span["column_start"].as_u64(),
+                            root,
+                            "cargo compiler-message",
+                        );
+                    }
+                }
+            }
+        }
+        for capture in plain.captures_iter(line) {
+            let raw = capture
+                .get(1)
+                .or_else(|| capture.get(3))
+                .or_else(|| capture.get(6))
+                .map(|s| s.as_str())
+                .unwrap_or("");
+            let number = capture
+                .get(2)
+                .or_else(|| capture.get(4))
+                .or_else(|| capture.get(7))
+                .and_then(|s| s.as_str().parse().ok())
+                .unwrap_or(0);
+            let column = capture
+                .get(5)
+                .or_else(|| capture.get(8))
+                .and_then(|s| s.as_str().parse().ok());
+            observe(
+                raw,
+                number,
+                column,
+                None,
+                "quoted text; relative root unknown",
+            );
         }
     }
-    Ok(locations)
+    Ok(rows)
+}
+
+pub fn diagnostic_locations(p: &Project, c: &crate::project::CheckResult) -> Result<Vec<Value>> {
+    Ok(diagnostic_observations(p, c)?
+        .into_iter()
+        .filter(|v| v["path"].is_string())
+        .take(4)
+        .collect())
+}
+
+/// A bounded observed failure packet. It does not synthesize a diagnosis or an
+/// implementation, and retains a reference to the complete captured evidence.
+pub fn failure_packet(p: &Project, c: &crate::project::CheckResult) -> Result<Value> {
+    let mut actual = c.clone();
+    actual.output = diagnostic_text(p, c);
+    let mut counterexamples = Vec::new();
+    for line in actual
+        .output
+        .lines()
+        .filter_map(|l| l.strip_prefix("ALT_OBSERVATION "))
+        .take(8)
+    {
+        if line.len() > 4096 {
+            continue;
+        }
+        if let Ok(value) = serde_json::from_str::<Value>(line) {
+            counterexamples.push(json!({"observed":value,"scope":"Check-emitted observation quoted verbatim; not a reference solution"}));
+        }
+    }
+    Ok(
+        json!({"schema":2,"evidence_id":c.id,"source_revision":c.snapshot,"check_name":c.name,"reproduction_argv":c.argv,"exit_code":c.exit_code,"timed_out":c.timed_out,"cancelled":c.cancelled,"error":c.error,"failed_cases":failed_cases(p,c),"observed_diagnostics":observed_lines(&actual),"locations":diagnostic_observations(p,c)?,"counterexamples":counterexamples,"captured_output_preview":crate::project::bounded(&actual.output,2000),"captured_output_truncated":c.output_truncated,"raw_reference":format!("evidence(id={}, stream=stdout/stderr)",c.id),"claim":"Observed execution only; passing source requires the independent verification contract"}),
+    )
 }

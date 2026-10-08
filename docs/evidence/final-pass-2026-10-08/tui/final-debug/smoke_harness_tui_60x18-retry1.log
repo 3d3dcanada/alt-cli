@@ -1,0 +1,28 @@
+Traceback (most recent call last):
+  File "/workspace/alt-cli/scripts/smoke_harness_tui.py", line 45, in <module>
+    if __name__=='__main__':main()
+                            ^^^^^^
+  File "/workspace/alt-cli/scripts/smoke_harness_tui.py", line 34, in main
+    settings();choose(0);term.wait('Reviewed instruction improvements');wait_words('Activation requires');term.send(b'\x1b')
+                                                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/alt-cli/scripts/smoke_harness_tui.py", line 22, in wait_words
+    raise AssertionError('Missing wrapped text '+repr(text)+'\n'+'\n'.join(term.screen.display))
+AssertionError: Missing wrapped text 'Activation requires'
+  ALT  /  LOCAL WORKSPACE               fixture-no-weights  
+  ╭ Reviewed instruction improvements ───────────────────╮  
+  │ Offline optimization creates drafts. Activation      │  
+Mo│ requires recorded development/validation splits,     │  
+  │ actual behavioral evidence and a completed review.   │  
+ M│ ╭ Choose an option ────────────────────────────────╮ │  
+ C│ │› Use the standard instructions                   │ │  
+ c│ │  Clear a reviewed supplement                     │ │  
+ ╭│ │                                                  │ │╮ 
+ ││ │                                                  │ ││ 
+ ││ │                                                  │ ││ 
+ ╰│ │                                                  │ │╯ 
+ D│ │                                                  │ │s 
+ N│ │                                                  │ │  
+ C│ ╰──────────────────────────────────────────────────╯ │  
+  │  Choose   Cancel                                     │  
+  ╰──────────────────────────────────────────────────────╯  
+                                                            

@@ -32,6 +32,55 @@ impl Effort {
         }
     }
 }
+/// Declared alternative approaches, not hidden extra inference or a stronger
+/// teacher. Preserve the same model, checks and shared allowance.
+pub fn strategy(index: usize) -> &'static str {
+    match index {
+        0 => {
+            "Reproduce the observed failure, inspect the relevant implementation and make one minimal repair."
+        }
+        1 => {
+            "Start from the original source. Use the actual failed cases to test boundary conditions and assumptions before choosing a different focused repair."
+        }
+        _ => {
+            "Start from the original source. Compare an alternative implementation against the required invariants; use a concrete executable probe before repeating an earlier approach."
+        }
+    }
+}
+pub fn candidate_feedback(previous: Option<&Value>) -> String {
+    let Some(row) = previous else {
+        return String::new();
+    };
+    let packet = &row["failure_packet"];
+    let excerpt = |name: &str| {
+        packet[name]
+            .as_array()
+            .map(|rows| {
+                rows.iter()
+                    .take(6)
+                    .map(|v| match v.as_str() {
+                        Some(text) => json!(crate::project::bounded(text, 300)),
+                        None => json!(crate::project::bounded(&v.to_string(), 500)),
+                    })
+                    .collect::<Vec<_>>()
+            })
+            .unwrap_or_default()
+    };
+    let observation = json!({"verification_complete":row["verification"]["complete"],"evidence_id":packet["evidence_id"],"source_revision":packet["source_revision"],"check_name":packet["check_name"],"exit_code":packet["exit_code"],"failed_cases":excerpt("failed_cases"),"observed_diagnostics":excerpt("observed_diagnostics"),"counterexample_previews":excerpt("counterexamples"),"raw_reference":packet["raw_reference"],"prior_strategy":row["strategy"],"scope":"Bounded observed previews. Complete candidate evidence remains retained; no reference solution."});
+    let paths = row["diffs"]
+        .as_array()
+        .map(|rows| {
+            rows.iter()
+                .filter_map(|r| r["path"].as_str())
+                .take(8)
+                .collect::<Vec<_>>()
+        })
+        .unwrap_or_default();
+    format!(
+        "Previous independently checked candidate observation: {observation}\nPrevious changed paths: {}\nTry a distinct approach from the original source. Old read handles and old passing evidence do not authorize this candidate.",
+        json!(paths)
+    )
+}
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Manifest {
     pub schema: u32,
@@ -272,9 +321,10 @@ pub async fn run(
         }
         let stdout = std::fs::File::create(directory.join("turn.jsonl"))?;
         let stderr = std::fs::File::create(directory.join("turn.stderr"))?;
-        let feedback=m.rows.last().map(|r|format!("Previous candidate observation (unverified prose is excluded): {}. Try a different focused approach from the original source.",r["verification"])).unwrap_or_default();
+        let feedback = candidate_feedback(m.rows.last());
+        let strategy = strategy(index);
         let prompt = format!(
-            "{goal}\n{feedback}\nCandidate {}. Use native tools. Preserve original tests. Run required independent checks. Do not claim success without current evidence.",
+            "{goal}\n{feedback}\nCandidate {}. Strategy: {strategy} Use native tools. Preserve original tests. Run required independent checks. Do not claim success without current evidence.",
             index + 1
         );
         let mut command = tokio::process::Command::new(&executable);
@@ -357,7 +407,14 @@ pub async fn run(
                 }
             }
         }
-        let (verification, current, changed_tests, source_files, unsupported_changes) = {
+        let (
+            verification,
+            current,
+            changed_tests,
+            source_files,
+            unsupported_changes,
+            failure_packet,
+        ) = {
             let p = Project::open(&state, &workspace)?;
             let (hash, now) = p.snapshot()?;
             let changed_tests = m.base_files.iter().any(|(name, hash)| {
@@ -388,6 +445,10 @@ pub async fn run(
                 changed_tests,
                 now,
                 unsupported_changes,
+                p.latest_check(&verify_task)?
+                    .as_ref()
+                    .map(|c| crate::workflow::failure_packet(&p, c))
+                    .transpose()?,
             )
         };
         let mut charged = 0u64;
@@ -435,7 +496,7 @@ pub async fn run(
             .saturating_sub(per_requests)
             .saturating_add(issued);
         m.in_flight = None;
-        m.rows.push(json!({"index":index+1,"ancestry":m.baseline,"source_revision":current,"eligible":eligible,"changed_tests":changed_tests,"unsupported_mode_or_binary_changes":unsupported_changes,"deadline_exhausted":timed_out,"cli_exit":exit,"verification":verification,"diffs":diffs,"charged_generated_tokens":charged,"requests":issued,"wall_seconds":start.elapsed().as_secs_f64(),"source_directory":workspace,"state_directory":state,"scope":"Separate source copy; Full access retains normal host permissions and external side effects. Automatic promotion supports UTF-8 content changes with preserved permissions; other changes remain reviewable in the copy."}));
+        m.rows.push(json!({"index":index+1,"strategy":strategy,"feedback_version":2,"check_reserve_seconds":check_reserve,"failure_packet":failure_packet,"ancestry":m.baseline,"source_revision":current,"eligible":eligible,"changed_tests":changed_tests,"unsupported_mode_or_binary_changes":unsupported_changes,"deadline_exhausted":timed_out,"cli_exit":exit,"verification":verification,"diffs":diffs,"charged_generated_tokens":charged,"requests":issued,"wall_seconds":start.elapsed().as_secs_f64(),"source_directory":workspace,"state_directory":state,"scope":"Separate source copy; Full access retains normal host permissions and external side effects. Automatic promotion supports UTF-8 content changes with preserved permissions; other changes remain reviewable in the copy."}));
         if eligible {
             m.selected = Some(index + 1);
             m.status = "verified-candidate".into();

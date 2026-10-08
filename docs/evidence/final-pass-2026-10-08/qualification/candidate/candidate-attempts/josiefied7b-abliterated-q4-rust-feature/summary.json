@@ -1,0 +1,125 @@
+{
+  "configuration": {
+    "oracle_version": 5,
+    "context_scope": "Managed runtime native window and engine budget",
+    "model_file": "Josiefied-Qwen2.5-7B-Instruct-abliterated.Q4_K_M.gguf",
+    "sha256": "d7d626d96cc2d3567e8266101b4211b17634012dd99a0c9b28f475ce4eb620b6",
+    "bytes": 4683074176,
+    "uncensored": "Explicit user-selected publisher-labelled uncensored/abliterated artifact; no fallback",
+    "provider": "openai",
+    "endpoint": null,
+    "model_id": null,
+    "runtime": "/workspace/.alt-tools/llama-b11429/llama-b11429/llama-server",
+    "contexts": [
+      8192
+    ],
+    "repeats": 1,
+    "timeout_seconds": 600,
+    "binary_sha256": "54b0cf02702df83afa96c3c31b5905e2c5311d787b9400f7ac9ac745e0486e51",
+    "physical_gpu_tested": false,
+    "verification_plan": true,
+    "history_notes": 0,
+    "cases": [
+      "rust-feature"
+    ],
+    "partition": "development",
+    "tool_profile": "compact",
+    "threads": 2,
+    "batch": 128,
+    "engine_sha256": "59655719cd9b098dab59b6e2c50f1e565a935992fae2e539f52018a960e0512a",
+    "runtime_sha256": "5faf410bbbc00a1b94b09ee01623699f255365628dfa73b1ee552d9e52a2231d",
+    "fixture_sha256": "751f2b8b514b3d62a854f88f7978a1b6867c4ffad403a40ce3da47b0e274f172",
+    "suite": "v5",
+    "interface": "cli",
+    "instruction_sha256": null,
+    "inference": {
+      "output_tokens": 1024,
+      "reasoning_tokens": null,
+      "temperature": 0.2,
+      "top_p": 0.95,
+      "workflow": "model-plan",
+      "skill": null,
+      "generated_tokens": 8192,
+      "requests": 12
+    },
+    "oracle_code_sha256": {
+      "acceptance_projects.py": "453f27af5b3cc558a2190620cee195a392e0a0a45889f43569b96e85765cd32a",
+      "acceptance_extra.py": "2a724e6da5673cb581b3b2c54d338a62bbc917f1753b7edf2774f9e2e005148d",
+      "acceptance_v5.py": "0f669daa7bbe060b131d79e2294ec026e419467be38d969c77f5dfefb897dea7",
+      "live_tui_turn.py": "ff284fbffaaaccdd7d597590cf447e76b18757247b14678b63c332e11b8a0425"
+    }
+  },
+  "attempts": [
+    {
+      "case": "rust-feature",
+      "context": 8192,
+      "repeat": 1,
+      "passed": false,
+      "cli_exit": 0,
+      "process_exit": 0,
+      "interface": "cli",
+      "wall_seconds": 215.66,
+      "outer_timeout": false,
+      "sampled_alt_tree_peak_rss_bytes": 8600924160,
+      "rss_scope": "Alt, Goose and managed inference runtime",
+      "vram": null,
+      "oracle_unchanged": true,
+      "failed_tool_updates": 0,
+      "prose_accuracy": "Retained for manual assessment; not inferred from process exit",
+      "inference_cost": {
+        "requests": 2,
+        "charged_generated_tokens": 237,
+        "known_generated_tokens": 237
+      },
+      "runtime_timings": {
+        "scope": "Actual server-reported timings for completed responses, not inferred elapsed time",
+        "measured_responses": 2,
+        "responses": [
+          {
+            "response": "state/inference/e3fa7889-40c9-4675-a6e5-dd82129630f4/87f25ba1-e198-4eb4-8f4f-f9d7a9b9ff49-response.raw",
+            "timings": {
+              "cache_n": 0,
+              "prompt_n": 2603,
+              "prompt_ms": 155504.098,
+              "prompt_per_token_ms": 59.740337303111794,
+              "prompt_per_second": 16.739108701816978,
+              "predicted_n": 56,
+              "predicted_ms": 11103.492,
+              "predicted_per_token_ms": 201.88167272727273,
+              "predicted_per_second": 4.953396643146138
+            }
+          },
+          {
+            "response": "state/inference/e3fa7889-40c9-4675-a6e5-dd82129630f4/0158b237-0ecf-4163-985c-dd4a36c93fc4-response.raw",
+            "timings": {
+              "cache_n": 2658,
+              "prompt_n": 27,
+              "prompt_ms": 2459.678,
+              "prompt_per_token_ms": 91.09918518518518,
+              "prompt_per_second": 10.977046589025067,
+              "predicted_n": 181,
+              "predicted_ms": 36833.926,
+              "predicted_per_token_ms": 204.63292222222222,
+              "predicted_per_second": 4.886799197022875
+            }
+          }
+        ],
+        "prefill_ms": 157963.776,
+        "generation_ms": 47937.418
+      },
+      "task_group": "rust-feature",
+      "source_sha256": "141cb95aff953c61dc84580d7cd2076d69f7bd847b470d43696e3e908ed0af3e",
+      "inference_requests": 2,
+      "scores": {
+        "source_behavior_passed": false,
+        "turn_completed": true,
+        "transport_turn_ended": true,
+        "stop_reason": "end_turn",
+        "claim_accuracy": "unassessed: use retained prose and evidence; no automatic success-claim inference"
+      }
+    }
+  ],
+  "passed": 0,
+  "total": 1,
+  "scope": "Seeded small projects; every attempt retained. These measurements do not establish arbitrary task reliability or GPU performance."
+}

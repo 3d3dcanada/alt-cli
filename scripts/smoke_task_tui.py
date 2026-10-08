@@ -18,7 +18,10 @@ with tempfile.TemporaryDirectory(prefix='alt-task-tui-') as t:
   end=time.monotonic()+timeout
   while time.monotonic()<end:
    pump()
-   if text in '\n'.join(screen.display):return
+   # Sidebar width can wrap prose within its content panel. Preserve every
+   # displayed word without treating the panel's border as part of the text.
+   prose=' '.join(' '.join(line[line.find('│')+1:line.rfind('│')].replace('│',' ') for line in screen.display if line.count('│')>=2).split())
+   if text in '\n'.join(screen.display) or text in prose:return
   raise AssertionError('Missing '+repr(text)+'\n'+'\n'.join(screen.display))
  def send(data):
   for _ in range(2):pump(.02)
@@ -52,7 +55,11 @@ with tempfile.TemporaryDirectory(prefix='alt-task-tui-') as t:
   send(b'e');wait('Check evidence');wait('Passed');wait('Actual check output:');wait('TASK_FRESH_CHECK_OK');capture('task-evidence');send(b'\r')
   # A user decision survives both project memory retrieval and a restart.
   send(b'n');wait('Remember a decision');paste('Keep the calculator public API unchanged.');send(b'\x13');wait('Decision saved')
-  send(b'm');wait('Search project memory');send(b'\x15');paste('calculator');send(b'\r');wait('Project memory and current files');send(b'\x1b[6~');wait('public API');wait('unchanged.');capture('task-memory');send(b'\r')
+  send(b'm');wait('Search project memory');send(b'\x15');paste('calculator');send(b'\r');wait('Project memory and current files');
+  for _ in range(12):
+   if 'public API' in '\n'.join(screen.display) and 'unchanged.' in '\n'.join(screen.display):break
+   send(b'\x1b[6~');pump(.08)
+  wait('public API');wait('unchanged.');capture('task-memory');send(b'\r')
   send(b'\x11');proc.wait(timeout=10);assert proc.returncode==0;assert termios.tcgetattr(slave)==original
   exported=subprocess.check_output([str(binary),'--data-dir',str(state),'task','export'],cwd=project,text=True)
   assert 'public API unchanged' in exported and 'TASK_FRESH_CHECK_OK' in exported

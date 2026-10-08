@@ -5,6 +5,9 @@ on:
   workflow_dispatch:
 permissions:
   contents: read
+concurrency:
+  group: verify-${{ github.head_ref || github.ref_name }}
+  cancel-in-progress: true
 jobs:
   training-handoff:
     runs-on: ubuntu-24.04
@@ -12,7 +15,12 @@ jobs:
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
       - name: Check training data boundaries and assistant-target encoding
-        run: python3 -m unittest discover -s training/tests -v
+        run: python3 scripts/ci-stage.py --name training-handoff -- python3 -m unittest discover -s training/tests -v
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: training-stage-evidence
+          path: ci-evidence/
   linux:
     runs-on: ubuntu-24.04
     timeout-minutes: 60
@@ -20,23 +28,30 @@ jobs:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
       - name: Prepare the documented workspace
         run: |
+          python3 scripts/ci-stage.py --name verify-workspace -- bash -euo pipefail <<'ALT_CI_STAGE'
           sudo mkdir -p /workspace
           sudo chown "$USER" /workspace
           ln -s "$GITHUB_WORKSPACE" /workspace/alt-cli
+          ALT_CI_STAGE
       - name: Build and exercise Rust, terminal and real-engine protocols
-        run: bash scripts/setup-cloud.sh
+        run: python3 scripts/ci-stage.py --name verify-setup -- bash scripts/setup-cloud.sh
       - name: Audit locked dependencies
         run: |
+          python3 scripts/ci-stage.py --name verify-dependencies -- bash -euo pipefail <<'ALT_CI_STAGE'
           export CARGO_HOME=/workspace/.cargo RUSTUP_HOME=/workspace/.rustup
           export PATH="/workspace/.cargo/bin:/workspace/.alt-tools/audit/bin:$PATH"
           cargo install cargo-audit --version 0.22.2 --locked --root /workspace/.alt-tools/audit
           mkdir -p dist
           cargo audit --db /workspace/.alt-tools/advisory-db --deny warnings --json > dist/dependency-audit.json
+          ALT_CI_STAGE
       - name: Package and test the installed artifact
         run: |
+          python3 scripts/ci-stage.py --name verify-package -- bash -euo pipefail <<'ALT_CI_STAGE'
           export CARGO_HOME=/workspace/.cargo RUSTUP_HOME=/workspace/.rustup
           export PATH="/workspace/.cargo/bin:/workspace/.alt-tools:$PATH"
           export PYTHONPATH=/workspace/.alt-tools/python
+          python3 scripts/smoke_draft_tui.py
+          python3 scripts/smoke_recovery_tui.py
           bash scripts/build-portable.sh
           python3 scripts/smoke_package.py dist/alt-*.tar.gz
           python3 scripts/release_gate.py dist/alt-*.tar.gz --output dist/release-gate.json
@@ -44,8 +59,11 @@ jobs:
           python3 scripts/soak.py --rounds 30 --output dist/soak.json
           python3 scripts/smoke_pressure_tui.py --rounds 30 --output dist/ui-pressure.json
           python3 scripts/smoke_stream_recovery.py --binary target/portable-glibc231/release/alt --engine /workspace/.alt-tools/goose --rounds 12 --output dist/stream-recovery.json
+          ALT_CI_STAGE
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()
         with:
           name: linux-build-and-evidence
-          path: dist/
+          path: |
+            dist/
+            ci-evidence/

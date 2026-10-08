@@ -16,19 +16,12 @@ struct Client {
     child: tokio::process::Child,
     input: tokio::process::ChildStdin,
     output: BufReader<tokio::process::ChildStdout>,
-    identity: Option<crate::jobs::Identity>,
+    group: crate::process::OwnedGroup,
     seq: u64,
 }
 impl Drop for Client {
     fn drop(&mut self) {
-        if let Some(id) = &self.identity
-            && id.alive()
-        {
-            let _ = nix::sys::signal::killpg(
-                nix::unistd::Pid::from_raw(id.pid as i32),
-                nix::sys::signal::Signal::SIGKILL,
-            );
-        }
+        self.group.kill();
         let _ = self.child.start_kill();
     }
 }
@@ -164,14 +157,14 @@ pub async fn query(data: &Path, cwd: &Path, q: Query<'_>, policy: Policy) -> Res
     let mut child = command
         .spawn()
         .context("Cannot start language server; install it or correct the executable")?;
-    let identity = child.id().and_then(crate::jobs::Identity::read);
+    let group = crate::process::OwnedGroup::capture(&child);
     let input = child.stdin.take().context("LSP input")?;
     let output = BufReader::new(child.stdout.take().context("LSP output")?);
     let mut client = Client {
         child,
         input,
         output,
-        identity,
+        group,
         seq: 0,
     };
     let initialize=client.request("initialize",json!({"processId":std::process::id(),"rootUri":uri(&cwd)?,"workspaceFolders":[{"uri":uri(&cwd)?,"name":"project"}],"capabilities":{"general":{"positionEncodings":["utf-16"]},"workspace":{"configuration":true,"workspaceEdit":{"documentChanges":true}},"textDocument":{"rename":{"prepareSupport":false}}}})).await?;
@@ -224,6 +217,7 @@ pub async fn query(data: &Path, cwd: &Path, q: Query<'_>, policy: Policy) -> Res
         result = client.request(method, params.clone()).await;
     }
     let result = result?;
+    client.group.stop(&mut client.child).await;
     if q.new_name.is_none() {
         return Ok(json!({"references":result,"server":q.server,"position_encoding":"UTF-16"}));
     }

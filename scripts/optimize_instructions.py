@@ -33,10 +33,28 @@ def feedback(paths,development):
         assert row['case'] in development and not row['case'].startswith('sealed-')
         manifest=json.loads((file.parent/'evidence-sha256.json').read_text())
         assert all(sha(file.parent/name)==digest for name,digest in manifest.items()),'Evidence changed'
-        rows.append({'family':row['case'],'goal':json.loads((file.parent/'fixture.json').read_text())['goal'],'passed':row['passed'],'observed_failure':row['after'].get('stderr','')[-3000:],'failed_tool_updates':row['failed_tool_updates'],'wall_seconds':row['wall_seconds']})
+        rows.append({'family':row['case'],'goal':json.loads((file.parent/'fixture.json').read_text())['goal'],'passed':row['passed'],'observed_failure':failure_feedback(row),'failed_tool_updates':row['failed_tool_updates'],'wall_seconds':row['wall_seconds']})
         refs.append({'path':str(file.resolve()),'sha256':sha(file)})
     assert rows,'Supply development attempts'
     return rows,refs
+
+def failure_feedback(row):
+    """Both streams are observations; stdout commonly carries test assertions."""
+    after=row.get('after',{})
+    observations=[]
+    for stream in ('stdout','stderr'):
+        for line in after.get(stream,'').splitlines():
+            if line.startswith('ALT_OBSERVATION '):
+                try: observations.append({'stream':stream,'observed':json.loads(line[len('ALT_OBSERVATION '):])})
+                except (ValueError,TypeError): pass
+    return {'stdout_tail':after.get('stdout','')[-2500:],
+            'stderr_tail':after.get('stderr','')[-2500:],
+            'stdout_truncated':len(after.get('stdout',''))>2500,
+            'stderr_truncated':len(after.get('stderr',''))>2500,
+            'check_emitted_observations':observations[:8],
+            'exit':after.get('exit'),'error':after.get('error'),
+            'source_sha256':row.get('source_sha256'),
+            'scope':'Bounded quoted execution evidence; no inferred diagnosis or reference implementation'}
 
 def proposal_error(text):
     if not text.strip():return 'No instruction proposal was returned'

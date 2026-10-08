@@ -1,5 +1,15 @@
 # Alt workspace guide
 
+Type **`alt`** after installation to open the workspace. Start without a model to
+explore Home or a practice project. **Ctrl+P** finds actions and **Ctrl+Q** exits.
+[See themes, layouts and the current interface](APPEARANCE.md), or the
+[launch walkthrough](UX_FINALIZATION.md).
+
+Use the theme control at the top right or **Settings → Appearance** to choose
+among six themes, enter your own accent color, change the navigation layout, or
+turn decorative graphics off. Changes save automatically. Click the page name at
+the top left to find another page, including when using the Focus layout.
+
 The current source adds [small-model controls and workflows](SMALL_MODEL_USAGE.md).
 That guide covers the expanded settings menu, skills, native probe and candidates.
 
@@ -17,11 +27,12 @@ checks and recovery tools remain available while a model server is offline.
 
 ## Your first project
 
-1. Choose **Home → Choose project**. Start with a small folder you recognize.
-2. Choose **Connect a model**. Ollama uses a server URL such as
+1. Choose **Home → Connect your first model**. Ollama uses a server URL such as
    `http://127.0.0.1:11434`; compatible servers usually end in `/v1`.
    Test the connection, select a listed model, and save. Existing GGUF files can
    be imported from Models; importing preserves the original file.
+2. Choose **Home → Choose a project folder**. Start with a small folder you
+   recognize, or use **Try a practice project** to explore before connecting.
 3. Describe the outcome you want, or pick a Home task starter. Say what successful
    behavior should look like, including what should keep working.
 4. Choose your access mode in Settings. **Full access** enables arbitrary commands,
@@ -32,9 +43,10 @@ checks and recovery tools remain available while a model server is offline.
 5. Review proposed actions. The approval dialog initially selects Reject; choose
    Allow for one action, or explicitly allow the connected session. Commands and
    complete tool arguments are shown. Ctrl+Y approves; ordinary `y` does not.
-6. Open **Task**. Configure a check for the actual requested behavior, mark it
+6. For code changes, open **Task**. Configure a check for the actual requested behavior, mark it
    required, and use **Run required checks**. Multiple requirements are independent:
-   one passing check does not certify the whole project.
+   one passing check does not certify the whole project. Checks are optional for
+   beginning a conversation or asking questions.
 7. Review changes and evidence. A green result means the configured checks passed
    on current files, commands and recorded environment. It does not prove untested
    behavior. Model prose never changes computed verification status.
@@ -53,7 +65,7 @@ preserved form; its Next step points to the appropriate recovery controls.
 | Models | Import GGUF, inspect a server's models, search/open Hub repositories, download/resume |
 | Connections | Add, test, edit and select model endpoints |
 | Conversations | Search, rename, resume, archive/restore and export saved conversations |
-| Settings | Access/context, tool paths, workflows/MCP, storage, model cache, runtime tuning, benchmark |
+| Settings | Themes/layouts/graphics, access/context, tool paths, workflows/MCP, storage, model cache, runtime tuning, benchmark |
 | Help | Keyboard shortcuts and usage guidance |
 | Task | Objective, plan, evidence, configured/required checks, decisions, diffs and undo |
 | Files | Browse paths, filter names, view/search/edit/create text, grouped change history |
@@ -240,19 +252,22 @@ old-report cleanup. Diagnostics omit credential values, endpoint URLs, prompts,
 source files, project paths and raw logs. Review the exported content before sharing.
 Other evidence exports and backups may include project data and are not encrypted.
 
-A backup includes Alt configuration, conversations, project journals/checkpoints
-and evidence. It excludes model blobs/imported originals, runtimes, engine cache
-and live job resources. It is not a filesystem backup of the working project.
+A core backup includes Alt configuration, conversations, project journals/checkpoints,
+execution recovery receipts/logs and inference cost/integrity receipts. Raw inference
+requests/responses and inference archives are exported separately; the backup
+manifest explicitly records these exclusions. It also excludes model blobs/imported
+originals, runtimes, engine cache and live job resources. It is not a filesystem backup of the working project.
 Restore verifies a checksummed manifest and requires a new or empty destination.
 Model records retain original paths; relocate or download again if those paths are
-missing. Database migrations create recovery copies before transactional changes.
+missing. Database migrations create recovery copies before transactional changes. A shared state-generation barrier coordinates writes; backups briefly take its exclusive side while freezing files and SQLite images, then release it before compression. Active checks or edits produce a retry message if a consistent snapshot cannot be acquired.
 
 Conversation retention first creates a compressed recovery archive, then removes
 only old conversations you already marked archived. Unarchived/recent conversations
 remain. Restore an archive without overwriting an existing conversation. Report
-retention previews eligible exports/evaluation files and finished jobs separately;
-checkpoints and databases are preserved. Interrupted file writes and undo are
-reconciled against before/after hashes; conflicts remain visible for manual review.
+retention previews eligible exports/evaluation files, finished jobs and inactive inference connections separately. Inference payloads are exported with a hash manifest before removal, while settings, cost/integrity receipts and archive indexes remain. Active leases and legacy connections without leases are protected. Verified inference archives remain under `inference-archives`; preserve them with your backups or move them to another storage location. They are never automatically deleted.
+
+Storage usage reports an explicit inference evidence warning budget (512 MiB by default), current bytes and a recovery action. The warning never cuts off inference or removes files. Checkpoints and databases are preserved. Interrupted file writes and undo are
+reconciled against before/after hashes; conflicts remain visible for manual review. Package updates stage and verify complete executable/documentation generations before switching one atomic pointer. Use `bash install.sh --status` to inspect the actual generation after interruption, and `--rollback` to switch to the retained prior executable/documentation. State downgrade still requires the matching pre-upgrade backup in a new folder.
 
 ```bash
 alt state usage

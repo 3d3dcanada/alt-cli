@@ -1,0 +1,82 @@
+{
+  "schema_version": 1,
+  "training_ready": false,
+  "training_run_performed": false,
+  "family_floor": {
+    "train": 32,
+    "validation": 8
+  },
+  "approved_families": {
+    "train": 0,
+    "validation": 0
+  },
+  "review_counts": {},
+  "attempt_counts": {},
+  "blockers": [
+    "Missing records",
+    "Missing registry",
+    "Missing ledger",
+    "Missing config",
+    "Missing loader_receipt",
+    "No complete collection attempt manifest, including failures/unperformed slots",
+    "train needs 32 independently reviewed families",
+    "validation needs 8 independently reviewed families",
+    "Usable CUDA training hardware not measured"
+  ],
+  "inputs": {},
+  "scope": "Readiness only. No weights trained, exported or promoted.",
+  "hardware": {
+    "schema_version": 1,
+    "recorded_at_utc": "2026-10-08T08:19:57.330126+00:00",
+    "platform": "Linux x86_64",
+    "python": "3.12.14",
+    "cpu_affinity_count": 5,
+    "cpu_quota_cores": 4.0,
+    "cgroup_memory_limit_bytes": "34359738368",
+    "cgroup_memory_current_bytes": "32590970880",
+    "host_available_memory_bytes": 17849167872,
+    "nvidia_devices": [],
+    "dri_devices": [],
+    "kfd_present": false,
+    "nvidia_smi_present": false,
+    "rocm_tool_present": false,
+    "libraries": {
+      "torch": null,
+      "transformers": null,
+      "peft": null,
+      "accelerate": null,
+      "bitsandbytes": null,
+      "safetensors": null
+    },
+    "training_run_performed": false,
+    "note": "Filesystem/library probe only. A present device does not establish CUDA usability, free VRAM or training fit. No weights loaded."
+  },
+  "pending_record_inventory": [
+    {
+      "id": "alt-5748a354fd3c316e-5a6633be9367469f",
+      "family": "python-feature",
+      "path": "docs/research/2026-10-07-repair-results/pending-training/training-pending-feature/trajectory.pending.jsonl",
+      "review": "pending",
+      "training_eligible": false,
+      "synthetic": true,
+      "record_sha256": "5fbc95a02b941baa002b76c1a9c8fa14ded7448196c7214ee29c914fa5991e2c"
+    },
+    {
+      "id": "alt-85011be7567ec112-5a9a92baf6fd3ebd",
+      "family": "python-multifile",
+      "path": "docs/research/2026-10-07-repair-results/pending-training/training-pending-multifile/trajectory.pending.jsonl",
+      "review": "pending",
+      "training_eligible": false,
+      "synthetic": true,
+      "record_sha256": "a9fdb8a105e78efbbda58fcd182374758ffd473e14455f44e9dd958055ea3c07"
+    }
+  ],
+  "evidence_root": null,
+  "validation": {
+    "training_boundary_tests": 55,
+    "campaign_boundary_tests": 14,
+    "actual_gpu_loader_executed": false,
+    "production_records_approved": 0,
+    "adapter_exported": false
+  }
+}

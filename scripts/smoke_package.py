@@ -5,10 +5,12 @@ import hashlib
 import json
 import os
 from pathlib import Path
+import re
 import shutil
 import subprocess
 import tarfile
 import tempfile
+from urllib.parse import unquote, urlsplit
 
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('archive', type=Path)
@@ -26,6 +28,26 @@ with tempfile.TemporaryDirectory(prefix='alt-installed-') as temp:
     with tarfile.open(a.archive) as archive:
         archive.extractall(unpack, filter='data')
     package = next(unpack.iterdir())
+    contents = json.loads((package / 'CONTENTS.json').read_text())
+    checked_images = []
+    for document in [package / 'README.md', package / 'docs/UX_FINALIZATION.md', package / 'docs/APPEARANCE.md']:
+        if not document.is_file():
+            assert document.name != 'README.md', 'The package README is missing'
+            continue  # Historical packages predate the UX/appearance guides.
+        document_images = []
+        for reference in re.findall(r'!\[[^\]]*\]\(([^)]+)\)', document.read_text()):
+            url = urlsplit(reference)
+            if url.scheme or url.netloc:
+                continue  # GitHub status badges are deliberately online resources.
+            image = (document.parent / unquote(url.path)).resolve()
+            relative = image.relative_to(package.resolve()).as_posix()
+            assert image.is_file(), 'Offline documentation image is missing: ' + relative
+            assert relative in contents, 'Offline image is missing from package manifest: ' + relative
+            assert hashlib.sha256(image.read_bytes()).hexdigest() == contents[relative], 'Offline image integrity failed: ' + relative
+            checked_images.append(relative)
+            document_images.append(relative)
+        if document.name in {'UX_FINALIZATION.md', 'APPEARANCE.md'}:
+            assert document_images, 'Guide has no checked local screenshots: ' + document.name
     platform = json.loads((package/'PLATFORM.json').read_text())
     assert hashlib.sha256((package/'alt').read_bytes()).hexdigest() == platform['sha256']
     prefix = root/'installed'
@@ -61,17 +83,11 @@ with tempfile.TemporaryDirectory(prefix='alt-installed-') as temp:
         blocked.unlink()
     else:
         prior_hash = None
-    if a.previous:
-        library=root/'fault.so'
-        subprocess.run(['cc','-shared','-fPIC','-O2',str(repo/'tests/fixtures/fault_io.c'),'-ldl','-o',str(library)],check=True)
-        old_bytes=binary.read_bytes()
-        for mode in ['enospc','crash-before-rename','crash-after-rename']:
-            binary.write_bytes(old_bytes);binary.chmod(0o755)
-            interrupted=subprocess.run(installer,env={**env,'LD_PRELOAD':str(library),'ALT_FAULT_PROJECT':str(binary.parent),'ALT_FAULT_MATCH':'/.alt-install-','ALT_FAULT_MODE':mode},capture_output=True)
-            assert interrupted.returncode!=0,(mode,'injector did not interrupt install')
-            assert binary.read_bytes() in [old_bytes,(package/'alt').read_bytes()],(mode,'partial binary installed')
-            subprocess.run([str(binary),'--version'],check=True,capture_output=True)
-        binary.write_bytes(old_bytes);binary.chmod(0o755)
+    # Fault probes stage separate temporary package generations; never overwrite an
+    # active generation through its stable executable symlink.
+    subprocess.run(['python3', str(repo/'scripts/test_install_generation.py'), '-v'],
+                   env={**env, 'ALT_TEST_BINARY': str(package/'alt'), 'ALT_TEST_PACKAGE': str(package)},
+                   check=True, capture_output=True)
     for _ in range(2):
         subprocess.run(installer, env=env, check=True, capture_output=True)
     assert binary.read_bytes() == (package/'alt').read_bytes()
@@ -98,6 +114,7 @@ with tempfile.TemporaryDirectory(prefix='alt-installed-') as temp:
     invoke('--access', 'trusted', 'task', 'verify', '--run')
     status = json.loads(invoke('task', 'status').stdout)
     assert status['verification']['complete'], status
+    current_contract=json.loads(invoke('task','export').stdout)['checks'][-1].get('environment',{}).get('verification_contract')
     invoke('state', 'backup', str(root/'backup.tar.gz'))
     invoke('state', 'restore', str(root/'backup.tar.gz'), str(root/'restored-state'))
     assert (root/'restored-state').is_dir()
@@ -143,9 +160,9 @@ with tempfile.TemporaryDirectory(prefix='alt-installed-') as temp:
         previous_contract=json.loads(invoke('task','export').stdout)['checks'][-1].get('environment',{}).get('verification_contract')
         subprocess.run(installer, env=env, check=True, capture_output=True)
         invoke('task','require','behavior','--check','package-check')
-        # 0.5-compatible evidence stays current; pre-0.5 evidence requires a rerun.
-        assert json.loads(invoke('task', 'status').stdout)['verification']['complete'] == (previous_contract=='3')
+        # Only evidence using the current verification contract can stay current.
+        assert json.loads(invoke('task', 'status').stdout)['verification']['complete'] == (previous_contract==current_contract)
         invoke('--access', 'trusted', 'task', 'verify', '--run')
         assert json.loads(invoke('task', 'status').stdout)['verification']['complete']
     invoke('hardware')
-    print('PASS: archive, every-file integrity including PYTHONOPTIMIZE=0/1/2, isolated repeated install, failed update preserves binary, state backup/restore, docs/licenses'+('; actual previous-version upgrade/rollback/re-upgrade' if prior_hash else '')+('; signature/tamper rejection' if a.verify_key else '')+('; installed TUI' if a.tui else ''))
+    print('PASS: archive, every-file integrity including PYTHONOPTIMIZE=0/1/2, isolated repeated install, failed update preserves binary, state backup/restore, docs/licenses, '+str(len(checked_images))+' offline documentation image references with manifest hashes'+('; actual previous-version upgrade/rollback/re-upgrade' if prior_hash else '')+('; signature/tamper rejection' if a.verify_key else '')+('; installed TUI' if a.tui else ''))

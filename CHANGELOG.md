@@ -1,5 +1,36 @@
 # Changelog
 
+## Unreleased — final-pass implementation
+
+- Add six complete color themes, a custom accent, four saved layouts and a
+  graphics toggle. Style wide Home as a dashboard with clickable status panels
+  and action cards. Keep mouse navigation available in Focus and preserve compact
+  layouts. Test actual theme/layout journeys, restarts, drafts and contrast.
+- Add a real startup screen, responsive Home, visible compact navigation, complete
+  action search and mouse-wheel lists. Fix clipped folder-picker actions and
+  compact Home click routing. Explain `alt` launch and PATH after installation;
+  reject invalid API key variable names without echoing their contents.
+- Exercise all pages by keyboard and mouse and all Settings entries at three
+  terminal sizes in a new repeatable product journey. See the
+  [UX walkthrough and screenshots](docs/UX_FINALIZATION.md).
+- Retain exact evolving user requirements, explicit corrections, ranked source
+  retrieval, actual failing-case feedback, typed edits and distinct checked candidates.
+- Bind verification to observed source, environment and declared inputs; retain
+  durable execution receipts and bounded raw logs through contention and restart.
+- Preserve displaced external edits and permission changes, coordinate projects
+  across state roots, and expose crash conflicts as reviewable recovery proposals.
+- Autosave drafts, separate submitted text from the next message, preserve profile
+  settings, and complete keyboard recovery workflows on small terminals.
+- Own runtime process groups and private endpoints, validate complete GGUF imports,
+  support authenticated Ollama, and expose model fit and loading measurements.
+- Add state-write barriers, active inference retention, recoverable generation
+  installs, smaller offline documentation and a separate verified research archive.
+- Add frozen family-level qualification, complete attempt accounting, persistent
+  workspace stress checks and reviewed training-readiness gates. Model-quality,
+  physical GTX 1070 and novice acceptance remain separate, unpromoted gates.
+
+See [delivery and evidence](docs/FINAL_PASS_DELIVERY.md) for validation and limits.
+
 ## 0.6.0 beta 3 — corrected release validation
 
 - Handle a child exiting during a procfs status/identity read in terminal and

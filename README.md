@@ -15,38 +15,25 @@ or server connections. It does not modify model weights or silently replace your
 selected model. Full access supports arbitrary commands, networking, package
 installation and external tools with your normal account permissions.
 
-![Alt's actual 80×24 TUI after a MiMo 9B Q4 model repair and independent checks](docs/screenshots/v6/native-model-repair-80x24.png)
+**Install it, type `alt`, and press Enter.** The full terminal workspace opens;
+Home works before you connect a model. Use the mouse or keyboard, press **Ctrl+P**
+to find an action, and **Ctrl+Q** to exit.
 
-**Status: 0.6.0 beta 3 · Linux x86_64 · Apache-2.0.** The screenshot shows an actual
-CPU MiMo 9B Q4 repair through the TUI, after the unchanged independent checks passed.
-Model reliability and hardware support are measured separately from
-application tests. [Read the results and remaining gaps](docs/IMPLEMENTATION.md).
+![Alt Home with the Aurora theme in an actual terminal](docs/screenshots/appearance/aurora.png)
 
-**Included in beta 3:** explicit inference allocation, host task workflows, bounded
-skills, source handles, serial checked candidates, reviewed instruction trials
-and offline training tools. Compact text/line-array tool choices reduce repeated
-context and provide updated source handles after edits. The current beta includes these additions. See [the usage guide](docs/SMALL_MODEL_USAGE.md)
-and [work-order delivery and evidence](docs/SMALL_MODEL_DELIVERY.md). No weights
-have been trained or new quality presets promoted.
+Actual terminal capture from the current source, with a test engine selected and
+no model loaded. **Six color presets, a custom accent, four layouts and optional
+graphics** are available from the theme control at the top right or
+**Settings → Appearance**. [Compare the themes and layouts](docs/APPEARANCE.md).
+See the [startup and setup walkthrough](docs/UX_FINALIZATION.md).
+The app is **Alt**; **Alt CLI** is the repository/package name.
 
-The [repair follow-up](docs/research/2026-10-07-repair-results/README.md) now has
-independently verified MiMo 9B Q4 repairs. A matched CPU pilot passed **3/4** with
-each interface; compact used about 38% less initial input and its passing repairs
-were faster in this small sample. The subsequent portable build passed **6/9**
-MiMo attempts: both Python feature repeats, JavaScript, two of four held-out tasks
-and the two-file repair through the actual TUI. Rust and two held-out tasks failed.
-The longer CPU allowance differs from the earlier 22 failures.
-The current continuation fix also passed a separate real two-turn MiMo TUI trial;
-the earlier failed continuation attempt is retained in that evidence.
-
-The [PC completion work orders](docs/PC_READY_WORK_ORDERS.md) add observed
-request stages, remaining connection allowances, explicit finite additions and
-reviewed allocation recovery without changing the model. Failed checks return
-actual failed cases and fresh source handles; repeated failures/source cycles
-produce advisory recovery feedback. The PC recorder now verifies a real repair,
-continuation, cancellation/reconnect and undo in disposable state. See the
-[current compatibility evidence](docs/COMPATIBILITY.md) for separate application
-and model-quality outcomes.
+**Linux x86_64 · Apache-2.0 · beta.** This branch contains the final reliability and
+UX changes. The published **0.6.0 beta 3 is an earlier build**. Use this branch or
+its successful CI artifact to try the changes shown here. Application tests,
+model quality and your computer's performance are separate checks:
+[current delivery](docs/FINAL_PASS_DELIVERY.md) ·
+[qualification and remaining gaps](docs/FINAL_PASS_QUALIFICATION.md).
 
 ## Try it on your computer
 
@@ -60,7 +47,7 @@ Debian/Ubuntu, the usual prerequisites are `git build-essential pkg-config curl
 ca-certificates python3 libgomp1`. The repository selects Rust 1.99.0 automatically.
 
 ```bash
-git clone https://github.com/3d3dcanada/alt-cli.git
+git clone --branch build/final-pass-2026-10-08 https://github.com/3d3dcanada/alt-cli.git
 cd alt-cli
 cargo build --locked --release
 ./target/release/alt
@@ -78,7 +65,8 @@ parallelism.
 3. **Install the agent engine** when Home offers it. A managed GGUF also needs
    the optional local runtime. Existing executables can be selected in Settings.
 4. **Choose access in Settings**, then describe the change or investigation.
-5. **Prepare project checks** on Home, then open Task to inspect edits and actual evidence.
+5. **For code changes, prepare project checks** on Home, then open Task to inspect edits and actual evidence.
+   Checks are optional for starting a conversation.
    A model saying “done” does not mark the behavior verified.
 
 ## What you can do
@@ -87,6 +75,7 @@ parallelism.
 |---|---|
 | Models | Hugging Face search, verified/resumable downloads, multipart GGUF, imported files and server model selection |
 | Coding workspace | Browse/search/edit files, inspect diffs, checkpoint Alt edits, undo and resume conversations |
+| Appearance | Six full color themes, custom accent, four saved layouts, graphical Home cards and a simpler graphics-off mode |
 | Terminal | Real PTY sessions, interactive input, resize, attach/detach, persistent jobs, stop/restart and health checks |
 | Tools | Native project tools; optional build, Git, HTTP, browser and security workflows; selected external MCP tools |
 | Project memory | Saved goals and decisions, pinned notes, incremental source indexing, retrieved context and a visible Context page |
@@ -133,8 +122,10 @@ and [live evaluations](docs/LIVE_EVALUATION.md).
 
 | Action | Control |
 |---|---|
-| Navigate | Alt+1…9; Alt+0 opens Jobs; Ctrl+P lists every page |
-| Help / quick actions | F1 / Ctrl+P |
+| Navigate | Click a page, or Tab → arrows → Enter; Alt+1…9 and Alt+0 are shortcuts |
+| Help / quick actions | F1 / Ctrl+P (includes every page and setup action) |
+| Colors and layout | Click the theme name at the top right, or Settings → Appearance |
+| Copy / paste | Your terminal shortcuts, usually Ctrl+Shift+C / Ctrl+Shift+V; Shift-drag selects with mouse capture |
 | Send / newline | Enter / Alt+Enter or Ctrl+J |
 | New conversation / project brief | Ctrl+N / Ctrl+B |
 | Stop work / quit | Esc / Ctrl+Q |
@@ -159,6 +150,8 @@ Keys are referenced by environment-variable name, not saved in model profiles.
 
 ## Documentation
 
+- [Themes, layouts and screenshots](docs/APPEARANCE.md) · [Launch and UX walkthrough](docs/UX_FINALIZATION.md)
+- [Final-pass delivery](docs/FINAL_PASS_DELIVERY.md)
 - [Small-model implementation plan](docs/SMALL_MODEL_IMPLEMENTATION_PLAN.md) · [Training handoff](training/README.md)
 - [Small-model usage](docs/SMALL_MODEL_USAGE.md) · [Delivered work orders and remaining gates](docs/SMALL_MODEL_DELIVERY.md)
 - [Installation and updates](docs/INSTALLATION.md) · [Troubleshooting](docs/TROUBLESHOOTING.md)
@@ -168,11 +161,10 @@ Keys are referenced by environment-variable name, not saved in model profiles.
 - [Implementation and evidence](docs/IMPLEMENTATION.md) · [Current work orders](docs/WORK_ORDERS_0.6.md) · [PC test guide](docs/PC_TESTING.md)
 - [Research and project history](docs/research/README.md) · [Documentation index](docs/README.md)
 
-Current source validation includes **123 Rust tests**, strict Clippy, both adapter
+The earlier beta 3 validation included **123 Rust tests**, strict Clippy, both adapter
 fixtures for both compact edit formats, and actual small-terminal permission,
-edit/check/undo and conversation-continuation journeys. Compact follow-ups retain
-the complete original request as context, with the latest user message taking
-precedence. The retained 0.6 acceptance also includes five PTY walkthroughs, 30
+edit/check/undo and conversation-continuation journeys. Current source retains every exact active user request, with explicit corrections
+and a visible error if the requirements exceed the selected context budget. The retained 0.6 acceptance also includes five PTY walkthroughs, 30
 responsiveness journeys, 60 stream-recovery scenarios and packaged
 install/update/rollback checks on Debian 11 and Ubuntu 24.04. The local PC recorder
 also passed a live uncensored-model CPU trial. These measurements do not guarantee

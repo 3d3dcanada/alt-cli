@@ -234,7 +234,17 @@ impl Relay {
         let evidence = root
             .join("inference")
             .join(uuid::Uuid::new_v4().to_string());
+        let _generation = crate::storage::StateWriteGuard::acquire(root)?;
         crate::config::private_dir(&evidence)?;
+        let active_lease = std::sync::Arc::new(
+            std::fs::OpenOptions::new()
+                .create(true)
+                .truncate(false)
+                .read(true)
+                .write(true)
+                .open(evidence.join("active.lock"))?,
+        );
+        fs2::FileExt::lock_shared(active_lease.as_ref())?;
         crate::config::atomic_write(
             &evidence.join("effective.json"),
             &serde_json::to_vec_pretty(&p.effective_inference().accounting(p))?,
@@ -248,11 +258,12 @@ impl Relay {
         let (status, _) = tokio::sync::watch::channel(Status::new(p));
         let live = Live { budget, status };
         let service = live.clone();
-        let client = reqwest::Client::builder()
+        let client = crate::runtime::http_client(p)
             .redirect(reqwest::redirect::Policy::none())
             .connect_timeout(Duration::from_secs(15))
             .build()?;
         let listener = tokio::spawn(async move {
+            let _active_lease = active_lease;
             let mut children = JoinSet::new();
             loop {
                 tokio::select! {
@@ -343,7 +354,7 @@ async fn input_accounting(p: &Profile, body: &Value) -> Value {
         return json!({"tokens":null,"scope":"External endpoint; no qualified full-chat tokenizer"});
     }
     let measured = tokio::time::timeout(Duration::from_secs(5), async {
-        let client = reqwest::Client::builder()
+        let client = crate::runtime::http_client(p)
             .redirect(reqwest::redirect::Policy::none())
             .build()?;
         let base = p.endpoint.trim_end_matches('/').trim_end_matches("/v1");

@@ -12,6 +12,8 @@ use std::{
     time::Duration,
 };
 
+mod recovery;
+
 pub const FILE_LIMIT: u64 = 1024 * 1024;
 pub const PROJECT_LIMIT: u64 = 64 * 1024 * 1024;
 pub const FILE_COUNT: usize = 4096;
@@ -82,8 +84,16 @@ pub struct Change {
     pub after_hash: Option<String>,
     pub status: String,
     pub mode: u32,
+    #[serde(default)]
+    pub after_mode: Option<u32>,
     pub test_change: bool,
     pub reason: String,
+    #[serde(default)]
+    pub before_identity: Option<recovery::FileIdentity>,
+    #[serde(default)]
+    pub after_identity: Option<recovery::FileIdentity>,
+    #[serde(default)]
+    pub transition: Option<recovery::Transition>,
 }
 impl Change {
     pub fn diff(&self) -> String {
@@ -97,6 +107,15 @@ impl Change {
         .to_string()
     }
 }
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct RequestRecord {
+    pub seq: i64,
+    pub body: String,
+    pub source: String,
+    pub superseded_by: Option<i64>,
+    pub superseded_reason: Option<String>,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TaskState {
     pub id: String,
@@ -138,6 +157,8 @@ pub struct CheckResult {
     pub contract: crate::verification::Contract,
     #[serde(default)]
     pub structured: Option<crate::verification::Outcome>,
+    #[serde(default)]
+    pub execution: crate::verification::ExecutionEvidence,
 }
 
 pub struct Project {
@@ -146,6 +167,8 @@ pub struct Project {
     pub(crate) dir: Dir,
     pub(crate) db: Connection,
     _lock: std::fs::File,
+    _project_lock: std::fs::File,
+    _generation: crate::storage::StateWriteGuard,
     pub(crate) cancellation: Option<crate::models::Cancel>,
 }
 impl Drop for Project {
@@ -153,6 +176,7 @@ impl Drop for Project {
         // Explicitly unlock before close: a concurrently forked child may still
         // hold the inherited open-file description until exec sets CLOEXEC.
         let _ = FileExt::unlock(&self._lock);
+        let _ = FileExt::unlock(&self._project_lock);
     }
 }
 impl Project {
@@ -171,6 +195,8 @@ impl Project {
         let root = cwd
             .canonicalize()
             .context("Project folder is unavailable")?;
+        let generation = crate::storage::StateWriteGuard::acquire(data)?;
+        let project_lock = recovery::project_lock(&root)?;
         let state = data
             .join("projects")
             .join(digest(root.to_string_lossy().as_bytes()));
@@ -183,11 +209,11 @@ impl Project {
             .open(state.join("project.lock"))?;
         lock.try_lock_exclusive()
             .context("Another Alt action is using this project; wait for it to finish")?;
-        crate::schema::compatible(&state.join("project.db"), 4)?;
+        crate::schema::compatible(&state.join("project.db"), 5)?;
         let mut db = Connection::open(state.join("project.db"))?;
         db.busy_timeout(Duration::from_secs(5))?;
         db.execute_batch("PRAGMA journal_mode=WAL; PRAGMA synchronous=FULL;")?;
-        crate::schema::migrate(&mut db, &state.join("project.db"), 4, concat!("
+        crate::schema::migrate(&mut db, &state.join("project.db"), 5, concat!("
           CREATE TABLE IF NOT EXISTS tasks(id TEXT PRIMARY KEY,goal TEXT NOT NULL,plan TEXT NOT NULL DEFAULT '',phase TEXT NOT NULL DEFAULT 'Inspect',next TEXT NOT NULL DEFAULT 'Inspect the relevant files',created TEXT DEFAULT CURRENT_TIMESTAMP);
           CREATE TABLE IF NOT EXISTS reads(task TEXT,path TEXT,hash TEXT,PRIMARY KEY(task,path));
           CREATE TABLE IF NOT EXISTS edit_handles(seq INTEGER PRIMARY KEY,task TEXT NOT NULL,path TEXT NOT NULL,hash TEXT NOT NULL,start INTEGER NOT NULL,end INTEGER NOT NULL,UNIQUE(task,path,hash,start,end));
@@ -209,6 +235,7 @@ impl Project {
             CREATE TRIGGER IF NOT EXISTS notes_delete AFTER DELETE ON notes BEGIN INSERT INTO decision_search(decision_search,rowid,body) VALUES('delete',old.seq,old.body); END;
             CREATE TRIGGER IF NOT EXISTS notes_update AFTER UPDATE ON notes BEGIN INSERT INTO decision_search(decision_search,rowid,body) VALUES('delete',old.seq,old.body); INSERT INTO decision_search(rowid,body) VALUES(new.seq,new.body); END;
             INSERT INTO decision_search(decision_search) VALUES('rebuild');
+            CREATE TABLE IF NOT EXISTS request_supersessions(seq INTEGER PRIMARY KEY,replacement INTEGER NOT NULL,reason TEXT NOT NULL);
             DELETE FROM index_meta;
         "))?;
         let dir = Dir::open_ambient_dir(&root, ambient_authority())?;
@@ -218,9 +245,12 @@ impl Project {
             dir,
             db,
             _lock: lock,
+            _project_lock: project_lock,
+            _generation: generation,
             cancellation: None,
         };
         p.recover()?;
+        crate::verification::reconcile_pending(&p)?;
         Ok(p)
     }
     pub fn start_task(&self, id: &str, goal: &str) -> Result<()> {
@@ -232,8 +262,67 @@ impl Project {
             "INSERT OR IGNORE INTO tasks(id,goal) VALUES(?1,?2)",
             params![id, goal],
         )?;
-        self.note(id, "request", &bounded(goal, 4000), "user")?;
+        // Context rebuilds retry the same submission; retain one exact adjacent request.
+        let latest: Option<String> = self.db.query_row(
+            "SELECT body FROM notes WHERE task=?1 AND kind='request' AND source='user' ORDER BY seq DESC LIMIT 1",
+            [id], |r| r.get(0),
+        ).optional()?;
+        if latest.as_deref() != Some(goal) {
+            self.note(id, "request", goal, "user")?;
+        }
         Ok(())
+    }
+    pub fn request_history(&self, task: &str) -> Result<Vec<RequestRecord>> {
+        let mut stmt = self.db.prepare("SELECT n.seq,n.body,n.source,s.replacement,s.reason FROM notes n LEFT JOIN request_supersessions s ON s.seq=n.seq WHERE n.task=?1 AND n.kind='request' AND n.source='user' ORDER BY n.seq")?;
+        Ok(stmt
+            .query_map([task], |r| {
+                Ok(RequestRecord {
+                    seq: r.get(0)?,
+                    body: r.get(1)?,
+                    source: r.get(2)?,
+                    superseded_by: r.get(3)?,
+                    superseded_reason: r.get(4)?,
+                })
+            })?
+            .collect::<rusqlite::Result<Vec<_>>>()?)
+    }
+    pub fn active_requests(&self, task: &str) -> Result<Vec<RequestRecord>> {
+        Ok(self
+            .request_history(task)?
+            .into_iter()
+            .filter(|r| r.superseded_by.is_none())
+            .collect())
+    }
+    /// Only explicit user interfaces call this; model memories cannot retire requirements.
+    pub fn supersede_request(
+        &self,
+        task: &str,
+        seq: i64,
+        replacement: &str,
+        reason: &str,
+    ) -> Result<i64> {
+        ensure!(
+            !replacement.trim().is_empty() && replacement.len() <= 64_000,
+            "Supply a replacement request of at most 64 KB"
+        );
+        ensure!(
+            !reason.trim().is_empty() && reason.len() <= 2000,
+            "Explain this explicit user correction (at most 2000 bytes)"
+        );
+        let transaction = self.db.unchecked_transaction()?;
+        let exists: bool = transaction.query_row("SELECT EXISTS(SELECT 1 FROM notes n WHERE n.seq=?1 AND n.task=?2 AND n.kind='request' AND n.source='user' AND NOT EXISTS(SELECT 1 FROM request_supersessions s WHERE s.seq=n.seq))",params![seq,task],|r|r.get(0))?;
+        ensure!(exists, "Choose an active user request from this task");
+        transaction.execute(
+            "INSERT INTO notes(task,kind,body,source) VALUES(?1,'request',?2,'user')",
+            params![task, replacement],
+        )?;
+        let id = transaction.last_insert_rowid();
+        transaction.execute(
+            "INSERT INTO request_supersessions(seq,replacement,reason) VALUES(?1,?2,?3)",
+            params![seq, id, reason],
+        )?;
+        transaction.commit()?;
+        Ok(id)
     }
     pub fn latest_task(&self) -> Result<Option<String>> {
         Ok(self
@@ -253,7 +342,12 @@ impl Project {
         Ok(())
     }
     pub fn note(&self, task: &str, kind: &str, body: &str, source: &str) -> Result<()> {
-        ensure!(body.len() <= 16_000, "Memory entry exceeds 16 KB");
+        let limit = if kind == "request" && source == "user" {
+            64_000
+        } else {
+            16_000
+        };
+        ensure!(body.len() <= limit, "Memory entry exceeds {limit} bytes");
         ensure!(
             matches!(
                 kind,
@@ -387,7 +481,16 @@ impl Project {
     }
     pub(crate) fn bytes(&self, path: &str) -> Result<Option<Vec<u8>>> {
         self.check_path(path)?;
-        let mut file = match self.dir.open(path) {
+        let mut options = cap_std::fs::OpenOptions::new();
+        options.read(true);
+        #[cfg(unix)]
+        {
+            use cap_std::fs::OpenOptionsExt;
+            // Validate the opened inode without waiting for a writer on a FIFO.
+            // A raced-in symlink must not redirect the read after check_path.
+            options.custom_flags(nix::libc::O_NONBLOCK | nix::libc::O_NOFOLLOW);
+        }
+        let mut file = match self.dir.open_with(path, &options) {
             Ok(f) => f,
             Err(e) if e.kind() == std::io::ErrorKind::NotFound => return Ok(None),
             Err(e) => return Err(e.into()),
@@ -493,7 +596,12 @@ impl Project {
             &digest(self.root.to_string_lossy().as_bytes())[..8]
         ))
     }
-    fn handle_span(&self, task: &str, path: &str, handle: &str) -> Result<(String, usize, usize)> {
+    pub(crate) fn handle_span(
+        &self,
+        task: &str,
+        path: &str,
+        handle: &str,
+    ) -> Result<(String, usize, usize)> {
         let bytes = self
             .bytes(path)?
             .context("Handle file was deleted; inspect again")?;
@@ -728,16 +836,38 @@ impl Project {
         }
     }
     pub fn snapshot(&self) -> Result<(String, BTreeMap<String, Vec<u8>>)> {
-        let files = self.scan()?;
-        let mut hasher = Sha256::new();
-        for (path, bytes) in &files {
-            hasher.update((path.len() as u64).to_le_bytes());
-            hasher.update(path.as_bytes());
-            hasher.update(self.mode(path)?.to_le_bytes());
-            hasher.update((bytes.len() as u64).to_le_bytes());
-            hasher.update(bytes);
+        // Two equal observations establish a stable capture, not an atomic snapshot
+        // against arbitrary external writers. Retry boundedly rather than certifying
+        // a manifest assembled from visibly different generations.
+        let capture = || -> Result<_> {
+            let files = self.scan()?;
+            let mut identities = BTreeMap::new();
+            let mut hasher = Sha256::new();
+            for (path, bytes) in &files {
+                let identity = self
+                    .file_identity(path)?
+                    .context("Source disappeared during snapshot capture")?;
+                hasher.update((path.len() as u64).to_le_bytes());
+                hasher.update(path.as_bytes());
+                hasher.update(identity.mode.to_le_bytes());
+                hasher.update((bytes.len() as u64).to_le_bytes());
+                hasher.update(bytes);
+                identities.insert(path.clone(), identity);
+            }
+            Ok((format!("{:x}", hasher.finalize()), files, identities))
+        };
+        let mut previous = capture()?;
+        for _ in 0..3 {
+            self.check_cancel()?;
+            let current = capture()?;
+            if previous.0 == current.0 && previous.2 == current.2 {
+                return Ok((current.0, current.1));
+            }
+            previous = current;
         }
-        Ok((format!("{:x}", hasher.finalize()), files))
+        bail!(
+            "Project kept changing during snapshot capture; finish external saves and retry. No stable snapshot was recorded"
+        )
     }
     pub fn index(&mut self) -> Result<usize> {
         let cancel = self.cancellation.clone();
@@ -902,8 +1032,12 @@ impl Project {
             after,
             status: "proposed".into(),
             mode,
+            after_mode: None,
             test_change,
             reason: reason.into(),
+            before_identity: self.file_identity(path)?,
+            after_identity: None,
+            transition: None,
         };
         self.db.execute(
             "INSERT INTO changes(id,task,status,payload) VALUES(?1,?2,?3,?4)",
@@ -946,48 +1080,6 @@ impl Project {
     fn current_hash(&self, path: &str) -> Result<Option<String>> {
         Ok(self.bytes(path)?.map(|b| digest(&b)))
     }
-    fn write_image(&self, c: &Change, image: Option<&str>) -> Result<()> {
-        self.check_path(&c.path)?;
-        if let Some(text) = image {
-            let parent = Path::new(&c.path).parent().unwrap_or(Path::new(""));
-            if !parent.as_os_str().is_empty() {
-                self.dir.create_dir_all(parent)?;
-            }
-            let temporary = parent.join(format!(".alt-write-{}", uuid::Uuid::new_v4()));
-            let mut options = cap_std::fs::OpenOptions::new();
-            options.write(true).create_new(true);
-            let result: Result<()> = (|| {
-                let mut file = self.dir.open_with(&temporary, &options)?;
-                file.write_all(text.as_bytes())?;
-                #[cfg(unix)]
-                {
-                    use cap_std::fs::PermissionsExt;
-                    file.set_permissions(cap_std::fs::Permissions::from_mode(c.mode))?;
-                }
-                file.sync_all()?;
-                if let Err(e) = self.dir.rename(&temporary, &self.dir, &c.path) {
-                    let _ = self.dir.remove_file(&temporary);
-                    return Err(e.into());
-                }
-                self.dir
-                    .open(if parent.as_os_str().is_empty() {
-                        Path::new(".")
-                    } else {
-                        parent
-                    })?
-                    .sync_all()?;
-                Ok(())
-            })();
-            if result.is_err() {
-                let _ = self.dir.remove_file(&temporary);
-            }
-            result?;
-        } else {
-            self.dir.remove_file(&c.path)?;
-            self.dir.open(".")?.sync_all()?;
-        }
-        Ok(())
-    }
     pub fn apply(&self, id: &str, policy: Policy) -> Result<Change> {
         ensure!(
             policy != Policy::ReviewOnly,
@@ -999,11 +1091,11 @@ impl Project {
             self.current_hash(&c.path)? == c.before_hash,
             "File changed after this proposal; read and prepare a fresh edit"
         );
+        self.ensure_identity(&c, false)?;
         c.status = "applying".into();
         self.save_change(&c)?;
-        self.write_image(&c, c.after.as_deref())?;
-        c.status = "applied".into();
-        self.save_change(&c)?;
+        let image = c.after.clone();
+        self.write_image(&mut c, image.as_deref())?;
         self.db
             .execute("DELETE FROM attempts WHERE task=?1", [&c.task])?;
         self.phase(
@@ -1035,11 +1127,11 @@ impl Project {
             self.current_hash(&c.path)? == c.after_hash,
             "Undo conflict: this file changed after Alt's action. Your changes were preserved; review the diff"
         );
+        self.ensure_identity(&c, true)?;
         c.status = "undoing".into();
         self.save_change(&c)?;
-        self.write_image(&c, c.before.as_deref())?;
-        c.status = "undone".into();
-        self.save_change(&c)?;
+        let image = c.before.clone();
+        self.write_image(&mut c, image.as_deref())?;
         self.phase(
             &c.task,
             "Test",
@@ -1055,17 +1147,30 @@ impl Project {
             .collect::<Vec<_>>();
         // Simulate the complete rollback before touching files. Avoid partial rollback on known conflicts.
         let mut expected: BTreeMap<String, Option<String>> = BTreeMap::new();
+        let mut expected_modes: BTreeMap<String, Option<u32>> = BTreeMap::new();
         for c in &actions {
+            if !expected.contains_key(&c.path) {
+                self.ensure_identity(c, true)?;
+            }
             let current = match expected.get(&c.path) {
                 Some(v) => v.clone(),
                 None => self.current_hash(&c.path)?,
             };
+            let mode = match expected_modes.get(&c.path) {
+                Some(mode) => *mode,
+                None => self.file_identity(&c.path)?.map(|identity| identity.mode),
+            };
             ensure!(
-                current == c.after_hash,
+                current == c.after_hash
+                    && mode
+                        == c.after_hash
+                            .as_ref()
+                            .map(|_| c.after_mode.unwrap_or(c.mode)),
                 "Undo conflict in {}; no actions were undone",
                 c.path
             );
             expected.insert(c.path.clone(), c.before_hash.clone());
+            expected_modes.insert(c.path.clone(), c.before_hash.as_ref().map(|_| c.mode));
         }
         actions.into_iter().map(|c| self.undo(&c.id)).collect()
     }
@@ -1074,7 +1179,17 @@ impl Project {
             if !matches!(c.status.as_str(), "applying" | "undoing") {
                 continue;
             }
-            let hash = self.current_hash(&c.path)?;
+            if self.recover_transition(&mut c)? {
+                continue;
+            }
+            let hash = match self.current_hash(&c.path) {
+                Ok(hash) => hash,
+                Err(_) => {
+                    c.status = "conflict".into();
+                    self.save_change(&c)?;
+                    continue;
+                }
+            };
             c.status = match (
                 c.status.as_str(),
                 hash == c.before_hash,
@@ -1125,9 +1240,25 @@ impl Project {
             .collect()
     }
     pub fn save_check(&self, result: &CheckResult) -> Result<()> {
-        self.db.execute(
+        let payload = serde_json::to_string(result)?;
+        let transaction = self.db.unchecked_transaction()?;
+        let existing: Option<String> = transaction
+            .query_row(
+                "SELECT payload FROM checks WHERE id=?1",
+                [&result.id],
+                |r| r.get(0),
+            )
+            .optional()?;
+        if let Some(existing) = existing {
+            ensure!(
+                existing == payload,
+                "Receipt ID already exists with different evidence; original retained"
+            );
+            return Ok(());
+        }
+        transaction.execute(
             "INSERT INTO checks(id,payload) VALUES(?1,?2)",
-            params![result.id, serde_json::to_string(result)?],
+            params![result.id, payload],
         )?;
         let passed = result.exit_code == Some(0)
             && !result.timed_out
@@ -1149,7 +1280,9 @@ impl Project {
                 "Inspect the failed check before making another change"
             },
         )?;
-        self.note(&result.task,if passed{"observation"}else{"failure"},&format!("Check {}: exit {:?}, timeout {}, cancelled {}, isolation {}, snapshot {}, evidence {}. {}",result.name,result.exit_code,result.timed_out,result.cancelled,result.isolation,result.snapshot,result.id,result.error.as_deref().unwrap_or("")),&result.id)
+        self.note(&result.task,if passed{"observation"}else{"failure"},&format!("Check {}: exit {:?}, timeout {}, cancelled {}, isolation {}, snapshot {}, evidence {}. {}",result.name,result.exit_code,result.timed_out,result.cancelled,result.isolation,result.snapshot,result.id,result.error.as_deref().unwrap_or("")),&result.id)?;
+        transaction.commit()?;
+        Ok(())
     }
     pub fn latest_check(&self, task: &str) -> Result<Option<CheckResult>> {
         // JSON extraction is supplied by bundled SQLite.
@@ -1177,6 +1310,14 @@ impl Project {
         Ok(())
     }
     pub fn memory(&mut self, task: &str, query: &str, max_chars: usize) -> Result<String> {
+        let total_budget = max_chars;
+        let active_requests = self.active_requests(task)?;
+        let requests = format!(
+            "Exact active user requests (user corrections supersede historical goals; model notes cannot retire these):\n{}\n",
+            serde_json::to_string(&active_requests)?
+        );
+        let request_chars = requests.chars().count();
+        let max_chars = max_chars.checked_sub(request_chars).filter(|remaining| *remaining >= 256).context("Active user requirements exceed this context budget. Increase the context allocation or explicitly correct/decompose the task; no requirement was silently omitted")?;
         let state = self.task(task)?;
         let workflow = crate::workflow::packet(self, task)?;
         let pinned = self.pinned()?;
@@ -1184,7 +1325,7 @@ impl Project {
         // Reserve the start for current evidence. Historical notes must never push
         // the most recent check out of a small model's prompt.
         let mut out = format!(
-            "CURRENT computed check status: {}\nTask: {}\nGoal: {}\n",
+            "CURRENT computed check status: {}\nTask: {}\nOriginal goal (historical): {}\n",
             state.check_status,
             state.id,
             bounded(&state.goal, max_chars / 12)
@@ -1270,7 +1411,7 @@ impl Project {
                 ledger_budget.saturating_sub(out.chars().count() + heading.chars().count());
             let mut history = Vec::new();
             let mut stmt = self.db.prepare(
-                "SELECT seq,kind,body,source FROM notes WHERE task=?1 AND NOT(kind='decision' AND source='user') ORDER BY seq DESC LIMIT 16",
+                "SELECT seq,kind,body,source FROM notes WHERE task=?1 AND kind<>'request' AND NOT(kind='decision' AND source='user') ORDER BY seq DESC LIMIT 16",
             )?;
             for note in stmt.query_map([task], |r| {
                 Ok((
@@ -1337,7 +1478,9 @@ impl Project {
             Err(e) => result.push_str(&format!("\nProject retrieval unavailable: {e}")),
         }
         let result = bounded(&result, max_chars);
-        let context = serde_json::json!({"task":task,"memory":result,"characters":result.chars().count(),"character_budget":max_chars,"included_excerpts":included_excerpts,"structural_candidates":structural,"omitted_excerpts":omitted_excerpts,"token_accounting":"Character estimate; tokenizer-specific usage is provided by the selected runtime when available","pinned":pinned,"omitted_history":"Only retrieved/recent notes and bounded excerpts are included; full history remains on disk","native_context_expanded":false});
+        let (first, rest) = result.split_once('\n').unwrap_or((&result, ""));
+        let result = format!("{first}\n{requests}{rest}");
+        let context = serde_json::json!({"active_user_requests":active_requests,"request_history":self.request_history(task)?,"task":task,"memory":result,"characters":result.chars().count(),"character_budget":total_budget,"included_excerpts":included_excerpts,"structural_candidates":structural,"omitted_excerpts":omitted_excerpts,"token_accounting":"Character estimate; tokenizer-specific usage is provided by the selected runtime when available","pinned":pinned,"omitted_history":"Only retrieved/recent notes and bounded excerpts are included; full history remains on disk","native_context_expanded":false});
         self.db.execute(
             "INSERT OR REPLACE INTO context_views VALUES(?1,?2)",
             params![task, context.to_string()],
@@ -1347,8 +1490,8 @@ impl Project {
     pub fn export(&self) -> Result<serde_json::Value> {
         let mut stmt = self
             .db
-            .prepare("SELECT kind,body,source,task,created FROM notes ORDER BY seq")?;
-        let notes=stmt.query_map([],|r|Ok(serde_json::json!({"kind":r.get::<_,String>(0)?,"body":r.get::<_,String>(1)?,"source":r.get::<_,String>(2)?,"task":r.get::<_,String>(3)?,"created":r.get::<_,String>(4)?})))?.collect::<rusqlite::Result<Vec<_>>>()?;
+            .prepare("SELECT kind,body,source,task,created,seq FROM notes ORDER BY seq")?;
+        let notes=stmt.query_map([],|r|Ok(serde_json::json!({"kind":r.get::<_,String>(0)?,"body":r.get::<_,String>(1)?,"source":r.get::<_,String>(2)?,"task":r.get::<_,String>(3)?,"created":r.get::<_,String>(4)?,"seq":r.get::<_,i64>(5)?})))?.collect::<rusqlite::Result<Vec<_>>>()?;
         let mut stmt = self
             .db
             .prepare("SELECT payload FROM checks ORDER BY rowid")?;
@@ -1360,6 +1503,13 @@ impl Project {
             .db
             .prepare("SELECT id,goal,plan,phase,next FROM tasks ORDER BY rowid")?;
         let tasks=stmt.query_map([],|r|Ok(serde_json::json!({"id":r.get::<_,String>(0)?,"goal":r.get::<_,String>(1)?,"plan":r.get::<_,String>(2)?,"phase":r.get::<_,String>(3)?,"next":r.get::<_,String>(4)?})))?.collect::<rusqlite::Result<Vec<_>>>()?;
+        let mut user_requests = BTreeMap::new();
+        for task in &tasks {
+            let id = task["id"]
+                .as_str()
+                .context("Saved task identity is invalid")?;
+            user_requests.insert(id.to_owned(), serde_json::json!({"history":self.request_history(id)?,"active":self.active_requests(id)?}));
+        }
         let mut reports = Vec::new();
         for check in &checks {
             self.check_cancel()?;
@@ -1379,7 +1529,7 @@ impl Project {
             }
         }
         Ok(
-            serde_json::json!({"project":self.root,"tasks":tasks,"notes":notes,"checks":checks,"check_reports":reports,"check_specs":self.checks()?,"verification":self.verification()?,"changes":self.changes(None)?}),
+            serde_json::json!({"project":self.root,"tasks":tasks,"user_requests":user_requests,"displaced_versions":self.displaced_versions()?,"recovery_export_scope":"Retained source blobs and raw execution logs stay in project state; use state backup for a portable complete recovery generation","notes":notes,"checks":checks,"check_reports":reports,"check_specs":self.checks()?,"verification":self.verification()?,"changes":self.changes(None)?}),
         )
     }
 }

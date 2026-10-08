@@ -20,7 +20,10 @@ export PYTHONPATH="/workspace/.alt-tools/python${PYTHONPATH:+:$PYTHONPATH}"
 ```
 
 Run `bash scripts/setup-cloud.sh` for repeatable setup. After changes, run relevant
-Rust tests, formatting, and strict Clippy. For UI changes run `scripts/smoke_tui.py`.
+Rust tests, formatting, and strict Clippy. For UI changes run `scripts/smoke_tui.py`
+and `scripts/smoke_product_tui.py` (all pages, settings, mouse and compact navigation),
+plus `scripts/smoke_appearance_tui.py` (themes, layouts, contrast, persistence and
+resizing without losing a draft).
 For engine changes run `scripts/smoke_goose.py` for both `openai` and `ollama`.
 For task/access/memory UI changes also run `scripts/smoke_task_tui.py`.
 Project policies/journals live in project.rs, the MCP boundary in toolbox.rs, and

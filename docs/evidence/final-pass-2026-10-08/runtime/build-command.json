@@ -1,0 +1,17 @@
+[
+  "rustc",
+  "--edition=2024",
+  "/tmp/alt-runtime-live-smoke/smoke.rs",
+  "-o",
+  "/tmp/alt-runtime-live-smoke/smoke",
+  "-L",
+  "dependency=target/debug/deps",
+  "--extern",
+  "alt_cli=target/debug/deps/libalt_cli-a6080f647fcbfadd.rlib",
+  "--extern",
+  "serde_json=target/debug/deps/libserde_json-daf607016eb36342.rlib",
+  "--extern",
+  "anyhow=target/debug/deps/libanyhow-95160b83a69d28f1.rlib",
+  "--extern",
+  "tokio=target/debug/deps/libtokio-50356399261f2b29.rlib"
+]

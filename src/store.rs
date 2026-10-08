@@ -4,7 +4,7 @@ use rusqlite::{Connection, params};
 use serde::{Deserialize, Serialize};
 use std::path::Path;
 
-pub struct Store(Connection);
+pub struct Store(Connection, std::path::PathBuf);
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Session {
@@ -27,6 +27,7 @@ pub struct SessionSummary {
 
 impl Store {
     pub fn open(root: &Path) -> Result<Self> {
+        let _generation = crate::storage::StateWriteGuard::acquire(root)?;
         crate::config::private_dir(root)?;
         crate::schema::compatible(&root.join("sessions.db"), 1)?;
         let mut db = Connection::open(root.join("sessions.db"))?;
@@ -45,10 +46,11 @@ impl Store {
             updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP);
             CREATE TABLE IF NOT EXISTS project_briefs (cwd TEXT PRIMARY KEY, body TEXT NOT NULL,
             updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP);"))?;
-        Ok(Self(db))
+        Ok(Self(db, root.to_path_buf()))
     }
 
     pub fn create(&self, session: &Session) -> Result<()> {
+        let _generation = crate::storage::StateWriteGuard::acquire(&self.1)?;
         let tx = self.0.unchecked_transaction()?;
         tx.execute("INSERT INTO sessions(id, engine_id, cwd, profile_name, profile) VALUES (?1,?2,?3,?4,?5)",
             params![session.id, session.engine_id, session.cwd, session.profile_name, serde_json::to_string(&session.profile)?])?;
@@ -98,6 +100,7 @@ impl Store {
     /// Explicitly updates only allocation on an existing model selection. Keep
     /// the durable session and the audit event in the same transaction.
     pub fn update_allocation(&self, id: &str, profile: Profile) -> Result<Session> {
+        let _generation = crate::storage::StateWriteGuard::acquire(&self.1)?;
         profile.validate()?;
         let mut session = self.get(id)?;
         let before = session.profile.clone();
@@ -125,6 +128,7 @@ impl Store {
     }
 
     pub fn append(&self, id: &str, event: &serde_json::Value) -> Result<()> {
+        let _generation = crate::storage::StateWriteGuard::acquire(&self.1)?;
         let tx = self.0.unchecked_transaction()?;
         ensure!(
             tx.query_row("SELECT count(*) FROM sessions WHERE id=?1", [id], |r| r
@@ -179,6 +183,7 @@ impl Store {
     }
 
     pub fn rename(&self, id: &str, title: &str) -> Result<()> {
+        let _generation = crate::storage::StateWriteGuard::acquire(&self.1)?;
         self.get(id)?;
         ensure!(
             !title.trim().is_empty() && title.chars().count() <= 120,
@@ -193,6 +198,7 @@ impl Store {
     }
 
     pub fn archive(&self, id: &str, archived: bool) -> Result<()> {
+        let _generation = crate::storage::StateWriteGuard::acquire(&self.1)?;
         self.get(id)?;
         self.0.execute(
             "INSERT INTO session_details(session_id,archived) VALUES (?1,?2)
@@ -216,6 +222,7 @@ impl Store {
     }
 
     pub fn save_brief(&self, cwd: &Path, body: &str) -> Result<()> {
+        let _generation = crate::storage::StateWriteGuard::acquire(&self.1)?;
         ensure!(
             body.len() <= 16_000,
             "Keep the project brief under 16 KB so it leaves room for your conversation"
@@ -229,6 +236,7 @@ impl Store {
     }
 
     pub fn export_files(&self, root: &Path, id: &str) -> Result<std::path::PathBuf> {
+        let _generation = crate::storage::StateWriteGuard::acquire(&self.1)?;
         use std::io::Write;
         let session = self.get(id)?;
         let directory =
@@ -332,6 +340,7 @@ impl Store {
         days: u64,
         apply: bool,
     ) -> Result<serde_json::Value> {
+        let _generation = crate::storage::StateWriteGuard::acquire(&self.1)?;
         use std::io::Write;
         ensure!(days >= 1, "Keep at least one day of conversation history");
         let tx = self
@@ -419,6 +428,7 @@ impl Store {
         )
     }
     pub fn restore_history(&mut self, path: &Path) -> Result<String> {
+        let _generation = crate::storage::StateWriteGuard::acquire(&self.1)?;
         use std::io::{BufRead, Read};
         let mut reader =
             std::io::BufReader::new(flate2::read::GzDecoder::new(std::fs::File::open(path)?));

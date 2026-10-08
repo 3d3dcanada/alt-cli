@@ -63,6 +63,9 @@ impl App {
             self.set_page(Page::ALL[if n == 0 { 9 } else { n as usize - 1 }]);
             return Ok(());
         }
+        if let Some(action) = super::actions::shortcut(key) {
+            return self.action(action);
+        }
         if ctrl {
             match key.code {
                 KeyCode::Char('p') => return self.action("palette"),
@@ -93,7 +96,7 @@ impl App {
             self.set_page(Page::Help);
             return Ok(());
         }
-        if key.code == KeyCode::Tab && !self.search_focus {
+        if matches!(key.code, KeyCode::Tab | KeyCode::BackTab) && !self.search_focus {
             self.nav_focus = !self.nav_focus;
             return Ok(());
         }
@@ -122,6 +125,9 @@ impl App {
             Page::Home => match key.code {
                 KeyCode::Down => self.home_selected = (self.home_selected + 1) % 8,
                 KeyCode::Up => self.home_selected = (self.home_selected + 7) % 8,
+                KeyCode::Left | KeyCode::Right => {
+                    self.move_home_horizontally(key.code == KeyCode::Right)
+                }
                 KeyCode::Enter => self.home_action(self.home_selected)?,
                 _ => {}
             },
@@ -241,6 +247,8 @@ impl App {
                 _ => {}
             },
             Page::Context => match key.code {
+                KeyCode::Char('i') => self.understanding()?,
+                KeyCode::Char('c') => self.correct_requirement()?,
                 KeyCode::Char('p') => self.workbench_action("pin-requirement")?,
                 KeyCode::Char('u') => self.workbench_action("unpin-requirement")?,
                 KeyCode::Char('r') => self.workbench_action("context-refresh")?,
@@ -249,6 +257,9 @@ impl App {
                 _ => {}
             },
             Page::Task => match key.code {
+                KeyCode::Char('l') => self.manager_action("check-logs", serde_json::json!({}))?,
+                KeyCode::Char('i') => self.understanding()?,
+                KeyCode::Char('f') => self.recovered_files()?,
                 KeyCode::Char('v') => self.workbench_action("verification-status")?,
                 KeyCode::Char('a') => self.workbench_action("verification-plan")?,
                 KeyCode::Char('t') => self.workbench_action("verification-run")?,
@@ -271,7 +282,7 @@ impl App {
             },
             Page::Settings => match key.code {
                 KeyCode::Up => self.settings_selected = self.settings_selected.saturating_sub(1),
-                KeyCode::Down => self.settings_selected = (self.settings_selected + 1).min(16),
+                KeyCode::Down => self.settings_selected = (self.settings_selected + 1).min(17),
                 KeyCode::Enter | KeyCode::Right => self.setting_action(self.settings_selected)?,
                 _ => {}
             },
@@ -299,6 +310,31 @@ impl App {
                     self.hub_files.len()
                 }
             }
+        }
+    }
+
+    fn move_home_horizontally(&mut self, right: bool) {
+        let Some((current, _)) = self
+            .hits
+            .iter()
+            .find(|(_, hit)| matches!(hit, Hit::Home(index) if *index == self.home_selected))
+        else {
+            return;
+        };
+        // Follow the rendered cards so changing layout or terminal size cannot
+        // send selection into an invisible second column. The selected hint at
+        // the bottom is a duplicate hit, after the actual cards/list rows.
+        if let Some(index) = self.hits.iter().find_map(|(rect, hit)| {
+            let Hit::Home(index) = hit else { return None };
+            (rect.y == current.y
+                && if right {
+                    rect.x > current.x
+                } else {
+                    rect.x < current.x
+                })
+            .then_some(*index)
+        }) {
+            self.home_selected = index;
         }
     }
 
@@ -346,6 +382,24 @@ impl App {
     }
 
     pub fn action(&mut self, action: &str) -> Result<()> {
+        let page = match action {
+            "page-home" => Some(Page::Home),
+            "page-chat" => Some(Page::Chat),
+            "page-models" => Some(Page::Models),
+            "page-connections" => Some(Page::Connections),
+            "page-sessions" => Some(Page::Sessions),
+            "page-settings" => Some(Page::Settings),
+            "page-help" => Some(Page::Help),
+            "page-files" => Some(Page::Files),
+            "page-jobs" => Some(Page::Jobs),
+            "page-context" => Some(Page::Context),
+            _ => None,
+        };
+        if let Some(page) = page {
+            self.set_page(page);
+            return Ok(());
+        }
+
         if action.starts_with("file")
             || action.starts_with("job-")
             || action.starts_with("jobs-")
@@ -355,13 +409,25 @@ impl App {
                 "all-diffs" | "context-refresh" | "pin-requirement" | "unpin-requirement"
             )
         {
-            return self.workbench_action(action);
+            if action == "files-search" {
+                self.set_page(Page::Files);
+            }
+            self.workbench_action(action)?;
+            if action == "job-attach" {
+                // A palette action can start outside the Jobs page. Keep the
+                // terminal receiving input visible after attachment succeeds.
+                self.page = Page::Jobs;
+                self.nav_index = Page::ALL.iter().position(|p| *p == Page::Jobs).unwrap();
+                self.nav_focus = false;
+            }
+            return Ok(());
         }
 
         if action.starts_with("task") || matches!(action, "access" | "hardware" | "evaluate") {
             return self.task_action(action);
         }
         match action {
+            "appearance" => self.appearance_dialog(),
             "quit" => {
                 if self.busy || self.connecting || self.job.is_some() {
                     self.dialog=Some(Dialog::Confirm{title:"Leave Alt?".into(),body:"Your conversation is saved. The active task and any download will stop; partial downloads can be resumed later.".into(),action:ConfirmAction::Quit,selected:0});
@@ -370,6 +436,7 @@ impl App {
                 }
             }
             "new" => self.new_conversation()?,
+            "practice" => self.home_action(1)?,
             "connect" => self.connection_wizard(),
             "send" => self.send_prompt()?,
             "stop" => self.stop_turn()?,
@@ -395,40 +462,28 @@ impl App {
                     selected: 0,
                 })
             }
+            "model-fit" | "storage-usage" | "storage-budget" | "inference-export"
+            | "check-inputs" | "check-logs" | "manage-tools" | "manage-storage"
+            | "manage-models" | "runtime-settings" | "benchmark-preview" | "tools-focus"
+            | "qualify-preview" => self.manager_action(action, serde_json::json!({}))?,
             "palette" => {
-                let mut items = Page::ALL
-                    .iter()
-                    .map(|p| {
-                        (
-                            p.name().to_string(),
-                            "Open page".into(),
-                            MenuAction::Page(*p),
-                        )
-                    })
-                    .collect::<Vec<_>>();
-                items.extend([
-                    (
-                        "New conversation".into(),
-                        "Keep previous conversations saved".into(),
-                        MenuAction::New,
-                    ),
-                    (
-                        "Choose project".into(),
-                        "Browse folders".into(),
-                        MenuAction::Project,
-                    ),
-                    (
-                        "Edit project brief".into(),
-                        "Keep goals and decisions in context".into(),
-                        MenuAction::Brief,
-                    ),
-                ]);
-                self.dialog = Some(Dialog::Menu {
-                    title: "Quick actions".into(),
-                    description: "Arrow keys to choose; Enter to open.".into(),
-                    items,
+                self.dialog = Some(Dialog::Palette {
+                    query: Editor::default(),
                     selected: 0,
-                });
+                })
+            }
+            "drafts" => self.draft_menu(),
+            "save-drafts" => {
+                self.remember_draft();
+                self.flush_drafts = true;
+            }
+            "manual-model" => self.manual_model()?,
+            "understanding" => self.understanding()?,
+            "correct-requirement" => self.correct_requirement()?,
+            "recovered-files" => self.recovered_files()?,
+            "next-step" => {
+                let (_, _, action) = self.next_step();
+                self.action(action)?;
             }
             "tool-details" => {
                 let tool = self
@@ -438,23 +493,35 @@ impl App {
                     .clone();
                 self.dialog = Some(Dialog::ToolDetails { tool, scroll: 0 });
             }
-            "refresh-models" => self.refresh_models()?,
+            "refresh-models" => {
+                self.set_page(Page::Models);
+                self.refresh_models()?;
+            }
             "use-model" => self.select_model()?,
             "hub-search" => {
+                self.set_page(Page::Models);
+                self.model_tab = 2;
                 self.dialog=Some(Dialog::Input{title:"Find a model on Hugging Face".into(),hint:"Try Qwen3 heretic, Spark, or MiMo. The variant filter uses publisher names/tags, not a behavior test.".into(),editor:Editor::new(&self.hub_query),action:InputAction::SearchHub,multiline:false});
             }
             "hub-repo" => {
+                self.set_page(Page::Models);
+                self.model_tab = 2;
                 self.dialog=Some(Dialog::Input{title:"Open a model repository".into(),hint:"Enter publisher/model-name. Only complete GGUF files with published checksums are offered.".into(),editor:Editor::default(),action:InputAction::DirectRepo,multiline:false});
             }
             "hub-back" => {
+                self.set_page(Page::Models);
+                self.model_tab = 2;
                 self.hub_files.clear();
                 self.model_selected = 0;
             }
             "variant-filter" => {
+                self.set_page(Page::Models);
+                self.model_tab = 2;
                 self.variants_only = !self.variants_only;
                 self.notify("Filter changed. Refresh the search to apply it.");
             }
             "import" => self.open_browser(BrowserKind::Model, self.preferences.project.clone())?,
+            "install-engine" => self.install_dialog(Component::Engine),
             "runtime" => {
                 if self.runtime_ready() {
                     self.notify("The local CPU runtime is installed. Select a local model and start a conversation.");
@@ -496,11 +563,9 @@ impl App {
                 let name = name.clone();
                 self.model_tab = 1;
                 self.set_page(Page::Models);
-                self.launch_job("Testing connection", move |_, _| async move {
-                    Ok(JobResult::Inventory(
-                        name,
-                        models::inventory(&profile).await?,
-                    ))
+                self.launch_job("Testing connection", move |cancel, _| async move {
+                    let models = tokio::select! { result = models::inventory(&profile) => result?, _ = models::cancelled(&cancel) => anyhow::bail!("Connection check cancelled") };
+                    Ok(JobResult::Inventory(name, models))
                 })?;
             }
             "remove-connection" => {
@@ -558,6 +623,7 @@ impl App {
                 })?;
             }
             "show-archived" => {
+                self.set_page(Page::Sessions);
                 self.archived = !self.archived;
                 self.refresh_sessions()?;
             }
@@ -581,7 +647,10 @@ impl App {
                     selected: 0,
                 });
             }
-            "search-sessions" => self.search_focus = true,
+            "search-sessions" => {
+                self.set_page(Page::Sessions);
+                self.search_focus = true;
+            }
             "choose-folder" => {
                 if let Some(Dialog::Browser {
                     kind: BrowserKind::Project,
@@ -614,6 +683,11 @@ impl App {
                 });
             }
             "modal-cancel" => {
+                if matches!(self.dialog, Some(Dialog::Connection(_)))
+                    && let Some(job) = &self.job
+                {
+                    job.cancel.store(true, Ordering::Relaxed);
+                }
                 self.dialog = None;
             }
             "modal-submit" => {
@@ -668,6 +742,10 @@ impl App {
             14 => return self.manager_action("benchmark-preview", serde_json::json!({})),
             15 => return self.manager_action("tools-focus", serde_json::json!({})),
             16 => return self.manager_action("qualify-preview", serde_json::json!({})),
+            17 => {
+                self.appearance_dialog();
+                return Ok(());
+            }
             10 => return self.manager_action("manage-tools", serde_json::json!({})),
             11 => return self.manager_action("manage-storage", serde_json::json!({})),
             12 => return self.manager_action("manage-models", serde_json::json!({})),
@@ -708,25 +786,34 @@ impl App {
             return Ok(());
         };
         let draft = self.draft(form)?;
-        self.launch_job("Checking the connection", move |_, _| async move {
-            let models = models::inventory(&draft.profile).await?;
+        self.status_error = false;
+        self.launch_job("Checking the connection", move |cancel, _| async move {
+            let models = tokio::select! { result = models::inventory(&draft.profile) => result?, _ = models::cancelled(&cancel) => anyhow::bail!("Connection check cancelled") };
             Ok(JobResult::Tested(draft, models))
         })
     }
-    fn draft(&self, form: &ConnectionForm) -> Result<ConnectionDraft> {
+    pub(super) fn draft(&self, form: &ConnectionForm) -> Result<ConnectionDraft> {
         let key = form.fields[2].text.trim();
         let original = form.original.clone();
-        let profile = Profile {
-            provider: form.provider,
-            endpoint: form.fields[1].text.trim().trim_end_matches('/').into(),
-            model: "choose-next".into(),
-            context_tokens: self.preferences.context_tokens,
-            max_turns: self.preferences.max_turns,
-            uncensored: false,
-            api_key_env: (!key.is_empty()).then(|| key.into()),
-            local_model: None,
-            inference: None,
-        };
+        let mut profile = form
+            .original
+            .as_ref()
+            .and_then(|name| self.config.profiles.get(name))
+            .cloned()
+            .unwrap_or(Profile {
+                provider: form.provider,
+                endpoint: String::new(),
+                model: "choose-next".into(),
+                context_tokens: self.preferences.context_tokens,
+                max_turns: self.preferences.max_turns,
+                uncensored: false,
+                api_key_env: None,
+                local_model: None,
+                inference: None,
+            });
+        // A connection form is a typed patch: unrelated allocations and claims survive.
+        profile.endpoint = form.fields[1].text.trim().trim_end_matches('/').into();
+        profile.api_key_env = (!key.is_empty()).then(|| key.into());
         profile.validate()?;
         ensure!(
             !form.fields[0].text.trim().is_empty(),
@@ -745,6 +832,11 @@ impl App {
             return Ok(());
         };
         if key.code == KeyCode::Esc {
+            if matches!(dialog, Dialog::Connection(_))
+                && let Some(job) = &self.job
+            {
+                job.cancel.store(true, Ordering::Relaxed);
+            }
             if matches!(dialog, Dialog::Notice { .. }) {
                 self.dialog = self.recovery_dialog.take().map(|d| *d);
             }
@@ -753,6 +845,25 @@ impl App {
         // Keep a recoverable form on validation errors.
         self.dialog = Some(dialog.clone());
         match &mut dialog {
+            Dialog::Palette { query, selected } => {
+                let entries = super::actions::search(&query.text);
+                match key.code {
+                    KeyCode::Down => {
+                        *selected = (*selected + 1).min(entries.len().saturating_sub(1))
+                    }
+                    KeyCode::Up => *selected = selected.saturating_sub(1),
+                    KeyCode::Enter => {
+                        if let Some(action) = entries.get(*selected) {
+                            self.dialog = None;
+                            return self.action(action.id);
+                        }
+                    }
+                    _ => {
+                        query.key(key, false);
+                        *selected = 0;
+                    }
+                }
+            }
             Dialog::Notice { scroll, .. } => {
                 match key.code {
                     KeyCode::PageDown => *scroll = scroll.saturating_add(8),
@@ -784,12 +895,15 @@ impl App {
                 KeyCode::Tab | KeyCode::Down => form.focus = (form.focus + 1) % 3,
                 KeyCode::BackTab | KeyCode::Up => form.focus = (form.focus + 2) % 3,
                 KeyCode::Enter => return self.test_form(),
-                KeyCode::Char('m') if ctrl => {
-                    let draft = self.draft(form)?;
-                    self.dialog=Some(Dialog::Input{title:"Enter a model identifier".into(),hint:"Use the exact name from your server. This saves without checking its inventory.".into(),editor:Editor::default(),action:InputAction::ManualModel(draft),multiline:false});
-                    return Ok(());
+                KeyCode::Char('o') if ctrl => return self.manual_model(),
+                _ => {
+                    if let Some(job) = &self.job
+                        && job.label == "Checking the connection"
+                    {
+                        job.cancel.store(true, Ordering::Relaxed);
+                    }
+                    form.fields[form.focus].key(key, false);
                 }
-                _ => form.fields[form.focus].key(key, false),
             },
             Dialog::PickModel {
                 draft,
@@ -859,6 +973,12 @@ impl App {
             Dialog::Confirm {
                 action, selected, ..
             } => match key.code {
+                KeyCode::PageUp | KeyCode::Up => {
+                    self.modal_scroll = self.modal_scroll.saturating_sub(4)
+                }
+                KeyCode::PageDown | KeyCode::Down => {
+                    self.modal_scroll = self.modal_scroll.saturating_add(4)
+                }
                 KeyCode::Tab | KeyCode::BackTab | KeyCode::Left | KeyCode::Right => {
                     *selected = 1 - *selected
                 }
@@ -896,7 +1016,34 @@ impl App {
         if !self.permissions.is_empty() {
             return;
         }
+        if matches!(self.dialog, Some(Dialog::Connection(_)))
+            && let Some(job) = &self.job
+            && job.label == "Checking the connection"
+        {
+            job.cancel.store(true, Ordering::Relaxed);
+        }
+        let incoming = text
+            .chars()
+            .filter(|c| *c == '\n' || *c == '\t' || !c.is_control())
+            .map(char::len_utf8)
+            .sum::<usize>();
+        let existing = match &self.dialog {
+            Some(Dialog::Connection(form)) => Some(form.fields[form.focus].text.len()),
+            Some(Dialog::Input { editor, .. }) => Some(editor.text.len()),
+            Some(Dialog::Palette { query, .. }) => Some(query.text.len()),
+            None if self.page == Page::Chat => Some(self.composer.text.len()),
+            None if self.search_focus => Some(self.session_search.text.len()),
+            _ => None,
+        };
+        if existing.is_some_and(|len| len.saturating_add(incoming) > 64 * 1024) {
+            self.error("Paste exceeds the 64 KiB editor limit. Existing text is unchanged. Put the large text in a project file and include its path in your request, or paste a smaller section.");
+            return;
+        }
         match &mut self.dialog {
+            Some(Dialog::Palette { query, selected }) => {
+                query.insert(text, false);
+                *selected = 0;
+            }
             Some(Dialog::Connection(form)) => form.fields[form.focus].insert(text, false),
             Some(Dialog::Input {
                 editor, multiline, ..
@@ -909,14 +1056,7 @@ impl App {
 
     pub fn mouse(&mut self, kind: MouseEventKind, x: u16, y: u16) -> Result<()> {
         if matches!(kind, MouseEventKind::ScrollUp | MouseEventKind::ScrollDown) {
-            return self.key(KeyEvent::new(
-                if kind == MouseEventKind::ScrollUp {
-                    KeyCode::PageUp
-                } else {
-                    KeyCode::PageDown
-                },
-                KeyModifiers::NONE,
-            ));
+            return self.scroll_mouse(kind == MouseEventKind::ScrollDown);
         }
         if kind != MouseEventKind::Down(MouseButton::Left) {
             return Ok(());
@@ -949,7 +1089,10 @@ impl App {
                 } else if let Some(Dialog::Confirm { selected, .. }) = &mut self.dialog {
                     *selected = choice;
                     self.dialog_key(KeyEvent::new(KeyCode::Enter, KeyModifiers::NONE))?;
-                } else if let Some(Dialog::Menu { selected, .. }) = &mut self.dialog {
+                } else if let Some(
+                    Dialog::Menu { selected, .. } | Dialog::Palette { selected, .. },
+                ) = &mut self.dialog
+                {
                     *selected = choice;
                     self.dialog_key(KeyEvent::new(KeyCode::Enter, KeyModifiers::NONE))?;
                 }
@@ -982,5 +1125,367 @@ impl App {
             _ => {}
         }
         Ok(())
+    }
+
+    /// Lists use their selection as the viewport anchor. Wheel movement must not
+    /// activate a setting, wrap at the end, or type cursor keys into a form.
+    fn scroll_mouse(&mut self, down: bool) -> Result<()> {
+        fn move_selection(selected: &mut usize, count: usize, down: bool) {
+            *selected = if down {
+                selected.saturating_add(3).min(count.saturating_sub(1))
+            } else {
+                selected.saturating_sub(3)
+            };
+        }
+        let page_key = if down {
+            KeyCode::PageDown
+        } else {
+            KeyCode::PageUp
+        };
+        if !self.permissions.is_empty() {
+            return self.key(KeyEvent::new(page_key, KeyModifiers::NONE));
+        }
+        match &mut self.dialog {
+            Some(Dialog::Menu {
+                items, selected, ..
+            }) => {
+                move_selection(selected, items.len(), down);
+                return Ok(());
+            }
+            Some(Dialog::Palette { query, selected }) => {
+                move_selection(selected, super::actions::search(&query.text).len(), down);
+                return Ok(());
+            }
+            Some(Dialog::Browser {
+                entries, selected, ..
+            }) => {
+                move_selection(selected, entries.len(), down);
+                return Ok(());
+            }
+            Some(Dialog::PickModel {
+                models, selected, ..
+            }) => {
+                move_selection(selected, models.len(), down);
+                return Ok(());
+            }
+            Some(Dialog::Connection(_) | Dialog::Input { .. }) => return Ok(()),
+            Some(_) => return self.key(KeyEvent::new(page_key, KeyModifiers::NONE)),
+            None => {}
+        }
+        if self.nav_focus {
+            move_selection(&mut self.nav_index, Page::ALL.len(), down);
+            return Ok(());
+        }
+        match self.page {
+            Page::Home => move_selection(&mut self.home_selected, 8, down),
+            Page::Models => {
+                let count = self.model_count();
+                move_selection(&mut self.model_selected, count, down);
+            }
+            Page::Connections => move_selection(
+                &mut self.connection_selected,
+                self.config.profiles.len(),
+                down,
+            ),
+            Page::Sessions => move_selection(&mut self.session_selected, self.sessions.len(), down),
+            Page::Settings => move_selection(&mut self.settings_selected, 18, down),
+            Page::Files => {
+                let count = self.filtered_files().len();
+                move_selection(&mut self.workbench.file_selected, count, down);
+            }
+            Page::Task => move_selection(
+                &mut self.change_selected,
+                self.task_view.changes.len(),
+                down,
+            ),
+            Page::Jobs if !self.workbench.attached => move_selection(
+                &mut self.workbench.job_selected,
+                self.workbench.jobs.len(),
+                down,
+            ),
+            Page::Chat if self.tools_focus => {
+                move_selection(&mut self.tool_selected, self.tools.len(), down)
+            }
+            _ => return self.key(KeyEvent::new(page_key, KeyModifiers::NONE)),
+        }
+        Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::config::Preferences;
+
+    fn setup() -> (tempfile::TempDir, App) {
+        let directory = tempfile::tempdir().unwrap();
+        let mut app = App::load(directory.path().join("state"), "goose".into(), None).unwrap();
+        app.preferences.project = directory.path().into();
+        (directory, app)
+    }
+
+    fn palette(app: &mut App, query: &str) {
+        app.action("palette").unwrap();
+        app.paste(query);
+        app.key(KeyEvent::new(KeyCode::Enter, KeyModifiers::NONE))
+            .unwrap();
+    }
+
+    #[test]
+    fn home_arrows_cross_visible_card_columns_without_activating_them() {
+        let (_directory, mut app) = setup();
+        app.hits = (0..8)
+            .map(|index| {
+                (
+                    ratatui::layout::Rect::new(
+                        if index < 4 { 3 } else { 50 },
+                        10 + (index % 4) as u16 * 4,
+                        44,
+                        4,
+                    ),
+                    Hit::Home(index),
+                )
+            })
+            .collect();
+        app.hits
+            .push((ratatui::layout::Rect::new(3, 30, 90, 2), Hit::Home(2)));
+        app.home_selected = 2;
+        let right = KeyEvent::new(KeyCode::Right, KeyModifiers::NONE);
+        let left = KeyEvent::new(KeyCode::Left, KeyModifiers::NONE);
+        app.key(right).unwrap();
+        assert_eq!(app.home_selected, 6);
+        app.key(right).unwrap();
+        assert_eq!(app.home_selected, 6);
+        app.key(left).unwrap();
+        assert_eq!(app.home_selected, 2);
+        app.key(KeyEvent::new(KeyCode::Down, KeyModifiers::NONE))
+            .unwrap();
+        app.key(right).unwrap();
+        assert_eq!(app.home_selected, 7);
+        app.key(left).unwrap();
+        assert_eq!(app.home_selected, 3);
+
+        app.hits = (0..8)
+            .map(|index| {
+                (
+                    ratatui::layout::Rect::new(3, 5 + index as u16, 54, 1),
+                    Hit::Home(index),
+                )
+            })
+            .collect();
+        app.hits
+            .push((ratatui::layout::Rect::new(3, 20, 54, 2), Hit::Home(3)));
+        app.key(right).unwrap();
+        app.key(left).unwrap();
+        assert_eq!(app.home_selected, 3);
+        assert_eq!(app.page, Page::Home);
+        assert!(app.dialog.is_none());
+        assert!(!app.root.join("preferences.toml").exists());
+    }
+
+    #[test]
+    fn appearance_keyboard_choices_save_live_without_losing_drafts_or_changing_connections() {
+        let (_directory, mut app) = setup();
+        app.composer.replace("Keep this unsent request");
+        app.page = Page::Chat;
+        let original_config = toml::to_string(&app.config).unwrap();
+        let original_project = app.preferences.project.clone();
+        let original_context = app.preferences.context_tokens;
+
+        palette(&mut app, "Appearance");
+        assert!(
+            matches!(&app.dialog, Some(Dialog::Menu { title, selected: 0, .. }) if title == "Appearance")
+        );
+        let enter = KeyEvent::new(KeyCode::Enter, KeyModifiers::NONE);
+        let down = KeyEvent::new(KeyCode::Down, KeyModifiers::NONE);
+        app.key(enter).unwrap();
+        app.key(down).unwrap();
+        app.key(down).unwrap();
+        app.key(enter).unwrap();
+        assert_eq!(
+            app.preferences.appearance.theme,
+            crate::config::ThemePreset::Aurora
+        );
+        assert!(
+            matches!(&app.dialog, Some(Dialog::Menu { title, selected: 2, .. }) if title == "Color theme")
+        );
+        assert_eq!(
+            Preferences::load(&app.root).unwrap().appearance.theme,
+            crate::config::ThemePreset::Aurora
+        );
+
+        app.setting_action(17).unwrap();
+        app.key(down).unwrap();
+        app.key(enter).unwrap();
+        for _ in 0..3 {
+            app.key(down).unwrap();
+        }
+        app.key(enter).unwrap();
+        assert_eq!(
+            app.preferences.appearance.layout,
+            crate::config::LayoutPreset::Focus
+        );
+        app.menu_action(MenuAction::Decorations).unwrap();
+        let loaded = Preferences::load(&app.root).unwrap();
+        assert!(!loaded.appearance.decorations);
+        assert_eq!(loaded.appearance.layout, crate::config::LayoutPreset::Focus);
+        assert_eq!(loaded.context_tokens, original_context);
+        assert_eq!(loaded.project, original_project);
+        assert_eq!(app.page, Page::Chat);
+        assert_eq!(app.composer.text, "Keep this unsent request");
+        assert_eq!(toml::to_string(&app.config).unwrap(), original_config);
+
+        app.menu_action(MenuAction::ResetAppearance).unwrap();
+        assert_eq!(
+            Preferences::load(&app.root).unwrap().appearance,
+            crate::config::Appearance::default()
+        );
+        assert_eq!(app.composer.text, "Keep this unsent request");
+    }
+
+    #[test]
+    fn invalid_accent_and_failed_appearance_save_preserve_input_and_current_preferences() {
+        let (_directory, mut app) = setup();
+        app.menu_action(MenuAction::Theme(crate::config::ThemePreset::Ember))
+            .unwrap();
+        let stored = std::fs::read(app.root.join("preferences.toml")).unwrap();
+        app.menu_action(MenuAction::AccentColor).unwrap();
+        app.paste("#nope");
+        let error = app
+            .key(KeyEvent::new(KeyCode::Enter, KeyModifiers::NONE))
+            .unwrap_err();
+        assert!(error.to_string().contains("six hexadecimal digits"));
+        assert!(
+            matches!(&app.dialog, Some(Dialog::Input { editor, action: InputAction::AccentColor, .. }) if editor.text == "#nope")
+        );
+        assert_eq!(
+            std::fs::read(app.root.join("preferences.toml")).unwrap(),
+            stored
+        );
+        app.submit_input(InputAction::AccentColor, "#7aa2f7".into())
+            .unwrap();
+        assert_eq!(
+            app.preferences.appearance.accent.as_deref(),
+            Some("#7AA2F7")
+        );
+        let before = app.preferences.appearance.clone();
+        std::fs::rename(
+            app.root.join("preferences.toml"),
+            app.root.join("preserved.toml"),
+        )
+        .unwrap();
+        std::fs::create_dir(app.root.join("preferences.toml")).unwrap();
+        assert!(
+            app.menu_action(MenuAction::Theme(crate::config::ThemePreset::Daylight))
+                .is_err()
+        );
+        assert_eq!(app.preferences.appearance, before);
+        assert!(matches!(&app.dialog, Some(Dialog::Menu { title, .. }) if title == "Color theme"));
+    }
+
+    #[tokio::test]
+    async fn global_palette_opens_setup_and_recovery_without_dead_form_actions() {
+        let (_directory, mut app) = setup();
+        palette(&mut app, "Add connection");
+        assert!(
+            matches!(&app.dialog, Some(Dialog::Menu { title, .. }) if title == "Where will your model run?")
+        );
+        palette(&mut app, "Open model repository");
+        assert_eq!(app.page, Page::Models);
+        assert_eq!(app.model_tab, 2);
+        assert!(matches!(
+            &app.dialog,
+            Some(Dialog::Input {
+                action: InputAction::DirectRepo,
+                ..
+            })
+        ));
+        palette(&mut app, "Storage and recovery");
+        assert!(
+            matches!(&app.dialog, Some(Dialog::Menu { title, .. }) if title == "Storage and recovery")
+        );
+        palette(&mut app, "Search conversations");
+        assert_eq!(app.page, Page::Sessions);
+        assert!(app.search_focus);
+        assert!(super::super::actions::search("manual-model").is_empty());
+        assert!(super::super::actions::search("test-form").is_empty());
+        app.dialog = None;
+        app.search_focus = false;
+        app.key(KeyEvent::new(KeyCode::Char('o'), KeyModifiers::CONTROL))
+            .unwrap();
+        assert!(app.dialog.is_none());
+        app.menu_action(MenuAction::Preset(1)).unwrap();
+        app.key(KeyEvent::new(KeyCode::Char('o'), KeyModifiers::CONTROL))
+            .unwrap();
+        assert!(matches!(
+            &app.dialog,
+            Some(Dialog::Input {
+                action: InputAction::ManualModel(_),
+                ..
+            })
+        ));
+    }
+
+    #[test]
+    fn mouse_wheel_scrolls_settings_without_changing_or_wrapping_them() {
+        let (_directory, mut app) = setup();
+        app.page = Page::Settings;
+        let original_context = app.preferences.context_tokens;
+        for _ in 0..10 {
+            app.mouse(MouseEventKind::ScrollDown, 40, 15).unwrap();
+        }
+        assert_eq!(app.settings_selected, 17);
+        assert_eq!(app.preferences.context_tokens, original_context);
+        assert!(app.dialog.is_none());
+        assert!(!app.root.join("preferences.toml").exists());
+        for _ in 0..10 {
+            app.mouse(MouseEventKind::ScrollUp, 40, 15).unwrap();
+        }
+        assert_eq!(app.settings_selected, 0);
+        app.key(KeyEvent::new(KeyCode::BackTab, KeyModifiers::SHIFT))
+            .unwrap();
+        assert!(app.nav_focus);
+        app.key(KeyEvent::new(KeyCode::BackTab, KeyModifiers::SHIFT))
+            .unwrap();
+        assert!(!app.nav_focus);
+    }
+
+    #[test]
+    fn mouse_wheel_scrolls_long_browser_and_menu_but_leaves_form_text_alone() {
+        let (directory, mut app) = setup();
+        app.dialog = Some(Dialog::Browser {
+            kind: BrowserKind::Project,
+            path: directory.path().into(),
+            entries: (0..50)
+                .map(|n| directory.path().join(format!("folder-{n:02}")))
+                .collect(),
+            selected: 0,
+        });
+        for _ in 0..20 {
+            app.mouse(MouseEventKind::ScrollDown, 40, 15).unwrap();
+        }
+        assert!(matches!(
+            &app.dialog,
+            Some(Dialog::Browser { selected: 49, .. })
+        ));
+        app.connection_wizard();
+        app.mouse(MouseEventKind::ScrollDown, 40, 15).unwrap();
+        assert!(matches!(
+            &app.dialog,
+            Some(Dialog::Menu { selected: 3, .. })
+        ));
+        app.mouse(MouseEventKind::ScrollDown, 40, 15).unwrap();
+        assert!(matches!(
+            &app.dialog,
+            Some(Dialog::Menu { selected: 4, .. })
+        ));
+        app.mouse(MouseEventKind::ScrollDown, 40, 15).unwrap();
+        assert!(matches!(
+            &app.dialog,
+            Some(Dialog::Menu { selected: 4, .. })
+        ));
+        app.menu_action(MenuAction::Preset(1)).unwrap();
+        app.mouse(MouseEventKind::ScrollDown, 40, 15).unwrap();
+        assert!(matches!(&app.dialog, Some(Dialog::Connection(form)) if form.focus == 1));
     }
 }
