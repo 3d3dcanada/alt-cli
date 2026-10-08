@@ -1,0 +1,86 @@
+{
+  "alt_version": "0.6.0",
+  "artifact": {
+    "bytes": 4,
+    "id": "b83633aa785344791618f2fddf131b010ea04912a60430760b070bad293f65bd",
+    "license": "Imported file — check its publisher's license",
+    "name": "fixture-00001-of-00002.gguf",
+    "path": "/tmp/alt-runtime-audit-ey6hxy36/fixture-00001-of-00002.gguf",
+    "pieces": [],
+    "sha256": "b83633aa785344791618f2fddf131b010ea04912a60430760b070bad293f65bd",
+    "source": null,
+    "uncensored_claim": true
+  },
+  "context": 8192,
+  "error": "Local runtime stopped (exit status: 127). If GPU initialization failed, choose a compatible runtime in Settings or select CPU (0 GPU layers); for allocation failures reduce context, batch or layers. The selected model was not changed. Details: AUDIT_UNREQUESTED_FALLBACK_USED\n",
+  "gpu_measurement": "Unavailable unless a local owned runtime and nvidia-smi report process allocation",
+  "hardware": {
+    "architecture": "x86_64",
+    "available_ram": 7222120448,
+    "cpu_flags": [
+      "sse2",
+      "sse4_2",
+      "avx",
+      "avx2",
+      "avx512f"
+    ],
+    "cpu_threads": 4,
+    "driver": "Driver/free VRAM/compute capability unavailable",
+    "gpu": "No NVIDIA GPU detected; CPU mode is available",
+    "isolation": {
+      "available": false,
+      "detail": "Isolation is unavailable: bwrap: setting up uid map: Read-only file system\n"
+    },
+    "libc": "2.41",
+    "notes": [
+      "RAM and discrete VRAM are separate budgets. Estimates do not guarantee fit or tool quality.",
+      "GTX 1070 is Pascal sm_61. Use a compatible CUDA 12 build or CPU runtime; CUDA 13-only binaries do not cover it.",
+      "Spark-X2.5 and MiMo are discoverable through arbitrary Hub search/compatible endpoints; publisher uncensored labels require separate verification.",
+      "The managed download defaults to CPU. Select a compatible GPU runtime and configure layers in Settings, or use an external Ollama/llama.cpp/LM Studio/ORA endpoint."
+    ],
+    "os": "linux",
+    "profiles": [
+      {
+        "context": 4096,
+        "estimated_weight_budget": 2147483648,
+        "explanation": "One loaded model, small context, leave RAM for the desktop and tools",
+        "model_hint": "1.7–3B Q4 GGUF; verify an uncensored derivative",
+        "name": "Low memory"
+      },
+      {
+        "context": 8192,
+        "estimated_weight_budget": 2537318400,
+        "explanation": "A starting estimate. Weight size excludes KV cache, runtime and process memory",
+        "model_hint": "3–4B Q4 GGUF; first evaluation target for 16 GB RAM",
+        "name": "Balanced"
+      },
+      {
+        "context": 16384,
+        "estimated_weight_budget": 1463576576,
+        "explanation": "Run the capability check, then measure memory and latency. Reduce context on allocation failure",
+        "model_hint": "Use a model whose native context supports this size",
+        "name": "More context"
+      }
+    ],
+    "ram": 34359738368
+  },
+  "id": "4e3a536e-8fc9-4ced-bdfa-37569f25a50d",
+  "model": "fixture-00001-of-00002.gguf",
+  "observed_native_context": null,
+  "provider": "openai",
+  "ram_measurement": "Sampled owned runtime from process spawn through load and generation. Sampling may miss short peaks; external servers are not measured. Null means unavailable, not zero memory use.",
+  "recovery": "The owned runtime was stopped. Reduce context/batch/layers or choose another explicitly selected model and rerun; no automatic substitution occurred.",
+  "requested_context": 8192,
+  "sampled_peak_runtime_rss_bytes": null,
+  "sampled_peak_runtime_vram_bytes": null,
+  "settings": {
+    "batch": 128,
+    "cache_k": "f16",
+    "cache_v": "f16",
+    "flash_attention": false,
+    "gpu_layers": 0,
+    "thinking": null,
+    "threads": 0
+  },
+  "task_completion": "Not measured by generation throughput; use the live project acceptance suite"
+}

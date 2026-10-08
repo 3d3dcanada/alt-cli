@@ -22,6 +22,11 @@ CPU MiMo 9B Q4 repair through the TUI, after the unchanged independent checks pa
 Model reliability and hardware support are measured separately from
 application tests. [Read the results and remaining gaps](docs/IMPLEMENTATION.md).
 
+The [2026-10-08 audit](docs/FINAL_AUDIT_2026-10-08.md) found open correctness,
+draft/settings preservation and runtime defects in beta 3. Its
+[14 improvement work orders](docs/FINAL_PASS_WORK_ORDERS.md) are planned fixes,
+not changes already included in this release.
+
 **Included in beta 3:** explicit inference allocation, host task workflows, bounded
 skills, source handles, serial checked candidates, reviewed instruction trials
 and offline training tools. Compact text/line-array tool choices reduce repeated

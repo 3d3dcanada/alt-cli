@@ -16,6 +16,9 @@
 
 ## Developing and evaluating
 
+- [Final beta 3 audit](FINAL_AUDIT_2026-10-08.md) and
+  [next improvement work orders](FINAL_PASS_WORK_ORDERS.md): open findings,
+  bounded reproductions and measurable acceptance criteria.
 - [Small-model implementation plan](SMALL_MODEL_IMPLEMENTATION_PLAN.md): combined
   harness/reasoning work orders and 7B/9B Q4 qualification.
 - [Small-model delivery](SMALL_MODEL_DELIVERY.md): implemented work orders,
