@@ -2,6 +2,8 @@
 
 ## Using Alt
 
+- [Launch and UX walkthrough](UX_FINALIZATION.md): actual startup/Home captures,
+  interaction fixes, terminal coverage and remaining human acceptance.
 - [Installation and updates](INSTALLATION.md): prerequisites, source/CI packages,
   first launch, state, rollback and uninstalling.
 - [Workspace guide](WORKSPACE_GUIDE.md): pages, editing, terminal jobs, models and

@@ -1,5 +1,9 @@
 # Alt workspace guide
 
+Type **`alt`** after installation to open the workspace. Start without a model to
+explore Home or a practice project. **Ctrl+P** finds actions and **Ctrl+Q** exits.
+[See the current interface and startup screen](UX_FINALIZATION.md).
+
 The current source adds [small-model controls and workflows](SMALL_MODEL_USAGE.md).
 That guide covers the expanded settings menu, skills, native probe and candidates.
 
@@ -17,11 +21,12 @@ checks and recovery tools remain available while a model server is offline.
 
 ## Your first project
 
-1. Choose **Home → Choose project**. Start with a small folder you recognize.
-2. Choose **Connect a model**. Ollama uses a server URL such as
+1. Choose **Home → Connect your first model**. Ollama uses a server URL such as
    `http://127.0.0.1:11434`; compatible servers usually end in `/v1`.
    Test the connection, select a listed model, and save. Existing GGUF files can
    be imported from Models; importing preserves the original file.
+2. Choose **Home → Choose a project folder**. Start with a small folder you
+   recognize, or use **Try a practice project** to explore before connecting.
 3. Describe the outcome you want, or pick a Home task starter. Say what successful
    behavior should look like, including what should keep working.
 4. Choose your access mode in Settings. **Full access** enables arbitrary commands,
@@ -32,9 +37,10 @@ checks and recovery tools remain available while a model server is offline.
 5. Review proposed actions. The approval dialog initially selects Reject; choose
    Allow for one action, or explicitly allow the connected session. Commands and
    complete tool arguments are shown. Ctrl+Y approves; ordinary `y` does not.
-6. Open **Task**. Configure a check for the actual requested behavior, mark it
+6. For code changes, open **Task**. Configure a check for the actual requested behavior, mark it
    required, and use **Run required checks**. Multiple requirements are independent:
-   one passing check does not certify the whole project.
+   one passing check does not certify the whole project. Checks are optional for
+   beginning a conversation or asking questions.
 7. Review changes and evidence. A green result means the configured checks passed
    on current files, commands and recorded environment. It does not prove untested
    behavior. Model prose never changes computed verification status.

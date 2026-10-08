@@ -42,6 +42,7 @@ pub enum Provider {
 
 impl Profile {
     pub fn validate(&self) -> Result<()> {
+        self.validate_api_key_env()?;
         let url = reqwest::Url::parse(&self.endpoint).context("Invalid endpoint URL")?;
         if !matches!(url.scheme(), "http" | "https")
             || url.host_str().is_none()
@@ -79,12 +80,34 @@ impl Profile {
     }
 
     pub fn key(&self) -> Result<Option<String>> {
+        self.validate_api_key_env()?;
         self.api_key_env
             .as_ref()
             .map(|name| {
-                std::env::var(name).with_context(|| format!("API key variable {name} is not set"))
+                // Do not attach VarError: its non-Unicode variant contains the
+                // environment value, and the configured name may be a pasted key.
+                std::env::var(name).map_err(|_| {
+                    anyhow::anyhow!(
+                        "API key environment variable is missing or is not valid Unicode. Set it in your terminal before starting Alt."
+                    )
+                })
             })
             .transpose()
+    }
+
+    fn validate_api_key_env(&self) -> Result<()> {
+        if let Some(name) = &self.api_key_env {
+            let mut bytes = name.bytes();
+            let valid_start = bytes
+                .next()
+                .is_some_and(|byte| byte.is_ascii_alphabetic() || byte == b'_');
+            if !valid_start || !bytes.all(|byte| byte.is_ascii_alphanumeric() || byte == b'_') {
+                bail!(
+                    "Use an environment variable name such as ALT_API_KEY: start with a letter or underscore, then use letters, digits or underscores. Do not paste the key itself."
+                );
+            }
+        }
+        Ok(())
     }
 }
 
@@ -293,4 +316,130 @@ pub fn private_dir(path: &Path) -> Result<()> {
         std::fs::set_permissions(path, std::fs::Permissions::from_mode(0o700))?;
     }
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{Config, Profile, Provider};
+    use std::collections::BTreeMap;
+
+    fn profile(name: Option<&str>) -> Profile {
+        Profile {
+            provider: Provider::Openai,
+            endpoint: "http://127.0.0.1:1234/v1".into(),
+            model: "test-model".into(),
+            context_tokens: 8192,
+            max_turns: 12,
+            uncensored: false,
+            api_key_env: name.map(str::to_owned),
+            local_model: None,
+            inference: None,
+        }
+    }
+
+    #[test]
+    fn portable_api_key_variable_names_round_trip_unchanged() {
+        let root = tempfile::tempdir().unwrap();
+        let names = ["ALT_API_KEY", "api_key", "_KEY", "_", "KEY2"];
+        let mut config = Config::default();
+        for name in names {
+            config.upsert(name.into(), profile(Some(name))).unwrap();
+        }
+        config.save(root.path()).unwrap();
+        let restored = Config::read(root.path()).unwrap();
+        for name in names {
+            assert_eq!(restored.profiles[name].api_key_env.as_deref(), Some(name));
+        }
+        assert_eq!(profile(None).key().unwrap(), None);
+        assert_eq!(
+            profile(Some("PATH")).key().unwrap(),
+            std::env::var("PATH").ok()
+        );
+    }
+
+    #[test]
+    fn pasted_key_syntax_is_rejected_before_persistence_without_echo() {
+        let root = tempfile::tempdir().unwrap();
+        Config::create(root.path(), profile(None)).unwrap();
+        let original = std::fs::read(root.path().join("config.toml")).unwrap();
+        for name in [
+            "sk-test-private-token",
+            "Bearer private-token",
+            "NAME=private-token",
+            " leading",
+            "9NAME",
+            "KEY.WITH.DOT",
+            "",
+            "密钥",
+            "KEY\0private-token",
+        ] {
+            let candidate = profile(Some(name));
+            let error = candidate.validate().unwrap_err().to_string();
+            assert!(error.starts_with("Use an environment variable name"));
+            assert!(!error.contains("private-token"));
+            assert_eq!(candidate.key().unwrap_err().to_string(), error);
+            let mut config = Config::read(root.path()).unwrap();
+            assert!(
+                config
+                    .upsert("candidate".into(), candidate.clone())
+                    .is_err()
+            );
+            config.profiles.insert("candidate".into(), candidate);
+            assert!(config.save(root.path()).is_err());
+            assert_eq!(
+                std::fs::read(root.path().join("config.toml")).unwrap(),
+                original
+            );
+        }
+    }
+
+    #[test]
+    fn manually_saved_invalid_variable_and_missing_variable_errors_are_redacted() {
+        let root = tempfile::tempdir().unwrap();
+        let config = Config {
+            default_profile: "local".into(),
+            profiles: BTreeMap::from([("local".into(), profile(Some("sk-private-token")))]),
+        };
+        std::fs::write(
+            root.path().join("config.toml"),
+            toml::to_string(&config).unwrap(),
+        )
+        .unwrap();
+        let error = format!("{:#}", Config::read(root.path()).unwrap_err());
+        assert!(!error.contains("sk-private-token"));
+        let missing = format!("ALT_CONFIG_MISSING_KEY_{}", std::process::id());
+        let error = format!("{:#}", profile(Some(&missing)).key().unwrap_err());
+        assert!(error.contains("environment variable is missing"));
+        assert!(!error.contains(&missing));
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn non_unicode_api_key_value_is_not_exposed_by_error_chain() {
+        use std::{ffi::OsString, os::unix::ffi::OsStringExt, process::Command};
+        const NAME: &str = "ALT_CONFIG_NON_UNICODE_KEY_TEST";
+        if std::env::var_os(NAME).is_some() {
+            let error = format!("{:#?}", profile(Some(NAME)).key().unwrap_err());
+            assert!(error.contains("environment variable is missing or is not valid Unicode"));
+            assert!(!error.contains("private-token"));
+            assert!(!error.contains(NAME));
+        } else {
+            // Child-only environment avoids mutating process globals while Rust
+            // runs unrelated tests on other threads.
+            let output = Command::new(std::env::current_exe().unwrap())
+                .args([
+                    "--exact",
+                    "config::tests::non_unicode_api_key_value_is_not_exposed_by_error_chain",
+                    "--nocapture",
+                ])
+                .env(NAME, OsString::from_vec(b"private-token\xff".to_vec()))
+                .output()
+                .unwrap();
+            assert!(
+                output.status.success(),
+                "{}",
+                String::from_utf8_lossy(&output.stderr)
+            );
+        }
+    }
 }

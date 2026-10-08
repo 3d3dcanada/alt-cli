@@ -15,46 +15,22 @@ or server connections. It does not modify model weights or silently replace your
 selected model. Full access supports arbitrary commands, networking, package
 installation and external tools with your normal account permissions.
 
-![Alt's actual 80×24 TUI after a MiMo 9B Q4 model repair and independent checks](docs/screenshots/v6/native-model-repair-80x24.png)
+**Install it, type `alt`, and press Enter.** The full terminal workspace opens;
+Home works before you connect a model. Use the mouse or keyboard, press **Ctrl+P**
+to find an action, and **Ctrl+Q** to exit.
 
-**Published: 0.6.0 beta 3. This branch: final-pass candidate. Linux x86_64 · Apache-2.0.** The screenshot shows an actual
-CPU MiMo 9B Q4 repair through the TUI, after the unchanged independent checks passed.
-Model reliability and hardware support are measured separately from
-application tests. [Read the results and remaining gaps](docs/IMPLEMENTATION.md).
+![Alt Home in an actual 80×24 terminal](docs/screenshots/ux-finalization/home-80x24.png)
 
-The [2026-10-08 audit](docs/FINAL_AUDIT_2026-10-08.md) identified correctness,
-draft/settings preservation and runtime defects in beta 3. This source branch
-implements the [14 approved work orders](docs/FINAL_PASS_DELIVERY.md), including
-durable drafts, recoverable external edits, stronger verification, private owned
-runtimes and smaller packages. The published beta 3 remains the earlier build.
-[Qualification](docs/FINAL_PASS_QUALIFICATION.md) records measured results and
-remaining model, hardware and novice acceptance gates.
+Actual terminal capture from the current source, with a test engine selected and
+no model loaded. [See the startup screen, setup and test coverage](docs/UX_FINALIZATION.md).
+The app is **Alt**; **Alt CLI** is the repository/package name.
 
-**Included in beta 3:** explicit inference allocation, host task workflows, bounded
-skills, source handles, serial checked candidates, reviewed instruction trials
-and offline training tools. Compact text/line-array tool choices reduce repeated
-context and provide updated source handles after edits. The current beta includes these additions. See [the usage guide](docs/SMALL_MODEL_USAGE.md)
-and [work-order delivery and evidence](docs/SMALL_MODEL_DELIVERY.md). No weights
-have been trained or new quality presets promoted.
-
-The [repair follow-up](docs/research/2026-10-07-repair-results/README.md) now has
-independently verified MiMo 9B Q4 repairs. A matched CPU pilot passed **3/4** with
-each interface; compact used about 38% less initial input and its passing repairs
-were faster in this small sample. The subsequent portable build passed **6/9**
-MiMo attempts: both Python feature repeats, JavaScript, two of four held-out tasks
-and the two-file repair through the actual TUI. Rust and two held-out tasks failed.
-The longer CPU allowance differs from the earlier 22 failures.
-The current continuation fix also passed a separate real two-turn MiMo TUI trial;
-the earlier failed continuation attempt is retained in that evidence.
-
-The [PC completion work orders](docs/PC_READY_WORK_ORDERS.md) add observed
-request stages, remaining connection allowances, explicit finite additions and
-reviewed allocation recovery without changing the model. Failed checks return
-actual failed cases and fresh source handles; repeated failures/source cycles
-produce advisory recovery feedback. The PC recorder now verifies a real repair,
-continuation, cancellation/reconnect and undo in disposable state. See the
-[current compatibility evidence](docs/COMPATIBILITY.md) for separate application
-and model-quality outcomes.
+**Linux x86_64 · Apache-2.0 · beta.** This branch contains the final reliability and
+UX changes. The published **0.6.0 beta 3 is an earlier build**. Use this branch or
+its successful CI artifact to try the changes shown here. Application tests,
+model quality and your computer's performance are separate checks:
+[current delivery](docs/FINAL_PASS_DELIVERY.md) ·
+[qualification and remaining gaps](docs/FINAL_PASS_QUALIFICATION.md).
 
 ## Try it on your computer
 
@@ -86,7 +62,8 @@ parallelism.
 3. **Install the agent engine** when Home offers it. A managed GGUF also needs
    the optional local runtime. Existing executables can be selected in Settings.
 4. **Choose access in Settings**, then describe the change or investigation.
-5. **Prepare project checks** on Home, then open Task to inspect edits and actual evidence.
+5. **For code changes, prepare project checks** on Home, then open Task to inspect edits and actual evidence.
+   Checks are optional for starting a conversation.
    A model saying “done” does not mark the behavior verified.
 
 ## What you can do
@@ -141,8 +118,9 @@ and [live evaluations](docs/LIVE_EVALUATION.md).
 
 | Action | Control |
 |---|---|
-| Navigate | Alt+1…9; Alt+0 opens Jobs; Ctrl+P lists every page |
-| Help / quick actions | F1 / Ctrl+P |
+| Navigate | Click a page, or Tab → arrows → Enter; Alt+1…9 and Alt+0 are shortcuts |
+| Help / quick actions | F1 / Ctrl+P (includes every page and setup action) |
+| Copy / paste | Your terminal shortcuts, usually Ctrl+Shift+C / Ctrl+Shift+V; Shift-drag selects with mouse capture |
 | Send / newline | Enter / Alt+Enter or Ctrl+J |
 | New conversation / project brief | Ctrl+N / Ctrl+B |
 | Stop work / quit | Esc / Ctrl+Q |
@@ -167,6 +145,7 @@ Keys are referenced by environment-variable name, not saved in model profiles.
 
 ## Documentation
 
+- [Latest UX walkthrough and screenshots](docs/UX_FINALIZATION.md) · [Final-pass delivery](docs/FINAL_PASS_DELIVERY.md)
 - [Small-model implementation plan](docs/SMALL_MODEL_IMPLEMENTATION_PLAN.md) · [Training handoff](training/README.md)
 - [Small-model usage](docs/SMALL_MODEL_USAGE.md) · [Delivered work orders and remaining gates](docs/SMALL_MODEL_DELIVERY.md)
 - [Installation and updates](docs/INSTALLATION.md) · [Troubleshooting](docs/TROUBLESHOOTING.md)

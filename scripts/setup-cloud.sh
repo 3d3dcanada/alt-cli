@@ -57,6 +57,7 @@ cargo test --locked
 cargo fmt --all --check
 cargo clippy --locked --all-targets -- -D warnings
 python3 scripts/smoke_tui.py
+python3 scripts/smoke_product_tui.py
 python3 scripts/smoke_draft_tui.py
 python3 scripts/smoke_recovery_tui.py
 python3 scripts/smoke_task_tui.py

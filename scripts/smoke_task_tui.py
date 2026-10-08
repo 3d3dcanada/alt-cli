@@ -18,7 +18,10 @@ with tempfile.TemporaryDirectory(prefix='alt-task-tui-') as t:
   end=time.monotonic()+timeout
   while time.monotonic()<end:
    pump()
-   if text in '\n'.join(screen.display):return
+   # Sidebar width can wrap prose within its content panel. Preserve every
+   # displayed word without treating the panel's border as part of the text.
+   prose=' '.join(' '.join(line[line.find('│')+1:line.rfind('│')].replace('│',' ') for line in screen.display if line.count('│')>=2).split())
+   if text in '\n'.join(screen.display) or text in prose:return
   raise AssertionError('Missing '+repr(text)+'\n'+'\n'.join(screen.display))
  def send(data):
   for _ in range(2):pump(.02)
