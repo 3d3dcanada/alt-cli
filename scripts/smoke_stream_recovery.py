@@ -16,7 +16,7 @@ p.add_argument('--rounds',type=int,default=12)
 p.add_argument('--output',type=Path,required=True)
 a=p.parse_args(); binary=a.binary.resolve(); assert 1<=a.rounds<=200
 assert ctypes.CDLL(None,use_errno=True).prctl(36,1,0,0,0)==0
-mode='normal'; started=threading.Event(); rows=[]
+mode='normal'; started=threading.Event(); disconnect_release=threading.Event(); rows=[]
 
 class Provider(BaseHTTPRequestHandler):
     def log_message(self,*_): pass
@@ -34,7 +34,11 @@ class Provider(BaseHTTPRequestHandler):
             for n in range(400):
                 chunk={'id':'stream-fixture','object':'chat.completion.chunk','created':1,'model':'stream-fixture','choices':[{'index':0,'delta':{'content':f'STREAM_RECEIPT_{n} '},'finish_reason':None}]}
                 self.wfile.write(('data: '+json.dumps(chunk)+'\n\n').encode()); self.wfile.flush(); started.set()
-                if selected=='disconnect' and n==2: return
+                if selected=='disconnect' and n==2:
+                    # Observe actual forwarding and process ownership before
+                    # truncating; fast cleanup must not race the fixture itself.
+                    disconnect_release.wait(timeout=5)
+                    return
                 time.sleep(.005)
             chunk['choices']=[{'index':0,'delta':{},'finish_reason':'stop'}]
             self.wfile.write(('data: '+json.dumps(chunk)+'\n\ndata: [DONE]\n\n').encode()); self.wfile.flush()
@@ -68,7 +72,7 @@ try:
         session=None
         for round in range(a.rounds):
             for selected in ['normal','disconnect','cancel','engine-crash','reconnect']:
-                mode=selected; started.clear(); begin=time.monotonic(); row={'round':round+1,'mode':selected,'passed':False}; proc=None
+                mode=selected; started.clear(); disconnect_release.clear(); begin=time.monotonic(); row={'round':round+1,'mode':selected,'passed':False}; proc=None
                 try:
                     command=base+['run',f'Stream recovery round {round+1} {selected}','--json','--timeout','30']
                     if session: command+=['--resume',session]
@@ -83,6 +87,7 @@ try:
                         while 'STREAM_RECEIPT_0' not in out.read_text() and proc.poll() is None and time.monotonic()<deadline: time.sleep(.02)
                         assert 'STREAM_RECEIPT_0' in out.read_text(), 'First streamed content was lost'
                         owned=descendants(proc.pid); assert owned, 'No owned engine to test'
+                        disconnect_release.set()
                         if selected=='cancel': proc.send_signal(signal.SIGINT)
                         elif selected=='engine-crash': os.kill(next(identity[0] for identity in owned if Path(f'/proc/{identity[0]}/comm').read_text().strip()=='goose'),signal.SIGKILL)
                         proc.wait(timeout=40)
@@ -103,6 +108,7 @@ try:
                     row.update(passed=True,exit=proc.returncode,events=len(events),retained_state_bytes=sum(f.stat().st_size for f in state.rglob('*') if f.is_file()),owned_processes_reaped=len(owned))
                 except Exception as error: row['error']=str(error)
                 finally:
+                    disconnect_release.set()
                     if proc and proc.poll() is None: os.killpg(proc.pid,signal.SIGKILL); proc.wait()
                     row['seconds']=round_seconds=time.monotonic()-begin; rows.append(row)
                     report={'schema':1,'binary_sha256':hashlib.sha256(binary.read_bytes()).hexdigest(),'expected':a.rounds*5,'attempts':rows,'passed':len(rows)==a.rounds*5 and all(r['passed'] for r in rows),'scope':'Real Alt and Goose with a deterministic streaming provider; no model weights, no physical GPU or human usability measurement.'}
