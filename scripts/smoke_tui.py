@@ -164,7 +164,11 @@ with tempfile.TemporaryDirectory(prefix="alt-tui-smoke-") as directory:
         send(b"\x15")
         paste("Project check")
         send(b"\r")
+        wait_for(b"Conversation name saved.")
         send(b"/\x15\r")
+        # Renaming removes this row from the old /tools filter. Wait for the
+        # asynchronously refreshed, unfiltered list before exporting its row.
+        wait_for(b"Project check")
         send(b"e")
         wait_for(b"Conversation exported")
         assert list((state / "exports").glob("*/conversation.md"))

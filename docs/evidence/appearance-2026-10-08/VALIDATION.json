@@ -1,0 +1,35 @@
+{
+  "binary": "/workspace/.alt-style-finalization/alt-frozen",
+  "binary_sha256": "a02c07c28c3442488426dfe5cb26a3cd4f48e8dfc10a50bd999e37c0348c954b",
+  "source_sha256": "73b7aff5c176f9627e61553c42eceb6efe0d3f6d03e07f7990db0af067510611",
+  "rust": {
+    "passed": 191,
+    "failed": 0,
+    "ignored": 1
+  },
+  "formatting": "passed",
+  "clippy": "passed --locked --all-targets -- -D warnings",
+  "model_weights": false,
+  "commands": [
+    "cargo build --locked -j4",
+    "cargo test --locked -j4",
+    "cargo clippy --locked --all-targets -j4 -- -D warnings",
+    "cargo fmt --all --check"
+  ],
+  "terminal_commands_use": "ALT_TEST_BINARY=/workspace/.alt-style-finalization/alt-frozen PYTHONPATH=/workspace/.alt-tools/python",
+  "appearance": {
+    "groups": 21,
+    "passed": true,
+    "page_visits": 198,
+    "screenshots_captured": 67
+  },
+  "product": {
+    "checks": 112,
+    "passed": true
+  },
+  "regressions": {
+    "suites": 8,
+    "passed": true,
+    "initial_failure_retained": true
+  }
+}

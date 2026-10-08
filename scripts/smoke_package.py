@@ -30,9 +30,11 @@ with tempfile.TemporaryDirectory(prefix='alt-installed-') as temp:
     package = next(unpack.iterdir())
     contents = json.loads((package / 'CONTENTS.json').read_text())
     checked_images = []
-    for document in [package / 'README.md', package / 'docs/UX_FINALIZATION.md']:
+    for document in [package / 'README.md', package / 'docs/UX_FINALIZATION.md', package / 'docs/APPEARANCE.md']:
         if not document.is_file():
-            continue  # Historical package versions did not have the UX guide.
+            assert document.name != 'README.md', 'The package README is missing'
+            continue  # Historical packages predate the UX/appearance guides.
+        document_images = []
         for reference in re.findall(r'!\[[^\]]*\]\(([^)]+)\)', document.read_text()):
             url = urlsplit(reference)
             if url.scheme or url.netloc:
@@ -43,8 +45,9 @@ with tempfile.TemporaryDirectory(prefix='alt-installed-') as temp:
             assert relative in contents, 'Offline image is missing from package manifest: ' + relative
             assert hashlib.sha256(image.read_bytes()).hexdigest() == contents[relative], 'Offline image integrity failed: ' + relative
             checked_images.append(relative)
-    if (package / 'docs/UX_FINALIZATION.md').is_file():
-        assert checked_images, 'Current README/UX guide images were not exercised'
+            document_images.append(relative)
+        if document.name in {'UX_FINALIZATION.md', 'APPEARANCE.md'}:
+            assert document_images, 'Guide has no checked local screenshots: ' + document.name
     platform = json.loads((package/'PLATFORM.json').read_text())
     assert hashlib.sha256((package/'alt').read_bytes()).hexdigest() == platform['sha256']
     prefix = root/'installed'

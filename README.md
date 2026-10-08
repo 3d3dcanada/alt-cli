@@ -19,10 +19,13 @@ installation and external tools with your normal account permissions.
 Home works before you connect a model. Use the mouse or keyboard, press **Ctrl+P**
 to find an action, and **Ctrl+Q** to exit.
 
-![Alt Home in an actual 80×24 terminal](docs/screenshots/ux-finalization/home-80x24.png)
+![Alt Home with the Aurora theme in an actual terminal](docs/screenshots/appearance/aurora.png)
 
 Actual terminal capture from the current source, with a test engine selected and
-no model loaded. [See the startup screen, setup and test coverage](docs/UX_FINALIZATION.md).
+no model loaded. **Six color presets, a custom accent, four layouts and optional
+graphics** are available from the theme control at the top right or
+**Settings → Appearance**. [Compare the themes and layouts](docs/APPEARANCE.md).
+See the [startup and setup walkthrough](docs/UX_FINALIZATION.md).
 The app is **Alt**; **Alt CLI** is the repository/package name.
 
 **Linux x86_64 · Apache-2.0 · beta.** This branch contains the final reliability and
@@ -72,6 +75,7 @@ parallelism.
 |---|---|
 | Models | Hugging Face search, verified/resumable downloads, multipart GGUF, imported files and server model selection |
 | Coding workspace | Browse/search/edit files, inspect diffs, checkpoint Alt edits, undo and resume conversations |
+| Appearance | Six full color themes, custom accent, four saved layouts, graphical Home cards and a simpler graphics-off mode |
 | Terminal | Real PTY sessions, interactive input, resize, attach/detach, persistent jobs, stop/restart and health checks |
 | Tools | Native project tools; optional build, Git, HTTP, browser and security workflows; selected external MCP tools |
 | Project memory | Saved goals and decisions, pinned notes, incremental source indexing, retrieved context and a visible Context page |
@@ -120,6 +124,7 @@ and [live evaluations](docs/LIVE_EVALUATION.md).
 |---|---|
 | Navigate | Click a page, or Tab → arrows → Enter; Alt+1…9 and Alt+0 are shortcuts |
 | Help / quick actions | F1 / Ctrl+P (includes every page and setup action) |
+| Colors and layout | Click the theme name at the top right, or Settings → Appearance |
 | Copy / paste | Your terminal shortcuts, usually Ctrl+Shift+C / Ctrl+Shift+V; Shift-drag selects with mouse capture |
 | Send / newline | Enter / Alt+Enter or Ctrl+J |
 | New conversation / project brief | Ctrl+N / Ctrl+B |
@@ -145,7 +150,8 @@ Keys are referenced by environment-variable name, not saved in model profiles.
 
 ## Documentation
 
-- [Latest UX walkthrough and screenshots](docs/UX_FINALIZATION.md) · [Final-pass delivery](docs/FINAL_PASS_DELIVERY.md)
+- [Themes, layouts and screenshots](docs/APPEARANCE.md) · [Launch and UX walkthrough](docs/UX_FINALIZATION.md)
+- [Final-pass delivery](docs/FINAL_PASS_DELIVERY.md)
 - [Small-model implementation plan](docs/SMALL_MODEL_IMPLEMENTATION_PLAN.md) · [Training handoff](training/README.md)
 - [Small-model usage](docs/SMALL_MODEL_USAGE.md) · [Delivered work orders and remaining gates](docs/SMALL_MODEL_DELIVERY.md)
 - [Installation and updates](docs/INSTALLATION.md) · [Troubleshooting](docs/TROUBLESHOOTING.md)

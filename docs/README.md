@@ -2,6 +2,8 @@
 
 ## Using Alt
 
+- [Themes, layouts and screenshots](APPEARANCE.md): six color presets, your accent,
+  four layouts, graphical Home cards and saved appearance choices.
 - [Launch and UX walkthrough](UX_FINALIZATION.md): actual startup/Home captures,
   interaction fixes, terminal coverage and remaining human acceptance.
 - [Installation and updates](INSTALLATION.md): prerequisites, source/CI packages,

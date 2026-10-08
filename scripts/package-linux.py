@@ -54,10 +54,20 @@ with tempfile.TemporaryDirectory(prefix="alt-package-") as temp:
     (package / "docs").mkdir()
     for document in sorted((repo / "docs").glob("*.md")):
         shutil.copy2(document, package / "docs" / document.name)
-    # The current product walkthrough is core offline help. Keep this bounded
-    # image/text capture set beside its Markdown; historical evidence stays split.
-    shutil.copytree(repo / "docs/screenshots/ux-finalization",
-                    package / "docs/screenshots/ux-finalization")
+    # Current walkthroughs are core offline help. Keep only these explicitly
+    # selected, bounded capture sets here; complete historical evidence stays in
+    # the separate research archive above, without silently dropping any files.
+    for walkthrough in ["ux-finalization", "appearance"]:
+        source = repo / "docs/screenshots" / walkthrough
+        if not source.is_dir() or source.is_symlink():
+            raise ValueError("Missing ordinary screenshot directory: " + str(source))
+        captures = sorted(source.rglob("*"))
+        if any(path.is_symlink() or not path.is_file() or path.suffix not in {".png", ".txt", ".json"}
+               for path in captures):
+            raise ValueError("Offline screenshots must be ordinary PNG, text or JSON files: " + walkthrough)
+        if not captures or len(captures) > 64 or sum(path.stat().st_size for path in captures) > 8 * 1024 * 1024:
+            raise ValueError("Offline screenshot set exceeds 64 files / 8 MiB or is empty: " + walkthrough)
+        shutil.copytree(source, package / "docs/screenshots" / walkthrough)
     (package / "RESEARCH.json").write_text(json.dumps(research, sort_keys=True, indent=2) + "\n")
     (package / "docs/RESEARCH_ARCHIVE.md").write_text(
         "# Research and historical evidence\n\n"

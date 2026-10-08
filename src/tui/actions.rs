@@ -28,6 +28,11 @@ macro_rules! action {
 }
 pub const ALL: &[Action] = &[
     action!(
+        "appearance",
+        "Appearance",
+        "Change color themes, custom accent, layout and decorative graphics"
+    ),
+    action!(
         "connect",
         "Add connection",
         "Connect Ollama, LM Studio, another API or a local model file"

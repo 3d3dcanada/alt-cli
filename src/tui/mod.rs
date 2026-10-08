@@ -5,6 +5,7 @@ mod experience;
 mod input;
 mod keys;
 mod task;
+mod theme;
 mod view;
 mod workbench;
 
