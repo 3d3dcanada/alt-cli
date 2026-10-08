@@ -37,5 +37,5 @@ Findings that drive `docs/WORK_ORDERS_0.7.md`:
 5. Hosted runs needed `--api-key-env` in the harness (added on this branch). The
    harness still forces `--uncensored`, which mislabels standard and hosted runs.
 
-Raw run directories stay on the owner PC under `~/alt-cli-trials/` (not committed,
+Raw run directories are on the owner SSD under `3D3D-Launch-2026-10-08/Software/Alt-CLI/alt-cli-trials/` (not committed,
 they hold full request/response logs).
