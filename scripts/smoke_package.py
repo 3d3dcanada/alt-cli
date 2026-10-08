@@ -5,10 +5,12 @@ import hashlib
 import json
 import os
 from pathlib import Path
+import re
 import shutil
 import subprocess
 import tarfile
 import tempfile
+from urllib.parse import unquote, urlsplit
 
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('archive', type=Path)
@@ -26,6 +28,23 @@ with tempfile.TemporaryDirectory(prefix='alt-installed-') as temp:
     with tarfile.open(a.archive) as archive:
         archive.extractall(unpack, filter='data')
     package = next(unpack.iterdir())
+    contents = json.loads((package / 'CONTENTS.json').read_text())
+    checked_images = []
+    for document in [package / 'README.md', package / 'docs/UX_FINALIZATION.md']:
+        if not document.is_file():
+            continue  # Historical package versions did not have the UX guide.
+        for reference in re.findall(r'!\[[^\]]*\]\(([^)]+)\)', document.read_text()):
+            url = urlsplit(reference)
+            if url.scheme or url.netloc:
+                continue  # GitHub status badges are deliberately online resources.
+            image = (document.parent / unquote(url.path)).resolve()
+            relative = image.relative_to(package.resolve()).as_posix()
+            assert image.is_file(), 'Offline documentation image is missing: ' + relative
+            assert relative in contents, 'Offline image is missing from package manifest: ' + relative
+            assert hashlib.sha256(image.read_bytes()).hexdigest() == contents[relative], 'Offline image integrity failed: ' + relative
+            checked_images.append(relative)
+    if (package / 'docs/UX_FINALIZATION.md').is_file():
+        assert checked_images, 'Current README/UX guide images were not exercised'
     platform = json.loads((package/'PLATFORM.json').read_text())
     assert hashlib.sha256((package/'alt').read_bytes()).hexdigest() == platform['sha256']
     prefix = root/'installed'
@@ -143,4 +162,4 @@ with tempfile.TemporaryDirectory(prefix='alt-installed-') as temp:
         invoke('--access', 'trusted', 'task', 'verify', '--run')
         assert json.loads(invoke('task', 'status').stdout)['verification']['complete']
     invoke('hardware')
-    print('PASS: archive, every-file integrity including PYTHONOPTIMIZE=0/1/2, isolated repeated install, failed update preserves binary, state backup/restore, docs/licenses'+('; actual previous-version upgrade/rollback/re-upgrade' if prior_hash else '')+('; signature/tamper rejection' if a.verify_key else '')+('; installed TUI' if a.tui else ''))
+    print('PASS: archive, every-file integrity including PYTHONOPTIMIZE=0/1/2, isolated repeated install, failed update preserves binary, state backup/restore, docs/licenses, '+str(len(checked_images))+' offline documentation image references with manifest hashes'+('; actual previous-version upgrade/rollback/re-upgrade' if prior_hash else '')+('; signature/tamper rejection' if a.verify_key else '')+('; installed TUI' if a.tui else ''))

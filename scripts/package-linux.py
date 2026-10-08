@@ -54,6 +54,10 @@ with tempfile.TemporaryDirectory(prefix="alt-package-") as temp:
     (package / "docs").mkdir()
     for document in sorted((repo / "docs").glob("*.md")):
         shutil.copy2(document, package / "docs" / document.name)
+    # The current product walkthrough is core offline help. Keep this bounded
+    # image/text capture set beside its Markdown; historical evidence stays split.
+    shutil.copytree(repo / "docs/screenshots/ux-finalization",
+                    package / "docs/screenshots/ux-finalization")
     (package / "RESEARCH.json").write_text(json.dumps(research, sort_keys=True, indent=2) + "\n")
     (package / "docs/RESEARCH_ARCHIVE.md").write_text(
         "# Research and historical evidence\n\n"
