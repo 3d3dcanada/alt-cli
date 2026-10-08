@@ -17,7 +17,7 @@ p.add_argument("--skill")
 p.add_argument('--thinking',choices=['default','on','off'],default='default');p.add_argument('--stop-after',type=int,help='Retain a bounded pilot and leave remaining matrix cells explicitly unmeasured');p.add_argument('--resume',action='store_true');p.add_argument('--tool-profile',choices=['all','inspect','coding','terminal','compact','compact-lines'],default='all');p.add_argument('--partition',choices=['development','held-out','all'],default='development');p.add_argument('--threads',type=int,default=2);p.add_argument('--batch',type=int,default=128)
 p.add_argument('--verification-plan',action='store_true');p.add_argument('--history-notes',type=int,default=0)
 p.add_argument('--binary',type=Path,default=Path('target/debug/alt'));p.add_argument('--engine',type=Path,required=True);p.add_argument('--model',type=Path,required=True);p.add_argument('--sha256',required=True);p.add_argument('--uncensored',action='store_true',required=True);p.add_argument('--runtime',type=Path);p.add_argument('--provider',choices=['openai','ollama'],default='openai');p.add_argument('--endpoint');p.add_argument('--model-id');p.add_argument('--contexts',default='8192');p.add_argument('--repeats',type=int,default=5);p.add_argument('--cases');p.add_argument('--timeout',type=int,default=240);p.add_argument('--output',type=Path,required=True)
-p.add_argument('--generated-tokens',type=int);p.add_argument('--requests',type=int)
+p.add_argument('--api-key-env',help='Environment variable holding the endpoint key (hosted comparison runs)');p.add_argument('--generated-tokens',type=int);p.add_argument('--requests',type=int)
 p.add_argument('--instruction-draft',type=Path,help='Trial this bounded offline supplement for this campaign only')
 p.add_argument('--interface',choices=['cli','tui'],default='cli');p.add_argument('--width',type=int,default=80);p.add_argument('--height',type=int,default=24)
 p.add_argument('--followup-prompt',action='append',default=[],help='Send a follow-up in the same actual TUI conversation after a normal turn; the total deadline/allowance remains shared')
@@ -94,7 +94,7 @@ for context in config['contexts']:
    if a.thinking!='default':
     with (state/'preferences.toml').open('a') as settings:settings.write('thinking='+('true' if a.thinking=='on' else 'false')+'\n')
    base=[str(binary),'--data-dir',str(state),'--engine',str(a.engine.resolve()),'--access','trusted']
-   arguments=['models','import',str(artifact),'--uncensored','--use']if a.runtime else ['init','--model',a.model_id,'--provider',a.provider,'--endpoint',a.endpoint,'--context',str(context),'--max-turns','12','--uncensored']
+   arguments=['models','import',str(artifact),'--uncensored','--use']if a.runtime else ['init','--model',a.model_id,'--provider',a.provider,'--endpoint',a.endpoint,'--context',str(context),'--max-turns','12','--uncensored']+(['--api-key-env',a.api_key_env] if a.api_key_env else [])
    init=subprocess.run(base+arguments,cwd=project,capture_output=True,text=True,timeout=180);(run_dir/'setup.stdout').write_text(init.stdout);(run_dir/'setup.stderr').write_text(init.stderr);assert init.returncode==0,init.stderr
    allocation=[]
    for field in ['output_tokens','reasoning_tokens','temperature','top_p','generated_tokens','requests']:
