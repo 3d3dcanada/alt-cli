@@ -48,3 +48,34 @@ copied immutable binary, so subsequent builds cannot change its identity.
 No live model inference, model download, training, GPU qualification or human
 novice session is counted in this evidence. The previous matched model pilot
 remains 1/4 baseline and 1/4 candidate.
+
+## Packaged application
+
+`portable/` records the first clean application build at `853555d` and its eight
+passing release gates. Later review found that its offline Markdown referenced
+images kept only in the separate research archive. A new negative archive check
+reproduced that omission; it is retained under `portable-final/`.
+
+Packaging commit `6a7b5ad` includes the bounded current screenshot set (13 files,
+522,893 bytes) and verifies each local README/walkthrough image against the
+package manifest. It reuses the same verified portable frontend, with application
+source SHA `11b8ac8acf8a8bb237c58a89bc8282d6786e2af7cd3b7e3c778149ddcd2b9b05`.
+Frontend build and packaging commit identities are recorded separately. No
+release, signature or model-quality promotion is implied by a local package pass.
+
+The final screenshot-inclusive archive passed **all eight gates**, including four
+local documentation image references with verified hashes, installed TUI journeys
+on Debian 11/Ubuntu 24.04, and required actual beta 3 upgrade/rollback/re-upgrade.
+Its SHA-256 is
+`907259fe7eab5b39b2e06cee99ef20f401f743d147b2562ba8d50d8a7bff58f5`.
+
+The [GitHub verification rerun](https://github.com/3d3dcanada/alt-cli/actions/runs/37768587588)
+for packaging commit `6a7b5ad` was still running at handoff. Its API snapshot is
+`github-status-at-handoff.json`. Local passing results above do not describe a
+completed remote run. Earlier duplicate/obsolete runs were cancelled by the
+workflow concurrency rule when this update was pushed.
+
+GitGuardian still reports the earlier public-log-checksum incident `38001251` in
+the PR history. The current check references the same protocol checksum file;
+its SHA-256 was recomputed again and matches the log. No scanner was disabled.
+External false-positive dismissal remains outstanding (`gitguardian-status.json`).

@@ -63,6 +63,10 @@ walkthrough passed **109 checks**, and the installer suite passed **12 tests**.
 The clean Linux portable binary has the same application source fingerprint as
 that tested build. Its installed TUI and all **eight package gates** passed,
 including Debian 11, Ubuntu 24.04 and published beta 3 upgrade/rollback.
+The screenshot-inclusive package was checked again after adding the offline
+images. [GitHub verification](https://github.com/3d3dcanada/alt-cli/actions/runs/37768587588)
+was still running when this evidence was handed off; the counts above are local
+cloud results.
 
 The regression suite drives actual keyboard, paste, mouse and resize events in
 pseudo-terminals. It visits all 11 pages by keyboard and mouse and opens all 17
