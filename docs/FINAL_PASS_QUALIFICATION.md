@@ -31,6 +31,13 @@ Executable, SQLite, configuration and build artifacts are excluded from the
 repository copy with an explicit excluded-file hash ledger. No candidate or final
 holdout result is implied by this pilot.
 
+The candidate pilot is frozen to commit
+`16a51866306efd7fb22270181eafca2cf6bcd5f6` with clean build metadata and portable
+binary SHA-256 `54b0cf02702df83afa96c3c31b5905e2c5311d787b9400f7ac9ac745e0486e51`.
+Its four historical matched cells run against the same beta.3 evaluator. The
+[final candidate seal](evidence/final-pass-2026-10-08/qualification/final-candidate-seal.json)
+binds that binary to the corrected final campaign before any final attempt.
+
 The new [campaign manifest](final-pass-qualification-manifest.json) declares
 34 disjoint family IDs: two development, two validation and 30 final holdouts.
 Every family has three repetitions for each of two models and two arms, producing
@@ -60,6 +67,14 @@ This is a bounded repository-task measure, not a general software-engineering or
 unrestricted-ability benchmark. The [oracle self-check receipt](final-pass-qualification-oracles.json)
 records all 30 broken-seed, golden, stale-source and early-exit checks. Reference
 implementations are never included in model prompts.
+
+Independent review corrected campaign attribution, outcome derivation, HMAC
+import compatibility, multi-file diff handling, protected-file checks and training
+receipt linkage. The `final-pass-2` oracles additionally pass 12 specific positive
+and negative regression controls. The [correction record](evidence/final-pass-2026-10-08/qualification/qualification-review-corrections.json)
+retains the superseded unrun plan; none of its slots or candidate outcomes are
+combined with the corrected campaign. Fourteen campaign controls and 55 training
+boundary tests pass. These counts establish software checks, not model gains.
 
 ## Run without contaminating the final comparison
 
@@ -133,16 +148,23 @@ The cloud run passed: one explicit ignored test executed in 8.01 seconds. Its
 [receipt](evidence/final-pass-2026-10-08/qualification/longevity-receipt.json)
 and [test log](evidence/final-pass-2026-10-08/qualification/longevity.log) retain
 the actual counts and backup hashes. Package update/rollback is a separate gate
-that consumes this persistent state.
+that consumes this persistent state. That [installer gate also passed](evidence/final-pass-2026-10-08/delivery-candidate/aged-install-receipt.json):
+the actual published beta.3 archive upgraded to the frozen candidate, its automatic
+backup restored identically, binary and documentation rolled back together, and
+the candidate re-upgraded. The original state digest stayed unchanged; six SQLite
+databases, 1,001 retained sessions and 4,004 remaining history events survived.
+The original longevity receipt remains unchanged so the two measurements keep
+their separate scope.
 
 ```bash
 ALT_LONGEVITY_ROOT=/path/to/new-persistent-longevity-run \
   cargo test --test long_lived_workspace -- --ignored --nocapture
 ```
 
-Keep this state for the package upgrade/rollback gate; the test's receipt says
-`installer_update_performed: false` until a separate installer test actually
-uses it. The reference PC, accelerated inference, graphical terminals and five
+Keep this state for later package upgrades. The longevity test's original receipt
+says `installer_update_performed: false`; the separate installer receipt above
+supplies the measured upgrade result. The reference PC, accelerated inference,
+graphical terminals and five
 uncoached novice sessions remain separate physical/human qualification.
 
 ## Training readiness

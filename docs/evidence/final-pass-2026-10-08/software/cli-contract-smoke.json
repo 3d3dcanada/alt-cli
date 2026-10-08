@@ -1,0 +1,143 @@
+{
+  "passed": true,
+  "binary_sha256": "54b0cf02702df83afa96c3c31b5905e2c5311d787b9400f7ac9ac745e0486e51",
+  "scope": "Disposable real CLI workflow, no model weights",
+  "rows": [
+    {
+      "args": [
+        "task",
+        "configure-check",
+        "answer",
+        "--timeout",
+        "33",
+        "--kind",
+        "tests",
+        "--format",
+        "json",
+        "--report",
+        ".alt-report.json",
+        "--assertion",
+        "/workspace/alt-final-cli-jh257pl7/assertion.py",
+        "--input-file",
+        "/workspace/alt-final-cli-jh257pl7/expected.txt",
+        "--generated-output",
+        "output.txt",
+        "--",
+        "python3",
+        "{assertion}"
+      ],
+      "exit_code": 0,
+      "stdout": "{\n  \"argv\": [\n    \"python3\",\n    \"{assertion}\"\n  ],\n  \"contract\": {\n    \"assertion\": {\n      \"path\": \"/workspace/alt-final-cli-jh257pl7/assertion.py\",\n      \"sha256\": \"8a41484bc362834dea69f95e6e089d6624eca0a4e33d74047e9844cf563dc181\"\n    },\n    \"inputs\": {\n      \"files\": [\n        \"/workspace/alt-final-cli-jh257pl7/expected.txt\"\n      ],\n      \"generated\": [\n        \"output.txt\"\n      ]\n    },\n    \"kind\": \"tests\",\n    \"report\": {\n      \"format\": \"json\",\n      \"path\": \".alt-report.json\"\n    }\n  },\n  \"name\": \"answer\",\n  \"timeout_secs\": 33\n}\n",
+      "stderr": ""
+    },
+    {
+      "args": [
+        "task",
+        "configure-check",
+        "answer",
+        "--",
+        "python3",
+        "{assertion}"
+      ],
+      "exit_code": 0,
+      "stdout": "{\n  \"argv\": [\n    \"python3\",\n    \"{assertion}\"\n  ],\n  \"contract\": {\n    \"assertion\": {\n      \"path\": \"/workspace/alt-final-cli-jh257pl7/assertion.py\",\n      \"sha256\": \"8a41484bc362834dea69f95e6e089d6624eca0a4e33d74047e9844cf563dc181\"\n    },\n    \"inputs\": {\n      \"files\": [\n        \"/workspace/alt-final-cli-jh257pl7/expected.txt\"\n      ],\n      \"generated\": [\n        \"output.txt\"\n      ]\n    },\n    \"kind\": \"tests\",\n    \"report\": {\n      \"format\": \"json\",\n      \"path\": \".alt-report.json\"\n    }\n  },\n  \"name\": \"answer\",\n  \"timeout_secs\": 33\n}\n",
+      "stderr": ""
+    },
+    {
+      "args": [
+        "task",
+        "require",
+        "answer",
+        "--check",
+        "answer"
+      ],
+      "exit_code": 0,
+      "stdout": "{\n  \"behavioral_acceptance\": false,\n  \"complete\": false,\n  \"requirements\": [\n    {\n      \"check_kind\": \"tests\",\n      \"coverage\": \"runner test report; no independent assertion\",\n      \"evidence\": null,\n      \"requirement\": {\n        \"check_name\": \"answer\",\n        \"description\": \"\",\n        \"name\": \"answer\"\n      },\n      \"status\": \"not run\"\n    }\n  ],\n  \"scope\": \"Required checks are incomplete\",\n  \"source_snapshot\": \"3a062da34de37fb7f1889229723644b13317060ccb96a9009f3cbb654bc0f906\"\n}\n",
+      "stderr": ""
+    },
+    {
+      "args": [
+        "task",
+        "check",
+        "answer"
+      ],
+      "exit_code": 0,
+      "stdout": "{\n  \"id\": \"7e064ecd-9551-4944-baa5-19aa5f426157\",\n  \"task\": \"manual-62dd865b-b249-4d97-8c75-a7df33c9cc90\",\n  \"name\": \"answer\",\n  \"argv\": [\n    \"python3\",\n    \"{assertion}\"\n  ],\n  \"exit_code\": 0,\n  \"timed_out\": false,\n  \"cancelled\": false,\n  \"output\": \"stdout:\\nFULL_RAW_STDOUT\\n\\nstderr:\\n\",\n  \"output_truncated\": false,\n  \"snapshot\": \"3a062da34de37fb7f1889229723644b13317060ccb96a9009f3cbb654bc0f906\",\n  \"isolation\": \"Unisolated: trusted command in disposable source copy\",\n  \"elapsed_ms\": 42,\n  \"error\": null,\n  \"environment\": {\n    \"argv_sha256\": \"fd191caee3474762a5cba4ad402cdab68fb54cce92d46320cbee96924d1502bc\",\n    \"declared_input_0_sha256\": \"73475cb40a568e8da8a045ced110137e159f890ac4da883b6b17dc651b3a8049\",\n    \"executable\": \"/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python3.12\",\n    \"executable_metadata\": \"27:9223372036854858618:30894944:33261:0:1788486252:0\",\n    \"inherited_environment_sha256\": \"0581b2635e434b97aaa476a52b2590ae2d6e8c4ea4d6407c028fb2cfa164a0ed\",\n    \"installed_dependencies\": \"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\",\n    \"observed_version_python3\": \"Python 3.12.14\",\n    \"verification_contract\": \"4\"\n  },\n  \"tests_run\": 1,\n  \"contract\": {\n    \"inputs\": {\n      \"files\": [\n        \"/workspace/alt-final-cli-jh257pl7/expected.txt\"\n      ],\n      \"generated\": [\n        \"output.txt\"\n      ]\n    },\n    \"kind\": \"tests\",\n    \"report\": {\n      \"format\": \"json\",\n      \"path\": \".alt-report.json\"\n    },\n    \"assertion\": {\n      \"path\": \"/workspace/alt-final-cli-jh257pl7/assertion.py\",\n      \"sha256\": \"8a41484bc362834dea69f95e6e089d6624eca0a4e33d74047e9844cf563dc181\"\n    }\n  },\n  \"structured\": {\n    \"format\": \"json\",\n    \"passed\": 1,\n    \"failed\": 0,\n    \"skipped\": 0,\n    \"executed\": 1,\n    \"complete\": true,\n    \"report_sha256\": \"e1651d6bbc85b2a394afd49e48dd8cc460bd5c84c699760bf2d0df594755fc34\",\n    \"assertion_verified\": true\n  },\n  \"execution\": {\n    \"command\": null,\n    \"snapshot_root\": \"/tmp/.tmpZjoo2z\",\n    \"namespace_root\": null,\n    \"project_root\": \"/workspace/alt-final-cli-jh257pl7/project\",\n    \"source_scope\": \"Observed input bytes and metadata before/after execution. Inputs are writable; stable observations do not establish immutable execution.\",\n    \"before_manifest_sha256\": \"32a9f5244d91f9090938a63a3f5b1626f755e11a6c566425abe4b681eac39289\",\n    \"after_manifest_sha256\": \"32a9f5244d91f9090938a63a3f5b1626f755e11a6c566425abe4b681eac39289\",\n    \"changed_inputs\": [],\n    \"patch_preview_truncated\": false,\n    \"transient_or_metadata_changes\": [],\n    \"generated_paths\": [\n      \".alt-report.json\",\n      \"output.txt\"\n    ],\n    \"observed_inputs_stable\": true,\n    \"immutable_inputs\": false,\n    \"receipt\": \"execution/7e064ecd-9551-4944-baa5-19aa5f426157/receipt.json\",\n    \"stdout\": {\n      \"total_bytes\": 16,\n      \"retained_bytes\": 16,\n      \"ring_start\": 0,\n      \"sha256\": \"1e21d6feaad4864f1ab9818cfe42f44b1393654e5222165988a42085ed822090\",\n      \"scope\": \"Last 4 MiB of this stream; offsets count all observed bytes. Earlier bytes may have rotated out.\"\n    },\n    \"stderr\": {\n      \"total_bytes\": 0,\n      \"retained_bytes\": 0,\n      \"ring_start\": 0,\n      \"sha256\": \"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\",\n      \"scope\": \"Last 4 MiB of this stream; offsets count all observed bytes. Earlier bytes may have rotated out.\"\n    }\n  }\n}\n",
+      "stderr": ""
+    },
+    {
+      "args": [
+        "task",
+        "verify"
+      ],
+      "exit_code": 0,
+      "stdout": "{\n  \"complete\": true,\n  \"behavioral_acceptance\": true,\n  \"scope\": \"Pinned independent assertions passed with unchanged observed input bytes and metadata. Execution inputs were writable; this does not establish immutable execution. Review behavioral coverage and the execution receipt.\",\n  \"requirements\": [\n    {\n      \"requirement\": {\n        \"name\": \"answer\",\n        \"description\": \"\",\n        \"check_name\": \"answer\"\n      },\n      \"status\": \"passed on current files\",\n      \"evidence\": \"7e064ecd-9551-4944-baa5-19aa5f426157\",\n      \"check_kind\": \"tests\",\n      \"coverage\": \"independent behavioral assertion\"\n    }\n  ],\n  \"source_snapshot\": \"3a062da34de37fb7f1889229723644b13317060ccb96a9009f3cbb654bc0f906\"\n}\n",
+      "stderr": ""
+    },
+    {
+      "args": [
+        "task",
+        "logs",
+        "7e064ecd-9551-4944-baa5-19aa5f426157",
+        "--stream",
+        "stdout",
+        "--limit",
+        "1000"
+      ],
+      "exit_code": 0,
+      "stdout": "{\n  \"id\": \"7e064ecd-9551-4944-baa5-19aa5f426157\",\n  \"next_offset\": 16,\n  \"offset\": 0,\n  \"retained_from\": 0,\n  \"scope\": \"Last 4 MiB of this stream; offsets count all observed bytes. Earlier bytes may have rotated out.\",\n  \"sha256\": \"1e21d6feaad4864f1ab9818cfe42f44b1393654e5222165988a42085ed822090\",\n  \"stream\": \"stdout\",\n  \"text\": \"FULL_RAW_STDOUT\\n\",\n  \"total_bytes\": 16\n}\n",
+      "stderr": ""
+    },
+    {
+      "args": [
+        "task",
+        "requests"
+      ],
+      "exit_code": 0,
+      "stdout": "{\n  \"active\": [\n    {\n      \"body\": \"Manual project checks and changes\",\n      \"seq\": 1,\n      \"source\": \"user\",\n      \"superseded_by\": null,\n      \"superseded_reason\": null\n    }\n  ],\n  \"history\": [\n    {\n      \"body\": \"Manual project checks and changes\",\n      \"seq\": 1,\n      \"source\": \"user\",\n      \"superseded_by\": null,\n      \"superseded_reason\": null\n    }\n  ],\n  \"task\": \"manual-62dd865b-b249-4d97-8c75-a7df33c9cc90\"\n}\n",
+      "stderr": ""
+    },
+    {
+      "args": [
+        "task",
+        "correct-request",
+        "1",
+        "Keep the exact answer and spacing.",
+        "--reason",
+        "Explicit CLI correction"
+      ],
+      "exit_code": 0,
+      "stdout": "{\n  \"active\": [\n    {\n      \"body\": \"Keep the exact answer and spacing.\",\n      \"seq\": 3,\n      \"source\": \"user\",\n      \"superseded_by\": null,\n      \"superseded_reason\": null\n    }\n  ],\n  \"replacement_seq\": 3\n}\n",
+      "stderr": ""
+    },
+    {
+      "args": [
+        "task",
+        "export"
+      ],
+      "exit_code": 0,
+      "stdout": "{\n  \"changes\": [],\n  \"check_reports\": [\n    {\n      \"check_id\": \"7e064ecd-9551-4944-baa5-19aa5f426157\",\n      \"sha256\": \"e1651d6bbc85b2a394afd49e48dd8cc460bd5c84c699760bf2d0df594755fc34\",\n      \"text\": \"{\\\"schema\\\": 1, \\\"complete\\\": true, \\\"tests\\\": [{\\\"name\\\": \\\"actual answer\\\", \\\"status\\\": \\\"passed\\\"}]}\"\n    }\n  ],\n  \"check_specs\": [\n    {\n      \"argv\": [\n        \"python3\",\n        \"{assertion}\"\n      ],\n      \"contract\": {\n        \"assertion\": {\n          \"path\": \"/workspace/alt-final-cli-jh257pl7/assertion.py\",\n          \"sha256\": \"8a41484bc362834dea69f95e6e089d6624eca0a4e33d74047e9844cf563dc181\"\n        },\n        \"inputs\": {\n          \"files\": [\n            \"/workspace/alt-final-cli-jh257pl7/expected.txt\"\n          ],\n          \"generated\": [\n            \"output.txt\"\n          ]\n        },\n        \"kind\": \"tests\",\n        \"report\": {\n          \"format\": \"json\",\n          \"path\": \".alt-report.json\"\n        }\n      },\n      \"name\": \"answer\",\n      \"timeout_secs\": 33\n    }\n  ],\n  \"checks\": [\n    {\n      \"argv\": [\n        \"python3\",\n        \"{assertion}\"\n      ],\n      \"cancelled\": false,\n      \"contract\": {\n        \"assertion\": {\n          \"path\": \"/workspace/alt-final-cli-jh257pl7/assertion.py\",\n          \"sha256\": \"8a41484bc362834dea69f95e6e089d6624eca0a4e33d74047e9844cf563dc181\"\n        },\n        \"inputs\": {\n          \"files\": [\n            \"/workspace/alt-final-cli-jh257pl7/expected.txt\"\n          ],\n          \"generated\": [\n            \"output.txt\"\n          ]\n        },\n        \"kind\": \"tests\",\n        \"report\": {\n          \"format\": \"json\",\n          \"path\": \".alt-report.json\"\n        }\n      },\n      \"elapsed_ms\": 42,\n      \"environment\": {\n        \"argv_sha256\": \"fd191caee3474762a5cba4ad402cdab68fb54cce92d46320cbee96924d1502bc\",\n        \"declared_input_0_sha256\": \"73475cb40a568e8da8a045ced110137e159f890ac4da883b6b17dc651b3a8049\",\n        \"executable\": \"/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python3.12\",\n        \"executable_metadata\": \"27:9223372036854858618:30894944:33261:0:1788486252:0\",\n        \"inherited_environment_sha256\": \"0581b2635e434b97aaa476a52b2590ae2d6e8c4ea4d6407c028fb2cfa164a0ed\",\n        \"installed_dependencies\": \"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\",\n        \"observed_version_python3\": \"Python 3.12.14\",\n        \"verification_contract\": \"4\"\n      },\n      \"error\": null,\n      \"execution\": {\n        \"after_manifest_sha256\": \"32a9f5244d91f9090938a63a3f5b1626f755e11a6c566425abe4b681eac39289\",\n        \"before_manifest_sha256\": \"32a9f5244d91f9090938a63a3f5b1626f755e11a6c566425abe4b681eac39289\",\n        \"changed_inputs\": [],\n        \"command\": null,\n        \"generated_paths\": [\n          \".alt-report.json\",\n          \"output.txt\"\n        ],\n        \"immutable_inputs\": false,\n        \"namespace_root\": null,\n        \"observed_inputs_stable\": true,\n        \"patch_preview_truncated\": false,\n        \"project_root\": \"/workspace/alt-final-cli-jh257pl7/project\",\n        \"receipt\": \"execution/7e064ecd-9551-4944-baa5-19aa5f426157/receipt.json\",\n        \"snapshot_root\": \"/tmp/.tmpZjoo2z\",\n        \"source_scope\": \"Observed input bytes and metadata before/after execution. Inputs are writable; stable observations do not establish immutable execution.\",\n        \"stderr\": {\n          \"retained_bytes\": 0,\n          \"ring_start\": 0,\n          \"scope\": \"Last 4 MiB of this stream; offsets count all observed bytes. Earlier bytes may have rotated out.\",\n          \"sha256\": \"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\",\n          \"total_bytes\": 0\n        },\n        \"stdout\": {\n          \"retained_bytes\": 16,\n          \"ring_start\": 0,\n          \"scope\": \"Last 4 MiB of this stream; offsets count all observed bytes. Earlier bytes may have rotated out.\",\n          \"sha256\": \"1e21d6feaad4864f1ab9818cfe42f44b1393654e5222165988a42085ed822090\",\n          \"total_bytes\": 16\n        },\n        \"transient_or_metadata_changes\": []\n      },\n      \"exit_code\": 0,\n      \"id\": \"7e064ecd-9551-4944-baa5-19aa5f426157\",\n      \"isolation\": \"Unisolated: trusted command in disposable source copy\",\n      \"name\": \"answer\",\n      \"output\": \"stdout:\\nFULL_RAW_STDOUT\\n\\nstderr:\\n\",\n      \"output_truncated\": false,\n      \"snapshot\": \"3a062da34de37fb7f1889229723644b13317060ccb96a9009f3cbb654bc0f906\",\n      \"structured\": {\n        \"assertion_verified\": true,\n        \"complete\": true,\n        \"executed\": 1,\n        \"failed\": 0,\n        \"format\": \"json\",\n        \"passed\": 1,\n        \"report_sha256\": \"e1651d6bbc85b2a394afd49e48dd8cc460bd5c84c699760bf2d0df594755fc34\",\n        \"skipped\": 0\n      },\n      \"task\": \"manual-62dd865b-b249-4d97-8c75-a7df33c9cc90\",\n      \"tests_run\": 1,\n      \"timed_out\": false\n    }\n  ],\n  \"displaced_versions\": [],\n  \"notes\": [\n    {\n      \"body\": \"Manual project checks and changes\",\n      \"created\": \"2026-10-08 08:53:37\",\n      \"kind\": \"request\",\n      \"seq\": 1,\n      \"source\": \"user\",\n      \"task\": \"manual-62dd865b-b249-4d97-8c75-a7df33c9cc90\"\n    },\n    {\n      \"body\": \"Check answer: exit Some(0), timeout false, cancelled false, isolation Unisolated: trusted command in disposable source copy, snapshot 3a062da34de37fb7f1889229723644b13317060ccb96a9009f3cbb654bc0f906, evidence 7e064ecd-9551-4944-baa5-19aa5f426157. \",\n      \"created\": \"2026-10-08 08:53:37\",\n      \"kind\": \"observation\",\n      \"seq\": 2,\n      \"source\": \"7e064ecd-9551-4944-baa5-19aa5f426157\",\n      \"task\": \"manual-62dd865b-b249-4d97-8c75-a7df33c9cc90\"\n    },\n    {\n      \"body\": \"Keep the exact answer and spacing.\",\n      \"created\": \"2026-10-08 08:53:37\",\n      \"kind\": \"request\",\n      \"seq\": 3,\n      \"source\": \"user\",\n      \"task\": \"manual-62dd865b-b249-4d97-8c75-a7df33c9cc90\"\n    }\n  ],\n  \"project\": \"/workspace/alt-final-cli-jh257pl7/project\",\n  \"recovery_export_scope\": \"Retained source blobs and raw execution logs stay in project state; use state backup for a portable complete recovery generation\",\n  \"tasks\": [\n    {\n      \"goal\": \"Manual project checks and changes\",\n      \"id\": \"manual-62dd865b-b249-4d97-8c75-a7df33c9cc90\",\n      \"next\": \"Review the changes and what this check covers\",\n      \"phase\": \"Results\",\n      \"plan\": \"\"\n    }\n  ],\n  \"user_requests\": {\n    \"manual-62dd865b-b249-4d97-8c75-a7df33c9cc90\": {\n      \"active\": [\n        {\n          \"body\": \"Keep the exact answer and spacing.\",\n          \"seq\": 3,\n          \"source\": \"user\",\n          \"superseded_by\": null,\n          \"superseded_reason\": null\n        }\n      ],\n      \"history\": [\n        {\n          \"body\": \"Manual project checks and changes\",\n          \"seq\": 1,\n          \"source\": \"user\",\n          \"superseded_by\": 3,\n          \"superseded_reason\": \"Explicit CLI correction\"\n        },\n        {\n          \"body\": \"Keep the exact answer and spacing.\",\n          \"seq\": 3,\n          \"source\": \"user\",\n          \"superseded_by\": null,\n          \"superseded_reason\": null\n        }\n      ]\n    }\n  },\n  \"verification\": {\n    \"behavioral_acceptance\": true,\n    \"complete\": true,\n    \"requirements\": [\n      {\n        \"check_kind\": \"tests\",\n        \"coverage\": \"independent behavioral assertion\",\n        \"evidence\": \"7e064ecd-9551-4944-baa5-19aa5f426157\",\n        \"requirement\": {\n          \"check_name\": \"answer\",\n          \"description\": \"\",\n          \"name\": \"answer\"\n        },\n        \"status\": \"passed on current files\"\n      }\n    ],\n    \"scope\": \"Pinned independent assertions passed with unchanged observed input bytes and metadata. Execution inputs were writable; this does not establish immutable execution. Review behavioral coverage and the execution receipt.\",\n    \"source_snapshot\": \"3a062da34de37fb7f1889229723644b13317060ccb96a9009f3cbb654bc0f906\"\n  }\n}\n",
+      "stderr": ""
+    },
+    {
+      "args": [
+        "task",
+        "verify"
+      ],
+      "exit_code": 1,
+      "stdout": "{\n  \"complete\": false,\n  \"behavioral_acceptance\": false,\n  \"scope\": \"Required checks are incomplete\",\n  \"requirements\": [\n    {\n      \"requirement\": {\n        \"name\": \"answer\",\n        \"description\": \"\",\n        \"check_name\": \"answer\"\n      },\n      \"status\": \"stale environment\",\n      \"evidence\": \"7e064ecd-9551-4944-baa5-19aa5f426157\",\n      \"check_kind\": \"tests\",\n      \"coverage\": \"independent behavioral assertion\"\n    }\n  ],\n  \"source_snapshot\": \"3a062da34de37fb7f1889229723644b13317060ccb96a9009f3cbb654bc0f906\"\n}\n",
+      "stderr": "alt: Required checks are incomplete; inspect the verification report\n"
+    },
+    {
+      "args": [
+        "state",
+        "budget",
+        "--inference-mib",
+        "512"
+      ],
+      "exit_code": 0,
+      "stdout": "{\n  \"enforcement\": \"Warning only; explicit archival retention preserves receipts and active work\",\n  \"inference_warning_bytes\": 536870912,\n  \"schema\": 1\n}\n",
+      "stderr": ""
+    }
+  ]
+}

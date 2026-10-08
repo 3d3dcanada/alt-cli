@@ -37,6 +37,40 @@ all-target Clippy passed. The exact source fingerprint and command logs are in
 Terminal, adapter, packaged-upgrade and candidate-model stages have their own
 receipts and are not included in this unit-test count.
 
+The final frozen debug executable passed **11 terminal gate groups** and **12
+headless/provider integration groups**, including real Goose with both adapters,
+authenticated Ollama, both compact formats, native tool-result checks, browser
+skills, candidate workflows and ten stream-recovery scenarios. Fourteen campaign
+controller tests and 55 training-gate tests also passed. The dependency audit found
+no denied advisory. Initial test-helper failures and their corrected retries are
+retained in the [terminal](evidence/final-pass-2026-10-08/tui/final-debug/final-summary.json)
+and [protocol](evidence/final-pass-2026-10-08/protocols/README.md) records.
+
+The clean portable candidate is commit
+`16a51866306efd7fb22270181eafca2cf6bcd5f6`, binary SHA-256
+`54b0cf02702df83afa96c3c31b5905e2c5311d787b9400f7ac9ac745e0486e51`.
+It passed **all eight packaged release gates**, including old/current Linux,
+installed TUI, research integrity, SBOM and actual beta 3 migration/rollback.
+A separate upgrade/backup-restore/rollback/re-upgrade of the aged workspace kept
+all six SQLite databases and the original state digest unchanged. The retained
+active state contained 1,001 sessions and 4,004 events after the longevity
+archive/restore steps. See [delivery receipts](evidence/final-pass-2026-10-08/delivery-candidate/).
+
+The same portable binary passed 30 soak rounds and 30 keyboard-pressure journeys
+(ten each at 120×40, 80×24 and 60×18), with zero surviving owned processes.
+Observed input p95 was 48.7 ms and cancellation p95 65.5 ms in those cloud
+fixtures. These are observations, not a latency guarantee for inference or older
+hardware. The [stress receipts](evidence/final-pass-2026-10-08/portable-stress/)
+retain the initial stale-test-navigation failures and corrected rerun.
+
+The measured application archive is **9,836,696 bytes**, versus **24,468,768** for
+published beta 3. Its unpacked payload fell from 195.0 MB to 43.7 MB (77.6%).
+The separate 15,197,705-byte research archive preserves every one of the 9,436
+documentation/evidence files in that package snapshot. Installed historical
+documentation fell by more than 99%; the full application archive did not shrink
+by 90%. Later evidence files belong to the repository and subsequent package
+snapshots; these measured archive hashes are retained unchanged.
+
 The retained [evidence directory](evidence/final-pass-2026-10-08/) separates
 deterministic software tests, actual provider protocol journeys, uncensored
 model attempts and unperformed work. Stage receipts identify their tested binary

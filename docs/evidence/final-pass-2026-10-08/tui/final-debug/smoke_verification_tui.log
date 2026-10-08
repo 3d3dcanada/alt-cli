@@ -1,0 +1,11 @@
+alt: Required checks are incomplete; inspect the verification report
+Traceback (most recent call last):
+  File "/workspace/alt-cli/scripts/smoke_verification_tui.py", line 17, in <module>
+    result=json.loads(subprocess.check_output(base+['task','verify'],cwd=project,text=True));assert result['behavioral_acceptance'] and result['complete'],result
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/subprocess.py", line 466, in check_output
+    return run(*popenargs, stdout=PIPE, timeout=timeout, check=True,
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/subprocess.py", line 571, in run
+    raise CalledProcessError(retcode, process.args,
+subprocess.CalledProcessError: Command '['/workspace/.alt-final-validation/tui/alt-frozen', '--data-dir', '/tmp/alt-contract-tui-2tbrfgb8/state', 'task', 'verify']' returned non-zero exit status 1.
