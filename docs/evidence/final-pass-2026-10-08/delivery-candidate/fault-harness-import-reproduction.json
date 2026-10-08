@@ -1,0 +1,36 @@
+{
+  "scope": "Fault harness importing an immutable packaged installer can contaminate the package with unmanifested bytecode; suppressing bytecode before import prevents the mutation. Production installer integrity rejection is correct.",
+  "rows": [
+    {
+      "suppress_bytecode": false,
+      "argv": [
+        "python3",
+        "-c",
+        "import importlib.util,sys; spec=importlib.util.spec_from_file_location(\"installer\",sys.argv[1]);module=importlib.util.module_from_spec(spec);spec.loader.exec_module(module)",
+        "<temporary>/install-generation.py"
+      ],
+      "exit": 0,
+      "helper_sha256": "1f69edf5beaf275e56057bd5346efc470f249f516f65f2f726d5cdb0e1c5ee57",
+      "files_after": [
+        "install-generation.py",
+        "__pycache__/install-generation.cpython-312.pyc"
+      ],
+      "stderr": ""
+    },
+    {
+      "suppress_bytecode": true,
+      "argv": [
+        "python3",
+        "-c",
+        "import importlib.util,sys; sys.dont_write_bytecode=True; spec=importlib.util.spec_from_file_location(\"installer\",sys.argv[1]);module=importlib.util.module_from_spec(spec);spec.loader.exec_module(module)",
+        "<temporary>/install-generation.py"
+      ],
+      "exit": 0,
+      "helper_sha256": "1f69edf5beaf275e56057bd5346efc470f249f516f65f2f726d5cdb0e1c5ee57",
+      "files_after": [
+        "install-generation.py"
+      ],
+      "stderr": ""
+    }
+  ]
+}

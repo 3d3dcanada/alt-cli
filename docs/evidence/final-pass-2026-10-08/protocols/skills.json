@@ -1,0 +1,346 @@
+{
+  "scope": "Executed tool recipes with real behavior assertions; no LLM, no skill-versus-baseline quality comparison",
+  "browser_executed": true,
+  "rows": [
+    {
+      "skill": "python-repair",
+      "broken_rejected": true,
+      "fixed_passed": true,
+      "actual_helper": {
+        "id": "f81cb754-d1b0-47f0-b728-883e263eb980",
+        "pack": "build",
+        "version": 1,
+        "input": {
+          "language": "python"
+        },
+        "status": "passed",
+        "error": null,
+        "evidence": {
+          "command": [
+            "python3",
+            "-m",
+            "unittest",
+            "discover",
+            "-v"
+          ],
+          "terminal": {
+            "cancelled": false,
+            "elapsed_ms": 65,
+            "error": null,
+            "execution": {
+              "after_manifest_sha256": null,
+              "before_manifest_sha256": null,
+              "changed_inputs": [],
+              "command": "'python3' '-m' 'unittest' 'discover' '-v'",
+              "generated_paths": [],
+              "immutable_inputs": false,
+              "namespace_root": null,
+              "observed_inputs_stable": false,
+              "patch_preview_truncated": false,
+              "project_root": null,
+              "receipt": "execution/f0ded6a2-1b14-4395-8498-3a3b4b699b3d/receipt.json",
+              "snapshot_root": null,
+              "source_scope": "",
+              "stderr": {
+                "retained_bytes": 200,
+                "ring_start": 0,
+                "scope": "Last 4 MiB of this stream; offsets count all observed bytes. Earlier bytes may have rotated out.",
+                "sha256": "2e1187bb9a52bcd8c7ce044039035f946e7b118d7111714dbd423a76c1417cd2",
+                "total_bytes": 200
+              },
+              "stdout": {
+                "retained_bytes": 0,
+                "ring_start": 0,
+                "scope": "Last 4 MiB of this stream; offsets count all observed bytes. Earlier bytes may have rotated out.",
+                "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                "total_bytes": 0
+              },
+              "transient_or_metadata_changes": []
+            },
+            "exit_code": 0,
+            "id": "f0ded6a2-1b14-4395-8498-3a3b4b699b3d",
+            "output": "stdout:\n\nstderr:\ntest_sum (test_solution.Behavior.test_sum) ... ok\ntest_zero (test_solution.Behavior.test_zero) ... ok\n\n----------------------------------------------------------------------\nRan 2 tests in 0.000s\n\nOK\n",
+            "output_truncated": false,
+            "tests_run": 2,
+            "timed_out": false,
+            "undoable": false
+          },
+          "tests_run": 2
+        },
+        "findings": []
+      }
+    },
+    {
+      "skill": "rust-diagnostics",
+      "broken_rejected": true,
+      "fixed_passed": true,
+      "actual_helper": {
+        "id": "f8eccc58-b4d9-4812-a5b6-2f39fa6145dd",
+        "pack": "build",
+        "version": 1,
+        "input": {
+          "language": "rust"
+        },
+        "status": "passed",
+        "error": null,
+        "evidence": {
+          "command": [
+            "cargo",
+            "test",
+            "--locked"
+          ],
+          "terminal": {
+            "cancelled": false,
+            "elapsed_ms": 100,
+            "error": null,
+            "execution": {
+              "after_manifest_sha256": null,
+              "before_manifest_sha256": null,
+              "changed_inputs": [],
+              "command": "'cargo' 'test' '--locked'",
+              "generated_paths": [],
+              "immutable_inputs": false,
+              "namespace_root": null,
+              "observed_inputs_stable": false,
+              "patch_preview_truncated": false,
+              "project_root": null,
+              "receipt": "execution/383ea5b0-a8a6-4da1-98dd-9750ef21a677/receipt.json",
+              "snapshot_root": null,
+              "source_scope": "",
+              "stderr": {
+                "retained_bytes": 245,
+                "ring_start": 0,
+                "scope": "Last 4 MiB of this stream; offsets count all observed bytes. Earlier bytes may have rotated out.",
+                "sha256": "67fdee2096fc446d7ac79aa5740d720e3dc4aa0b434a90f5bdd8fc3ff69cd73d",
+                "total_bytes": 245
+              },
+              "stdout": {
+                "retained_bytes": 248,
+                "ring_start": 0,
+                "scope": "Last 4 MiB of this stream; offsets count all observed bytes. Earlier bytes may have rotated out.",
+                "sha256": "0dd21a24c74bf92d673bb83b92ebe5350a3fac9191e5dbb36f33d3290231b3bc",
+                "total_bytes": 248
+              },
+              "transient_or_metadata_changes": []
+            },
+            "exit_code": 0,
+            "id": "383ea5b0-a8a6-4da1-98dd-9750ef21a677",
+            "output": "stdout:\n\nrunning 1 test\ntest tests::sum ... ok\n\ntest result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s\n\n\nrunning 0 tests\n\ntest result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s\n\n\nstderr:\n   Compiling skill_fixture v0.1.0 (/tmp/alt-skill-checks-0cdu_zmq/rust)\n    Finished `test` profile [unoptimized] target(s) in 0.07s\n     Running unittests src/lib.rs (target/debug/deps/skill_fixture-6a6f546f25b27e6c)\n   Doc-tests skill_fixture\n",
+            "output_truncated": false,
+            "tests_run": 1,
+            "timed_out": false,
+            "undoable": false
+          },
+          "tests_run": 1
+        },
+        "findings": []
+      }
+    },
+    {
+      "skill": "javascript-setup",
+      "broken_rejected": true,
+      "fixed_passed": true,
+      "actual_helper": {
+        "id": "01d94c7c-64ed-4afd-a15c-a4c1377eb3fe",
+        "pack": "build",
+        "version": 1,
+        "input": {
+          "language": "javascript"
+        },
+        "status": "passed",
+        "error": null,
+        "evidence": {
+          "command": [
+            "npm",
+            "test"
+          ],
+          "terminal": {
+            "cancelled": false,
+            "elapsed_ms": 324,
+            "error": null,
+            "execution": {
+              "after_manifest_sha256": null,
+              "before_manifest_sha256": null,
+              "changed_inputs": [],
+              "command": "'npm' 'test'",
+              "generated_paths": [],
+              "immutable_inputs": false,
+              "namespace_root": null,
+              "observed_inputs_stable": false,
+              "patch_preview_truncated": false,
+              "project_root": null,
+              "receipt": "execution/9dce04fd-9b0b-4fc3-b347-3e8017e079e5/receipt.json",
+              "snapshot_root": null,
+              "source_scope": "",
+              "stderr": {
+                "retained_bytes": 0,
+                "ring_start": 0,
+                "scope": "Last 4 MiB of this stream; offsets count all observed bytes. Earlier bytes may have rotated out.",
+                "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                "total_bytes": 0
+              },
+              "stdout": {
+                "retained_bytes": 267,
+                "ring_start": 0,
+                "scope": "Last 4 MiB of this stream; offsets count all observed bytes. Earlier bytes may have rotated out.",
+                "sha256": "9afb013bc575748799c4c11f62babb22bfed7b3bdd59c6c1c7ff760e4ae14e68",
+                "total_bytes": 267
+              },
+              "transient_or_metadata_changes": []
+            },
+            "exit_code": 0,
+            "id": "9dce04fd-9b0b-4fc3-b347-3e8017e079e5",
+            "output": "stdout:\n\n> skill-fixture@1.0.0 test\n> node --test --test-reporter=tap test.cjs\n\nTAP version 13\n# Subtest: sum\nok 1 - sum\n  ---\n  duration_ms: 0.901709\n  type: 'test'\n  ...\n1..1\n# tests 1\n# suites 0\n# pass 1\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 58.036198\n\nstderr:\n",
+            "output_truncated": false,
+            "tests_run": 1,
+            "timed_out": false,
+            "undoable": false
+          },
+          "tests_run": 1
+        },
+        "findings": []
+      }
+    },
+    {
+      "skill": "configuration-data",
+      "broken_rejected": true,
+      "fixed_passed": true,
+      "actual_helper": {
+        "id": "f4fc82ca-bbd5-4612-a08b-20e24793712f",
+        "pack": "build",
+        "version": 1,
+        "input": {
+          "language": "python"
+        },
+        "status": "passed",
+        "error": null,
+        "evidence": {
+          "command": [
+            "python3",
+            "-m",
+            "unittest",
+            "discover",
+            "-v"
+          ],
+          "terminal": {
+            "cancelled": false,
+            "elapsed_ms": 65,
+            "error": null,
+            "execution": {
+              "after_manifest_sha256": null,
+              "before_manifest_sha256": null,
+              "changed_inputs": [],
+              "command": "'python3' '-m' 'unittest' 'discover' '-v'",
+              "generated_paths": [],
+              "immutable_inputs": false,
+              "namespace_root": null,
+              "observed_inputs_stable": false,
+              "patch_preview_truncated": false,
+              "project_root": null,
+              "receipt": "execution/7b692b75-8d98-4512-ba45-db8d4c4e8733/receipt.json",
+              "snapshot_root": null,
+              "source_scope": "",
+              "stderr": {
+                "retained_bytes": 298,
+                "ring_start": 0,
+                "scope": "Last 4 MiB of this stream; offsets count all observed bytes. Earlier bytes may have rotated out.",
+                "sha256": "3cb1dc8ccaa409e90418cde54ff8578bf8fecc877ac7fc795aa525c31b96e236",
+                "total_bytes": 298
+              },
+              "stdout": {
+                "retained_bytes": 0,
+                "ring_start": 0,
+                "scope": "Last 4 MiB of this stream; offsets count all observed bytes. Earlier bytes may have rotated out.",
+                "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                "total_bytes": 0
+              },
+              "transient_or_metadata_changes": []
+            },
+            "exit_code": 0,
+            "id": "7b692b75-8d98-4512-ba45-db8d4c4e8733",
+            "output": "stdout:\n\nstderr:\ntest_defaults (test_solution.Behavior.test_defaults) ... ok\ntest_empty_host (test_solution.Behavior.test_empty_host) ... ok\ntest_types_and_bounds (test_solution.Behavior.test_types_and_bounds) ... ok\n\n----------------------------------------------------------------------\nRan 3 tests in 0.000s\n\nOK\n",
+            "output_truncated": false,
+            "tests_run": 3,
+            "timed_out": false,
+            "undoable": false
+          },
+          "tests_run": 3
+        },
+        "findings": []
+      }
+    },
+    {
+      "skill": "browser-checks",
+      "broken_rejected": true,
+      "fixed_passed": true,
+      "actual_helper": {
+        "id": "13e23608-4201-42ca-86a2-e2c4cca457cf",
+        "pack": "browser",
+        "version": 1,
+        "input": {
+          "click": "#go",
+          "contains": "Ready",
+          "executable": "/usr/bin/chromium",
+          "screenshot": "/tmp/alt-skill-checks-0cdu_zmq/state/projects/e4cc25428ca7fcaafe4142c5034b4819f138396d2dab331c5701b8803e11d1a5/workflows/13e23608-4201-42ca-86a2-e2c4cca457cf.png",
+          "selector": "#result",
+          "url": "http://127.0.0.1:45579/"
+        },
+        "status": "passed",
+        "error": null,
+        "evidence": {
+          "command": [
+            "node",
+            "-e",
+            "// Playwright is an optional project dependency. No browser download occurs here.\nconst input = JSON.parse(process.argv[1]);\n(async () => {\n  const { chromium } = require('playwright');\n  const browser = await chromium.launch({ headless: true, executablePath: input.executable || undefined });\n  try {\n    const page = await browser.newPage();\n    const response = await page.goto(input.url, { timeout: 20000, waitUntil: 'domcontentloaded' });\n    if (!response || !response.ok()) throw new Error(`Page returned ${response && response.status()}`);\n    if (input.click) await page.locator(input.click).click({ timeout: 10000 });\n    const locator = page.locator(input.selector || 'body');\n    await locator.waitFor({ state: 'visible', timeout: 10000 });\n    const text = await locator.innerText({ timeout: 10000 });\n    if (input.contains && !text.includes(input.contains)) throw new Error(`Expected text absent: ${input.contains}`);\n    if (input.screenshot) await page.screenshot({ path: input.screenshot, fullPage: false });\n    console.log(JSON.stringify({ passed: true, url: page.url(), status: response.status(), observed: text.slice(0, 4000) }));\n  } finally { await browser.close(); }\n})().catch(error => { console.log(JSON.stringify({ passed: false, error: error.message })); process.exitCode = 1; });\n",
+            "{\"click\":\"#go\",\"contains\":\"Ready\",\"executable\":\"/usr/bin/chromium\",\"screenshot\":\"/tmp/alt-skill-checks-0cdu_zmq/state/projects/e4cc25428ca7fcaafe4142c5034b4819f138396d2dab331c5701b8803e11d1a5/workflows/13e23608-4201-42ca-86a2-e2c4cca457cf.png\",\"selector\":\"#result\",\"url\":\"http://127.0.0.1:45579/\"}"
+          ],
+          "terminal": {
+            "cancelled": false,
+            "elapsed_ms": 1303,
+            "error": null,
+            "execution": {
+              "after_manifest_sha256": null,
+              "before_manifest_sha256": null,
+              "changed_inputs": [],
+              "command": "'node' '-e' '// Playwright is an optional project dependency. No browser download occurs here.\nconst input = JSON.parse(process.argv[1]);\n(async () => {\n  const { chromium } = require('\\''playwright'\\'');\n  const browser = await chromium.launch({ headless: true, executablePath: input.executable || undefined });\n  try {\n    const page = await browser.newPage();\n    const response = await page.goto(input.url, { timeout: 20000, waitUntil: '\\''domcontentloaded'\\'' });\n    if (!response || !response.ok()) throw new Error(`Page returned ${response && response.status()}`);\n    if (input.click) await page.locator(input.click).click({ timeout: 10000 });\n    const locator = page.locator(input.selector || '\\''body'\\'');\n    await locator.waitFor({ state: '\\''visible'\\'', timeout: 10000 });\n    const text = await locator.innerText({ timeout: 10000 });\n    if (input.contains && !text.includes(input.contains)) throw new Error(`Expected text absent: ${input.contains}`);\n    if (input.screenshot) await page.screenshot({ path: input.screenshot, fullPage: false });\n    console.log(JSON.stringify({ passed: true, url: page.url(), status: response.status(), observed: text.slice(0, 4000) }));\n  } finally { await browser.close(); }\n})().catch(error => { console.log(JSON.stringify({ passed: false, error: error.message })); process.exitCode = 1; });\n' '{\"click\":\"#go\",\"contains\":\"Ready\",\"executable\":\"/usr/bin/chromium\",\"screenshot\":\"/tmp/alt-skill-checks-0cdu_zmq/state/projects/e4cc25428ca7fcaafe4142c5034b4819f138396d2dab331c5701b8803e11d1a5/workflows/13e23608-4201-42ca-86a2-e2c4cca457cf.png\",\"selector\":\"#result\",\"url\":\"http://127.0.0.1:45579/\"}'",
+              "generated_paths": [],
+              "immutable_inputs": false,
+              "namespace_root": null,
+              "observed_inputs_stable": false,
+              "patch_preview_truncated": false,
+              "project_root": null,
+              "receipt": "execution/0404e822-d3fe-46db-a9d1-1d21dcd179b1/receipt.json",
+              "snapshot_root": null,
+              "source_scope": "",
+              "stderr": {
+                "retained_bytes": 0,
+                "ring_start": 0,
+                "scope": "Last 4 MiB of this stream; offsets count all observed bytes. Earlier bytes may have rotated out.",
+                "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                "total_bytes": 0
+              },
+              "stdout": {
+                "retained_bytes": 80,
+                "ring_start": 0,
+                "scope": "Last 4 MiB of this stream; offsets count all observed bytes. Earlier bytes may have rotated out.",
+                "sha256": "b9a385e843f8e6fc923d59e0a38f4564515eac8861540f968fded92eca7ddf1c",
+                "total_bytes": 80
+              },
+              "transient_or_metadata_changes": []
+            },
+            "exit_code": 0,
+            "id": "0404e822-d3fe-46db-a9d1-1d21dcd179b1",
+            "output": "stdout:\n{\"passed\":true,\"url\":\"http://127.0.0.1:45579/\",\"status\":200,\"observed\":\"Ready\"}\n\nstderr:\n",
+            "output_truncated": false,
+            "tests_run": null,
+            "timed_out": false,
+            "undoable": false
+          }
+        },
+        "findings": [],
+        "retained_screenshot": "skills-browser-checks.png",
+        "screenshot_sha256": "9d1d405a2a0cd26009c41dd6c3c37f75bc023958805da5e598b2a86003e71832"
+      }
+    }
+  ]
+}

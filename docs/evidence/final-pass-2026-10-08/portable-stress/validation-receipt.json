@@ -1,0 +1,25 @@
+{
+  "schema": 1,
+  "binary_sha256": "54b0cf02702df83afa96c3c31b5905e2c5311d787b9400f7ac9ac745e0486e51",
+  "commands": [
+    {
+      "command": "python3 scripts/soak.py --binary target/portable-glibc231/release/alt --rounds 30 --output /workspace/.alt-final-validation/portable-stress/soak-30.json",
+      "exit_code": 0
+    },
+    {
+      "command": "python3 scripts/smoke_pressure_tui.py --binary target/portable-glibc231/release/alt --rounds 30 --output /workspace/.alt-final-validation/portable-stress/pressure-30.json",
+      "exit_code": 0
+    }
+  ],
+  "scripts_sha256": {
+    "scripts/soak.py": "6d486fb85b593df4530b7b24b699c66ad592fcfb09c3ba7b6d54385bb6fedbfe",
+    "scripts/smoke_pressure_tui.py": "eb23ad57486994ea9ada8e7827f0df1cbbe496aaf341a9f81bae80e6950e8722"
+  },
+  "initial_pressure_attempt": {
+    "recorded_failed_rounds": 9,
+    "exit_code": 130,
+    "termination": "Harness interrupted after repeated identical stale navigation failures; incomplete next round not included in JSON",
+    "diagnosis": "Obsolete Enter attempted to dismiss cancellation status, instead submitting draft and opening model selection. Removed Enter while retaining cancellation, draft preservation, file-navigation and terminal restoration assertions. Portable application unchanged."
+  },
+  "scope": "Portable CPU protocol/PTY fixtures only; no model launches or human usability claim. Latency under concurrent cloud activity; process RAM/FD are samples, not peaks."
+}

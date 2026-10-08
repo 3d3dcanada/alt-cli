@@ -27,7 +27,8 @@ for n in range(a.rounds):
    wait('ALT');send(b'\x1b9');time.sleep(.08) # queued file read is deliberately blocked by flock
    start=time.monotonic();send(b'\x1b2');draft=f'DRAFT-{n}-caf';send(b'\x1b[200~'+(draft+'é 🙂').encode()+b'\x1b[201~');wait(draft);row['input_to_visible_ms']=(time.monotonic()-start)*1000
    start=time.monotonic();send(b'\x1b');wait('cancelled',timeout=3);row['cancel_to_visible_ms']=(time.monotonic()-start)*1000
-   send(b'\r');wait(draft)
+   # Cancellation is a status message, not a modal. Enter would submit the draft.
+   wait(draft);assert 'Where will your model run?' not in '\n'.join(screen.display)
    fcntl.flock(lock,fcntl.LOCK_UN);send(b'\x1b9');wait('file-');send(b'\x1b2');wait(draft)
    send(b'\x11');proc.wait(timeout=10);assert proc.returncode==0 and termios.tcgetattr(slave)==original
    row['passed']=True

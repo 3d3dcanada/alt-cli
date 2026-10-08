@@ -1,0 +1,492 @@
+{
+  "schema": 1,
+  "date": "2026-10-08",
+  "binary_sha256": "293ab2625a5896c8bcd6c94c9ee3848e460dd3fdbf6fb94f23803815ad410172",
+  "binary_path": "/workspace/.alt-final-validation/tui/alt-frozen",
+  "complete": true,
+  "passed": true,
+  "passed_gates": 11,
+  "failed_gates_remaining": 0,
+  "stages": [
+    {
+      "name": "smoke_allowance_tui",
+      "command": [
+        "python3",
+        "scripts/smoke_allowance_tui.py",
+        "--alt",
+        "/workspace/.alt-final-validation/tui/alt-frozen",
+        "--output",
+        "/workspace/.alt-final-validation/tui/smoke_allowance_tui.json",
+        "--engine",
+        "/workspace/.alt-tools/goose"
+      ],
+      "status": "passed",
+      "exit_code": 0,
+      "duration_seconds": 40.64,
+      "timeout_seconds": 240,
+      "log": "smoke_allowance_tui.log",
+      "script_sha256": "79afb652b52fa03012df5c548afe923b02df9b00534a3694bfb6c55aa085c571",
+      "log_sha256": "3e1003a93b480a750c3136deea071e3c3dd78acf971af1b9df1e9c11392fa77d",
+      "attempt": 1
+    },
+    {
+      "name": "smoke_draft_tui",
+      "command": [
+        "python3",
+        "scripts/smoke_draft_tui.py",
+        "--alt",
+        "/workspace/.alt-final-validation/tui/alt-frozen",
+        "--output",
+        "/workspace/.alt-final-validation/tui/smoke_draft_tui.json"
+      ],
+      "status": "passed",
+      "exit_code": 0,
+      "duration_seconds": 20.25,
+      "timeout_seconds": 240,
+      "log": "smoke_draft_tui.log",
+      "script_sha256": "82c07f6c970c29380c8ca79ac93b2c9161cb07d3e3d4759a843acf5fd7862b87",
+      "log_sha256": "419bfc5f55d93d391d99f5ab87b6a6a56106c4cb37a83787ec61a7356f533de3",
+      "attempt": 1
+    },
+    {
+      "name": "smoke_harness_tui_60x18",
+      "command": [
+        "python3",
+        "scripts/smoke_harness_tui.py",
+        "--alt",
+        "/workspace/.alt-final-validation/tui/alt-frozen",
+        "--width",
+        "60",
+        "--height",
+        "18"
+      ],
+      "status": "passed",
+      "exit_code": 0,
+      "duration_seconds": null,
+      "log": "smoke_harness_tui_60x18-retry2.log",
+      "log_sha256": "2c7226b454351d83e403132fb003e3dd842855481d8b308b70b29bf322dc7768",
+      "script_sha256": "9911c25aaa0bc9174b25745171288324e6084e53656017925e906a699cd4f40d",
+      "attempt": 3,
+      "duration_note": "Runner tool observed completion exit0; this direct targeted retry did not measure total wall time."
+    },
+    {
+      "name": "smoke_harness_tui_80x24",
+      "command": [
+        "python3",
+        "scripts/smoke_harness_tui.py",
+        "--alt",
+        "/workspace/.alt-final-validation/tui/alt-frozen",
+        "--width",
+        "80",
+        "--height",
+        "24"
+      ],
+      "status": "passed",
+      "exit_code": 0,
+      "duration_seconds": 6.25,
+      "timeout_seconds": 180,
+      "log": "smoke_harness_tui_80x24.log",
+      "script_sha256": "bdd3c9269ff17e7f4ba40bac3480a473ff8ad0a661f9147b8c0e7ec4126660b8",
+      "log_sha256": "2c7226b454351d83e403132fb003e3dd842855481d8b308b70b29bf322dc7768",
+      "attempt": 1
+    },
+    {
+      "name": "smoke_pc_recorder",
+      "command": [
+        "python3",
+        "scripts/smoke_pc_recorder.py",
+        "--alt",
+        "/workspace/.alt-final-validation/tui/alt-frozen",
+        "--output",
+        "/workspace/.alt-final-validation/tui/smoke_pc_recorder.json",
+        "--engine",
+        "/workspace/.alt-tools/goose"
+      ],
+      "status": "passed",
+      "exit_code": 0,
+      "duration_seconds": 32.86,
+      "timeout_seconds": 600,
+      "log": "smoke_pc_recorder.log",
+      "script_sha256": "797289850b48b4bbbfbd16f8eb466f0c1ff86a992a546bebd2fe744c8d210369",
+      "log_sha256": "8a8f778fc3b45dee692c93b4b112402f61c860c094f8a30d981e28199eb08821",
+      "attempt": 1
+    },
+    {
+      "name": "smoke_practice_tui",
+      "command": [
+        "python3",
+        "scripts/smoke_practice_tui.py"
+      ],
+      "status": "passed",
+      "exit_code": 0,
+      "duration_seconds": 8.11,
+      "log": "smoke_practice_tui-retry1.log",
+      "log_sha256": "4f0df451a47c44ee71693e6e051099b8afb22a600d94dc7bda7f3b353949e715",
+      "script_sha256": "f938f1a4e4863f7b92f25b4ff5130837eb35c15b861d21a954c84746cb895f11",
+      "attempt": 2
+    },
+    {
+      "name": "smoke_recovery_tui",
+      "command": [
+        "python3",
+        "scripts/smoke_recovery_tui.py",
+        "--alt",
+        "/workspace/.alt-final-validation/tui/alt-frozen",
+        "--output",
+        "/workspace/.alt-final-validation/tui/smoke_recovery_tui.json"
+      ],
+      "status": "passed",
+      "exit_code": 0,
+      "duration_seconds": 11.66,
+      "timeout_seconds": 240,
+      "log": "smoke_recovery_tui.log",
+      "script_sha256": "fc4f425afb23b3d61737b5500d893046801b046596b2ce4a933913328e18acd5",
+      "log_sha256": "644971188470759ce5701e5a8723e48bbfb814b3bddc22ba9462d122edb73a67",
+      "attempt": 1
+    },
+    {
+      "name": "smoke_task_tui",
+      "command": [
+        "python3",
+        "scripts/smoke_task_tui.py"
+      ],
+      "status": "passed",
+      "exit_code": 0,
+      "duration_seconds": 1.72,
+      "timeout_seconds": 180,
+      "log": "smoke_task_tui.log",
+      "script_sha256": "7c3debd0893086bbebe2364a7d6b5f9666b89dbd8c9ac00e58beebcfff5991c5",
+      "log_sha256": "ddc56693861ec10d3e860bb2153c258a37ca710b4280eeede12e80b580bd2b37",
+      "attempt": 1
+    },
+    {
+      "name": "smoke_tui",
+      "command": [
+        "python3",
+        "scripts/smoke_tui.py"
+      ],
+      "status": "passed",
+      "exit_code": 0,
+      "duration_seconds": 4.0,
+      "timeout_seconds": 180,
+      "log": "smoke_tui.log",
+      "script_sha256": "dc1d436e25fe1604ac763cbd8daf9163f9ca4e10f459b0fb0c34437c139677dd",
+      "log_sha256": "e6b7745bcb6e4c08759a6c0b85490befad7a1234df0832430cac24bf655fe4e3",
+      "attempt": 1
+    },
+    {
+      "name": "smoke_verification_tui",
+      "command": [
+        "python3",
+        "scripts/smoke_verification_tui.py"
+      ],
+      "status": "passed",
+      "exit_code": 0,
+      "duration_seconds": 2.73,
+      "log": "smoke_verification_tui-retry1.log",
+      "log_sha256": "2015ccd6f26f1cef95c018c79cb55bb47e29842548674a46d5817413960a89f5",
+      "script_sha256": "7f0e12ee055c936848bf693a20943a007d4cafcda818807e829bccbe836c2d4c",
+      "attempt": 2
+    },
+    {
+      "name": "smoke_workbench_tui",
+      "command": [
+        "python3",
+        "scripts/smoke_workbench_tui.py"
+      ],
+      "status": "passed",
+      "exit_code": 0,
+      "duration_seconds": 8.61,
+      "timeout_seconds": 180,
+      "log": "smoke_workbench_tui.log",
+      "script_sha256": "d2a0dc7f5f5b7aed3bf1fc2b0119164eebe3900af21946ea472872fffe59d5fb",
+      "log_sha256": "400b7da698b0b347f4b8a79da834fbfa7fc5f652c4cf53a99a7cdf2fb22af7ab",
+      "attempt": 1
+    }
+  ],
+  "retained_failed_attempts": [
+    {
+      "name": "smoke_verification_tui",
+      "command": [
+        "python3",
+        "scripts/smoke_verification_tui.py"
+      ],
+      "status": "failed",
+      "exit_code": 1,
+      "duration_seconds": 1.77,
+      "timeout_seconds": 180,
+      "log": "smoke_verification_tui.log",
+      "script_sha256": "522d9ce7b96504e165718fdf2a4df1d61419b32b0bfa163ad39ce6ce8cc7c388",
+      "log_sha256": "a5959ef8ca460886b64ce3c747882b7d841713b8163b84b01a8f668b20bd05c9",
+      "attempt": 1,
+      "resolution": "The actual PTY sets TERM=xterm-256color. Align the independent CLI verify subprocess to that same environment; F01 correctly invalidated evidence when TERM differed. No assertion weakened; complete and behavioral_acceptance still required."
+    },
+    {
+      "name": "smoke_practice_tui",
+      "command": [
+        "python3",
+        "scripts/smoke_practice_tui.py"
+      ],
+      "status": "failed",
+      "exit_code": 1,
+      "duration_seconds": 1.67,
+      "timeout_seconds": 180,
+      "log": "smoke_practice_tui.log",
+      "script_sha256": "2d50024967a6cea9bef2d4b5108f3579283665916a959e1963a0889767edd975",
+      "log_sha256": "ddaea09fb24b81118d632389ca4f6f92423276969fcf4db5e0a4191f6e908fdb",
+      "attempt": 1,
+      "resolution": "Same environment alignment as verification. Full practice repair/check/restart/undo still required at120x40,80x24,60x18 plus dependency recovery."
+    },
+    {
+      "name": "smoke_harness_tui_60x18",
+      "command": [
+        "python3",
+        "scripts/smoke_harness_tui.py",
+        "--alt",
+        "/workspace/.alt-final-validation/tui/alt-frozen",
+        "--width",
+        "60",
+        "--height",
+        "18"
+      ],
+      "status": "failed",
+      "exit_code": 1,
+      "duration_seconds": 15.03,
+      "timeout_seconds": 180,
+      "log": "smoke_harness_tui_60x18.log",
+      "script_sha256": "bdd3c9269ff17e7f4ba40bac3480a473ff8ad0a661f9147b8c0e7ec4126660b8",
+      "log_sha256": "e906adefa4f5fcc22120b246cd71f624e04cf89e9e5c03dc69114cb38143336a",
+      "attempt": 1,
+      "resolution": "Preserve literal Activation requires assertion after joining wrapped visible dialog text and excluding unrelated background characters outside modal borders. All settings persistence and cancellation assertions unchanged."
+    },
+    {
+      "name": "smoke_harness_tui_60x18",
+      "command": [
+        "python3",
+        "scripts/smoke_harness_tui.py",
+        "--alt",
+        "/workspace/.alt-final-validation/tui/alt-frozen",
+        "--width",
+        "60",
+        "--height",
+        "18"
+      ],
+      "status": "failed",
+      "exit_code": 1,
+      "duration_seconds": 15.01,
+      "log": "smoke_harness_tui_60x18-retry1.log",
+      "log_sha256": "527f426d51d6b42fd161d9a81f07c1e72e738de0ce17dc463da47670499b3232",
+      "script_sha256": "4e97f41f50c6fae3edf347d2b3325620d3fabbb15050fbae63ea9f1fd5d19c1a",
+      "attempt": 2,
+      "resolution": "Preserve literal Activation requires assertion after joining wrapped visible dialog text and excluding unrelated background characters outside modal borders. All settings persistence and cancellation assertions unchanged."
+    }
+  ],
+  "protocol_details": {
+    "smoke_draft_tui": {
+      "passed": true,
+      "attempts": [
+        {
+          "size": "80x24",
+          "profile_preserved": true,
+          "manual_id_no_inventory": true,
+          "cancel_ms": 178.69,
+          "input_to_durable_ms": 116.58,
+          "abrupt_restore": true,
+          "new_restore": true,
+          "oversized_paste_feedback": true,
+          "keyboard_only": true
+        },
+        {
+          "size": "60x18",
+          "profile_preserved": true,
+          "manual_id_no_inventory": true,
+          "cancel_ms": 179.29,
+          "input_to_durable_ms": 135.62,
+          "abrupt_restore": true,
+          "new_restore": true,
+          "oversized_paste_feedback": true,
+          "keyboard_only": true
+        },
+        {
+          "size": "60x18",
+          "second_window_refused": true,
+          "failed_quit_keeps_editor": true,
+          "repair_then_flush_preserves_text": true
+        },
+        {
+          "startup": "success",
+          "next_draft_preserved": true,
+          "submission_id_recorded_or_recoverable": true,
+          "orderly_restart": true
+        },
+        {
+          "startup": "failure",
+          "next_draft_preserved": true,
+          "submission_id_recorded_or_recoverable": true,
+          "orderly_restart": true
+        },
+        {
+          "startup": "cancel",
+          "next_draft_preserved": true,
+          "submission_id_recorded_or_recoverable": true,
+          "orderly_restart": true
+        }
+      ]
+    },
+    "smoke_recovery_tui": {
+      "passed": true,
+      "binary_sha256": "293ab2625a5896c8bcd6c94c9ee3848e460dd3fdbf6fb94f23803815ad410172",
+      "attempts": [
+        {
+          "size": "80x24",
+          "raw_stream_switch": true,
+          "declared_inputs_preserve_contract": true,
+          "storage_budget_persisted": true,
+          "recovered_preview_and_restore": true,
+          "keyboard_only": true
+        },
+        {
+          "size": "60x18",
+          "raw_stream_switch": true,
+          "declared_inputs_preserve_contract": true,
+          "storage_budget_persisted": true,
+          "recovered_preview_and_restore": true,
+          "keyboard_only": true
+        },
+        {
+          "size": "60x18",
+          "explicit_requirement_correction": true,
+          "earlier_text_retained": true,
+          "no_model_prompt_for_correction": true
+        }
+      ],
+      "scope": "Actual keyboard PTYs, deterministic ACP and local check commands; no model quality or human novice measurement"
+    },
+    "smoke_allowance_tui": {
+      "schema": 1,
+      "passed": true,
+      "binary_sha256": "293ab2625a5896c8bcd6c94c9ee3848e460dd3fdbf6fb94f23803815ad410172",
+      "attempts": [
+        {
+          "width": 120,
+          "height": 40,
+          "passed": true,
+          "actual_requests": 2,
+          "addition_issued_no_request": true,
+          "allocation_persisted": true
+        },
+        {
+          "width": 80,
+          "height": 24,
+          "passed": true,
+          "actual_requests": 2,
+          "addition_issued_no_request": true,
+          "allocation_persisted": true
+        },
+        {
+          "width": 60,
+          "height": 18,
+          "passed": true,
+          "actual_requests": 2,
+          "addition_issued_no_request": true,
+          "allocation_persisted": true
+        }
+      ],
+      "scope": "Actual PTY/Alt/Goose with a weight-free provider"
+    },
+    "smoke_pc_recorder": {
+      "schema": 1,
+      "binary_sha256": "293ab2625a5896c8bcd6c94c9ee3848e460dd3fdbf6fb94f23803815ad410172",
+      "passed": true,
+      "attempts": [
+        {
+          "provider": "openai",
+          "incorrect_fixture": false,
+          "expected_outcome_observed": true,
+          "recorder_passed": true,
+          "outcomes": {
+            "application": {
+              "passed": true,
+              "checks": 14
+            },
+            "model_correctness": {
+              "passed": true,
+              "checks": 9
+            },
+            "native_transport": {
+              "passed": true,
+              "checks": 3
+            },
+            "recovery": {
+              "passed": true,
+              "checks": 7
+            }
+          }
+        },
+        {
+          "provider": "ollama",
+          "incorrect_fixture": false,
+          "expected_outcome_observed": true,
+          "recorder_passed": true,
+          "outcomes": {
+            "application": {
+              "passed": true,
+              "checks": 14
+            },
+            "model_correctness": {
+              "passed": true,
+              "checks": 9
+            },
+            "native_transport": {
+              "passed": true,
+              "checks": 3
+            },
+            "recovery": {
+              "passed": true,
+              "checks": 7
+            }
+          }
+        },
+        {
+          "provider": "openai",
+          "incorrect_fixture": true,
+          "expected_outcome_observed": true,
+          "recorder_passed": false,
+          "outcomes": {
+            "application": {
+              "passed": true,
+              "checks": 14
+            },
+            "model_correctness": {
+              "passed": false,
+              "checks": 9
+            },
+            "native_transport": {
+              "passed": true,
+              "checks": 3
+            },
+            "recovery": {
+              "passed": true,
+              "checks": 7
+            }
+          }
+        }
+      ],
+      "scope": "Weight-free fixtures with actual Alt/Goose and PC recorder; no measured model intelligence"
+    }
+  },
+  "test_environment": {
+    "python": "3.12.14",
+    "goose": "1.53.0",
+    "binary_scope": "Exact final rebuilt debug binary copied before test-helper-only changes and implementation commit bb34872. No Rust source changed during these runs.",
+    "max_parallel_suites": 4
+  },
+  "scope": "Actual PTYs plus real Goose with weight-free local protocol fixtures for allowance and PC recorder. PC recorder positive OpenAI/Ollama fixtures passed; deliberately incorrect repair failed behavioral correctness as required. These are transport/harness tests, not model evaluations.",
+  "unmeasured": [
+    "Five uncoached novice sessions",
+    "GTX1070 performance and fit",
+    "Any live checkpoint capability improvement",
+    "Universal hard bound on draft durability during storage stalls"
+  ],
+  "repo_copy_policy": "Copy only this summary and referenced bounded .log/.json receipts after root permits repo writes; leave frozen binary and raw recorder state outside repo."
+}

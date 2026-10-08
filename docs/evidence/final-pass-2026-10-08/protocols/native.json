@@ -1,0 +1,387 @@
+{
+  "scope": "Real native HTTP round trips with scripted weight-free responses; not model quality",
+  "rows": [
+    {
+      "uses_result": false,
+      "report": {
+        "challenge_version": 2,
+        "elapsed_seconds": 0.012744696,
+        "error": "Final response did not use the actual host result",
+        "evidence_directory": "/tmp/alt-native-contract-yg6bog6m/state/evaluations/native-33b86140-e7f4-4d3c-8edd-ae4d4e1c3fdd",
+        "id": "33b86140-e7f4-4d3c-8edd-ae4d4e1c3fdd",
+        "identity": {
+          "access": "guided",
+          "active_skill": null,
+          "artifact_id": null,
+          "artifact_metadata": null,
+          "artifact_parts": null,
+          "artifact_sha256": null,
+          "context": 16384,
+          "effective_inference": {
+            "accounting": "Owned runtime measures the full rendered chat/tools before forwarding when its template/tokenizer endpoints are available. Each receipt records measurement or unknown; server usage is authoritative. External native context is unqualified.",
+            "action_headroom": 256,
+            "input_allowance": 14336,
+            "native_context": "Owned runtime configured; external server must be inspected separately",
+            "reasoning_allowance": null,
+            "settings": {
+              "action_headroom": 256,
+              "llama_extensions": false,
+              "max_requests": null,
+              "min_p": null,
+              "output_parameter": "max_tokens",
+              "output_tokens": 2048,
+              "reasoning_tokens": null,
+              "temperature": null,
+              "top_k": null,
+              "top_p": null,
+              "total_generated_tokens": null,
+              "version": 1
+            },
+            "thinking_support": "Budget only affects a supported thinking parser; non-thinking checkpoints do not gain a thinking mode.",
+            "total_output_allowance": 2048
+          },
+          "endpoint": "http://127.0.0.1:37105/v1",
+          "engine_sha256": null,
+          "fingerprint": "15e7c6c684ddaaa106fd8bf3aab0f033828b27fca45df6ba833e207fd1c07f44",
+          "identity_complete": false,
+          "instruction_version": null,
+          "max_turns": 12,
+          "model_id": "fixture-no-weights",
+          "operator_sha256": "dbddfe2c0b0a641f055314ea47011fa94fa3cc2d242f76c832ed407a34249472",
+          "provider": "openai",
+          "runtime_libraries": {},
+          "runtime_settings": {
+            "batch": 128,
+            "cache_k": "f16",
+            "cache_v": "f16",
+            "flash_attention": false,
+            "gpu_layers": 0,
+            "startup_timeout_secs": 180,
+            "thinking": null,
+            "threads": 0
+          },
+          "runtime_sha256": null,
+          "schema": 1,
+          "source_sha256": "662fd9f11392d39d05d6cea1185c8652830af4579cc3e34b248a3fccf782ecb1",
+          "template_sha256": null,
+          "tool_profile": "all",
+          "tool_schema_sha256": "fa6e54940a33df453021238bab265596e390b042eb6bebdbc8181b1a0649916c",
+          "workflow": "model-plan"
+        },
+        "model": "fixture-no-weights",
+        "physical_gpu_tested": false,
+        "probe_tool_schema_sha256": "d4d6ef2b89dfb7be53ba97067ccd63af73191bc0c37ee6bfded4c0ef9905bae2",
+        "schema": 1,
+        "scope": "Native calls and actual deterministic host execution; not broad reasoning or task reliability",
+        "status": "failed",
+        "steps": [
+          {
+            "executed": true,
+            "host_observation": {
+              "content": "ALT_HOST_5c0a0265-ec4f-429d-89d5-f1c0e804cf47",
+              "role": "tool",
+              "tool_call_id": "actual-fixture-call"
+            },
+            "native_call": {
+              "function": {
+                "arguments": "{\"text\": \"ALT_NATIVE_2a33e76d-2fb8-4df5-a7a6-853cd7fb04d0\"}",
+                "name": "echo_probe"
+              },
+              "id": "actual-fixture-call",
+              "type": "function"
+            }
+          }
+        ],
+        "timeout_seconds": 10,
+        "tool_choice": "auto"
+      },
+      "requests": [
+        {
+          "max_tokens": 2048,
+          "messages": [
+            {
+              "content": "Call echo_probe with text exactly ALT_NATIVE_2a33e76d-2fb8-4df5-a7a6-853cd7fb04d0. After its result, report the exact text returned by the tool. The host creates a new value after your call; do not repeat the input. Use a native tool call.",
+              "role": "user"
+            }
+          ],
+          "model": "fixture-no-weights",
+          "parallel_tool_calls": false,
+          "stream": true,
+          "stream_options": {
+            "include_usage": true
+          },
+          "tools": [
+            {
+              "function": {
+                "description": "Validate the supplied text and return a new host-generated observation. Read the actual returned text; it cannot be predicted from the input.",
+                "name": "echo_probe",
+                "parameters": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "text": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "text"
+                  ],
+                  "type": "object"
+                }
+              },
+              "type": "function"
+            }
+          ]
+        },
+        {
+          "max_tokens": 2048,
+          "messages": [
+            {
+              "content": "Call echo_probe with text exactly ALT_NATIVE_2a33e76d-2fb8-4df5-a7a6-853cd7fb04d0. After its result, report the exact text returned by the tool. The host creates a new value after your call; do not repeat the input. Use a native tool call.",
+              "role": "user"
+            },
+            {
+              "content": "",
+              "role": "assistant",
+              "tool_calls": [
+                {
+                  "function": {
+                    "arguments": "{\"text\": \"ALT_NATIVE_2a33e76d-2fb8-4df5-a7a6-853cd7fb04d0\"}",
+                    "name": "echo_probe"
+                  },
+                  "id": "actual-fixture-call",
+                  "type": "function"
+                }
+              ]
+            },
+            {
+              "content": "ALT_HOST_5c0a0265-ec4f-429d-89d5-f1c0e804cf47",
+              "role": "tool",
+              "tool_call_id": "actual-fixture-call"
+            }
+          ],
+          "model": "fixture-no-weights",
+          "parallel_tool_calls": false,
+          "stream": true,
+          "stream_options": {
+            "include_usage": true
+          },
+          "tools": [
+            {
+              "function": {
+                "description": "Validate the supplied text and return a new host-generated observation. Read the actual returned text; it cannot be predicted from the input.",
+                "name": "echo_probe",
+                "parameters": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "text": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "text"
+                  ],
+                  "type": "object"
+                }
+              },
+              "type": "function"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "uses_result": true,
+      "report": {
+        "challenge_version": 2,
+        "elapsed_seconds": 0.017453979,
+        "evidence_directory": "/tmp/alt-native-contract-yg6bog6m/state/evaluations/native-b92dcb9d-afa5-4e45-8a14-2fe05762763d",
+        "id": "b92dcb9d-afa5-4e45-8a14-2fe05762763d",
+        "identity": {
+          "access": "guided",
+          "active_skill": null,
+          "artifact_id": null,
+          "artifact_metadata": null,
+          "artifact_parts": null,
+          "artifact_sha256": null,
+          "context": 16384,
+          "effective_inference": {
+            "accounting": "Owned runtime measures the full rendered chat/tools before forwarding when its template/tokenizer endpoints are available. Each receipt records measurement or unknown; server usage is authoritative. External native context is unqualified.",
+            "action_headroom": 256,
+            "input_allowance": 14336,
+            "native_context": "Owned runtime configured; external server must be inspected separately",
+            "reasoning_allowance": null,
+            "settings": {
+              "action_headroom": 256,
+              "llama_extensions": false,
+              "max_requests": null,
+              "min_p": null,
+              "output_parameter": "max_tokens",
+              "output_tokens": 2048,
+              "reasoning_tokens": null,
+              "temperature": null,
+              "top_k": null,
+              "top_p": null,
+              "total_generated_tokens": null,
+              "version": 1
+            },
+            "thinking_support": "Budget only affects a supported thinking parser; non-thinking checkpoints do not gain a thinking mode.",
+            "total_output_allowance": 2048
+          },
+          "endpoint": "http://127.0.0.1:37105/v1",
+          "engine_sha256": null,
+          "fingerprint": "15e7c6c684ddaaa106fd8bf3aab0f033828b27fca45df6ba833e207fd1c07f44",
+          "identity_complete": false,
+          "instruction_version": null,
+          "max_turns": 12,
+          "model_id": "fixture-no-weights",
+          "operator_sha256": "dbddfe2c0b0a641f055314ea47011fa94fa3cc2d242f76c832ed407a34249472",
+          "provider": "openai",
+          "runtime_libraries": {},
+          "runtime_settings": {
+            "batch": 128,
+            "cache_k": "f16",
+            "cache_v": "f16",
+            "flash_attention": false,
+            "gpu_layers": 0,
+            "startup_timeout_secs": 180,
+            "thinking": null,
+            "threads": 0
+          },
+          "runtime_sha256": null,
+          "schema": 1,
+          "source_sha256": "662fd9f11392d39d05d6cea1185c8652830af4579cc3e34b248a3fccf782ecb1",
+          "template_sha256": null,
+          "tool_profile": "all",
+          "tool_schema_sha256": "fa6e54940a33df453021238bab265596e390b042eb6bebdbc8181b1a0649916c",
+          "workflow": "model-plan"
+        },
+        "model": "fixture-no-weights",
+        "physical_gpu_tested": false,
+        "probe_tool_schema_sha256": "d4d6ef2b89dfb7be53ba97067ccd63af73191bc0c37ee6bfded4c0ef9905bae2",
+        "schema": 1,
+        "scope": "Native calls and actual deterministic host execution; not broad reasoning or task reliability",
+        "status": "passed",
+        "steps": [
+          {
+            "executed": true,
+            "host_observation": {
+              "content": "ALT_HOST_79e904f9-bd50-41f9-b2cd-49101d0e4b1e",
+              "role": "tool",
+              "tool_call_id": "actual-fixture-call"
+            },
+            "native_call": {
+              "function": {
+                "arguments": "{\"text\": \"ALT_NATIVE_756b52f2-d533-421a-b2ff-2f46add2e296\"}",
+                "name": "echo_probe"
+              },
+              "id": "actual-fixture-call",
+              "type": "function"
+            }
+          },
+          {
+            "final_response": {
+              "content": "ALT_HOST_79e904f9-bd50-41f9-b2cd-49101d0e4b1e",
+              "role": "assistant"
+            },
+            "host_result_used": true
+          }
+        ],
+        "timeout_seconds": 10,
+        "tool_choice": "auto"
+      },
+      "requests": [
+        {
+          "max_tokens": 2048,
+          "messages": [
+            {
+              "content": "Call echo_probe with text exactly ALT_NATIVE_756b52f2-d533-421a-b2ff-2f46add2e296. After its result, report the exact text returned by the tool. The host creates a new value after your call; do not repeat the input. Use a native tool call.",
+              "role": "user"
+            }
+          ],
+          "model": "fixture-no-weights",
+          "parallel_tool_calls": false,
+          "stream": true,
+          "stream_options": {
+            "include_usage": true
+          },
+          "tools": [
+            {
+              "function": {
+                "description": "Validate the supplied text and return a new host-generated observation. Read the actual returned text; it cannot be predicted from the input.",
+                "name": "echo_probe",
+                "parameters": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "text": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "text"
+                  ],
+                  "type": "object"
+                }
+              },
+              "type": "function"
+            }
+          ]
+        },
+        {
+          "max_tokens": 2048,
+          "messages": [
+            {
+              "content": "Call echo_probe with text exactly ALT_NATIVE_756b52f2-d533-421a-b2ff-2f46add2e296. After its result, report the exact text returned by the tool. The host creates a new value after your call; do not repeat the input. Use a native tool call.",
+              "role": "user"
+            },
+            {
+              "content": "",
+              "role": "assistant",
+              "tool_calls": [
+                {
+                  "function": {
+                    "arguments": "{\"text\": \"ALT_NATIVE_756b52f2-d533-421a-b2ff-2f46add2e296\"}",
+                    "name": "echo_probe"
+                  },
+                  "id": "actual-fixture-call",
+                  "type": "function"
+                }
+              ]
+            },
+            {
+              "content": "ALT_HOST_79e904f9-bd50-41f9-b2cd-49101d0e4b1e",
+              "role": "tool",
+              "tool_call_id": "actual-fixture-call"
+            }
+          ],
+          "model": "fixture-no-weights",
+          "parallel_tool_calls": false,
+          "stream": true,
+          "stream_options": {
+            "include_usage": true
+          },
+          "tools": [
+            {
+              "function": {
+                "description": "Validate the supplied text and return a new host-generated observation. Read the actual returned text; it cannot be predicted from the input.",
+                "name": "echo_probe",
+                "parameters": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "text": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "text"
+                  ],
+                  "type": "object"
+                }
+              },
+              "type": "function"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

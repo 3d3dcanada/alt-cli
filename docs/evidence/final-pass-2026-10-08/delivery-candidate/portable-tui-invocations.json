@@ -1,0 +1,43 @@
+{
+  "binary": "/workspace/alt-cli/target/portable-glibc231/release/alt",
+  "binary_sha256": "54b0cf02702df83afa96c3c31b5905e2c5311d787b9400f7ac9ac745e0486e51",
+  "commands": [
+    {
+      "argv": [
+        "python3",
+        "scripts/smoke_draft_tui.py",
+        "--alt",
+        "/workspace/alt-cli/target/portable-glibc231/release/alt",
+        "--output",
+        "/workspace/.alt-final-qualification/delivery/draft-tui-final-portable.json"
+      ],
+      "cwd": "/workspace/alt-cli",
+      "environment_override": {
+        "PYTHONPATH": "/workspace/.alt-tools/python"
+      },
+      "script_sha256": "82c07f6c970c29380c8ca79ac93b2c9161cb07d3e3d4759a843acf5fd7862b87",
+      "completed_pass_receipt": "draft-tui-final-portable.json",
+      "receipt_sha256": "a8360dfada562ed4d39e000b9d1babc1501755fdad8f17262845ee59822ed255",
+      "passed": true
+    },
+    {
+      "argv": [
+        "python3",
+        "scripts/smoke_recovery_tui.py",
+        "--alt",
+        "/workspace/alt-cli/target/portable-glibc231/release/alt",
+        "--output",
+        "/workspace/.alt-final-qualification/delivery/recovery-tui-final-portable.json"
+      ],
+      "cwd": "/workspace/alt-cli",
+      "environment_override": {
+        "PYTHONPATH": "/workspace/.alt-tools/python"
+      },
+      "script_sha256": "fc4f425afb23b3d61737b5500d893046801b046596b2ce4a933913328e18acd5",
+      "completed_pass_receipt": "recovery-tui-final-portable.json",
+      "receipt_sha256": "7f096b0ff4921c6989a2f65f9f853d43a9d14426b0bd6222e0d42a656e490240",
+      "passed": true
+    }
+  ],
+  "scope": "Both commands explicitly select the final portable binary; these records bind the successful fixture receipts to that invocation. No live model weights used."
+}
