@@ -228,8 +228,65 @@ async fn worker(
                 Some(Command::Prompt{text,brief}) if response.is_none()=>{
                     store.append(&session.id,&json!({"type":"user","text":text}))?;
                     if !brief.trim().is_empty() {store.append(&session.id,&json!({"type":"project_brief","text":brief}))?;}
-                    response=Some(engine.prompt_with_brief(&session.engine_id,&text,&brief).await?);
-                    deadline=tokio::time::Instant::now()+Duration::from_secs(1200);cancelling=false;
+                    // Prompt setup (project/memory/tokenizer work) runs before the
+                    // engine turn. It must stay cancellable and bounded: an Esc during
+                    // this phase raises the bridge's cancel flag and the setup future
+                    // unwinds at its next cancel check, while a hard deadline stops a
+                    // wedged setup from freezing the conversation forever.
+                    let cancel_flag = engine.bridge_cancel();
+                    let mut prompt = Box::pin(engine.prompt_with_brief(&session.engine_id,&text,&brief));
+                    let setup_deadline = tokio::time::Instant::now() + Duration::from_secs(120);
+                    let mut deferred: Option<Command> = None;
+                    let outcome = loop {
+                        tokio::select! {
+                            result=&mut prompt=>{ break result; }
+                            command=commands.recv()=>{
+                                match command {
+                                    Some(Command::Cancel)=>{
+                                        if let Some(flag)=&cancel_flag { flag.store(true,Ordering::Relaxed); }
+                                        // Keep waiting: the setup future observes the flag
+                                        // at its next cancel check.
+                                    }
+                                    other=>{ deferred=other; }
+                                }
+                            }
+                            _=tokio::time::sleep_until(setup_deadline)=>{
+                                break Err(anyhow::anyhow!("Prompt setup did not finish within two minutes. Stop any busy project checks and try again; the conversation is saved"));
+                            }
+                        }
+                    };
+                    drop(prompt);
+                    if let Some(flag)=&cancel_flag { flag.store(false,Ordering::Relaxed); }
+                    match outcome {
+                        Ok(future)=>{response=Some(future);deadline=tokio::time::Instant::now()+Duration::from_secs(1200);cancelling=false;}
+                        Err(error)=>{
+                            store.append(&session.id,&json!({"type":"error","text":error.to_string()}))?;
+                            updates.send(Update::Error(error.to_string())).await?;
+                        }
+                    }
+                    // A command that arrived during setup was deferred; deliver it now.
+                    match deferred {
+                        Some(Command::Permission{id,params,allow})=>{
+                            let allow=allow&&!cancelling&&params["sessionId"]==session.engine_id;
+                            engine.permission(id.clone(),&params,allow).await?;
+                            store.append(&session.id,&json!({"type":"permission_decision","id":id,"allow":allow}))?;
+                        }
+                        Some(Command::AddAllowance{requests,tokens}) if response.is_none()=>{
+                            match engine.add_allowance(requests,tokens) {
+                                Ok(status)=>{
+                                    store.append(&session.id,&json!({"type":"allowance_added","requests":requests,"generated_tokens":tokens,"data":status}))?;
+                                    updates.send(Update::Inference(status.clone())).await?;
+                                    updates.send(Update::Progress(Progress{stage:"Allowance added. Send a message to continue the saved task.".into(),..Progress::default()})).await?;
+                                }
+                                Err(error)=>{updates.send(Update::Error(error.to_string())).await?;}
+                            }
+                        }
+                        Some(Command::Shutdown)=>{ engine.shutdown().await; if let Some(runtime)=&mut local_runtime { runtime.stop().await; } return Ok(()); }
+                        Some(Command::Cancel) if response.is_some()=>{
+                            engine.cancel(&session.engine_id).await?;cancelling=true;deadline=tokio::time::Instant::now()+Duration::from_secs(5);
+                        }
+                        _=>{}
+                    }
                 },
                 Some(Command::Permission{id,params,allow})=>{
                     let allow=allow && !cancelling && params["sessionId"]==session.engine_id;
