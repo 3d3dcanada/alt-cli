@@ -550,7 +550,11 @@ async fn main() {
 }
 
 async fn model_ids(profile: &Profile) -> Result<Vec<String>> {
-    models::inventory(profile).await
+    Ok(models::inventory(profile)
+        .await?
+        .into_iter()
+        .map(|model| model.id)
+        .collect())
 }
 
 async fn run() -> Result<()> {

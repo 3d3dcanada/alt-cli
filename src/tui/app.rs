@@ -76,6 +76,43 @@ impl Page {
     }
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum LayoutMode {
+    Sidebar,
+    TopTabs,
+    BottomTabs,
+    Split,
+}
+impl LayoutMode {
+    pub const ALL: [Self; 4] = [Self::Sidebar, Self::TopTabs, Self::BottomTabs, Self::Split];
+    pub fn label(self) -> &'static str {
+        match self {
+            Self::Sidebar => "Sidebar",
+            Self::TopTabs => "Top tabs",
+            Self::BottomTabs => "Bottom tabs",
+            Self::Split => "Split (sidebar + activity)",
+        }
+    }
+    pub fn from_saved(name: &str) -> Self {
+        Self::ALL
+            .iter()
+            .find(|mode| {
+                mode.label().split_whitespace().next()
+                    == Some(name.split_whitespace().next().unwrap_or(""))
+            })
+            .copied()
+            .unwrap_or(Self::Sidebar)
+    }
+    pub fn saved_name(self) -> &'static str {
+        match self {
+            Self::Sidebar => "sidebar",
+            Self::TopTabs => "top",
+            Self::BottomTabs => "bottom",
+            Self::Split => "split",
+        }
+    }
+}
+
 #[derive(Debug, Clone)]
 pub enum Hit {
     Nav(Page),
@@ -83,6 +120,7 @@ pub enum Hit {
     Row(usize),
     Button(&'static str),
     ModelTab(usize),
+    SettingsTab(usize),
     Field(usize),
     Choice(usize),
     Composer,
@@ -156,6 +194,7 @@ pub enum InputAction {
     EnginePath,
     RuntimePath,
     ProjectPath,
+    NewProjectPath,
     ManualModel(ConnectionDraft),
 }
 #[derive(Debug, Clone)]
@@ -190,6 +229,10 @@ pub enum MenuAction {
     New,
     Brief,
     Project,
+    CurrentFolder,
+    RecentProject(usize),
+    NewFolder,
+    Connect,
 }
 
 #[derive(Debug, Clone)]
@@ -203,7 +246,11 @@ pub enum Dialog {
     Connection(ConnectionForm),
     PickModel {
         draft: ConnectionDraft,
-        models: Vec<String>,
+        models: Vec<models::ServerModel>,
+        selected: usize,
+    },
+    Palette {
+        query: Editor,
         selected: usize,
     },
     Input {
@@ -253,10 +300,10 @@ pub enum JobResult {
     Check(crate::project::CheckResult),
     Notice(String, String),
     Hardware(crate::hardware::Report),
-    Inventory(String, Vec<String>),
+    Inventory(String, Vec<models::ServerModel>),
     Search(Vec<HubModel>),
     Files(Vec<ModelFile>),
-    Tested(ConnectionDraft, Vec<String>),
+    Tested(ConnectionDraft, Vec<models::ServerModel>),
     Artifact(Artifact),
     Installed(Component, PathBuf),
 }
@@ -298,10 +345,16 @@ pub struct App {
     pub status: String,
     pub status_error: bool,
     pub recovery_dialog: Option<Box<Dialog>>,
+    pub project_missing: bool,
+    pub theme: &'static crate::tui::theme::Theme,
+    /// Monotonic render counter; drives spinner animation.
+    pub frame: u64,
+    pub layout: LayoutMode,
     pub home_selected: usize,
     pub connection_selected: usize,
     pub session_selected: usize,
     pub settings_selected: usize,
+    pub settings_tab: usize,
     pub sessions: Vec<SessionSummary>,
     pub session_search: Editor,
     pub search_focus: bool,
@@ -309,7 +362,7 @@ pub struct App {
     pub model_tab: usize,
     pub model_selected: usize,
     pub artifacts: Vec<Artifact>,
-    pub server_models: Vec<String>,
+    pub server_models: Vec<models::ServerModel>,
     pub server_source: Option<String>,
     pub hub_models: Vec<HubModel>,
     pub hub_files: Vec<ModelFile>,
@@ -396,6 +449,8 @@ impl App {
             }
         };
         let (tx, rx) = mpsc::channel(32);
+        let theme = crate::tui::theme::by_name(preferences.theme.as_str());
+        let layout = LayoutMode::from_saved(&preferences.layout);
         let mut app = Self {
             workbench: Default::default(),
             root,
@@ -412,10 +467,15 @@ impl App {
                 .into(),
             status_error: false,
             recovery_dialog: None,
+            project_missing: false,
+            theme,
+            frame: 0,
+            layout,
             home_selected: 0,
             connection_selected: 0,
             session_selected: 0,
             settings_selected: 0,
+            settings_tab: 0,
             task_view: Default::default(),
             change_selected: 0,
             sessions,
@@ -474,11 +534,307 @@ impl App {
         if !recovery.is_empty() {
             app.error(format!("Some saved settings or model records need attention. The details below explain what was preserved and how to recover. Conversations and project files are unchanged.\n\n{}", recovery.join("\n\n")));
         }
+        // N02: detect a dead saved project before the first frame so no
+        // launch ever opens on a workspace that cannot be used.
+        if !app.preferences.project.is_dir() {
+            app.project_missing = true;
+            app.open_project_chooser();
+        }
         Ok(app)
     }
 
     pub fn current_profile(&self) -> Option<(&str, &Profile)> {
         self.config.profile(None).ok()
+    }
+
+    pub const SETTINGS_TABS: [&str; 5] =
+        ["Appearance", "Models", "Tools & access", "Runtime", "Data"];
+    /// Global setting indexes shown in each tab, in order. Indexes match
+    /// `setting_action` and `settings_all_items` exactly.
+    pub fn settings_tab_indexes(tab: usize) -> &'static [usize] {
+        const TABS: [&[usize]; 5] = [
+            &[2, 3, 4],
+            &[0, 10, 11, 16],
+            &[8, 17, 12],
+            &[1, 5, 6, 9, 15, 18],
+            &[7, 13, 14],
+        ];
+        TABS[tab.min(TABS.len() - 1)]
+    }
+    /// All settings rows in the exact order setting_action indexes expect.
+    pub fn settings_all_items(&self, context: u32, budget: u32) -> Vec<(String, String)> {
+        vec![
+            (
+                format!(
+                    "Context: {} tokens · {}",
+                    context,
+                    match context {
+                        4096 => "Economy",
+                        8192 => "Balanced",
+                        16384 => "Extended",
+                        _ => "Large",
+                    }
+                ),
+                "More context uses more memory. Cycle: 4K → 8K → 16K → 32K.".into(),
+            ),
+            (
+                format!("Task budget: {budget} steps"),
+                "Limits tool/model turns before asking you to continue. Cycle: 6 → 12 → 24."
+                    .into(),
+            ),
+            (
+                format!("Theme: {}", self.theme.name),
+                "Five looks including the neon default; Alt redraws immediately.".into(),
+            ),
+            (
+                format!("Layout: {}", self.layout.label()),
+                "Ctrl+L also cycles: sidebar, top tabs, bottom tabs, split.".into(),
+            ),
+            (
+                format!(
+                    "Mouse: {}",
+                    if self.preferences.mouse {
+                        "enabled"
+                    } else {
+                        "disabled"
+                    }
+                ),
+                "Keyboard navigation is always available.".into(),
+            ),
+            (
+                "Agent engine executable".into(),
+                self.preferences
+                    .engine_path
+                    .as_ref()
+                    .map(|p| p.display().to_string())
+                    .unwrap_or_else(|| "Auto-detect Goose; install from Home if missing".into()),
+            ),
+            (
+                "Local model runtime executable".into(),
+                self.preferences
+                    .runtime_path
+                    .as_ref()
+                    .map(|p| p.display().to_string())
+                    .unwrap_or_else(|| {
+                        "Auto-detect llama-server; install from Models if missing".into()
+                    }),
+            ),
+            (
+                "Project brief".into(),
+                "Edit the goals and decisions sent with each new message.".into(),
+            ),
+            (
+                format!(
+                    "Access: {} · {} configured check(s)",
+                    self.preferences.access_policy.label(),
+                    self.task_view.checks.len()
+                ),
+                "Choose Review only, Guided changes, or Full access terminal.".into(),
+            ),
+            (
+                "Fit Alt to this computer".into(),
+                "Inspect hardware and choose a low-memory, balanced or larger context profile."
+                    .into(),
+            ),
+            (
+                "Check this model's tool use".into(),
+                "A short live probe of the exact selected uncensored model. Saves its evidence."
+                    .into(),
+            ),
+            (
+                format!(
+                    "Selected model is uncensored/abliterated: {}",
+                    if self.current_profile().is_some_and(|(_, p)| p.uncensored) {
+                        "claimed"
+                    } else {
+                        "not marked"
+                    }
+                ),
+                "Enter records/removes your publisher claim, enabling the explicit live evaluation."
+                    .into(),
+            ),
+            (
+                "Tools and workflows".into(),
+                "Build, Git, HTTP, browser, security and selected external MCP tools.".into(),
+            ),
+            (
+                "Storage and recovery".into(),
+                "Backup, restore, disk usage, retention and redacted diagnostics.".into(),
+            ),
+            (
+                "Model files and cache".into(),
+                "Private Hub access, verified relocation and removing managed weights.".into(),
+            ),
+            (
+                "Model and runtime settings".into(),
+                "Output allocation, skills, workflow, effort and CPU/GPU settings.".into(),
+            ),
+            (
+                "Benchmark selected model".into(),
+                "Measure this computer; exports exact settings, timings and runtime memory.".into(),
+            ),
+            (
+                format!("Tool focus: {}", self.preferences.tool_profile.label()),
+                "Choose all tools, inspection, coding or terminal schemas; access mode stays your choice.".into(),
+            ),
+            (
+                "Qualify model contexts and restart".into(),
+                "Measure generation, memory, cancellation cleanup and restart for 2K, 4K and 8K."
+                    .into(),
+            ),
+        ]
+    }
+
+    /// Every command reachable from the Ctrl+P palette. Keyboard and mouse
+    /// share this one list, so nothing exists outside it.
+    pub fn palette_items(&self) -> Vec<(String, String, MenuAction)> {
+        let mut items: Vec<(String, String, MenuAction)> = Page::ALL
+            .iter()
+            .map(|p| {
+                (
+                    p.name().to_string(),
+                    "Open page".into(),
+                    MenuAction::Page(*p),
+                )
+            })
+            .collect();
+        items.extend([
+            (
+                "New conversation".into(),
+                "Keep previous conversations saved".into(),
+                MenuAction::New,
+            ),
+            (
+                "Connect a model…".into(),
+                "Guided setup for Ollama, LM Studio, servers or files".into(),
+                MenuAction::Connect,
+            ),
+            (
+                "Choose project folder…".into(),
+                "Browse this computer".into(),
+                MenuAction::Project,
+            ),
+            (
+                "Create a project folder…".into(),
+                "Make a folder and open it".into(),
+                MenuAction::NewFolder,
+            ),
+            (
+                "Try a practice project".into(),
+                "Fresh example; learns repair, checks and undo".into(),
+                MenuAction::NewPractice,
+            ),
+            (
+                "Edit project brief".into(),
+                "Goals and decisions sent with new messages".into(),
+                MenuAction::Brief,
+            ),
+            (
+                "Appearance: themes".into(),
+                "Switch the whole look; redraws immediately".into(),
+                MenuAction::Manager {
+                    action: "appearance".into(),
+                    state: serde_json::json!({}),
+                },
+            ),
+            (
+                "Tools and workflows".into(),
+                "Packs, MCP connections, findings".into(),
+                MenuAction::Manager {
+                    action: "manage-tools".into(),
+                    state: serde_json::json!({}),
+                },
+            ),
+            (
+                "Bundled skills on/off".into(),
+                "Disabled skills are never offered to the model".into(),
+                MenuAction::Manager {
+                    action: "skills-manager".into(),
+                    state: serde_json::json!({}),
+                },
+            ),
+            (
+                "Storage and recovery".into(),
+                "Backups, disk use, retention".into(),
+                MenuAction::Manager {
+                    action: "manage-storage".into(),
+                    state: serde_json::json!({}),
+                },
+            ),
+            (
+                "Model files and cache".into(),
+                "Managed weights, relocation, removal".into(),
+                MenuAction::Manager {
+                    action: "manage-models".into(),
+                    state: serde_json::json!({}),
+                },
+            ),
+            (
+                "Model and runtime settings".into(),
+                "Allocation, skills, workflow, CPU/GPU".into(),
+                MenuAction::Manager {
+                    action: "runtime-settings".into(),
+                    state: serde_json::json!({}),
+                },
+            ),
+            (
+                "Inference allowance".into(),
+                "Live request/token budgets".into(),
+                MenuAction::Manager {
+                    action: "inference-live".into(),
+                    state: serde_json::json!({}),
+                },
+            ),
+            (
+                "Access: Review only".into(),
+                "The model may inspect but not change".into(),
+                MenuAction::Access(crate::project::Policy::ReviewOnly),
+            ),
+            (
+                "Access: Guided changes".into(),
+                "Reviewed edits with isolated checks".into(),
+                MenuAction::Access(crate::project::Policy::Guided),
+            ),
+            (
+                "Access: Full access".into(),
+                "Any command, network and installs with your permissions".into(),
+                MenuAction::Access(crate::project::Policy::Trusted),
+            ),
+        ]);
+        items
+    }
+
+    /// Case-insensitive contains-or-subsequence filter with a simple score;
+    /// an empty query shows everything.
+    pub fn palette_filtered(&self) -> Vec<(String, String, MenuAction)> {
+        let query = self
+            .dialog
+            .as_ref()
+            .and_then(|d| match d {
+                Dialog::Palette { query, .. } => Some(query.text.trim().to_lowercase()),
+                _ => None,
+            })
+            .unwrap_or_default();
+        let mut scored: Vec<(i32, (String, String, MenuAction))> = self
+            .palette_items()
+            .into_iter()
+            .map(|item| {
+                let hay = format!("{} {}", item.0, item.1).to_lowercase();
+                let score = if query.is_empty() {
+                    1
+                } else if hay.contains(&query) {
+                    3
+                } else {
+                    let mut chars = hay.chars();
+                    let subsequence = query.chars().all(|qc| chars.any(|hc| hc == qc));
+                    if subsequence { 2 } else { 0 }
+                };
+                (score, item)
+            })
+            .filter(|(score, _)| *score > 0)
+            .collect();
+        scored.sort_by(|a, b| b.0.cmp(&a.0).then(a.1.0.cmp(&b.1.0)));
+        scored.into_iter().map(|(_, item)| item).collect()
     }
     pub fn engine_ready(&self) -> bool {
         runtime::find_engine(&self.root, &self.requested_engine, &self.preferences).is_some()
@@ -489,6 +845,22 @@ impl App {
     pub fn notify(&mut self, text: impl Into<String>) {
         self.status = text.into();
         self.status_error = false;
+    }
+    /// N08: Ctrl+L cycles Sidebar → Top tabs → Bottom tabs → Split and back.
+    pub fn cycle_layout(&mut self) -> Result<()> {
+        self.layout = LayoutMode::ALL[(LayoutMode::ALL
+            .iter()
+            .position(|m| *m == self.layout)
+            .unwrap_or(0)
+            + 1)
+            % LayoutMode::ALL.len()];
+        self.preferences.layout = self.layout.saved_name().to_owned();
+        self.preferences.save(&self.root)?;
+        self.notify(format!(
+            "Layout: {}. Ctrl+L switches again.",
+            self.layout.label()
+        ));
+        Ok(())
     }
     pub fn error(&mut self, error: impl std::fmt::Display) {
         let mut text = display_text(&error.to_string());
@@ -1375,6 +1747,31 @@ impl App {
             MenuAction::Project => {
                 self.open_browser(BrowserKind::Project, self.preferences.project.clone())?
             }
+            MenuAction::CurrentFolder => {
+                let cwd =
+                    std::env::current_dir().context("Alt cannot read the folder it was started in")?;
+                self.choose_project(&cwd)?;
+            }
+            MenuAction::RecentProject(index) => {
+                let path = self
+                    .preferences
+                    .recent_projects
+                    .get(index)
+                    .context("That recent project is no longer listed")?
+                    .clone();
+                self.choose_project(&path)?;
+            }
+            MenuAction::NewFolder => {
+                self.dialog = Some(Dialog::Input {
+                    title: "Create a project folder".into(),
+                    hint: "Enter a new folder path. Alt creates it and makes it the project."
+                        .into(),
+                    editor: Editor::default(),
+                    action: InputAction::NewProjectPath,
+                    multiline: false,
+                });
+            }
+            MenuAction::Connect => self.connection_wizard(),
         }
         Ok(())
     }
@@ -1468,6 +1865,7 @@ impl App {
         );
         self.task_view = Default::default();
         self.preferences.choose_project(path)?;
+        self.project_missing = false;
         self.generation = self.generation.wrapping_add(1);
         self.pending_task_notice = None;
         self.workbench = Default::default();
@@ -1483,6 +1881,69 @@ impl App {
         self.tools.clear();
         self.dialog = None;
         self.notify("Project folder selected. Home → Prepare project checks helps set up how changes will be tested.");
+        Ok(())
+    }
+
+    /// N02: a launch must never land on a dead workspace. A saved project
+    /// folder that no longer exists opens this chooser; dismissing it opens
+    /// the sandbox below so every page still works.
+    pub fn open_project_chooser(&mut self) {
+        let mut items: Vec<(String, String, MenuAction)> = Vec::new();
+        if let Ok(cwd) = std::env::current_dir()
+            && cwd.is_dir()
+        {
+            items.push((
+                format!("Open {}", cwd.display()),
+                "The folder Alt was started from".into(),
+                MenuAction::CurrentFolder,
+            ));
+        }
+        for (index, path) in self.preferences.recent_projects.iter().take(5).enumerate() {
+            if path.is_dir() {
+                items.push((
+                    format!("Open {}", path.display()),
+                    "Recent project".into(),
+                    MenuAction::RecentProject(index),
+                ));
+            }
+        }
+        items.push((
+            "Choose a project folder…".into(),
+            "Browse this computer".into(),
+            MenuAction::Project,
+        ));
+        items.push((
+            "Create a new folder…".into(),
+            "Make a folder and open it".into(),
+            MenuAction::NewFolder,
+        ));
+        items.push((
+            "Use the practice sandbox".into(),
+            "A fresh example project; nothing outside it is touched".into(),
+            MenuAction::NewPractice,
+        ));
+        self.dialog = Some(Dialog::Menu {
+            title: "Open a project".into(),
+            description: "The saved project folder is missing. Pick another folder now, or press Esc to open Alt's sandbox workspace.".into(),
+            items,
+            selected: 0,
+        });
+    }
+
+    pub fn open_sandbox(&mut self) -> Result<()> {
+        let sandbox = self.root.join("sandbox");
+        std::fs::create_dir_all(&sandbox).context("Alt could not create its sandbox folder")?;
+        let readme = sandbox.join("README.md");
+        if !readme.exists() {
+            crate::config::atomic_write(
+                &readme,
+                b"# Alt sandbox\n\nThis is a scratch workspace Alt opens when no project folder is available.\nChoose a project folder from Home at any time; this folder stays.\n",
+            )?;
+        }
+        self.choose_project(&sandbox)?;
+        self.notify(
+            "Sandbox workspace opened. Choose a project folder from Home whenever you are ready.",
+        );
         Ok(())
     }
 
@@ -1516,6 +1977,7 @@ impl App {
                     .server_models
                     .get(self.model_selected)
                     .context("Refresh the server model list first")?
+                    .id
                     .clone();
                 let name = self
                     .server_source
@@ -1896,6 +2358,13 @@ impl App {
             }
             InputAction::ImportPath => self.import_path(expand_path(&text))?,
             InputAction::ProjectPath => self.choose_project(&expand_path(&text))?,
+            InputAction::NewProjectPath => {
+                let path = expand_path(&text);
+                std::fs::create_dir_all(&path).with_context(|| {
+                    format!("That folder path cannot be created: {}", path.display())
+                })?;
+                self.choose_project(&path)?;
+            }
             InputAction::Rename(id) => {
                 let root = self.root.clone();
                 self.launch_io("Naming conversation", move || {
@@ -2467,5 +2936,84 @@ mod recovery_tests {
                 .starts_with("runtime.toml.recovery-")
         }));
         assert!(Preferences::load(root.path()).is_ok());
+    }
+
+    #[test]
+    fn a_dead_saved_project_opens_a_chooser_and_esc_lands_in_the_sandbox() {
+        let data = tempfile::tempdir().unwrap();
+        let gone = data.path().join("deleted-project");
+        std::fs::write(
+            data.path().join("preferences.toml"),
+            format!("project = {:?}\n", gone.display().to_string()),
+        )
+        .unwrap();
+        let mut app = App::load(data.path().into(), "goose".into(), None).unwrap();
+        assert!(
+            app.project_missing,
+            "a dead project must be detected at load"
+        );
+        assert!(
+            matches!(&app.dialog, Some(Dialog::Menu { title, .. }) if title == "Open a project"),
+            "launching on a dead project must open the chooser"
+        );
+        app.key(crossterm::event::KeyEvent::from(
+            crossterm::event::KeyCode::Esc,
+        ))
+        .unwrap();
+        assert!(
+            !app.project_missing,
+            "dismissing the chooser must leave a working workspace"
+        );
+        assert!(app.dialog.is_none());
+        let sandbox = data.path().join("sandbox");
+        assert_eq!(app.preferences.project, sandbox);
+        assert!(sandbox.join("README.md").exists());
+        let stored = crate::config::Preferences::load(data.path()).unwrap();
+        assert_eq!(stored.project, sandbox);
+    }
+
+    #[test]
+    fn settings_tabs_cover_every_row_exactly_once() {
+        let data = tempfile::tempdir().unwrap();
+        let app = App::load(data.path().into(), "goose".into(), None).unwrap();
+        let rows = app.settings_all_items(8192, 12);
+        let mut seen = std::collections::BTreeSet::new();
+        for tab in 0..App::SETTINGS_TABS.len() {
+            for index in App::settings_tab_indexes(tab) {
+                assert!(seen.insert(*index), "setting {index} appears twice");
+            }
+        }
+        assert_eq!(
+            seen,
+            (0..rows.len()).collect::<std::collections::BTreeSet<_>>(),
+            "every settings row must sit in exactly one tab"
+        );
+    }
+
+    #[test]
+    fn palette_filter_matches_words_and_runs_pages() {
+        let data = tempfile::tempdir().unwrap();
+        let mut app = App::load(data.path().into(), "goose".into(), None).unwrap();
+        app.dialog = Some(Dialog::Palette {
+            query: Editor::default(),
+            selected: 0,
+        });
+        assert!(app.palette_filtered().len() >= 15);
+        let mut query = Editor::default();
+        query.insert("theme", false);
+        app.dialog = Some(Dialog::Palette { query, selected: 0 });
+        let filtered = app.palette_filtered();
+        assert!(
+            filtered
+                .iter()
+                .any(|(label, _, _)| label.contains("Appearance")),
+            "the theme picker must be findable"
+        );
+        assert!(
+            !filtered
+                .iter()
+                .any(|(label, _, _)| label.contains("Terminal jobs")),
+            "unrelated pages must be filtered out"
+        );
     }
 }

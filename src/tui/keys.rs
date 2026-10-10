@@ -66,6 +66,7 @@ impl App {
         if ctrl {
             match key.code {
                 KeyCode::Char('p') => return self.action("palette"),
+                KeyCode::Char('l') => return self.cycle_layout(),
                 KeyCode::Char('n') => return self.new_conversation(),
                 KeyCode::Char('b') => {
                     self.edit_brief();
@@ -270,9 +271,28 @@ impl App {
                 _ => {}
             },
             Page::Settings => match key.code {
+                KeyCode::Left => {
+                    self.settings_tab = (self.settings_tab + 4) % 5;
+                    self.settings_selected = 0;
+                }
+                KeyCode::Right => {
+                    self.settings_tab = (self.settings_tab + 1) % 5;
+                    self.settings_selected = 0;
+                }
                 KeyCode::Up => self.settings_selected = self.settings_selected.saturating_sub(1),
-                KeyCode::Down => self.settings_selected = (self.settings_selected + 1).min(16),
-                KeyCode::Enter | KeyCode::Right => self.setting_action(self.settings_selected)?,
+                KeyCode::Down => {
+                    self.settings_selected = (self.settings_selected + 1).min(
+                        App::settings_tab_indexes(self.settings_tab)
+                            .len()
+                            .saturating_sub(1),
+                    )
+                }
+                KeyCode::Enter => {
+                    let indexes = App::settings_tab_indexes(self.settings_tab);
+                    if let Some(global) = indexes.get(self.settings_selected) {
+                        self.setting_action(*global)?;
+                    }
+                }
                 _ => {}
             },
             Page::Help => match key.code {
@@ -396,37 +416,8 @@ impl App {
                 })
             }
             "palette" => {
-                let mut items = Page::ALL
-                    .iter()
-                    .map(|p| {
-                        (
-                            p.name().to_string(),
-                            "Open page".into(),
-                            MenuAction::Page(*p),
-                        )
-                    })
-                    .collect::<Vec<_>>();
-                items.extend([
-                    (
-                        "New conversation".into(),
-                        "Keep previous conversations saved".into(),
-                        MenuAction::New,
-                    ),
-                    (
-                        "Choose project".into(),
-                        "Browse folders".into(),
-                        MenuAction::Project,
-                    ),
-                    (
-                        "Edit project brief".into(),
-                        "Keep goals and decisions in context".into(),
-                        MenuAction::Brief,
-                    ),
-                ]);
-                self.dialog = Some(Dialog::Menu {
-                    title: "Quick actions".into(),
-                    description: "Arrow keys to choose; Enter to open.".into(),
-                    items,
+                self.dialog = Some(Dialog::Palette {
+                    query: Editor::default(),
                     selected: 0,
                 });
             }
@@ -648,7 +639,9 @@ impl App {
                 let n = values.iter().position(|v| *v == current).unwrap_or(0);
                 self.preferences.max_turns = values[(n + 1) % 3];
             }
-            2 => {
+            2 => return self.manager_action("appearance", serde_json::json!({})),
+            3 => return self.cycle_layout(),
+            4 => {
                 self.preferences.mouse = !self.preferences.mouse;
                 if self.preferences.mouse {
                     crossterm::execute!(std::io::stdout(), crossterm::event::EnableMouseCapture)?;
@@ -656,25 +649,29 @@ impl App {
                     crossterm::execute!(std::io::stdout(), crossterm::event::DisableMouseCapture)?;
                 }
             }
-            3 => {
+            5 => {
                 self.open_browser(BrowserKind::Engine, self.preferences.project.clone())?;
                 return Ok(());
             }
-            4 => {
+            6 => {
                 self.open_browser(BrowserKind::Runtime, self.preferences.project.clone())?;
                 return Ok(());
             }
-            13 => return self.manager_action("runtime-settings", serde_json::json!({})),
-            14 => return self.manager_action("benchmark-preview", serde_json::json!({})),
-            15 => return self.manager_action("tools-focus", serde_json::json!({})),
-            16 => return self.manager_action("qualify-preview", serde_json::json!({})),
-            10 => return self.manager_action("manage-tools", serde_json::json!({})),
-            11 => return self.manager_action("manage-storage", serde_json::json!({})),
-            12 => return self.manager_action("manage-models", serde_json::json!({})),
-            6 => return self.task_action("access"),
-            7 => return self.task_action("hardware"),
-            8 => return self.task_action("evaluate"),
-            9 => {
+            7 => {
+                self.edit_brief();
+                return Ok(());
+            }
+            15 => return self.manager_action("runtime-settings", serde_json::json!({})),
+            16 => return self.manager_action("benchmark-preview", serde_json::json!({})),
+            17 => return self.manager_action("tools-focus", serde_json::json!({})),
+            18 => return self.manager_action("qualify-preview", serde_json::json!({})),
+            12 => return self.manager_action("manage-tools", serde_json::json!({})),
+            13 => return self.manager_action("manage-storage", serde_json::json!({})),
+            14 => return self.manager_action("manage-models", serde_json::json!({})),
+            8 => return self.task_action("access"),
+            9 => return self.task_action("hardware"),
+            10 => return self.task_action("evaluate"),
+            11 => {
                 let profile = self
                     .config
                     .profiles
@@ -683,10 +680,6 @@ impl App {
                 profile.uncensored = !profile.uncensored;
                 self.config.save(&self.root)?;
                 self.notify("Publisher/user model claim updated. This does not establish its quality or refusal behavior.");
-                return Ok(());
-            }
-            5 => {
-                self.edit_brief();
                 return Ok(());
             }
             _ => {}
@@ -748,6 +741,11 @@ impl App {
             if matches!(dialog, Dialog::Notice { .. }) {
                 self.dialog = self.recovery_dialog.take().map(|d| *d);
             }
+            // N02: dismissing the project chooser still lands in a working
+            // workspace instead of leaving every page dead.
+            if self.project_missing && !self.preferences.project.is_dir() {
+                self.open_sandbox()?;
+            }
             return Ok(());
         }
         // Keep a recoverable form on validation errors.
@@ -780,6 +778,23 @@ impl App {
                 }
                 _ => {}
             },
+            Dialog::Palette { query, selected } => match key.code {
+                KeyCode::Down => {
+                    let count = self.palette_filtered().len();
+                    *selected = (*selected + 1).min(count.saturating_sub(1));
+                }
+                KeyCode::Up => *selected = selected.saturating_sub(1),
+                KeyCode::Enter => {
+                    if let Some((_, _, action)) = self.palette_filtered().get(*selected) {
+                        let action = action.clone();
+                        return self.menu_action(action);
+                    }
+                }
+                _ => {
+                    query.key(key, false);
+                    *selected = 0;
+                }
+            },
             Dialog::Connection(form) => match key.code {
                 KeyCode::Tab | KeyCode::Down => form.focus = (form.focus + 1) % 3,
                 KeyCode::BackTab | KeyCode::Up => form.focus = (form.focus + 2) % 3,
@@ -800,7 +815,8 @@ impl App {
                 KeyCode::Down => *selected = (*selected + 1).min(models.len().saturating_sub(1)),
                 KeyCode::Enter => {
                     let mut draft = draft.clone();
-                    draft.profile.model = models.get(*selected).context("Select a model")?.clone();
+                    draft.profile.model =
+                        models.get(*selected).context("Select a model")?.id.clone();
                     return self.save_connection(draft);
                 }
                 _ => {}
@@ -938,6 +954,10 @@ impl App {
                 self.model_tab = tab;
                 self.model_selected = 0;
             }
+            Some(Hit::SettingsTab(tab)) => {
+                self.settings_tab = tab;
+                self.settings_selected = 0;
+            }
             Some(Hit::Field(index)) => {
                 if let Some(Dialog::Connection(form)) = &mut self.dialog {
                     form.focus = index;
@@ -950,6 +970,9 @@ impl App {
                     *selected = choice;
                     self.dialog_key(KeyEvent::new(KeyCode::Enter, KeyModifiers::NONE))?;
                 } else if let Some(Dialog::Menu { selected, .. }) = &mut self.dialog {
+                    *selected = choice;
+                    self.dialog_key(KeyEvent::new(KeyCode::Enter, KeyModifiers::NONE))?;
+                } else if let Some(Dialog::Palette { selected, .. }) = &mut self.dialog {
                     *selected = choice;
                     self.dialog_key(KeyEvent::new(KeyCode::Enter, KeyModifiers::NONE))?;
                 }
@@ -966,7 +989,10 @@ impl App {
                     Page::Sessions => self.session_selected = index,
                     Page::Settings => {
                         self.settings_selected = index;
-                        self.setting_action(index)?;
+                        let indexes = App::settings_tab_indexes(self.settings_tab);
+                        if let Some(global) = indexes.get(index) {
+                            self.setting_action(*global)?;
+                        }
                     }
                     Page::Chat => {
                         self.tool_selected = index;

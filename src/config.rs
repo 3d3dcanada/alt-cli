@@ -181,6 +181,15 @@ pub struct Preferences {
     pub workflow: crate::workflow::Mode,
     pub active_skill: Option<String>,
     pub instruction_version: Option<String>,
+    #[serde(default = "default_theme")]
+    pub theme: String,
+    /// Saved layout mode: sidebar | top | bottom | split.
+    #[serde(default = "default_layout")]
+    pub layout: String,
+    /// Bundled skills the user switched off. Off means the model is never
+    /// offered them; nothing is deleted.
+    #[serde(default)]
+    pub skills_disabled: Vec<String>,
 }
 
 impl Default for Preferences {
@@ -199,6 +208,9 @@ impl Default for Preferences {
             workflow: crate::workflow::Mode::default(),
             active_skill: None,
             instruction_version: None,
+            theme: crate::tui::theme::DEFAULT.to_owned(),
+            layout: default_layout(),
+            skills_disabled: Vec::new(),
         }
     }
 }
@@ -255,6 +267,14 @@ impl Preferences {
         self.project = path;
         Ok(())
     }
+}
+
+fn default_theme() -> String {
+    crate::tui::theme::DEFAULT.to_owned()
+}
+
+fn default_layout() -> String {
+    "sidebar".to_owned()
 }
 
 pub fn atomic_write(path: &Path, bytes: &[u8]) -> Result<()> {

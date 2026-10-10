@@ -2,6 +2,7 @@ mod app;
 mod input;
 mod keys;
 mod task;
+pub(crate) mod theme;
 mod view;
 mod workbench;
 

@@ -81,6 +81,23 @@ pub fn get(id: &str) -> Result<Skill> {
         .find(|s| s.id == id)
         .context("Unknown skill; list the bundled skills first")
 }
+/// Catalog with the user's disabled entries removed. The model never sees a
+/// disabled skill; the list and read paths both filter through here.
+pub fn enabled_catalog(disabled: &[String]) -> Vec<Skill> {
+    catalog()
+        .into_iter()
+        .filter(|s| !disabled.iter().any(|d| d == s.id))
+        .collect()
+}
+pub fn enabled_shortlist(query: &str, disabled: &[String]) -> Vec<Skill> {
+    shortlist(query)
+        .into_iter()
+        .filter(|s| !disabled.iter().any(|d| d == s.id))
+        .collect()
+}
+pub fn is_disabled(id: &str, disabled: &[String]) -> bool {
+    disabled.iter().any(|d| d == id)
+}
 pub fn shortlist(query: &str) -> Vec<Skill> {
     let terms: Vec<_> = query
         .split(|c: char| !c.is_alphanumeric())
