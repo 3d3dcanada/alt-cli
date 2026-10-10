@@ -637,25 +637,37 @@ async fn execute(
         }
         "skill" => {
             let action = r.arguments["action"].as_str().unwrap_or("list");
+            // A disabled skill is invisible to the model: list, read and
+            // helper all check the same saved user choice.
+            let disabled = crate::config::Preferences::load(&s.data)
+                .map(|p| p.skills_disabled)
+                .unwrap_or_default();
             match action {
                 "list" => {
                     let query = r.arguments["query"].as_str().unwrap_or("");
                     Ok(json!(if query.trim().is_empty() {
-                        crate::skills::catalog()
+                        crate::skills::enabled_catalog(&disabled)
                     } else {
-                        crate::skills::shortlist(query)
+                        crate::skills::enabled_shortlist(query, &disabled)
                     }))
                 }
                 "read" => {
-                    let skill = crate::skills::get(
-                        r.arguments["id"].as_str().context("Skill id is required")?,
-                    )?;
+                    let id = r.arguments["id"].as_str().context("Skill id is required")?;
+                    ensure!(
+                        !crate::skills::is_disabled(id, &disabled),
+                        "This skill is switched off in Tools and workflows"
+                    );
+                    let skill = crate::skills::get(id)?;
                     Ok(
                         json!({"metadata":skill,"procedure":skill.procedure,"permissions":"Does not grant execution access"}),
                     )
                 }
                 "helper" => {
                     let id_skill = r.arguments["id"].as_str().context("Skill id is required")?;
+                    ensure!(
+                        !crate::skills::is_disabled(id_skill, &disabled),
+                        "This skill is switched off in Tools and workflows"
+                    );
                     let helper = r.arguments["helper"]
                         .as_str()
                         .context("Helper is required")?;

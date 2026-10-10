@@ -1,5 +1,34 @@
 # Changelog
 
+## Unreleased — Neon interface (work orders N01–N09)
+
+- Model lists now show distinct descriptions per row: parameters, quantization,
+  file size, family and modified date where the server provides them (Ollama
+  `/api/tags`), with a curated family blurb in the picker and an honest
+  "no details reported" fallback. Duplicate-looking rows are gone.
+- Launch is never a dead end: a missing saved project folder opens an
+  "Open a project" chooser (current folder, recent projects, browse, create new,
+  practice sandbox), and dismissing it opens Alt's sandbox workspace so every
+  page works. Recent projects are recorded and offered.
+- Theme engine with five selectable looks (Neon Grid default, Amber CRT, IRIS,
+  Bleached, Stock): every color, border style and glyph is data; the choice
+  persists and redraws live. Status header gains a connection LED, access badge,
+  animated busy spinner and a context-budget meter.
+- Settings reorganized into five tabs (Appearance, Models, Tools & access,
+  Runtime, Data) with ←→ switching; a regression test proves every setting sits
+  in exactly one tab.
+- Ctrl+P is now a fuzzy command palette: every page, setting and manager action,
+  typed filtering, keyboard and mouse.
+- Bundled skills can be switched on/off from Tools and workflows; disabled
+  skills are excluded from the model's list/read/helper paths and cannot stay
+  the active procedure. Nothing auto-enables.
+- Layout modes: sidebar, top tabs, bottom tabs and a wide split view with a
+  live activity column; Ctrl+L cycles and the choice persists.
+- Verification: strict Clippy and fmt clean; serial unit tests green; the full
+  first-run PTY battery (`smoke_tui.py`) and `smoke_task_tui.py` pass.
+  Three timing-budget recovery tests flake under host load above ~10; the same
+  flakes reproduce on the pre-change baseline, and they pass serially.
+
 ## 0.6.0 beta 3 — corrected release validation
 
 - Handle a child exiting during a procfs status/identity read in terminal and

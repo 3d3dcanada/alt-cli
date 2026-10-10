@@ -1,4 +1,8 @@
-use super::{app::*, input::Editor};
+// Color shims keep the historical constant names for a minimal diff; they read
+// the per-frame theme instead of hard-coded values.
+#![allow(non_snake_case)]
+
+use super::{app::*, input::Editor, theme};
 use crate::{display_text, models::human_bytes};
 use ratatui::{
     Frame,
@@ -10,16 +14,44 @@ use ratatui::{
     },
 };
 
-const BG: Color = Color::Rgb(15, 20, 29);
-const PANEL: Color = Color::Rgb(22, 29, 40);
-const TEXT: Color = Color::Rgb(224, 231, 239);
-const MUTED: Color = Color::Rgb(147, 163, 183);
-const ACCENT: Color = Color::Rgb(81, 211, 202);
-const BORDER: Color = Color::Rgb(55, 69, 86);
-const SELECT: Color = Color::Rgb(35, 61, 72);
-const GOOD: Color = Color::Rgb(153, 215, 143);
-const WARN: Color = Color::Rgb(239, 194, 105);
-const BAD: Color = Color::Rgb(246, 139, 136);
+// Colors read through the per-frame theme so every panel follows the user's
+// choice without a rebuild. Stock names kept for a minimal diff.
+fn BG() -> Color {
+    theme::cur().bg
+}
+fn PANEL() -> Color {
+    theme::cur().panel
+}
+fn TEXT() -> Color {
+    theme::cur().text
+}
+fn MUTED() -> Color {
+    theme::cur().muted
+}
+fn ACCENT() -> Color {
+    theme::cur().accent
+}
+fn ACCENT2() -> Color {
+    theme::cur().accent2
+}
+fn BORDER() -> Color {
+    theme::cur().border
+}
+fn BORDER_FOCUSED() -> Color {
+    theme::cur().border_focused
+}
+fn SELECT() -> Color {
+    theme::cur().select
+}
+fn GOOD() -> Color {
+    theme::cur().good
+}
+fn WARN() -> Color {
+    theme::cur().warn
+}
+fn BAD() -> Color {
+    theme::cur().bad
+}
 
 fn style(color: Color) -> Style {
     Style::default().fg(color)
@@ -29,9 +61,9 @@ fn block(title: impl Into<Line<'static>>, focused: bool) -> Block<'static> {
         .borders(Borders::ALL)
         .border_type(BorderType::Rounded)
         .title(title)
-        .title_style(style(MUTED))
-        .border_style(style(if focused { ACCENT } else { BORDER }))
-        .style(Style::default().bg(PANEL).fg(TEXT))
+        .title_style(style(ACCENT()))
+        .border_style(style(if focused { BORDER_FOCUSED() } else { BORDER() }))
+        .style(Style::default().bg(PANEL()).fg(TEXT()))
 }
 fn line(text: impl Into<String>, color: Color) -> Line<'static> {
     Line::styled(display_text(&text.into()), style(color))
@@ -40,7 +72,7 @@ fn paragraph(frame: &mut Frame, area: Rect, text: impl Into<Text<'static>>) {
     frame.render_widget(
         Paragraph::new(text)
             .wrap(Wrap { trim: false })
-            .style(style(TEXT)),
+            .style(style(TEXT())),
         area,
     );
 }
@@ -62,8 +94,8 @@ fn button(
     frame.render_widget(
         Paragraph::new(format!(" {label} ")).style(
             Style::default()
-                .fg(if active { BG } else { TEXT })
-                .bg(if active { ACCENT } else { SELECT }),
+                .fg(if active { BG() } else { TEXT() })
+                .bg(if active { ACCENT() } else { SELECT() }),
         ),
         area,
     );
@@ -84,9 +116,11 @@ fn buttons(frame: &mut Frame, app: &mut App, area: Rect, items: &[(&str, &'stati
 
 pub fn draw(frame: &mut Frame, app: &mut App) {
     let area = frame.area();
+    theme::set(*app.theme);
+    app.frame = app.frame.wrapping_add(1);
     app.hits.clear();
     frame.render_widget(
-        Block::default().style(Style::default().bg(BG).fg(TEXT)),
+        Block::default().style(Style::default().bg(BG()).fg(TEXT())),
         area,
     );
     if area.width < 60 || area.height < 18 {
@@ -94,9 +128,9 @@ pub fn draw(frame: &mut Frame, app: &mut App) {
             frame,
             inset(area, 2, 1),
             vec![
-                line("ALT", ACCENT),
-                line("Make this terminal at least 60 columns × 18 rows.", TEXT),
-                line("Your work is saved. Ctrl+Q leaves Alt.", MUTED),
+                line("ALT", ACCENT()),
+                line("Make this terminal at least 60 columns × 18 rows.", TEXT()),
+                line("Your work is saved. Ctrl+Q leaves Alt.", MUTED()),
             ],
         );
         return;
@@ -109,16 +143,18 @@ pub fn draw(frame: &mut Frame, app: &mut App) {
     .split(area);
     let header = Layout::horizontal([Constraint::Length(27), Constraint::Min(10)])
         .split(inset(root[0], 2, 0));
+    let th = theme::cur();
     paragraph(
         frame,
         header[0],
         vec![
             Line::from(vec![
-                Span::styled("ALT", style(ACCENT).add_modifier(Modifier::BOLD)),
-                Span::styled("  /  LOCAL WORKSPACE", style(MUTED)),
+                Span::styled("ALT", style(ACCENT()).add_modifier(Modifier::BOLD)),
+                Span::styled(" // ", style(ACCENT2())),
+                Span::styled("LOCAL WORKSPACE", style(MUTED())),
             ]),
-            line(app.page.name(), TEXT),
-            line(crate::BUILD_LABEL, MUTED),
+            line(app.page.name(), TEXT()),
+            line(crate::BUILD_LABEL, MUTED()),
         ],
     );
     let model = app
@@ -128,54 +164,97 @@ pub fn draw(frame: &mut Frame, app: &mut App) {
         .map(|s| s.profile.model.clone())
         .or_else(|| app.current_profile().map(|(_, p)| p.model.clone()))
         .unwrap_or_else(|| "Choose a model to get started".into());
+    // Connection LED, access badge and a context meter share one line; the
+    // second line animates while a task runs so the state is visible at a glance.
+    let meter = match (app.context_used, app.context_size) {
+        (Some(used), Some(size)) if size > 0 => {
+            let width = 10usize;
+            let filled = ((used.min(size) as f64 / size as f64) * width as f64).round() as usize;
+            format!(
+                " ctx ▕{}{}▏ {}K/{}K",
+                "▮".repeat(filled.min(width)),
+                "·".repeat(width.saturating_sub(filled.min(width))),
+                used / 1024,
+                size / 1024
+            )
+        }
+        _ => String::new(),
+    };
+    let (state_text, state_color, spinner) = if app.busy {
+        (
+            if app.permissions.is_empty() {
+                "Working · Esc stops"
+            } else {
+                "Waiting for your approval"
+            },
+            WARN(),
+            th.spinner[(app.frame as usize) % th.spinner.len()],
+        )
+    } else if app.connecting {
+        (
+            "Connecting…",
+            WARN(),
+            th.spinner[(app.frame as usize) % th.spinner.len()],
+        )
+    } else if app.connected {
+        ("Connected · saved locally", GOOD(), "")
+    } else {
+        ("Local-first · you choose the model", MUTED(), "")
+    };
     frame.render_widget(
         Paragraph::new(vec![
-            line(model, ACCENT),
-            line(
-                if app.busy {
-                    "Working · Esc to stop"
-                } else if app.connecting {
-                    "Connecting…"
-                } else if app.connected {
-                    "Connected · saved locally"
-                } else {
-                    "Local-first · you choose the model"
-                },
-                MUTED,
-            ),
+            Line::from(vec![
+                Span::styled(
+                    format!("{} ", if app.connected { th.led_on } else { th.led_off }),
+                    style(if app.connected { GOOD() } else { MUTED() }),
+                ),
+                Span::styled(model, style(ACCENT())),
+                Span::styled(
+                    format!("  · {}", app.preferences.access_policy.label()),
+                    style(ACCENT2()),
+                ),
+            ]),
+            Line::from(vec![
+                Span::styled(format!("{spinner} "), style(state_color)),
+                Span::styled(state_text, style(state_color)),
+                Span::styled(meter, style(MUTED())),
+            ]),
         ])
         .alignment(ratatui::layout::Alignment::Right),
         header[1],
     );
-    let content = if area.width >= 85 {
-        let cols = Layout::horizontal([Constraint::Length(21), Constraint::Min(30)]).split(root[1]);
-        nav(frame, app, cols[0]);
-        inset(cols[1], 1, 0)
-    } else {
-        let parts = Layout::vertical([Constraint::Length(2), Constraint::Min(8)]).split(root[1]);
-        let labels = [
-            "Home", "Chat", "Models", "Links", "Saved", "Settings", "Help", "Task", "Files",
-            "Jobs", "Memory",
-        ];
-        let visible = (area.width as usize / 10).clamp(3, 7);
-        let active = Page::ALL.iter().position(|p| *p == app.page).unwrap_or(0);
-        let start = active
-            .saturating_sub(visible / 2)
-            .min(Page::ALL.len() - visible);
-        let cols = Layout::horizontal(vec![Constraint::Fill(1); visible]).split(parts[0]);
-        for (column, i) in (start..start + visible).enumerate() {
-            let page = &Page::ALL[i];
-            frame.render_widget(
-                Paragraph::new(labels[i]).style(Style::default().fg(if *page == app.page {
-                    ACCENT
-                } else {
-                    MUTED
-                })),
-                cols[column],
-            );
-            app.hits.push((cols[column], Hit::Nav(*page)));
+    // Layout modes: Sidebar (vertical nav), TopTabs / BottomTabs (horizontal),
+    // Split (sidebar plus a live activity column on wide terminals).
+    let content = match app.layout {
+        LayoutMode::Sidebar if area.width >= 85 => {
+            let cols =
+                Layout::horizontal([Constraint::Length(21), Constraint::Min(30)]).split(root[1]);
+            nav(frame, app, cols[0]);
+            inset(cols[1], 1, 0)
         }
-        inset(parts[1], 1, 0)
+        LayoutMode::Split if area.width >= 100 => {
+            let cols = Layout::horizontal([
+                Constraint::Length(21),
+                Constraint::Min(40),
+                Constraint::Length(38),
+            ])
+            .split(root[1]);
+            nav(frame, app, cols[0]);
+            activity_column(frame, app, inset(cols[2], 1, 0));
+            inset(cols[1], 1, 0)
+        }
+        LayoutMode::BottomTabs if area.width >= 60 => {
+            let parts =
+                Layout::vertical([Constraint::Min(8), Constraint::Length(2)]).split(root[1]);
+            tab_strip(frame, app, parts[1], area.width);
+            inset(parts[0], 1, 0)
+        }
+        _ => {
+            let parts =
+                Layout::vertical([Constraint::Length(2), Constraint::Min(8)]).split(root[1]);
+            tab_strip(frame, app, parts[0], area.width);
+            inset(parts[1], 1, 0)
+        }
     };
     match app.page {
         Page::Home => home(frame, app, content),
@@ -197,15 +276,167 @@ pub fn draw(frame: &mut Frame, app: &mut App) {
     }
 }
 
+/// Live activity/context column; rendered beside Chat and in Split layout.
+fn activity_column(frame: &mut Frame, app: &mut App, area: Rect) {
+    let th = theme::cur();
+    let activity = area;
+    let chunks = Layout::vertical([
+        Constraint::Length(4),
+        Constraint::Min(3),
+        Constraint::Length(3),
+    ])
+    .split(activity);
+    let context = match (app.context_used, app.context_size) {
+        (Some(used), Some(size)) => format!("Context: {used} / {size} tokens"),
+        _ => format!(
+            "Context: {} tokens configured",
+            app.session
+                .as_ref()
+                .map(|s| s.profile.context_tokens)
+                .or_else(|| app.current_profile().map(|(_, p)| p.context_tokens))
+                .unwrap_or(app.preferences.context_tokens)
+        ),
+    };
+    paragraph(
+        frame,
+        inset(chunks[0], 1, 0),
+        vec![
+            Line::from(vec![
+                Span::styled("ACTIVITY", style(ACCENT())),
+                Span::styled(" & ", style(MUTED())),
+                Span::styled("CONTEXT", style(ACCENT2())),
+            ]),
+            line(context, MUTED()),
+            line(
+                format!("Project brief: {} chars", app.brief.chars().count()),
+                MUTED(),
+            ),
+            line(
+                if app.trust_session {
+                    "Tools trusted for this session"
+                } else {
+                    "Tool actions request approval"
+                },
+                if app.trust_session { WARN() } else { MUTED() },
+            ),
+        ],
+    );
+    let items = app
+        .tools
+        .iter()
+        .map(|tool| {
+            let (led, status_color) = match tool.status.as_str() {
+                "completed" => (th.led_on, GOOD()),
+                "failed" => (th.led_on, BAD()),
+                _ => (th.led_off, WARN()),
+            };
+            ListItem::new(vec![
+                Line::from(vec![
+                    Span::styled(format!("{led} "), style(status_color)),
+                    Span::styled(tool.title.clone(), style(TEXT())),
+                ]),
+                line(format!("  {}", tool.status), status_color),
+            ])
+        })
+        .collect::<Vec<_>>();
+    if items.is_empty() {
+        frame.render_widget(
+            Paragraph::new(
+                "No tool actions yet.\n\nCommands, file changes, and results will appear here.",
+            )
+            .wrap(Wrap { trim: false })
+            .block(block(" Tools ", app.tools_focus)),
+            chunks[1],
+        );
+    } else {
+        let mut state = ListState::default().with_selected(Some(app.tool_selected));
+        frame.render_stateful_widget(
+            List::new(items)
+                .highlight_style(Style::default().bg(SELECT()))
+                .block(block(" Tools · Enter for evidence ", app.tools_focus)),
+            chunks[1],
+            &mut state,
+        );
+        let inner = inset(chunks[1], 1, 1);
+        let offset = state.offset();
+        for i in offset..app.tools.len() {
+            let y = inner.y + (i - offset) as u16 * 2;
+            if y >= inner.bottom() {
+                break;
+            }
+            app.hits.push((
+                Rect::new(inner.x, y, inner.width, 2.min(inner.bottom() - y)),
+                Hit::Row(i),
+            ));
+        }
+    }
+    buttons(
+        frame,
+        app,
+        inset(chunks[2], 1, 1),
+        &[("Evidence", "tool-details"), ("Task", "task")],
+    );
+}
+
+/// Horizontal page tab strip shared by the TopTabs and BottomTabs layouts.
+fn tab_strip(frame: &mut Frame, app: &mut App, area: Rect, width: u16) {
+    let labels = [
+        "Home", "Chat", "Models", "Links", "Saved", "Settings", "Help", "Task", "Files", "Jobs",
+        "Memory",
+    ];
+    let visible = (width as usize / 10).clamp(3, 7);
+    let active = Page::ALL.iter().position(|p| *p == app.page).unwrap_or(0);
+    let start = active
+        .saturating_sub(visible / 2)
+        .min(Page::ALL.len() - visible);
+    let cols = Layout::horizontal(vec![Constraint::Fill(1); visible]).split(area);
+    for (column, i) in (start..start + visible).enumerate() {
+        let page = &Page::ALL[i];
+        frame.render_widget(
+            Paragraph::new(Line::from(vec![
+                Span::styled(
+                    format!(
+                        "{}{} ",
+                        if *page == app.page {
+                            theme::cur().pointer
+                        } else {
+                            ' '
+                        },
+                        if i < 9 {
+                            (i + 1).to_string()
+                        } else if i == 9 {
+                            "0".to_string()
+                        } else {
+                            "·".to_string()
+                        }
+                    ),
+                    style(if *page == app.page {
+                        ACCENT2()
+                    } else {
+                        MUTED()
+                    }),
+                ),
+                Span::styled(
+                    labels[i].to_string(),
+                    style(if *page == app.page { ACCENT() } else { MUTED() }),
+                ),
+            ])),
+            cols[column],
+        );
+        app.hits.push((cols[column], Hit::Nav(*page)));
+    }
+}
+
 fn nav(frame: &mut Frame, app: &mut App, area: Rect) {
     let inner = inset(area, 1, 0);
     frame.render_widget(
         Block::default()
             .borders(Borders::RIGHT)
-            .border_style(style(BORDER)),
+            .border_style(style(BORDER())),
         area,
     );
     let spacing = if inner.height >= 30 { 2 } else { 1 };
+    let th = theme::cur();
     for (i, page) in Page::ALL.iter().enumerate() {
         let rect = Rect::new(
             inner.x,
@@ -216,22 +447,46 @@ fn nav(frame: &mut Frame, app: &mut App, area: Rect) {
         let active = *page == app.page;
         let focused = app.nav_focus && app.nav_index == i;
         frame.render_widget(
-            Paragraph::new(format!(
-                " {}  {}",
-                if i < 9 {
-                    (i + 1).to_string()
-                } else if i == 9 {
-                    "0".into()
-                } else {
-                    "·".into()
-                },
-                page.name()
-            ))
-            .style(
-                Style::default()
-                    .bg(if active || focused { SELECT } else { BG })
-                    .fg(if active || focused { ACCENT } else { MUTED }),
-            ),
+            Paragraph::new(Line::from(vec![
+                Span::styled(
+                    format!(" {} ", if active { th.pointer } else { ' ' }),
+                    style(if active || focused {
+                        ACCENT()
+                    } else {
+                        BORDER()
+                    }),
+                ),
+                Span::styled(
+                    if i < 9 {
+                        (i + 1).to_string()
+                    } else if i == 9 {
+                        "0".into()
+                    } else {
+                        "·".into()
+                    },
+                    style(if active || focused {
+                        ACCENT2()
+                    } else {
+                        MUTED()
+                    }),
+                ),
+                Span::styled(
+                    format!(" {}", page.name()),
+                    if active || focused {
+                        Style::default()
+                            .bg(SELECT())
+                            .fg(ACCENT())
+                            .add_modifier(Modifier::BOLD)
+                    } else {
+                        Style::default().bg(BG()).fg(MUTED())
+                    },
+                ),
+            ]))
+            .style(Style::default().bg(if active || focused {
+                SELECT()
+            } else {
+                BG()
+            })),
             rect,
         );
         app.hits.push((rect, Hit::Nav(*page)));
@@ -242,11 +497,11 @@ fn nav(frame: &mut Frame, app: &mut App, area: Rect) {
             frame,
             Rect::new(inner.x, start, inner.width, 5),
             vec![
-                line("ON THIS COMPUTER", MUTED),
-                line(format!("{} RAM", human_bytes(app.hardware.ram)), TEXT),
-                line(format!("{} CPU threads", app.hardware.threads), TEXT),
-                line("Ctrl+P  Actions", MUTED),
-                line("F1      Help", MUTED),
+                line("ON THIS COMPUTER", MUTED()),
+                line(format!("{} RAM", human_bytes(app.hardware.ram)), TEXT()),
+                line(format!("{} CPU threads", app.hardware.threads), TEXT()),
+                line("Ctrl+P  Actions", MUTED()),
+                line("F1      Help", MUTED()),
             ],
         );
     }
@@ -281,7 +536,7 @@ fn footer(frame: &mut Frame, app: &mut App, area: Rect) {
             Gauge::default()
                 .ratio(ratio.clamp(0.0, 1.0))
                 .label(label)
-                .gauge_style(Style::default().fg(ACCENT).bg(SELECT)),
+                .gauge_style(Style::default().fg(ACCENT()).bg(SELECT())),
             progress,
         );
         let stage = job.progress.stage.clone();
@@ -296,7 +551,7 @@ fn footer(frame: &mut Frame, app: &mut App, area: Rect) {
         paragraph(
             frame,
             Rect::new(inner.x, inner.y + 1, inner.width, 1),
-            line(stage, MUTED),
+            line(stage, MUTED()),
         );
         inner.y + 3
     } else {
@@ -307,7 +562,7 @@ fn footer(frame: &mut Frame, app: &mut App, area: Rect) {
         Rect::new(inner.x, status_y, inner.width, 1),
         line(
             app.status.clone(),
-            if app.status_error { BAD } else { TEXT },
+            if app.status_error { BAD() } else { TEXT() },
         ),
     );
     let hint = if app.nav_focus {
@@ -333,7 +588,9 @@ fn footer(frame: &mut Frame, app: &mut App, area: Rect) {
             Page::Task => {
                 "↑↓ Change   Enter Diff   R Run checks   U Undo   C Configure   M Memory   E Evidence"
             }
-            Page::Settings => "↑↓ Choose setting   Enter Change   Settings are saved automatically",
+            Page::Settings => {
+                "←→ Category   ↑↓ Choose setting   Enter Change   Settings are saved automatically"
+            }
             Page::Help => {
                 "Alt+1…8 Switch page   Tab Navigation   Ctrl+P Quick actions   Ctrl+Q Quit"
             }
@@ -342,7 +599,7 @@ fn footer(frame: &mut Frame, app: &mut App, area: Rect) {
     paragraph(
         frame,
         Rect::new(inner.x, status_y + 1, inner.width, 1),
-        line(hint, MUTED),
+        line(hint, MUTED()),
     );
 }
 
@@ -363,16 +620,23 @@ fn home(frame: &mut Frame, app: &mut App, area: Rect) {
         vec![
             Line::styled(
                 "Make something. Understand it. Make it work.",
-                style(TEXT).add_modifier(Modifier::BOLD),
+                style(TEXT()).add_modifier(Modifier::BOLD),
             ),
             line(
                 "Describe your goal in ordinary language. Alt helps with the steps.",
-                MUTED,
+                MUTED(),
             ),
-            line(connection, ACCENT),
+            line(connection, ACCENT()),
             line(
-                format!("Project: {}", app.preferences.project.display()),
-                TEXT,
+                if app.project_missing {
+                    format!(
+                        "Project folder missing: {} · pick a folder from Start here",
+                        app.preferences.project.display()
+                    )
+                } else {
+                    format!("Project: {}", app.preferences.project.display())
+                },
+                if app.project_missing { BAD() } else { TEXT() },
             ),
             line(
                 if app.engine_ready() {
@@ -380,7 +644,7 @@ fn home(frame: &mut Frame, app: &mut App, area: Rect) {
                 } else {
                     "Agent engine missing · install it below when you are ready"
                 },
-                if app.engine_ready() { GOOD } else { WARN },
+                if app.engine_ready() { GOOD() } else { WARN() },
             ),
         ],
     );
@@ -434,12 +698,12 @@ fn home(frame: &mut Frame, app: &mut App, area: Rect) {
     };
     let rows = labels
         .iter()
-        .map(|(title, hint)| ListItem::new(vec![line(*title, TEXT), line(*hint, MUTED)]))
+        .map(|(title, hint)| ListItem::new(vec![line(*title, TEXT()), line(*hint, MUTED())]))
         .collect::<Vec<_>>();
     let mut state = ListState::default().with_selected(Some(app.home_selected));
     frame.render_stateful_widget(
         List::new(rows)
-            .highlight_style(Style::default().bg(SELECT))
+            .highlight_style(Style::default().bg(SELECT()))
             .highlight_symbol("› ")
             .block(block(" Start here ", !app.nav_focus)),
         choices,
@@ -462,13 +726,13 @@ fn home(frame: &mut Frame, app: &mut App, area: Rect) {
             .split(guidance);
         frame.render_widget(
             Paragraph::new(vec![
-                line("1  Describe the result you want.", TEXT),
-                line("2  Review commands and file changes.", TEXT),
-                line("3  Check the results together.", TEXT),
-                line("", TEXT),
+                line("1  Describe the result you want.", TEXT()),
+                line("2  Review commands and file changes.", TEXT()),
+                line("3  Check the results together.", TEXT()),
+                line("", TEXT()),
                 line(
                     "You can stop a task with Esc. Conversations are saved as you work.",
-                    MUTED,
+                    MUTED(),
                 ),
             ])
             .wrap(Wrap { trim: false })
@@ -483,16 +747,16 @@ fn home(frame: &mut Frame, app: &mut App, area: Rect) {
             Paragraph::new(vec![
                 line(
                     format!("Context budget: {}K tokens", context / 1024),
-                    ACCENT,
+                    ACCENT(),
                 ),
                 line(
                     "Start with a small 3B–4B quantized model. More context needs more memory.",
-                    TEXT,
+                    TEXT(),
                 ),
-                line("", TEXT),
+                line("", TEXT()),
                 line(
                     "An existing model server can use your GPU. Alt's built-in runtime uses CPU.",
-                    MUTED,
+                    MUTED(),
                 ),
             ])
             .wrap(Wrap { trim: false })
@@ -505,12 +769,13 @@ fn home(frame: &mut Frame, app: &mut App, area: Rect) {
         parts[2],
         line(
             "Tip: your assistant can be wrong. Tool results show what actually happened.",
-            MUTED,
+            MUTED(),
         ),
     );
 }
 
 fn chat(frame: &mut Frame, app: &mut App, area: Rect) {
+    let th = theme::cur();
     let compact = area.height < 12;
     let rows = Layout::vertical([
         Constraint::Min(if compact { 3 } else { 5 }),
@@ -531,72 +796,73 @@ fn chat(frame: &mut Frame, app: &mut App, area: Rect) {
         let mut lines = Vec::new();
         if app.messages.is_empty() {
             lines.extend([
-                line("What would you like to make or figure out?", TEXT),
-                line("", TEXT),
-                line("Examples", ACCENT),
-                line("• Explain how this project works.", MUTED),
-                line("• Add a settings screen with a dark theme.", MUTED),
-                line("• Help me understand and fix this error.", MUTED),
-                line("• Run the checks and explain any failures.", MUTED),
-                line("", TEXT),
-                line("Your first message connects the selected model.", MUTED),
-                line("No model selected? Open Connections first.", MUTED),
+                line("What would you like to make or figure out?", TEXT()),
+                line("", TEXT()),
+                line("Examples", ACCENT()),
+                line("• Explain how this project works.", MUTED()),
+                line("• Add a settings screen with a dark theme.", MUTED()),
+                line("• Help me understand and fix this error.", MUTED()),
+                line("• Run the checks and explain any failures.", MUTED()),
+                line("", TEXT()),
+                line("Your first message connects the selected model.", MUTED()),
+                line("No model selected? Open Connections first.", MUTED()),
             ]);
         }
         for message in &app.messages {
-            lines.push(line("", TEXT));
-            lines.push(Line::styled(
-                format!(" {} ", message.role),
-                style(if message.role == "You" {
-                    ACCENT
-                } else if message.role == "Notice" {
-                    WARN
-                } else {
-                    GOOD
-                })
-                .add_modifier(Modifier::BOLD),
-            ));
+            lines.push(line("", TEXT()));
+            let (badge_color, led) = if message.role == "You" {
+                (ACCENT2(), th.led_on)
+            } else if message.role == "Notice" {
+                (WARN(), th.led_on)
+            } else {
+                (ACCENT(), th.led_on)
+            };
+            lines.push(Line::from(vec![
+                Span::styled(format!("{led} "), style(badge_color)),
+                Span::styled(
+                    format!(" {} ", message.role.to_uppercase()),
+                    style(badge_color).add_modifier(Modifier::BOLD),
+                ),
+            ]));
             let mut code = false;
             for text in message.text.lines() {
                 if text.starts_with("```") {
                     code = !code;
-                    lines.push(line(text, MUTED));
+                    lines.push(line(text, MUTED()));
                     continue;
                 }
                 lines.push(Line::styled(
                     text.to_string(),
                     if code {
-                        Style::default().bg(SELECT).fg(TEXT)
+                        Style::default().bg(SELECT()).fg(TEXT())
                     } else if text.starts_with('#') {
-                        style(ACCENT)
+                        style(ACCENT())
                     } else {
-                        style(TEXT)
+                        style(TEXT())
                     },
                 ));
             }
         }
         if app.busy {
-            lines.push(line(
-                format!(
-                    "Working{}  {}s · {}",
-                    ".".repeat(
-                        (app.turn_started
-                            .map(|s| s.elapsed().as_millis() / 400)
-                            .unwrap_or(0)
-                            % 4) as usize
+            let frame_index = (app.frame as usize) % th.spinner.len();
+            lines.push(Line::from(vec![
+                Span::styled(format!("{} ", th.spinner[frame_index]), style(WARN())),
+                Span::styled(
+                    format!(
+                        "Working · {}s · {}",
+                        app.turn_started.map(|s| s.elapsed().as_secs()).unwrap_or(0),
+                        if !app.permissions.is_empty() {
+                            "Waiting for your tool approval"
+                        } else {
+                            app.inference_status
+                                .as_ref()
+                                .map(|s| s.stage.label())
+                                .unwrap_or("Preparing saved task and source context")
+                        }
                     ),
-                    app.turn_started.map(|s| s.elapsed().as_secs()).unwrap_or(0),
-                    if !app.permissions.is_empty() {
-                        "Waiting for your tool approval"
-                    } else {
-                        app.inference_status
-                            .as_ref()
-                            .map(|s| s.stage.label())
-                            .unwrap_or("Preparing saved task and source context")
-                    }
+                    style(WARN()),
                 ),
-                WARN,
-            ));
+            ]));
         }
         if let Some(s) = &app.inference_status {
             lines.push(line(
@@ -609,7 +875,7 @@ fn chat(frame: &mut Frame, app: &mut App, area: Rect) {
                         .map(|v| v.to_string())
                         .unwrap_or_else(|| "no limit".into())
                 ),
-                MUTED,
+                MUTED(),
             ));
             lines.push(line(
                 format!(
@@ -626,7 +892,7 @@ fn chat(frame: &mut Frame, app: &mut App, area: Rect) {
                             .saturating_sub(s.input_allowance))
                         .unwrap_or(s.output_allowance)
                 ),
-                MUTED,
+                MUTED(),
             ));
         }
         let paragraph = Paragraph::new(lines)
@@ -641,97 +907,7 @@ fn chat(frame: &mut Frame, app: &mut App, area: Rect) {
         frame.render_widget(paragraph.scroll((scroll, 0)), conversation);
     }
     if let Some(activity) = activity {
-        let chunks = Layout::vertical([
-            Constraint::Length(4),
-            Constraint::Min(3),
-            Constraint::Length(3),
-        ])
-        .split(activity);
-        let context = match (app.context_used, app.context_size) {
-            (Some(used), Some(size)) => format!("Context: {used} / {size} tokens"),
-            _ => format!(
-                "Context: {} tokens configured",
-                app.session
-                    .as_ref()
-                    .map(|s| s.profile.context_tokens)
-                    .or_else(|| app.current_profile().map(|(_, p)| p.context_tokens))
-                    .unwrap_or(app.preferences.context_tokens)
-            ),
-        };
-        paragraph(
-            frame,
-            inset(chunks[0], 1, 0),
-            vec![
-                line("ACTIVITY & CONTEXT", ACCENT),
-                line(context, MUTED),
-                line(
-                    format!("Project brief: {} chars", app.brief.chars().count()),
-                    MUTED,
-                ),
-                line(
-                    if app.trust_session {
-                        "Tools trusted for this session"
-                    } else {
-                        "Tool actions request approval"
-                    },
-                    if app.trust_session { WARN } else { MUTED },
-                ),
-            ],
-        );
-        let items = app
-            .tools
-            .iter()
-            .map(|tool| {
-                ListItem::new(vec![
-                    line(tool.title.clone(), TEXT),
-                    line(
-                        format!("  {}", tool.status),
-                        match tool.status.as_str() {
-                            "completed" => GOOD,
-                            "failed" => BAD,
-                            _ => WARN,
-                        },
-                    ),
-                ])
-            })
-            .collect::<Vec<_>>();
-        if items.is_empty() {
-            frame.render_widget(
-                Paragraph::new(
-                    "No tool actions yet.\n\nCommands, file changes, and results will appear here.",
-                )
-                .wrap(Wrap { trim: false })
-                .block(block(" Tools ", app.tools_focus)),
-                chunks[1],
-            );
-        } else {
-            let mut state = ListState::default().with_selected(Some(app.tool_selected));
-            frame.render_stateful_widget(
-                List::new(items)
-                    .highlight_style(Style::default().bg(SELECT))
-                    .block(block(" Tools · Enter for evidence ", app.tools_focus)),
-                chunks[1],
-                &mut state,
-            );
-            let inner = inset(chunks[1], 1, 1);
-            let offset = state.offset();
-            for i in offset..app.tools.len() {
-                let y = inner.y + (i - offset) as u16 * 2;
-                if y >= inner.bottom() {
-                    break;
-                }
-                app.hits.push((
-                    Rect::new(inner.x, y, inner.width, 2.min(inner.bottom() - y)),
-                    Hit::Row(i),
-                ));
-            }
-        }
-        buttons(
-            frame,
-            app,
-            inset(chunks[2], 1, 1),
-            &[("Evidence", "tool-details"), ("Task", "task")],
-        );
+        activity_column(frame, app, activity);
     }
     let composer_block = block(
         if app.busy {
@@ -782,9 +958,9 @@ fn selectable_list(
     let items = rows
         .into_iter()
         .map(|(title, hint)| {
-            let mut lines = vec![line(title, TEXT)];
+            let mut lines = vec![line(title, TEXT())];
             if row_height > 1 {
-                lines.push(line(hint, MUTED));
+                lines.push(line(hint, MUTED()));
             }
             ListItem::new(lines)
         })
@@ -793,7 +969,7 @@ fn selectable_list(
         List::new(items)
             .block(block(format!(" {title} "), !app.nav_focus))
             .highlight_symbol("› ")
-            .highlight_style(Style::default().bg(SELECT)),
+            .highlight_style(Style::default().bg(SELECT())),
         area,
         &mut state,
     );
@@ -837,8 +1013,12 @@ fn models(frame: &mut Frame, app: &mut App, area: Rect) {
         frame.render_widget(
             Paragraph::new(*label).style(
                 Style::default()
-                    .fg(if app.model_tab == i { ACCENT } else { MUTED })
-                    .bg(if app.model_tab == i { SELECT } else { BG }),
+                    .fg(if app.model_tab == i {
+                        ACCENT()
+                    } else {
+                        MUTED()
+                    })
+                    .bg(if app.model_tab == i { SELECT() } else { BG() }),
             ),
             tabs[i],
         );
@@ -849,7 +1029,7 @@ fn models(frame: &mut Frame, app: &mut App, area: Rect) {
         1 => "Models your selected server already has. Refresh, then choose Use model.",
         _ => "Public GGUF models. Publisher labels do not guarantee capability or behavior.",
     };
-    paragraph(frame, rows[1], line(intro, MUTED));
+    paragraph(frame, rows[1], line(intro, MUTED()));
     let items = match app.model_tab {
         0 => app
             .artifacts
@@ -872,7 +1052,7 @@ fn models(frame: &mut Frame, app: &mut App, area: Rect) {
         1 => app
             .server_models
             .iter()
-            .map(|m| (m.clone(), "Available on the selected server".into()))
+            .map(|m| (m.id.clone(), m.describe()))
             .collect(),
         _ if app.hub_files.is_empty() => app
             .hub_models
@@ -923,12 +1103,50 @@ fn models(frame: &mut Frame, app: &mut App, area: Rect) {
             app.model_selected,
         );
     }
-    let details=match app.model_tab {
-        0=>app.artifacts.get(app.model_selected).map(|m|format!("{}\nLicense: {}\n{} · CPU runtime {}",m.path.display(),m.license,if m.uncensored_claim{"Publisher labels this variant uncensored/abliterated"}else{"Uncensored status not established"},if app.runtime_ready(){"installed"}else{"not installed"})).unwrap_or_default(),
-        1=>app.server_source.as_ref().and_then(|name|app.config.profiles.get(name).map(|p|(name,p))).map(|(name,p)|format!("Connection: {name}\nAddress: {}\nSelecting a model applies to new conversations.",p.endpoint)).unwrap_or_else(||"Open Connections to add a server, then Refresh.".into()),
-        _=>{let filter=if app.variants_only{"Variant filter ON (publisher claims)"}else{"Variant filter OFF"};app.hub_files.get(app.model_selected).map(|f|format!("{}\n{} · download {}\nRunning a model needs additional memory for context and working buffers.",f.repo,filter,human_bytes(f.bytes))).unwrap_or_else(||format!("Search: {}\n{filter}\nOnly complete GGUF files with published SHA256 metadata are offered.",app.hub_query))},
+    let details = match app.model_tab {
+        0 => app
+            .artifacts
+            .get(app.model_selected)
+            .map(|m| {
+                format!(
+                    "{}\nLicense: {}\n{} · CPU runtime {}",
+                    m.path.display(),
+                    m.license,
+                    if m.uncensored_claim {
+                        "Publisher labels this variant uncensored/abliterated"
+                    } else {
+                        "Uncensored status not established"
+                    },
+                    if app.runtime_ready() {
+                        "installed"
+                    } else {
+                        "not installed"
+                    }
+                )
+            })
+            .unwrap_or_default(),
+        1 => app
+            .server_models
+            .get(app.model_selected)
+            .map(|m| {
+                format!(
+                    "{}\n{}\nConnection: {} · Selecting applies to new conversations.",
+                    m.id,
+                    m.blurb(),
+                    app.server_source.as_deref().unwrap_or("none")
+                )
+            })
+            .unwrap_or_else(|| "Open Connections to add a server, then Refresh.".into()),
+        _ => {
+            let filter = if app.variants_only {
+                "Variant filter ON (publisher claims)"
+            } else {
+                "Variant filter OFF"
+            };
+            app.hub_files.get(app.model_selected).map(|f|format!("{}\n{} · download {}\nRunning a model needs additional memory for context and working buffers.",f.repo,filter,human_bytes(f.bytes))).unwrap_or_else(||format!("Search: {}\n{filter}\nOnly complete GGUF files with published SHA256 metadata are offered.",app.hub_query))
+        }
     };
-    paragraph(frame, rows[3], line(details, MUTED));
+    paragraph(frame, rows[3], line(details, MUTED()));
     let buttons_list = match app.model_tab {
         0 => vec![
             ("Use model", "use-model"),
@@ -964,10 +1182,10 @@ fn connections(frame: &mut Frame, app: &mut App, area: Rect) {
         frame,
         rows[0],
         vec![
-            line("Where your model runs", TEXT),
+            line("Where your model runs", TEXT()),
             line(
                 "Choose a saved connection, or add one with the guided setup.",
-                MUTED,
+                MUTED(),
             ),
         ],
     );
@@ -1022,7 +1240,7 @@ fn connections(frame: &mut Frame, app: &mut App, area: Rect) {
                         "{name} · {} context tokens · {} steps per turn",
                         p.context_tokens, p.max_turns
                     ),
-                    TEXT,
+                    TEXT(),
                 ),
                 line(
                     if p.local_model.is_some() {
@@ -1030,14 +1248,14 @@ fn connections(frame: &mut Frame, app: &mut App, area: Rect) {
                     } else {
                         p.endpoint.clone()
                     },
-                    MUTED,
+                    MUTED(),
                 ),
                 line(
                     format!(
                         "Authentication: {}",
                         p.api_key_env.as_deref().unwrap_or("none configured")
                     ),
-                    MUTED,
+                    MUTED(),
                 ),
             ],
         );
@@ -1114,7 +1332,7 @@ fn sessions(frame: &mut Frame, app: &mut App, area: Rect) {
                     "Project: {}\nResume uses the conversation's original model and connection.",
                     s.cwd
                 ),
-                MUTED,
+                MUTED(),
             ),
         );
     }
@@ -1138,6 +1356,7 @@ fn sessions(frame: &mut Frame, app: &mut App, area: Rect) {
 fn settings(frame: &mut Frame, app: &mut App, area: Rect) {
     let rows = Layout::vertical([
         Constraint::Length(3),
+        Constraint::Length(2),
         Constraint::Min(4),
         Constraint::Length(4),
     ])
@@ -1146,13 +1365,36 @@ fn settings(frame: &mut Frame, app: &mut App, area: Rect) {
         frame,
         rows[0],
         vec![
-            line("Make Alt fit your computer", TEXT),
+            line("Make Alt fit your computer", TEXT()),
             line(
                 "Change a setting with Enter. Changes apply to new conversations.",
-                MUTED,
+                MUTED(),
             ),
         ],
     );
+    // Category tabs; ←→ switches, every setting stays one keystroke away.
+    let tabs = Layout::horizontal([Constraint::Percentage(20); 5]).split(rows[1]);
+    for (i, label) in App::SETTINGS_TABS.iter().enumerate() {
+        let active = i == app.settings_tab;
+        frame.render_widget(
+            Paragraph::new(format!(
+                " {} ",
+                if active { theme::cur().pointer } else { ' ' }
+            ))
+            .style(Style::default().fg(if active { ACCENT() } else { MUTED() })), // pointer cell
+            tabs[i],
+        );
+        frame.render_widget(
+            Paragraph::new((*label).to_string()).style(Style::default().fg(if active {
+                ACCENT()
+            } else {
+                MUTED()
+            })),
+            Rect::new(tabs[i].x + 2, tabs[i].y, tabs[i].width.saturating_sub(2), 1),
+        );
+        app.hits.push((tabs[i], Hit::SettingsTab(i)));
+    }
+    // Every settings row in one place, indexed exactly as setting_action maps.
     let context = app
         .current_profile()
         .map(|(_, p)| p.context_tokens)
@@ -1161,119 +1403,20 @@ fn settings(frame: &mut Frame, app: &mut App, area: Rect) {
         .current_profile()
         .map(|(_, p)| p.max_turns)
         .unwrap_or(app.preferences.max_turns);
-    let items = vec![
-        (
-            format!(
-                "Context: {} tokens · {}",
-                context,
-                match context {
-                    4096 => "Economy",
-                    8192 => "Balanced",
-                    16384 => "Extended",
-                    _ => "Large",
-                }
-            ),
-            "More context uses more memory. Cycle: 4K → 8K → 16K → 32K.".into(),
-        ),
-        (
-            format!("Task budget: {budget} steps"),
-            "Limits tool/model turns before asking you to continue. Cycle: 6 → 12 → 24.".into(),
-        ),
-        (
-            format!(
-                "Mouse: {}",
-                if app.preferences.mouse {
-                    "enabled"
-                } else {
-                    "disabled"
-                }
-            ),
-            "Keyboard navigation is always available.".into(),
-        ),
-        (
-            "Agent engine executable".into(),
-            app.preferences
-                .engine_path
-                .as_ref()
-                .map(|p| p.display().to_string())
-                .unwrap_or_else(|| "Auto-detect Goose; install from Home if missing".into()),
-        ),
-        (
-            "Local model runtime executable".into(),
-            app.preferences
-                .runtime_path
-                .as_ref()
-                .map(|p| p.display().to_string())
-                .unwrap_or_else(|| {
-                    "Auto-detect llama-server; install from Models if missing".into()
-                }),
-        ),
-        (
-            "Project brief".into(),
-            "Edit the goals and decisions sent with each new message.".into(),
-        ),
-        (
-            format!(
-                "Access: {} · {} configured check(s)",
-                app.preferences.access_policy.label(),
-                app.task_view.checks.len()
-            ),
-            "Choose Review only, Guided changes, or Full access terminal.".into(),
-        ),
-        (
-            "Fit Alt to this computer".into(),
-            "Inspect hardware and choose a low-memory, balanced or larger context profile.".into(),
-        ),
-        (
-            "Check this model's tool use".into(),
-            "A short live probe of the exact selected uncensored model. Saves its evidence.".into(),
-        ),
-        (
-            format!(
-                "Selected model is uncensored/abliterated: {}",
-                if app.current_profile().is_some_and(|(_, p)| p.uncensored) {
-                    "claimed"
-                } else {
-                    "not marked"
-                }
-            ),
-            "Enter records/removes your publisher claim, enabling the explicit live evaluation."
-                .into(),
-        ),
-        (
-            "Tools and workflows".into(),
-            "Build, Git, HTTP, browser, security and selected external MCP tools.".into(),
-        ),
-        (
-            "Storage and recovery".into(),
-            "Backup, restore, disk usage, retention and redacted diagnostics.".into(),
-        ),
-        (
-            "Model files and cache".into(),
-            "Private Hub access, verified relocation and removing managed weights.".into(),
-        ),
-        (
-            "Model and runtime settings".into(),
-            "Output allocation, skills, workflow, effort and CPU/GPU settings.".into(),
-        ),
-        (
-            "Benchmark selected model".into(),
-            "Measure this computer; exports exact settings, timings and runtime memory.".into(),
-        ),
-        (format!("Tool focus: {}",app.preferences.tool_profile.label()),"Choose all tools, inspection, coding or terminal schemas; access mode stays your choice.".into()),
-        ("Qualify model contexts and restart".into(),"Measure generation, memory, cancellation cleanup and restart for 2K, 4K and 8K.".into()),
-    ];
+    let all = app.settings_all_items(context, budget);
+    let indexes = App::settings_tab_indexes(app.settings_tab);
+    let items: Vec<(String, String)> = indexes.iter().map(|i| all[*i].clone()).collect();
     selectable_list(
         frame,
         app,
-        rows[1],
+        rows[2],
         "Preferences",
         items,
         app.settings_selected,
     );
     paragraph(
         frame,
-        rows[2],
+        rows[3],
         vec![
             line(
                 format!(
@@ -1282,54 +1425,54 @@ fn settings(frame: &mut Frame, app: &mut App, area: Rect) {
                     human_bytes(app.hardware.available_ram),
                     app.hardware.threads
                 ),
-                MUTED,
+                MUTED(),
             ),
-            line(app.hardware.gpu.clone(), MUTED),
+            line(app.hardware.gpu.clone(), MUTED()),
             line(
                 "CPU is the default. GPU layers require a compatible llama-server build.",
-                MUTED,
+                MUTED(),
             ),
-            line(format!("Data: {}", app.root.display()), MUTED),
+            line(format!("Data: {}", app.root.display()), MUTED()),
         ],
     );
 }
 
 fn help(frame: &mut Frame, area: Rect, scroll: u16) {
     let text = vec![
-        line("YOU DO NOT NEED TO KNOW HOW TO CODE", ACCENT),
+        line("YOU DO NOT NEED TO KNOW HOW TO CODE", ACCENT()),
         line(
             "Tell Alt the result you want. It can inspect your files, explain a plan, make changes, and run checks. Review what it did; models can make mistakes.",
-            TEXT,
+            TEXT(),
         ),
-        line("", TEXT),
-        line("1. CONNECT A MODEL", ACCENT),
+        line("", TEXT()),
+        line("1. CONNECT A MODEL", ACCENT()),
         line(
             "A connection points to the application running your model. Use Ollama, LM Studio, another compatible server, or a local GGUF model file. The guided setup checks the address and lists models.",
-            TEXT,
+            TEXT(),
         ),
-        line("", TEXT),
-        line("2. CHOOSE A PROJECT", ACCENT),
+        line("", TEXT()),
+        line("2. CHOOSE A PROJECT", ACCENT()),
         line(
             "Pick the folder containing the files you want to work on. The project brief keeps your goals and decisions handy. It is included with your messages.",
-            TEXT,
+            TEXT(),
         ),
-        line("", TEXT),
-        line("3. DESCRIBE THE JOB AND REVIEW ACTIONS", ACCENT),
+        line("", TEXT()),
+        line("3. DESCRIBE THE JOB AND REVIEW ACTIONS", ACCENT()),
         line(
             "Use ordinary language. Activity shows commands, edits, and actual results. Read each approval, then reject it, allow it once, or trust the session. Guided changes checkpoints edits and isolates configured checks. Full access enables arbitrary terminal commands with your OS access. Task progress shows diffs, undo and fresh check evidence.",
-            TEXT,
+            TEXT(),
         ),
-        line("", TEXT),
-        line("FIND YOUR WAY", ACCENT),
+        line("", TEXT()),
+        line("FIND YOUR WAY", ACCENT()),
         line(
             "Click a page or press Alt+1…8. Tab focuses navigation. Ctrl+P opens quick actions. Enter sends a message; Alt+Enter or Ctrl+J adds a new line. Paste works. Esc stops a task. Ctrl+Q exits.",
-            TEXT,
+            TEXT(),
         ),
-        line("", TEXT),
-        line("WHEN SOMETHING GOES WRONG", ACCENT),
+        line("", TEXT()),
+        line("WHEN SOMETHING GOES WRONG", ACCENT()),
         line(
             "Your conversation stays saved. Check the connection address, model application, available memory, and tool evidence. Reconnect a saved conversation to continue. Paused model downloads resume when you choose the same file.",
-            TEXT,
+            TEXT(),
         ),
     ];
     frame.render_widget(
@@ -1358,7 +1501,7 @@ fn editor(frame: &mut Frame, area: Rect, editor: &Editor, multiline: bool, focus
     }
     if !multiline {
         let (text, column) = editor.line_view(area.width as usize);
-        frame.render_widget(Paragraph::new(text).style(style(TEXT)), area);
+        frame.render_widget(Paragraph::new(text).style(style(TEXT())), area);
         if focused {
             frame.set_cursor_position((area.x + column.min(area.width - 1), area.y));
         }
@@ -1379,7 +1522,7 @@ fn editor(frame: &mut Frame, area: Rect, editor: &Editor, multiline: bool, focus
                     top.min(u16::MAX as usize) as u16,
                     left.min(u16::MAX as usize) as u16,
                 ))
-                .style(style(TEXT)),
+                .style(style(TEXT())),
             area,
         );
         if focused {
@@ -1408,6 +1551,7 @@ fn modal(frame: &mut Frame, app: &mut App, area: Rect) {
             Dialog::Input {
                 multiline: true, ..
             } => 26,
+            Dialog::Palette { .. } => 20,
             _ => 24,
         },
     );
@@ -1435,7 +1579,7 @@ fn modal(frame: &mut Frame, app: &mut App, area: Rect) {
                 rows[0],
                 description
                     .lines()
-                    .map(|s| line(s.to_owned(), MUTED))
+                    .map(|s| line(s.to_owned(), MUTED()))
                     .collect::<Vec<_>>(),
             );
             let labels = items
@@ -1456,6 +1600,81 @@ fn modal(frame: &mut Frame, app: &mut App, area: Rect) {
                 &[("Choose", "modal-submit"), ("Cancel", "modal-cancel")],
             );
         }
+        Dialog::Palette { query, selected } => {
+            let th = theme::cur();
+            use unicode_width::UnicodeWidthStr;
+            frame.render_widget(block(" Command palette ", true), rect);
+            let rows = Layout::vertical([
+                Constraint::Length(2),
+                Constraint::Min(4),
+                Constraint::Length(1),
+            ])
+            .split(inset(rect, 2, 1));
+            frame.render_widget(
+                Paragraph::new(Line::from(vec![
+                    Span::styled(format!("{} ", th.pointer), style(ACCENT())),
+                    Span::styled(query.text.clone(), style(TEXT())),
+                ]))
+                .block(
+                    Block::default()
+                        .borders(Borders::BOTTOM)
+                        .border_style(style(BORDER())),
+                ),
+                rows[0],
+            );
+            frame.set_cursor_position((rows[0].x + 2 + query.text.width() as u16, rows[0].y));
+            let items = app.palette_filtered();
+            let inner = inset(rows[1], 0, 0);
+            let visible = (inner.height / 2) as usize;
+            let start = (selected / visible.max(1) * visible.max(1)).min(items.len());
+            let mut lines = Vec::new();
+            for (offset, (label, hint, _)) in items.iter().enumerate().skip(start).take(visible) {
+                let active = offset == selected;
+                lines.push(Line::from(vec![
+                    Span::styled(
+                        format!("{} ", if active { th.pointer } else { ' ' }),
+                        style(if active { ACCENT() } else { BORDER() }),
+                    ),
+                    Span::styled(
+                        label.clone(),
+                        if active {
+                            style(ACCENT()).add_modifier(Modifier::BOLD)
+                        } else {
+                            style(TEXT())
+                        },
+                    ),
+                ]));
+                lines.push(line(format!("    {hint}"), MUTED()));
+            }
+            frame.render_widget(
+                Paragraph::new(lines).style(Style::default().bg(PANEL())),
+                rows[1],
+            );
+            for (offset, _) in items.iter().enumerate().skip(start).take(visible) {
+                let y = inner.y + (offset - start) as u16 * 2;
+                if y + 1 < inner.bottom() {
+                    app.hits
+                        .push((Rect::new(inner.x, y, inner.width, 2), Hit::Row(offset)));
+                }
+            }
+            // Clicking a result selects and runs it, like every other list.
+            for (_, hit) in &mut app.hits {
+                if let Hit::Row(index) = hit {
+                    *hit = Hit::Choice(*index);
+                }
+            }
+            paragraph(
+                frame,
+                rows[2],
+                line(
+                    format!(
+                        "{} result(s) · Type to filter · ↑↓ move · Enter run · Esc close",
+                        items.len()
+                    ),
+                    MUTED(),
+                ),
+            );
+        }
         Dialog::Connection(form) => {
             frame.render_widget(block(" Connect your model · Step 1 of 2 ", true), rect);
             let inner = inset(rect, 2, 1);
@@ -1465,11 +1684,11 @@ fn modal(frame: &mut Frame, app: &mut App, area: Rect) {
                 vec![
                     line(
                         "Give this connection a name, then check its server address.",
-                        TEXT,
+                        TEXT(),
                     ),
                     line(
                         "Start the server in your model application first. No API key is needed for most local servers.",
-                        MUTED,
+                        MUTED(),
                     ),
                 ],
             );
@@ -1497,7 +1716,7 @@ fn modal(frame: &mut Frame, app: &mut App, area: Rect) {
                 Rect::new(inner.x, inner.y + 12, inner.width, 2),
                 line(
                     "Tab changes fields · Enter checks the connection · Ctrl+M enters a model ID manually",
-                    MUTED,
+                    MUTED(),
                 ),
             );
             buttons(
@@ -1525,10 +1744,19 @@ fn modal(frame: &mut Frame, app: &mut App, area: Rect) {
             paragraph(
                 frame,
                 rows[0],
-                line(
-                    format!("{} is connected. Choose the model to use.", draft.name),
-                    GOOD,
-                ),
+                vec![
+                    line(
+                        format!("{} is connected. Choose the model to use.", draft.name),
+                        GOOD(),
+                    ),
+                    line(
+                        models
+                            .get(selected)
+                            .map(|m| format!("{} — {}", m.id, m.blurb()))
+                            .unwrap_or_default(),
+                        MUTED(),
+                    ),
+                ],
             );
             selectable_list(
                 frame,
@@ -1537,7 +1765,7 @@ fn modal(frame: &mut Frame, app: &mut App, area: Rect) {
                 "Available models",
                 models
                     .iter()
-                    .map(|m| (m.clone(), "Select to save this connection".into()))
+                    .map(|m| (m.id.clone(), m.describe()))
                     .collect(),
                 selected,
             );
@@ -1565,7 +1793,7 @@ fn modal(frame: &mut Frame, app: &mut App, area: Rect) {
                 Constraint::Length(1),
             ])
             .split(inset(rect, 2, 1));
-            paragraph(frame, rows[0], line(hint, MUTED));
+            paragraph(frame, rows[0], line(hint, MUTED()));
             frame.render_widget(block(" Your text ", true), rows[1]);
             editor(frame, inset(rows[1], 1, 1), &input, multiline, true);
             buttons(
@@ -1608,14 +1836,14 @@ fn modal(frame: &mut Frame, app: &mut App, area: Rect) {
                 frame,
                 rows[0],
                 vec![
-                    line(path.display().to_string(), ACCENT),
+                    line(path.display().to_string(), ACCENT()),
                     line(
                         if matches!(kind, BrowserKind::Project) {
                             "Enter opens a folder · Ctrl+S chooses the current folder"
                         } else {
                             "Enter opens folders or imports the selected file; files are not moved."
                         },
-                        MUTED,
+                        MUTED(),
                     ),
                 ],
             );
@@ -1673,7 +1901,7 @@ fn modal(frame: &mut Frame, app: &mut App, area: Rect) {
                 frame,
                 rows[0],
                 body.lines()
-                    .map(|s| line(s.to_owned(), TEXT))
+                    .map(|s| line(s.to_owned(), TEXT()))
                     .collect::<Vec<_>>(),
             );
             let cols = Layout::horizontal([Constraint::Percentage(50), Constraint::Percentage(50)])
@@ -1682,8 +1910,8 @@ fn modal(frame: &mut Frame, app: &mut App, area: Rect) {
                 frame.render_widget(
                     Paragraph::new(format!("  {label}  ")).style(
                         Style::default()
-                            .bg(if selected == i { ACCENT } else { SELECT })
-                            .fg(if selected == i { BG } else { TEXT }),
+                            .bg(if selected == i { ACCENT() } else { SELECT() })
+                            .fg(if selected == i { BG() } else { TEXT() }),
                     ),
                     cols[i],
                 );
@@ -1700,7 +1928,7 @@ fn modal(frame: &mut Frame, app: &mut App, area: Rect) {
                 .split(inset(rect, 2, 1));
             frame.render_widget(
                 Paragraph::new(display_text(&body))
-                    .style(style(TEXT))
+                    .style(style(TEXT()))
                     .wrap(Wrap { trim: false })
                     .scroll((scroll, 0)),
                 rows[0],
@@ -1743,7 +1971,7 @@ fn permission_modal(frame: &mut Frame, app: &mut App, area: Rect) {
     let rect = centered(area, 94, area.height.saturating_sub(2));
     frame.render_widget(Clear, rect);
     frame.render_widget(
-        block(" Review this action ", true).border_style(style(WARN)),
+        block(" Review this action ", true).border_style(style(WARN())),
         rect,
     );
     let rows = Layout::vertical([
@@ -1761,25 +1989,25 @@ fn permission_modal(frame: &mut Frame, app: &mut App, area: Rect) {
                 tool["title"]
                     .as_str()
                     .unwrap_or("Your model wants to use a tool"),
-                WARN,
+                WARN(),
             ),
             line(
                 format!(
                     "Project: {}",
                     app.session.as_ref().map(|s| s.cwd.as_str()).unwrap_or("")
                 ),
-                MUTED,
+                MUTED(),
             ),
             line(
                 "Read the proposed command or change below. It runs with your account's access.",
-                TEXT,
+                TEXT(),
             ),
             line(
                 format!(
                     "{} request(s) waiting · PgUp/PgDn scroll details",
                     app.permissions.len()
                 ),
-                MUTED,
+                MUTED(),
             ),
         ],
     );
@@ -1800,7 +2028,7 @@ fn permission_modal(frame: &mut Frame, app: &mut App, area: Rect) {
         rows[2],
         line(
             "Allow this session accepts future tool requests in this conversation until you reconnect. Reject is selected initially. Ctrl+Y allows once; Ctrl+N rejects.",
-            MUTED,
+            MUTED(),
         ),
     );
     let cols = Layout::horizontal([
@@ -1817,14 +2045,14 @@ fn permission_modal(frame: &mut Frame, app: &mut App, area: Rect) {
             Paragraph::new(format!(" {label} ")).style(
                 Style::default()
                     .bg(if app.permission_selected == i {
-                        WARN
+                        WARN()
                     } else {
-                        SELECT
+                        SELECT()
                     })
                     .fg(if app.permission_selected == i {
-                        BG
+                        BG()
                     } else {
-                        TEXT
+                        TEXT()
                     }),
             ),
             cols[i],
@@ -1846,14 +2074,14 @@ fn task(frame: &mut Frame, app: &mut App, area: Rect) {
         vec![]
     } else {
         vec![
-            line("Inspect → Plan → Edit → Test → Results", ACCENT),
+            line("Inspect → Plan → Edit → Test → Results", ACCENT()),
             line(
                 format!(
                     "Access: {} · {} configured check(s)",
                     app.preferences.access_policy.label(),
                     app.task_view.checks.len()
                 ),
-                MUTED,
+                MUTED(),
             ),
         ]
     };
@@ -1888,32 +2116,32 @@ fn task(frame: &mut Frame, app: &mut App, area: Rect) {
         summary.push(line(
             format!("Evidence: {evidence}"),
             if verification.is_some_and(|v| v.complete) {
-                GOOD
+                GOOD()
             } else {
-                WARN
+                WARN()
             },
         ));
-        summary.push(line(format!("Next: {}", t.next), TEXT));
+        summary.push(line(format!("Next: {}", t.next), TEXT()));
         summary.push(line(
             format!("Now: {} · {} tracked edit(s)", t.phase, t.changes),
-            TEXT,
+            TEXT(),
         ));
         summary.push(line(
             format!("Goal: {}", crate::project::bounded(&t.goal, 180)),
-            TEXT,
+            TEXT(),
         ));
     } else {
         summary.push(line(
             "Your model's file changes and check results appear here.",
-            TEXT,
+            TEXT(),
         ));
         summary.push(line(
             "Choose Configure checks to tell Alt what should prove your project works.",
-            TEXT,
+            TEXT(),
         ));
         summary.push(line(
             "You can run checks, inspect evidence and undo edits without asking the model.",
-            MUTED,
+            MUTED(),
         ));
     }
     frame.render_widget(
@@ -1993,11 +2221,11 @@ fn files(frame: &mut Frame, app: &mut App, area: Rect) {
                     app.preferences.project.display(),
                     app.workbench.filter
                 ),
-                TEXT,
+                TEXT(),
             ),
             line(
                 "Enter views · S finds text · G opens a line · E edits · N creates · D diffs",
-                MUTED,
+                MUTED(),
             ),
         ],
     );
@@ -2048,9 +2276,9 @@ fn jobs(frame: &mut Frame, app: &mut App, area: Rect) {
                 "Terminal jobs · Enter attaches · N starts · S stops · R restarts · H health · L logs"
             },
             if app.workbench.attached {
-                ACCENT
+                ACCENT()
             } else {
-                MUTED
+                MUTED()
             },
         ),
     );
@@ -2085,7 +2313,7 @@ fn jobs(frame: &mut Frame, app: &mut App, area: Rect) {
     let inner = panel.inner(rows[2]);
     frame.render_widget(panel, rows[2]);
     frame.render_widget(
-        Paragraph::new(display_text(&app.workbench.screen)).style(style(TEXT)),
+        Paragraph::new(display_text(&app.workbench.screen)).style(style(TEXT())),
         inner,
     );
     if app.workbench.terminal.is_some() && app.workbench.dimensions != (inner.width, inner.height)

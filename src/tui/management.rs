@@ -165,9 +165,49 @@ impl App {
             self.notify("Tool focus saved. Your next message connects with the selected tools.");
             return Ok(());
         }
+        if action == "appearance" {
+            let current = self.theme.name;
+            let items: Vec<_> = crate::tui::theme::THEMES
+                .iter()
+                .map(|t| {
+                    (
+                        format!(
+                            "{}{}",
+                            t.name,
+                            if t.name == current {
+                                "  · current"
+                            } else {
+                                ""
+                            }
+                        ),
+                        t.blurb.to_string(),
+                        "theme-select".into(),
+                        json!({"name":t.name}),
+                    )
+                })
+                .collect();
+            self.manager_menu(
+                "Appearance",
+                "Choose a theme. Alt redraws immediately; nothing else changes.",
+                items,
+            );
+            return Ok(());
+        }
+        if action == "theme-select" {
+            let name = state["name"].as_str().context("Theme")?;
+            self.theme = crate::tui::theme::by_name(name);
+            self.preferences.theme = name.to_owned();
+            self.preferences.save(&self.root)?;
+            self.notify(format!(
+                "Theme changed to {name}. Everything else is unchanged."
+            ));
+            return Ok(());
+        }
         if action == "skills-settings" {
+            let disabled = self.preferences.skills_disabled.clone();
             let mut items: Vec<_> = crate::skills::catalog()
                 .into_iter()
+                .filter(|skill| !crate::skills::is_disabled(skill.id, &disabled))
                 .map(|skill| {
                     (
                         skill.id.into(),
@@ -187,6 +227,56 @@ impl App {
                 ),
             );
             self.manager_menu("Choose a task skill","One bounded procedure enters the next prompt. Helpers use your existing execution access; their native skill tool returns actual evidence.",items);
+            return Ok(());
+        }
+        if action == "skills-manager" {
+            let disabled = self.preferences.skills_disabled.clone();
+            let items: Vec<_> = crate::skills::catalog()
+                .into_iter()
+                .map(|skill| {
+                    (
+                        format!(
+                            "{} {}",
+                            if crate::skills::is_disabled(skill.id, &disabled) {
+                                "[off]"
+                            } else {
+                                "[on] "
+                            },
+                            skill.id
+                        ),
+                        format!("{} · {}", skill.description, skill.prerequisites),
+                        "skill-toggle".into(),
+                        json!({"id":skill.id}),
+                    )
+                })
+                .collect();
+            self.manager_menu("Bundled skills","Select to switch a skill on or off. Off means the model is never offered it; the active-procedure choice is separate and unaffected.",items);
+            return Ok(());
+        }
+        if action == "skill-toggle" {
+            ensure!(
+                !self.busy && !self.connecting,
+                "Stop the current task before changing skills"
+            );
+            let id = state["id"].as_str().context("Skill")?.to_owned();
+            if let Some(position) = self
+                .preferences
+                .skills_disabled
+                .iter()
+                .position(|d| d == &id)
+            {
+                self.preferences.skills_disabled.remove(position);
+            } else {
+                // A skill switched off cannot stay the active procedure.
+                if self.preferences.active_skill.as_deref() == Some(id.as_str()) {
+                    self.preferences.active_skill = None;
+                }
+                self.preferences.skills_disabled.push(id);
+            }
+            self.preferences.save(&self.root)?;
+            self.workspace = None;
+            self.connected = false;
+            self.manager_action("skills-manager", json!({}))?;
             return Ok(());
         }
         if action == "skills-select" {
@@ -883,7 +973,7 @@ impl App {
     fn manage_workflows(&mut self, action: &str, mut state: Value) -> Result<()> {
         let value = state["value"].as_str().unwrap_or("").to_owned();
         match action {
-"manage-tools"=>self.manager_menu("Tools and workflows","Choose only the tools you need. External tools execute with Full access.",vec![("Project workflows".into(),"Build, Git, HTTP, browser and security checks".into(),"packs".into(),json!({})),("External MCP connections".into(),"Connect a server and select its exposed tools".into(),"extensions".into(),json!({})),("Findings and evidence".into(),"Review and export actual workflow results".into(),"findings".into(),json!({})),("Language-server references or rename".into(),"Optional installed language server; preview checkpoints before applying".into(),"language-start".into(),json!({}))]),
+"manage-tools"=>self.manager_menu("Tools and workflows","Choose only the tools you need. External tools execute with Full access.",vec![("Bundled skills on/off".into(),"Switch whole skills off; the model is never offered a disabled one".into(),"skills-manager".into(),json!({})),("Project workflows".into(),"Build, Git, HTTP, browser and security checks".into(),"packs".into(),json!({})),("External MCP connections".into(),"Connect a server and select its exposed tools".into(),"extensions".into(),json!({})),("Findings and evidence".into(),"Review and export actual workflow results".into(),"findings".into(),json!({})),("Language-server references or rename".into(),"Optional installed language server; preview checkpoints before applying".into(),"language-start".into(),json!({}))]),
 "packs"=>self.manager_menu("Project workflows","Optional scanners and browsers must be installed. Every attempt saves evidence.",packs::catalog().into_iter().map(|p|(p.id.clone(),format!("{} · needs {}",p.description,p.prerequisite),"pack-configure".into(),json!({"pack":p.id,"input":{}}))).collect()),
 "pack-configure"=>{match state["pack"].as_str().context("Pack")? {
     "build"=>self.manager_menu("Choose your project's language","Runs its existing test runner. A zero-test result is incomplete when the runner exposes a count.",["rust","python","javascript"].into_iter().map(|language|(language.into(),"Use installed project dependencies".into(),"pack-preview".into(),json!({"pack":"build","input":{"language":language}}))).collect()),

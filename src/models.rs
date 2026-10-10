@@ -1,5 +1,5 @@
 //! Provider inventory, public Hub discovery, and verified local model files.
-use crate::config::{Profile, Provider, atomic_write, private_dir};
+use crate::config::{Profile, atomic_write, private_dir};
 use anyhow::{Context, Result, bail, ensure};
 use futures_util::StreamExt;
 use serde::{Deserialize, Serialize};
@@ -66,24 +66,144 @@ async fn json_response(request: reqwest::RequestBuilder) -> Result<Value> {
     serde_json::from_slice(&bytes).context("The server returned an unreadable model list")
 }
 
-pub async fn inventory(profile: &Profile) -> Result<Vec<String>> {
+/// One model offered by a server. Ollama reports size, parameter count,
+/// quantization, family and modified date per tag; OpenAI-compatible servers
+/// usually report only an identifier. Unknown fields stay `None` and are
+/// labelled as unknown in the interface instead of being invented.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ServerModel {
+    pub id: String,
+    pub bytes: Option<u64>,
+    pub parameters: Option<String>,
+    pub quant: Option<String>,
+    pub family: Option<String>,
+    pub modified: Option<String>,
+}
+impl ServerModel {
+    /// Distinct one-line summary. Two models must never render the same
+    /// summary unless their identifiers are also identical.
+    pub fn describe(&self) -> String {
+        let mut parts: Vec<String> = Vec::new();
+        if let Some(parameters) = self.parameters.as_deref() {
+            parts.push(format!("{parameters} parameters"));
+        }
+        if let Some(quant) = self.quant.as_deref() {
+            parts.push(format!("quant {quant}"));
+        }
+        if let Some(bytes) = self.bytes {
+            parts.push(human_bytes(bytes).to_string());
+        }
+        if let Some(family) = self.family.as_deref() {
+            parts.push(format!("family {family}"));
+        }
+        if let Some(date) = self.modified.as_deref() {
+            parts.push(format!("modified {date}"));
+        }
+        if parts.is_empty() {
+            "No details reported by this server".into()
+        } else {
+            parts.join(" · ")
+        }
+    }
+    /// Short curated description for common local-model families. Absent for
+    /// unknown names; the interface then says so instead of guessing.
+    pub fn blurb(&self) -> &'static str {
+        catalog_blurb(&self.id).unwrap_or("No family description available for this model name")
+    }
+}
+fn catalog_blurb(id: &str) -> Option<&'static str> {
+    let id = id.to_lowercase();
+    let rules: &[(&str, &str)] = &[
+        (
+            "spark",
+            "Spark: small fast coding model; good on 8 GB GPUs and CPU",
+        ),
+        (
+            "mimo",
+            "MiMo: compact coding and repair model; tries tool calls reliably",
+        ),
+        (
+            "heretic",
+            "Heretic variant: uncensored derivative of a standard model",
+        ),
+        (
+            "abliterat",
+            "Abliterated variant: refusal directions removed by the publisher",
+        ),
+        ("uncensored", "Publisher labels this variant uncensored"),
+        (
+            "dolphin",
+            "Dolphin: instruction-tuned, less-refusal-heavy assistant lineage",
+        ),
+        (
+            "qwen",
+            "Qwen family: strong general and coding capability for its size",
+        ),
+        ("codestral", "Codestral: code-completion-focused model"),
+        (
+            "deepseek",
+            "DeepSeek family: coding-capable, tool-call oriented",
+        ),
+        ("codellama", "CodeLlama: code-focused Llama derivative"),
+        ("llama", "Llama family: broad general-purpose base"),
+        (
+            "phi",
+            "Phi family: very small strong-talking models; verify behavior",
+        ),
+        ("gemma", "Gemma family: compact general-purpose models"),
+        ("granite", "Granite: small enterprise-style models"),
+        ("mistral", "Mistral family: efficient general models"),
+        (
+            "qwen3",
+            "Qwen 3 generation: newer tool-calling and reasoning",
+        ),
+    ];
+    rules
+        .iter()
+        .find(|(needle, _)| id.contains(needle))
+        .map(|(_, blurb)| *blurb)
+}
+pub async fn inventory(profile: &Profile) -> Result<Vec<ServerModel>> {
     let mut request = client()?.get(profile.models_url());
     if let Some(key) = profile.key()? {
         request = request.bearer_auth(key);
     }
     let value = json_response(request).await?;
-    let (field, name) = match profile.provider {
-        Provider::Openai => ("data", "id"),
-        Provider::Ollama => ("models", "name"),
-    };
-    let mut models: Vec<String> = value[field]
+    // A present-but-empty list is valid: the caller reports the reachable
+    // server with no models. Only a missing or non-array field is an error.
+    let list = value["data"]
         .as_array()
-        .context("This address did not return a supported model list")?
+        .or_else(|| value["models"].as_array())
+        .context("This address did not return a supported model list")?;
+    let models: Vec<ServerModel> = list
         .iter()
-        .filter_map(|model| model[name].as_str().map(str::to_owned))
+        .filter_map(|model| {
+            let id = model["id"].as_str().or_else(|| model["name"].as_str())?;
+            let date = model["modified_at"]
+                .as_str()
+                .or_else(|| model["modified"].as_str())
+                .and_then(|raw| raw.split('T').next())
+                .map(str::to_owned);
+            let details = model.get("details");
+            let find = |field: &str| {
+                details
+                    .and_then(|d| d.get(field))
+                    .and_then(Value::as_str)
+                    .map(str::to_owned)
+            };
+            Some(ServerModel {
+                id: id.to_owned(),
+                bytes: model["size"].as_u64(),
+                parameters: find("parameter_size"),
+                quant: find("quantization_level"),
+                family: find("family"),
+                modified: date,
+            })
+        })
         .collect();
-    models.sort();
-    models.dedup();
+    let mut models = models;
+    models.sort_by(|a, b| a.id.cmp(&b.id));
+    models.dedup_by(|a, b| a.id == b.id);
     Ok(models)
 }
 
