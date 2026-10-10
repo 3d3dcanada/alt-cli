@@ -193,6 +193,10 @@ impl Engine {
         Ok(engine)
     }
 
+    pub fn bridge_cancel(&self) -> Option<crate::models::Cancel> {
+        self.bridge.as_ref().map(|bridge| bridge.cancel.clone())
+    }
+
     /// Public for alternate ACP engines and deterministic protocol fixtures.
     pub async fn spawn(mut command: Command) -> Result<Self> {
         command
