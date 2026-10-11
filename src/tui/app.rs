@@ -1264,11 +1264,33 @@ impl App {
             return Ok(());
         }
         if !self.connected {
+            // B02: the submitted message is held separately, so anything typed
+            // while connecting stays in the composer for the next message.
             self.pending_prompt = Some(self.composer.text.clone());
+            self.composer.clear();
             self.start_workspace(self.session.clone())?;
+            self.notify("Connecting. Your message will be sent when the model is ready; you can type the next one meanwhile.");
             return Ok(());
         }
         let text = self.composer.text.clone();
+        self.composer.clear();
+        self.send_text(text)
+    }
+
+    /// Put an unsent submitted message back, keeping anything typed since,
+    /// so neither is lost and the message appears exactly once.
+    fn restore_pending(&mut self) {
+        if let Some(prompt) = self.pending_prompt.take() {
+            let typed = self.composer.text.trim().to_owned();
+            if typed.is_empty() {
+                self.composer.replace(prompt);
+            } else if typed != prompt.trim() {
+                self.composer.replace(format!("{prompt}\n\n{typed}"));
+            }
+        }
+    }
+
+    fn send_text(&mut self, text: String) -> Result<()> {
         self.workspace
             .as_ref()
             .context("Reconnect your workspace")?
@@ -1276,7 +1298,6 @@ impl App {
                 text: text.clone(),
                 brief: self.brief.clone(),
             })?;
-        self.composer.clear();
         self.add_message("You", text);
         self.busy = true;
         self.turn_tools = 0;
@@ -1294,7 +1315,7 @@ impl App {
             }
             self.connecting = false;
             self.connected = false;
-            self.pending_prompt = None;
+            self.restore_pending();
             self.notify("Connection cancelled. Your message is still here.");
             return Ok(());
         }
@@ -1325,8 +1346,7 @@ impl App {
                 self.notify("Ready. Describe what you want to do.");
                 self.refresh_sessions()?;
                 if let Some(prompt) = self.pending_prompt.take() {
-                    self.composer.replace(prompt);
-                    self.send_prompt()?;
+                    self.send_text(prompt)?;
                 }
             }
             workspace::Update::Event(Event::Update(params)) => self.apply_update(&params),
@@ -1390,9 +1410,7 @@ impl App {
                 self.busy = false;
                 self.connecting = false;
                 self.permissions.clear();
-                if let Some(prompt) = self.pending_prompt.take() {
-                    self.composer.replace(prompt);
-                }
+                self.restore_pending();
                 self.add_message("Notice", &error);
                 self.error(error);
             }
@@ -1415,6 +1433,7 @@ impl App {
             workspace::Update::Closed => {
                 self.connected = false;
                 self.connecting = false;
+                self.restore_pending();
                 self.busy = false;
                 self.permissions.clear();
                 self.workspace = None;
@@ -3442,5 +3461,29 @@ mod recovery_tests {
             serde_json::to_value(saved.effective_inference()).unwrap(),
             serde_json::to_value(settings).unwrap()
         );
+    }
+
+    #[test]
+    fn text_typed_while_connecting_survives_failure_and_cancel_exactly_once() {
+        let data = tempfile::tempdir().unwrap();
+        let mut app = App::load(data.path().into(), "goose".into(), None).unwrap();
+        // Failure: the submitted message comes back first, the new draft after it.
+        app.pending_prompt = Some("Fix the parser".into());
+        app.composer.replace("Also update the docs");
+        app.workspace_update(workspace::Update::Error("Server unavailable".into()))
+            .unwrap();
+        assert_eq!(app.composer.text, "Fix the parser\n\nAlso update the docs");
+        assert!(app.pending_prompt.is_none());
+        // Cancelling a connection restores it without duplicating identical text.
+        app.composer.replace("Fix the parser");
+        app.pending_prompt = Some("Fix the parser".into());
+        app.connecting = true;
+        app.stop_turn().unwrap();
+        assert_eq!(app.composer.text, "Fix the parser");
+        // A closed connection also gives the message back.
+        app.composer.clear();
+        app.pending_prompt = Some("Run the tests".into());
+        app.workspace_update(workspace::Update::Closed).unwrap();
+        assert_eq!(app.composer.text, "Run the tests");
     }
 }

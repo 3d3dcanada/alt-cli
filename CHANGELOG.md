@@ -77,6 +77,9 @@
 - B01 (audit A03): editing a connection patches only the name, provider, address,
   key variable and dialect; context, steps, inference settings, the selected model
   and the uncensored claim are kept, and the model list opens on the current model.
+- B02 (audit A04, part): a message sent before the model is ready is held apart from
+  the composer. Text typed while connecting stays for the next message; on failure,
+  cancel or a closed connection the held message comes back exactly once, ahead of it.
 
 ### A10 harness labels and matched re-run script (prepared; owner PC runs it)
 
