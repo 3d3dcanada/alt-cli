@@ -114,8 +114,9 @@ pub fn shadow(buf: &mut Buffer, rect: Rect, color: Color, amount: f64) {
     }
 }
 
-/// Blend retained cells over what is now beneath them: a fade-out. Symbols
-/// switch to the new screen at the midpoint so text never doubles up.
+/// Fade a closed dialog's colours out over what is now beneath it. The new
+/// screen's text is shown from the first frame; only the dialog's colours
+/// linger, so nothing stale can be read or clicked.
 pub fn fade_out(buf: &mut Buffer, rect: Rect, cells: &[Cell], t: f64, text: Color, bg: Color) {
     let area = rect.intersection(buf.area);
     if area != rect {
@@ -127,10 +128,6 @@ pub fn fade_out(buf: &mut Buffer, rect: Rect, cells: &[Cell], t: f64, text: Colo
             let Some(old) = iter.next() else { return };
             let cell = &mut buf[(x, y)];
             let (new_fg, new_bg) = (rgb(cell.fg, text), rgb(cell.bg, bg));
-            if t < 0.5 {
-                let symbol = old.symbol().to_owned();
-                cell.set_symbol(&symbol);
-            }
             cell.fg = blend(rgb(old.fg, text), new_fg, t);
             cell.bg = blend(rgb(old.bg, bg), new_bg, t);
         }
@@ -219,21 +216,16 @@ mod tests {
     }
 
     #[test]
-    fn fade_out_swaps_symbols_at_the_midpoint() {
+    fn fade_out_shows_the_new_text_at_once_and_fades_colours() {
         let mut buf = buffer("new");
-        let old = buffer("old");
+        let mut old = buffer("old");
+        for x in 0..3 {
+            old[(x, 0)].bg = Color::Rgb(200, 200, 200);
+        }
         let cells = snapshot(&old, old.area);
-        let mut early = buf.clone();
-        fade_out(
-            &mut early,
-            buf.area,
-            &cells,
-            0.2,
-            Color::White,
-            Color::Black,
-        );
-        assert_eq!(row(&early), "old");
-        fade_out(&mut buf, old.area, &cells, 0.7, Color::White, Color::Black);
-        assert_eq!(row(&buf), "new");
+        let area = buf.area;
+        fade_out(&mut buf, area, &cells, 0.25, Color::White, Color::Black);
+        assert_eq!(row(&buf), "new", "no stale text, even early");
+        assert_eq!(buf[(0, 0)].bg, Color::Rgb(150, 150, 150));
     }
 }

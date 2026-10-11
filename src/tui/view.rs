@@ -3066,9 +3066,10 @@ mod tests {
         app.motion.pin(Some(motion::MODAL_IN_MS + 2.0));
         let closing = render(&mut app, 100, 30);
         assert!(
-            closing.contains("Where will your model run?"),
-            "closing fades out"
+            !closing.contains("Where will your model run?"),
+            "a closing dialog's text is gone at once"
         );
+        assert!(app.motion.active(), "its colours fade out");
         app.motion
             .pin(Some(motion::MODAL_IN_MS + motion::MODAL_OUT_MS + 3.0));
         let closed = render(&mut app, 100, 30);
