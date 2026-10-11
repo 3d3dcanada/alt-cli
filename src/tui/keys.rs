@@ -705,13 +705,16 @@ impl App {
         Ok(())
     }
 
-    fn test_form(&mut self) -> Result<()> {
+    pub(super) fn test_form(&mut self) -> Result<()> {
         let Some(Dialog::Connection(form)) = &self.dialog else {
             return Ok(());
         };
         let draft = self.draft(form)?;
-        self.launch_job("Checking the connection", move |_, _| async move {
-            let models = models::inventory(&draft.profile).await?;
+        self.launch_job("Checking the connection", move |cancel, _| async move {
+            let models = tokio::select! {
+                result = models::inventory(&draft.profile) => result?,
+                _ = models::cancelled(&cancel) => anyhow::bail!("Connection check cancelled"),
+            };
             Ok(JobResult::Tested(draft, models))
         })
     }

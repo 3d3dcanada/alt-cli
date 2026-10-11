@@ -86,6 +86,8 @@
 - B07 (audit A18): manual model-ID entry moved from Ctrl+M (sent as Enter by most
   terminals) to Alt+M and a *Type model ID* button; allowance recovery was already in
   the palette (N06).
+- B08 (audit A19): cancelling a connection check stops the inventory request at once
+  and a late result is discarded; the form stays and no model dialog reopens.
 
 ### A10 harness labels and matched re-run script (prepared; owner PC runs it)
 

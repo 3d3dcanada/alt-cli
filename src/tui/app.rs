@@ -1582,6 +1582,10 @@ impl App {
                     Ok(JobResult::Resume(_) | JobResult::PreparedWorkspace(..)) if cancelled => {
                         self.notify("Conversation loading cancelled. Your message is kept.");
                     }
+                    // B08: a cancelled check never reopens a dialog later.
+                    Ok(JobResult::Tested(..) | JobResult::Inventory(..)) if cancelled => {
+                        self.notify("Connection check cancelled. Nothing was saved.");
+                    }
                     Ok(JobResult::Resume(session)) => self.start_workspace(Some(session))?,
                     Ok(JobResult::PreparedWorkspace(options, history, brief)) => {
                         self.finish_workspace(*options, history, brief)?;
@@ -3511,5 +3515,42 @@ mod recovery_tests {
         app.key(KeyEvent::new(KeyCode::Enter, KeyModifiers::NONE))
             .unwrap();
         assert_eq!(app.current_profile().unwrap().1.model, "my-exact-model:7b");
+    }
+
+    #[tokio::test]
+    async fn a_cancelled_connection_check_returns_quickly_and_opens_nothing() {
+        // Audit A19: a stalled server, then Esc.
+        let stalled = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let address = stalled.local_addr().unwrap();
+        let hold = tokio::spawn(async move {
+            let (_socket, _) = stalled.accept().await.unwrap();
+            std::future::pending::<()>().await;
+        });
+        let data = tempfile::tempdir().unwrap();
+        let mut app = App::load(data.path().into(), "goose".into(), None).unwrap();
+        app.menu_action(MenuAction::Preset(1)).unwrap();
+        if let Some(Dialog::Connection(form)) = &mut app.dialog {
+            form.fields[1] = Editor::new(format!("http://{address}/v1"));
+        }
+        app.test_form().unwrap();
+        tokio::time::sleep(Duration::from_millis(200)).await;
+        let started = Instant::now();
+        app.job
+            .as_ref()
+            .unwrap()
+            .cancel
+            .store(true, Ordering::Relaxed);
+        let event = tokio::time::timeout(Duration::from_secs(1), app.job_rx.recv())
+            .await
+            .expect("cancellation must return control within one second")
+            .unwrap();
+        app.job_event(event).unwrap();
+        assert!(started.elapsed() < Duration::from_secs(1));
+        assert!(app.job.is_none());
+        assert!(
+            matches!(app.dialog, Some(Dialog::Connection(_))),
+            "the form stays; no model dialog opens"
+        );
+        hold.abort();
     }
 }
