@@ -84,6 +84,9 @@ pub struct Change {
     pub mode: u32,
     pub test_change: bool,
     pub reason: String,
+    /// How `old_text` was located when it was not an exact match (A06).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub matched: Option<String>,
 }
 impl Change {
     pub fn diff(&self) -> String {
@@ -561,6 +564,46 @@ impl Project {
         );
         Ok((body, start, end))
     }
+    /// Whole-file rewrite for small files (A06): the current revision must have
+    /// been read in full in this task, and the file must be at most 300 lines.
+    pub fn prepare_replace_file(
+        &self,
+        task: &str,
+        path: &str,
+        replacement: &str,
+        reason: &str,
+    ) -> Result<Change> {
+        let body = String::from_utf8(
+            self.bytes(path)?
+                .context("File does not exist; use create_file for a new file")?,
+        )
+        .context("Only UTF-8 text files can be rewritten")?;
+        let lines = body.lines().count();
+        ensure!(
+            lines <= 300,
+            "replace_file is for files up to 300 lines; this one has {lines}. Edit a read span with edit_text instead."
+        );
+        let hash = digest(body.as_bytes());
+        let complete: bool = self.db.query_row(
+            "SELECT EXISTS(SELECT 1 FROM edit_handles WHERE task=?1 AND path=?2 AND hash=?3 AND start=0 AND end=?4)",
+            params![task, path, hash, body.len()],
+            |r| r.get(0),
+        )?;
+        ensure!(
+            complete || body.is_empty(),
+            "Read the whole current file first (read with start_line=1 and lines={}), then send replace_file. No change applied.",
+            lines.max(1)
+        );
+        self.prepare_edit(
+            task,
+            path,
+            Some(&hash),
+            &body,
+            replacement,
+            "replace",
+            reason,
+        )
+    }
     pub fn prepare_handle_edit(
         &self,
         task: &str,
@@ -842,6 +885,7 @@ impl Project {
         );
         let before = self.bytes(path)?.map(String::from_utf8).transpose()?;
         let before_hash = before.as_ref().map(|s| digest(s.as_bytes()));
+        let mut matched = None;
         if let Some(hash) = &before_hash {
             let read: Option<String> = self
                 .db
@@ -872,12 +916,55 @@ impl Project {
                 let text = before
                     .as_ref()
                     .context("Existing file is missing; inspect before changing the plan")?;
-                ensure!(
-                    (old.is_empty() && text.is_empty())
-                        || (!old.is_empty() && text.matches(old).count() == 1),
-                    "old_text must occur exactly once; read the exact current text"
-                );
-                Some(text.replacen(old, new, 1))
+                if old.is_empty() && text.is_empty() {
+                    Some(new.to_string())
+                } else {
+                    ensure!(
+                        !old.is_empty(),
+                        "old_text is empty; read the exact current text"
+                    );
+                    match text.matches(old).count() {
+                        1 => Some(text.replacen(old, new, 1)),
+                        0 => match whitespace_match(text, old) {
+                            Ok((start, end, reindented)) => {
+                                matched = Some(format!(
+                                    "old_text matched lines {}–{} after ignoring whitespace differences{}",
+                                    text[..start].lines().count() + 1,
+                                    text[..end].lines().count(),
+                                    if reindented {
+                                        "; new_text was re-indented to match the file"
+                                    } else {
+                                        ""
+                                    }
+                                ));
+                                let replacement = if reindented {
+                                    reindent(text, start, old, new)
+                                } else {
+                                    new.to_string()
+                                };
+                                let mut after = text.clone();
+                                after.replace_range(start..end, &replacement);
+                                Some(after)
+                            }
+                            Err(Some((start, end))) => {
+                                let hash = before_hash.as_deref().unwrap_or_default();
+                                let handle = self.edit_handle(task, path, hash, start, end)?;
+                                bail!(
+                                    "old_text was not found, even ignoring whitespace. Closest current text (lines {}–{}, handle {handle}):\n{}\nReplace it with edit(operation=handle, handle={handle}, new_text=...) or copy the exact text. No change applied.",
+                                    text[..start].lines().count() + 1,
+                                    text[..end].lines().count(),
+                                    bounded(&text[start..end], 4000)
+                                )
+                            }
+                            Err(None) => bail!(
+                                "old_text matches more than one place after ignoring whitespace; include more surrounding lines. No change applied."
+                            ),
+                        },
+                        n => bail!(
+                            "old_text occurs {n} times; include more surrounding lines so it is unique. No change applied."
+                        ),
+                    }
+                }
             }
             "delete" => {
                 ensure!(before.is_some(), "File is already absent");
@@ -925,6 +1012,7 @@ impl Project {
             mode,
             test_change,
             reason: reason.into(),
+            matched,
         };
         self.db.execute(
             "INSERT INTO changes(id,task,status,payload) VALUES(?1,?2,?3,?4)",
@@ -1450,6 +1538,87 @@ pub(crate) fn excluded(name: &str) -> bool {
             .iter()
             .any(|key| lower.starts_with(key))
         || (lower.starts_with("credentials") && lower.ends_with(".json"))
+}
+
+/// Byte offsets of each line (start, end without its newline).
+fn line_spans(text: &str) -> Vec<(usize, usize)> {
+    let mut spans = Vec::new();
+    let mut offset = 0;
+    for line in text.split_inclusive('\n') {
+        let content = line.trim_end_matches(['\n', '\r']);
+        spans.push((offset, offset + content.len()));
+        offset += line.len();
+    }
+    spans
+}
+
+fn significant_lines(text: &str) -> Vec<&str> {
+    let lines: Vec<&str> = text.lines().map(str::trim).collect();
+    let first = lines
+        .iter()
+        .position(|l| !l.is_empty())
+        .unwrap_or(lines.len());
+    let last = lines
+        .iter()
+        .rposition(|l| !l.is_empty())
+        .map_or(first, |i| i + 1);
+    lines[first..last].to_vec()
+}
+
+/// Locate `old` in `text` comparing lines with surrounding whitespace removed.
+/// `Ok((start, end, reindent))` for exactly one match; `Err(Some(span))` with the
+/// closest window when nothing matches; `Err(None)` when several windows match.
+pub(crate) fn whitespace_match(
+    text: &str,
+    old: &str,
+) -> std::result::Result<(usize, usize, bool), Option<(usize, usize)>> {
+    let wanted = significant_lines(old);
+    let spans = line_spans(text);
+    if wanted.is_empty() || spans.len() < wanted.len() || spans.len() > 20_000 {
+        return Err(None);
+    }
+    let lines: Vec<&str> = spans.iter().map(|(s, e)| text[*s..*e].trim()).collect();
+    let mut hits = Vec::new();
+    let mut best = (0.0f32, 0usize);
+    for i in 0..=spans.len() - wanted.len() {
+        let window = &lines[i..i + wanted.len()];
+        if window == wanted.as_slice() {
+            hits.push(i);
+        } else if hits.is_empty() {
+            let score =
+                similar::TextDiff::from_chars(&window.join("\n"), &wanted.join("\n")).ratio();
+            if score > best.0 {
+                best = (score, i);
+            }
+        }
+    }
+    let span = |i: usize| (spans[i].0, spans[i + wanted.len() - 1].1);
+    match hits.as_slice() {
+        [i] => {
+            let (start, end) = span(*i);
+            let indent = |l: &str| l.len() - l.trim_start().len();
+            let first_old = old.lines().find(|l| !l.trim().is_empty()).unwrap_or("");
+            let first_text = &text[spans[*i].0..spans[*i].1];
+            let reindent = first_old[..indent(first_old)] != first_text[..indent(first_text)];
+            Ok((start, end, reindent))
+        }
+        [] => Err(Some(span(best.1))),
+        _ => Err(None),
+    }
+}
+
+/// Shift `new` from the indentation `old` assumed to the file's actual one.
+fn reindent(text: &str, start: usize, old: &str, new: &str) -> String {
+    let leading = |l: &str| l[..l.len() - l.trim_start().len()].to_string();
+    let actual = leading(&text[start..text[start..].find('\n').map_or(text.len(), |n| start + n)]);
+    let assumed = leading(old.lines().find(|l| !l.trim().is_empty()).unwrap_or(""));
+    new.split_inclusive('\n')
+        .map(|line| match line.strip_prefix(assumed.as_str()) {
+            Some(rest) if !assumed.is_empty() => format!("{actual}{rest}"),
+            _ if assumed.is_empty() && !line.trim().is_empty() => format!("{actual}{line}"),
+            _ => line.to_string(),
+        })
+        .collect()
 }
 
 /// A project root that exposes a whole account or system is allowed (Full access
