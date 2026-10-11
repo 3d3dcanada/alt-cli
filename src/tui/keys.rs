@@ -6,6 +6,7 @@ use std::sync::atomic::Ordering;
 
 impl App {
     pub fn key(&mut self, key: KeyEvent) -> Result<()> {
+        self.motion.dismiss_splash();
         let ctrl = key.modifiers.contains(KeyModifiers::CONTROL);
         let alt = key.modifiers.contains(KeyModifiers::ALT);
         if key.code == KeyCode::Esc
@@ -385,7 +386,11 @@ impl App {
         }
         match action {
             "quit" => {
-                if self.busy || self.connecting || self.job.is_some() {
+                // A disposable view refresh yields to quitting; real work asks.
+                if self.busy
+                    || self.connecting
+                    || self.job.as_ref().is_some_and(|job| !job.replaceable)
+                {
                     self.dialog=Some(Dialog::Confirm{title:"Leave Alt?".into(),body:"Your conversation is saved. The active task and any download will stop; partial downloads can be resumed later.".into(),action:ConfirmAction::Quit,selected:0});
                 } else {
                     self.quit = true;
@@ -676,6 +681,7 @@ impl App {
             20 => return self.manager_action("params-menu", serde_json::json!({})),
             21 => return self.manager_action("probe-run", serde_json::json!({})),
             22 => return self.manager_action("cuda-runtime", serde_json::json!({})),
+            23 => return self.manager_action("motion", serde_json::json!({})),
             12 => return self.manager_action("manage-tools", serde_json::json!({})),
             13 => return self.manager_action("manage-storage", serde_json::json!({})),
             14 => return self.manager_action("manage-models", serde_json::json!({})),
@@ -1004,6 +1010,17 @@ impl App {
     }
 
     pub fn mouse(&mut self, kind: MouseEventKind, x: u16, y: u16) -> Result<()> {
+        if matches!(kind, MouseEventKind::Moved | MouseEventKind::Drag(_)) {
+            self.motion.hover = Some((x, y));
+            return Ok(());
+        }
+        if self.motion.splash().is_some() {
+            // A click cannot aim at a hidden screen: it only ends the splash.
+            if matches!(kind, MouseEventKind::Down(_)) {
+                self.motion.dismiss_splash();
+            }
+            return Ok(());
+        }
         if matches!(kind, MouseEventKind::ScrollUp | MouseEventKind::ScrollDown) {
             return self.key(KeyEvent::new(
                 if kind == MouseEventKind::ScrollUp {
@@ -1017,12 +1034,17 @@ impl App {
         if kind != MouseEventKind::Down(MouseButton::Left) {
             return Ok(());
         }
-        let hit = self
+        self.motion.hover = Some((x, y));
+        let found = self
             .hits
             .iter()
             .rev()
             .find(|(rect, _)| rect.contains((x, y).into()))
-            .map(|(_, hit)| hit.clone());
+            .cloned();
+        if let Some((rect, _)) = &found {
+            self.motion.pressed(*rect);
+        }
+        let hit = found.map(|(_, hit)| hit);
         match hit {
             Some(Hit::Nav(page)) => self.set_page(page),
             Some(Hit::Home(index)) => {

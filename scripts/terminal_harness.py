@@ -18,6 +18,11 @@ class Terminal:
   os.write(self.master,data)
  def paste(self,text):self.send(b'\x1b[200~'+text.encode()+b'\x1b[201~')
  def close(self):
-  if self.proc.poll() is None:self.send(b'\x11');self.proc.wait(timeout=10)
+  # Keep reading while Alt exits, as a terminal does; an unread PTY would
+  # block its last frame and look like a hang.
+  if self.proc.poll() is None:
+   self.send(b'\x11');end=time.monotonic()+10
+   while self.proc.poll() is None and time.monotonic()<end:self.pump(.05)
+   if self.proc.poll() is None:raise AssertionError('Alt did not exit after Ctrl+Q\n'+'\n'.join(self.screen.display))
   assert self.proc.returncode==0 and termios.tcgetattr(self.slave)==self.original
   os.close(self.master);os.close(self.slave)

@@ -22,6 +22,12 @@ for n in range(a.rounds):
     if text in '\n'.join(screen.display):return (time.monotonic()-started)*1000
    raise AssertionError('Missing '+text+'\n'+'\n'.join(screen.display))
   def send(value):os.write(master,value)
+  def exit_wait(timeout=10):
+   # Keep reading while Alt exits, as a terminal does; an unread PTY blocks its last frame.
+   end=time.monotonic()+timeout
+   while proc.poll() is None and time.monotonic()<end:
+    if select.select([master],[],[],.05)[0]:stream.feed(os.read(master,65536))
+   return proc.wait(timeout=1)
   row={'round':n+1,'size':[width,height],'passed':False}
   try:
    wait('ALT');send(b'\x1b9');time.sleep(.08) # queued file read is deliberately blocked by flock
@@ -29,12 +35,12 @@ for n in range(a.rounds):
    start=time.monotonic();send(b'\x1b');wait('cancelled',timeout=3);row['cancel_to_visible_ms']=(time.monotonic()-start)*1000
    send(b'\r');wait(draft)
    fcntl.flock(lock,fcntl.LOCK_UN);send(b'\x1b9');wait('file-');send(b'\x1b2');wait(draft)
-   send(b'\x11');proc.wait(timeout=10);assert proc.returncode==0 and termios.tcgetattr(slave)==original
+   send(b'\x11');exit_wait();assert proc.returncode==0 and termios.tcgetattr(slave)==original
    row['passed']=True
   except Exception as error:
    row['error']=str(error)
   finally:
-   if proc.poll() is None:proc.terminate();proc.wait(timeout=10)
+   if proc.poll() is None:proc.terminate();exit_wait()
    lock.close();os.close(master);os.close(slave)
   rows.append(row)
   report={'schema':1,'binary_sha256':hashlib.sha256(binary.read_bytes()).hexdigest(),'journeys':rows,'passed':sum(r['passed'] for r in rows),'scope':'Automated keyboard/Unicode/narrow-screen journeys under lock contention, not uncoached human usability. Latency includes rendering and Python observation.'}
