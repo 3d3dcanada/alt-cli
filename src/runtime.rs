@@ -192,6 +192,27 @@ fn cgroup_available(host_available: u64, limit: u64, used: u64, statistics: &str
 }
 
 #[cfg(test)]
+mod gpu_tests {
+    use super::*;
+    #[test]
+    fn nvidia_smi_rows_and_cuda12_fit() {
+        let gpus = parse_gpus(
+            "NVIDIA GeForce GTX 1070, 8192, 6.1, 550.54.14\nTesla K80, 11441, 3.7, 470.82.01\n",
+        );
+        assert_eq!(gpus.len(), 2);
+        assert_eq!(gpus[0].compute, Some((6, 1)));
+        assert_eq!(gpus[0].memory_mib, 8192);
+        assert!(cuda12_fit(&gpus[..1]).unwrap().contains("GTX 1070"));
+        assert!(cuda12_fit(&gpus[1..]).unwrap_err().contains("6.1"));
+        let old_driver = parse_gpus("NVIDIA GeForce GTX 1070, 8192, 6.1, 470.82.01");
+        assert!(cuda12_fit(&old_driver).unwrap_err().contains("525.60"));
+        assert!(cuda12_fit(&[]).unwrap_err().contains("No NVIDIA GPU"));
+        assert!(parse_gpus("").is_empty());
+        assert!(CUDA12.is_none() || CUDA12.is_some_and(|p| p.sha256.len() == 64));
+    }
+}
+
+#[cfg(test)]
 mod memory_tests {
     use super::cgroup_available;
 
@@ -313,6 +334,122 @@ fn find_executable(path: &Path) -> Option<PathBuf> {
 pub enum Component {
     Engine,
     Inference,
+    /// A08: optional llama.cpp CUDA 12 build for NVIDIA GPUs (Pascal sm_61+).
+    CudaInference,
+}
+
+/// A pinned, checksummed runtime archive with one top-level directory that
+/// contains `llama-server` (and any shared libraries beside it).
+#[derive(Debug, Clone, Copy)]
+pub struct Pin {
+    pub label: &'static str,
+    pub url: &'static str,
+    pub sha256: &'static str,
+    pub size: u64,
+    pub directory: &'static str,
+}
+
+/// A08: the owner fills this from a CUDA 12 build verified on the reference PC
+/// (`scripts/pin_cuda_runtime.py` prints the exact values). Until then automatic
+/// CUDA installation is unavailable; CPU stays the default and Alt explains how
+/// to build or select a GPU runtime instead. Never auto-switched.
+pub const CUDA12: Option<Pin> = None;
+
+/// One NVIDIA GPU as reported by `nvidia-smi`.
+#[derive(Debug, Clone, PartialEq, serde::Serialize)]
+pub struct Gpu {
+    pub name: String,
+    pub memory_mib: u64,
+    pub compute: Option<(u32, u32)>,
+    pub driver: Option<String>,
+}
+
+/// Parse `nvidia-smi --query-gpu=name,memory.total,compute_cap,driver_version
+/// --format=csv,noheader,nounits`. Unknown fields stay unknown.
+pub fn parse_gpus(text: &str) -> Vec<Gpu> {
+    text.lines()
+        .filter_map(|line| {
+            let fields: Vec<&str> = line.split(',').map(str::trim).collect();
+            let name = fields.first().filter(|n| !n.is_empty())?.to_string();
+            let compute = fields.get(2).and_then(|c| {
+                let (major, minor) = c.split_once('.')?;
+                Some((major.parse().ok()?, minor.parse().ok()?))
+            });
+            Some(Gpu {
+                name: crate::display_text(&name),
+                memory_mib: fields.get(1).and_then(|m| m.parse().ok()).unwrap_or(0),
+                compute,
+                driver: fields
+                    .get(3)
+                    .filter(|d| !d.is_empty())
+                    .map(|d| d.to_string()),
+            })
+        })
+        .collect()
+}
+
+pub async fn detect_gpus() -> Vec<Gpu> {
+    let result = tokio::time::timeout(
+        Duration::from_secs(3),
+        Command::new("nvidia-smi")
+            .args([
+                "--query-gpu=name,memory.total,compute_cap,driver_version",
+                "--format=csv,noheader,nounits",
+            ])
+            .kill_on_drop(true)
+            .output(),
+    )
+    .await;
+    match result {
+        Ok(Ok(output)) if output.status.success() => {
+            parse_gpus(&String::from_utf8_lossy(&output.stdout))
+        }
+        _ => Vec::new(),
+    }
+}
+
+/// Whether a CUDA 12 runtime can serve these GPUs: compute capability 6.1+
+/// (Pascal and newer) and a driver new enough for CUDA 12 (525.60+). A labelled
+/// reason either way; nothing is installed or selected here.
+pub fn cuda12_fit(gpus: &[Gpu]) -> std::result::Result<String, String> {
+    let gpu = gpus.iter().max_by_key(|g| g.memory_mib).ok_or_else(|| {
+        "No NVIDIA GPU was detected (nvidia-smi unavailable). CPU mode stays available.".to_string()
+    })?;
+    let compute = gpu.compute.ok_or_else(|| {
+        format!(
+            "{} reports no compute capability; check the NVIDIA driver",
+            gpu.name
+        )
+    })?;
+    if compute < (6, 1) {
+        return Err(format!(
+            "{} has compute capability {}.{}; CUDA 12 builds here need 6.1 (Pascal) or newer",
+            gpu.name, compute.0, compute.1
+        ));
+    }
+    let driver_ok = gpu
+        .driver
+        .as_deref()
+        .and_then(|d| {
+            let mut parts = d.split('.').filter_map(|p| p.parse::<u32>().ok());
+            Some((parts.next()?, parts.next().unwrap_or(0)))
+        })
+        .is_some_and(|version| version >= (525, 60));
+    if !driver_ok {
+        return Err(format!(
+            "{} needs NVIDIA driver 525.60 or newer for CUDA 12 (found {})",
+            gpu.name,
+            gpu.driver.as_deref().unwrap_or("unknown")
+        ));
+    }
+    Ok(format!(
+        "{} · {} MiB · compute {}.{} · driver {}: a CUDA 12 runtime can use this GPU",
+        gpu.name,
+        gpu.memory_mib,
+        compute.0,
+        compute.1,
+        gpu.driver.as_deref().unwrap_or("?")
+    ))
 }
 
 impl Component {
@@ -320,12 +457,16 @@ impl Component {
         match self {
             Self::Engine => "Goose 1.53.0 agent engine",
             Self::Inference => "llama.cpp b11429 CPU runtime",
+            Self::CudaInference => {
+                "llama.cpp CUDA 12 runtime for NVIDIA GPUs (Pascal sm_61 and newer)"
+            }
         }
     }
     pub fn size(self) -> u64 {
         match self {
             Self::Engine => 94_629_008,
             Self::Inference => 17_693_462,
+            Self::CudaInference => CUDA12.map_or(0, |p| p.size),
         }
     }
     fn release(self) -> (&'static str, &'static str) {
@@ -338,6 +479,7 @@ impl Component {
                 "https://github.com/ggml-org/llama.cpp/releases/download/b11429/llama-b11429-bin-ubuntu-x64.tar.gz",
                 "f6d25dde8f51133143d1453da4fd5f73b145127177612a283bf7995957af3392",
             ),
+            Self::CudaInference => CUDA12.map_or(("", ""), |p| (p.url, p.sha256)),
         }
     }
 }
@@ -348,6 +490,14 @@ pub async fn install(
     cancel: Cancel,
     mut progress: impl FnMut(Progress),
 ) -> Result<PathBuf> {
+    if let Component::CudaInference = component {
+        let pin = CUDA12.context(
+            "No CUDA 12 runtime is pinned in this Alt version yet. Build one with scripts/build-pascal-runtime.sh and select its llama-server in Settings, or keep CPU mode",
+        )?;
+        cuda12_fit(&detect_gpus().await).map_err(anyhow::Error::msg)?;
+        crate::hardware::artifact_preflight(component)?;
+        return install_pin(root, &pin, cancel, progress).await;
+    }
     ensure!(
         cfg!(all(target_os = "linux", target_arch = "x86_64")),
         "Automatic installation currently supports Linux x86_64. Set an existing executable in Settings on this platform"
@@ -383,6 +533,7 @@ pub async fn install(
                 std::fs::rename(temp.path().join("goose"),&dest)?;
                 dest
             },
+            Component::CudaInference=>bail!("CUDA runtimes install through their pin"),
             Component::Inference=>{
                 let dest=tools.join("llama-b11429");
                 let previous=temp.path().join("previous");
@@ -504,6 +655,67 @@ pub fn server_args(
     args
 }
 
+/// Download, verify and unpack a pinned runtime archive into Alt's tools
+/// folder, keeping any previous copy until the new one is in place.
+pub async fn install_pin(
+    root: &Path,
+    pin: &Pin,
+    cancel: Cancel,
+    mut progress: impl FnMut(Progress),
+) -> Result<PathBuf> {
+    ensure!(
+        !pin.directory.is_empty()
+            && Path::new(pin.directory)
+                .components()
+                .all(|c| matches!(c, std::path::Component::Normal(_))),
+        "Pinned runtime directory must be a plain folder name"
+    );
+    let tools = root.join("tools");
+    private_dir(&tools)?;
+    let archive = tools.join(format!("{}.tar.gz", pin.sha256));
+    models::download_verified(
+        pin.url,
+        &archive,
+        pin.size,
+        pin.sha256,
+        cancel.clone(),
+        &mut progress,
+    )
+    .await?;
+    ensure!(!cancel.load(Ordering::Relaxed), "Installation cancelled");
+    progress(Progress {
+        received: pin.size,
+        total: pin.size,
+        stage: format!("Installing verified {}", pin.label),
+    });
+    let directory = pin.directory.to_owned();
+    tokio::task::spawn_blocking(move || -> Result<PathBuf> {
+        let temp = tempfile::tempdir_in(&tools)?;
+        let gzip = flate2::read::GzDecoder::new(std::fs::File::open(&archive)?);
+        tar::Archive::new(gzip)
+            .unpack(temp.path())
+            .context("Could not unpack the verified runtime")?;
+        let unpacked = temp.path().join(&directory);
+        ensure!(
+            unpacked.join("llama-server").is_file(),
+            "The verified archive has no {directory}/llama-server"
+        );
+        let destination = tools.join(&directory);
+        let previous = temp.path().join("previous");
+        if destination.exists() {
+            std::fs::rename(&destination, &previous)?;
+        }
+        if let Err(error) = std::fs::rename(&unpacked, &destination) {
+            if previous.exists() {
+                std::fs::rename(&previous, &destination)?;
+            }
+            return Err(error.into());
+        }
+        Ok(destination.join("llama-server"))
+    })
+    .await?
+}
+
 pub struct LocalRuntime {
     child: Child,
     pub endpoint: String,
@@ -614,6 +826,16 @@ impl LocalRuntime {
             .stdout(output.try_clone()?)
             .stderr(output)
             .kill_on_drop(true);
+        // Managed archives carry their shared libraries beside llama-server.
+        if binary.starts_with(root.join("tools"))
+            && let Some(directory) = binary.parent()
+        {
+            let mut paths = vec![directory.to_path_buf()];
+            if let Some(existing) = std::env::var_os("LD_LIBRARY_PATH") {
+                paths.extend(std::env::split_paths(&existing));
+            }
+            command.env("LD_LIBRARY_PATH", std::env::join_paths(paths)?);
+        }
         if let Some(tokens) = profile.effective_inference().reasoning_tokens {
             // Fail visibly on older runtimes rather than claiming an unsupported allocation.
             let help = tokio::time::timeout(

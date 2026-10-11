@@ -72,6 +72,21 @@
   and a raw JSON view of the exact request fields and runtime argv. CLI:
   `alt params set|unset|show`.
 
+### A08 managed CUDA 12 runtime (prepared for the owner PC; not run)
+
+- GPU detection from `nvidia-smi` (name, VRAM, compute capability, driver) and a
+  labelled CUDA 12 fit check (compute 6.1+, driver 525.60+).
+- A pinned-archive installer (`runtime::install_pin`: resumable download, SHA256,
+  unpack, previous copy kept until the new one is in place) and a `CUDA12` pin slot.
+  The slot is empty in this commit: no CUDA build has been verified yet, so
+  automatic installation refuses with guidance. `scripts/pin_cuda_runtime.py` builds a
+  deterministic archive from a verified PC build and prints the exact pin;
+  `scripts/pc_cuda_check.sh` checks the runtime on the PC first.
+- Managed runtimes get their own folder on `LD_LIBRARY_PATH`. CPU stays the default:
+  installing never selects the CUDA runtime or changes GPU layers (`alt install
+  cuda-runtime --use` or the TUI's explicit *Use the CUDA runtime*).
+- Settings → Runtime → *GPU runtime (CUDA 12)* and Ctrl+P.
+
 ### A09 repository weight and README (+ B11 package size)
 
 - README opens with what a new user needs: install, connect a model (local or a

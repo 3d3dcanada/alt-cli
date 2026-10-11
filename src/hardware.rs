@@ -60,7 +60,7 @@ pub fn artifact_preflight(component: runtime::Component) -> Result<()> {
     );
     let minimum = match component {
         runtime::Component::Engine => (2, 28),
-        runtime::Component::Inference => (2, 34),
+        runtime::Component::Inference | runtime::Component::CudaInference => (2, 34),
     };
     let libc = glibc().context(
         "These managed GNU binaries need glibc; use a compatible manually installed runtime",

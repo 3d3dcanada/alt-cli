@@ -283,6 +283,9 @@ enum Action {
     Install {
         #[arg(value_enum)]
         component: InstallComponent,
+        /// Select the installed CUDA runtime now (it is never selected automatically).
+        #[arg(long = "use")]
+        select: bool,
     },
     /// List saved sessions.
     Sessions,
@@ -589,6 +592,8 @@ enum ModelAction {
 enum InstallComponent {
     Engine,
     Runtime,
+    /// llama.cpp CUDA 12 build for NVIDIA GPUs (A08); needs a pinned build.
+    CudaRuntime,
 }
 
 #[tokio::main]
@@ -1300,10 +1305,11 @@ async fn run() -> Result<()> {
             command: Some(command),
             ..
         } => return model_action(&root, command).await,
-        Action::Install { component } => {
+        Action::Install { component, select } => {
             let component = match component {
                 InstallComponent::Engine => runtime::Component::Engine,
                 InstallComponent::Runtime => runtime::Component::Inference,
+                InstallComponent::CudaRuntime => runtime::Component::CudaInference,
             };
             let (cancel, mut progress) = transfer_status();
             let path = runtime::install(&root, component, cancel, &mut progress).await?;
@@ -1311,6 +1317,14 @@ async fn run() -> Result<()> {
             match component {
                 runtime::Component::Engine => preferences.engine_path = Some(path.clone()),
                 runtime::Component::Inference => preferences.runtime_path = Some(path.clone()),
+                // Never auto-switched: the CUDA runtime is selected only on request.
+                runtime::Component::CudaInference if select => {
+                    preferences.runtime_path = Some(path.clone())
+                }
+                runtime::Component::CudaInference => eprintln!(
+                    "Installed but not selected. Run again with --use, or choose it in Settings; GPU layers stay at {}.",
+                    preferences.runtime.gpu_layers
+                ),
             }
             preferences.save(&root)?;
             println!(
