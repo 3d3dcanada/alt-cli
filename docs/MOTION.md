@@ -53,6 +53,9 @@ anything stale. Identical repeated notices collapse into one card with a count
   recolour or move cells that widgets already drew. Layout, hit targets and text
   are exactly what the widgets produced, so a click during a transition still
   lands on the target it will settle on.
+- **Whole frames:** each frame is written once through a buffered backend
+  inside a synchronized update, so a full-screen effect is never seen half
+  drawn.
 - **Adaptive frame pacing:** Alt draws every 16 ms while something animates and
   every 60 ms otherwise, and any input or update is drawn within one fast frame.
   Spinners follow the clock, so their speed doesn't depend on the frame rate.

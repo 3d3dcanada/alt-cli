@@ -120,6 +120,15 @@ fn buttons(frame: &mut Frame, app: &mut App, area: Rect, items: &[(&str, &'stati
     }
 }
 
+/// Background jobs get the progress footer only once they have run for a
+/// moment, so an instant refresh never shifts the whole layout up and back.
+pub(crate) const JOB_FOOTER_DELAY: std::time::Duration = std::time::Duration::from_millis(250);
+fn shown_job(app: &App) -> Option<&Job> {
+    app.job
+        .as_ref()
+        .filter(|job| job.started.elapsed() >= JOB_FOOTER_DELAY)
+}
+
 /// A smooth horizontal bar: whole cells plus one eighth-block partial cell.
 pub(crate) fn meter_bar(fill: f64, width: usize) -> String {
     const PARTS: [char; 8] = [' ', '▏', '▎', '▍', '▌', '▋', '▊', '▉'];
@@ -159,7 +168,7 @@ pub fn draw(frame: &mut Frame, app: &mut App) {
     let root = Layout::vertical([
         Constraint::Length(3),
         Constraint::Min(10),
-        Constraint::Length(if app.job.is_some() { 6 } else { 3 }),
+        Constraint::Length(if shown_job(app).is_some() { 6 } else { 3 }),
     ])
     .split(area);
     let header = Layout::horizontal([Constraint::Length(27), Constraint::Min(10)])
@@ -861,7 +870,9 @@ fn nav(frame: &mut Frame, app: &mut App, area: Rect) {
 
 fn footer(frame: &mut Frame, app: &mut App, area: Rect) {
     let inner = inset(area, 2, 0);
-    let status_y = if let Some(job) = &app.job {
+    let status_y = if shown_job(app).is_some()
+        && let Some(job) = &app.job
+    {
         let ratio = if job.progress.total > 0 {
             job.progress.received as f64 / job.progress.total as f64
         } else {
@@ -3313,6 +3324,21 @@ mod tests {
             "p95 {:.2} ms over the {budget} ms budget",
             pick(&full, 95)
         );
+    }
+    #[tokio::test]
+    async fn quitting_skips_the_prompt_for_view_refreshes_but_not_real_work() {
+        let (_dir, mut app) = setup();
+        app.set_page(Page::Files);
+        if let Some(job) = &app.job {
+            assert!(job.replaceable, "a page refresh is disposable");
+        }
+        app.action("quit").unwrap();
+        assert!(app.quit && app.dialog.is_none(), "a refresh never asks");
+        let (_dir, mut app) = setup();
+        app.busy = true;
+        app.action("quit").unwrap();
+        assert!(!app.quit, "a running task asks first");
+        assert!(matches!(app.dialog, Some(Dialog::Confirm { .. })));
     }
     #[tokio::test]
     async fn every_page_and_dialog_renders_at_supported_sizes() {

@@ -17,8 +17,14 @@
 - Proof: a frame-time budget test (release 1.44 ms median at 160×48, Off 1.39 ms),
   `scripts/capture_motion.py` clips and stills, and `--check`, a bandwidth and
   idle regression check.
-- `smoke_tui` drains its PTY between processes; before, it could judge a
-  resumed session by the previous process's last frame.
+- Each frame now reaches the terminal in one buffered write, wrapped in a
+  synchronized update, so no terminal shows half a frame. The background-job
+  footer appears only after a job has run for 250 ms, so instant refreshes no
+  longer shift the layout up and back. Ctrl+Q no longer asks "Leave Alt?" over a
+  disposable view refresh; running tasks, connections and downloads still ask.
+- Test harnesses keep reading the PTY while Alt exits (`smoke_tui`,
+  `terminal_harness`, `smoke_pressure_tui`), and the allowance smoke clicks only
+  a button row that has held still.
 
 ## Unreleased — 0.7 (work orders in docs/WORK_ORDERS_0.7.md)
 

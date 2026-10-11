@@ -386,7 +386,11 @@ impl App {
         }
         match action {
             "quit" => {
-                if self.busy || self.connecting || self.job.is_some() {
+                // A disposable view refresh yields to quitting; real work asks.
+                if self.busy
+                    || self.connecting
+                    || self.job.as_ref().is_some_and(|job| !job.replaceable)
+                {
                     self.dialog=Some(Dialog::Confirm{title:"Leave Alt?".into(),body:"Your conversation is saved. The active task and any download will stop; partial downloads can be resumed later.".into(),action:ConfirmAction::Quit,selected:0});
                 } else {
                     self.quit = true;
