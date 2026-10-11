@@ -200,7 +200,11 @@ async fn pause_interrupts_a_stalled_body_and_keeps_partial_file() {
 async fn import_preserves_original_and_rejects_wrong_format() {
     let dir = tempfile::tempdir().unwrap();
     let original = dir.path().join("my model.gguf");
-    std::fs::write(&original, b"GGUFfixture").unwrap();
+    std::fs::write(
+        &original,
+        b"GGUF\x03\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0fixture",
+    )
+    .unwrap();
     let root = dir.path().join("alt");
     let artifact = import(&root, &original, false, cancel(), |_| {})
         .await
@@ -224,8 +228,8 @@ async fn multipart_promotes_only_complete_set_and_relocates_without_import_loss(
     use serde_json::json;
     let dir = tempfile::tempdir().unwrap();
     let root = dir.path().join("state");
-    let a = b"GGUFpart-A";
-    let b = b"GGUFpart-B";
+    let a = b"GGUF\x03\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0part-A";
+    let b = b"GGUF\x03\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0part-B";
     let catalog_value = json!({"sha":"revision","tags":["heretic"],"siblings":[{"rfilename":"q-00001-of-00002.gguf","size":a.len(),"lfs":{"sha256":hash(a)}},{"rfilename":"q-00002-of-00002.gguf","size":b.len(),"lfs":{"sha256":hash(b)}}]});
     let set = catalog("owner/repo", &catalog_value).unwrap().remove(0);
     assert_eq!(set.parts.len(), 2);
@@ -268,7 +272,11 @@ async fn multipart_promotes_only_complete_set_and_relocates_without_import_loss(
             .contains("00001-of")
     );
     let original = dir.path().join("import.gguf");
-    std::fs::write(&original, b"GGUForiginal").unwrap();
+    std::fs::write(
+        &original,
+        b"GGUF\x03\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0original",
+    )
+    .unwrap();
     let imported = import(&root, &original, true, cancel(), |_| {})
         .await
         .unwrap();
@@ -279,7 +287,10 @@ async fn multipart_promotes_only_complete_set_and_relocates_without_import_loss(
     assert!(model.path.exists());
     verify_artifact(&active, &cancel(), |_| {}).await.unwrap();
     remove(&root, &imported.id, true).unwrap();
-    assert_eq!(std::fs::read(original).unwrap(), b"GGUForiginal");
+    assert_eq!(
+        std::fs::read(original).unwrap(),
+        b"GGUF\x03\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0original"
+    );
     remove(&root, &model.id, true).unwrap();
     assert!(!active.path.exists());
     assert!(model.path.exists());
@@ -334,7 +345,11 @@ async fn interrupted_cache_relocation_preserves_originals_and_resumes_same_desti
     let root = tempfile::tempdir().unwrap();
     let outside = tempfile::tempdir().unwrap();
     let original = outside.path().join("managed.gguf");
-    std::fs::write(&original, b"GGUFfixture-weights-not-a-real-model").unwrap();
+    std::fs::write(
+        &original,
+        b"GGUF\x03\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0fixture-weights-not-a-real-model",
+    )
+    .unwrap();
     let mut model = import(root.path(), &original, true, cancel(), |_| {})
         .await
         .unwrap();

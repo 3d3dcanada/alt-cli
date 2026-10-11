@@ -88,6 +88,9 @@
   the palette (N06).
 - B08 (audit A19): cancelling a connection check stops the inventory request at once
   and a late result is discarded; the form stays and no model dialog reopens.
+- B09 (audit A12): GGUF files must carry the full 24-byte header (supported version 2
+  or 3, plausible tensor and metadata counts) on import and after downloads; a
+  magic-only or truncated file is refused before anything loads.
 
 ### A10 harness labels and matched re-run script (prepared; owner PC runs it)
 
