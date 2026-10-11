@@ -67,6 +67,9 @@ impl App {
         if action.starts_with("probe-") {
             return self.manage_probe(action, state);
         }
+        if action.starts_with("cuda-") {
+            return self.manage_cuda(action, state);
+        }
         if action.starts_with("inference-") {
             return self.manage_inference(action, state);
         }
@@ -917,6 +920,127 @@ impl App {
                 self.notify("Model allocation saved. For this saved task, open Allowance → Apply saved allocation and reconnect.");
             }
             _ => anyhow::bail!("Unknown inference action"),
+        }
+        Ok(())
+    }
+    /// A08: detect the GPU, explain whether a CUDA 12 runtime fits, and only
+    /// install or select it on an explicit choice. CPU stays the default.
+    fn manage_cuda(&mut self, action: &str, state: Value) -> Result<()> {
+        match action {
+            "cuda-runtime" => {
+                self.launch_job("Checking for an NVIDIA GPU", move |_, _| async move {
+                    let gpus = crate::runtime::detect_gpus().await;
+                    let fit = crate::runtime::cuda12_fit(&gpus);
+                    Ok(JobResult::Manager(
+                        "cuda-runtime-report".into(),
+                        json!({"gpus":gpus,"fit":fit.as_ref().ok(),"problem":fit.as_ref().err()}),
+                    ))
+                })?;
+            }
+            "cuda-runtime-report" => {
+                let pinned = crate::runtime::CUDA12;
+                let mut items = Vec::new();
+                match (pinned, state["fit"].is_string()) {
+                    (Some(pin), true) => items.push((
+                        "Install the CUDA 12 runtime".into(),
+                        format!(
+                            "{} · {} · pinned SHA256; installs beside the CPU runtime",
+                            pin.label,
+                            models::human_bytes(pin.size)
+                        ),
+                        "cuda-install".into(),
+                        json!({}),
+                    )),
+                    (None, _) => items.push((
+                        "No CUDA 12 build is pinned in this version".into(),
+                        "Build one from source below, or select an existing GPU llama-server"
+                            .into(),
+                        "cuda-build-help".into(),
+                        json!({}),
+                    )),
+                    _ => {}
+                }
+                items.push((
+                    "Build a Pascal-compatible runtime from source".into(),
+                    "scripts/build-pascal-runtime.sh (CUDA 12 toolkit, sm_61)".into(),
+                    "cuda-build-help".into(),
+                    json!({}),
+                ));
+                items.push((
+                    "Select an existing llama-server".into(),
+                    "Choose a GPU build you already have".into(),
+                    "cuda-select".into(),
+                    json!({}),
+                ));
+                items.push((
+                    "Keep CPU mode".into(),
+                    "Nothing changes".into(),
+                    "close".into(),
+                    json!({}),
+                ));
+                let summary = state["fit"]
+                    .as_str()
+                    .or(state["problem"].as_str())
+                    .unwrap_or("GPU status unknown")
+                    .to_owned();
+                self.manager_menu(
+                    "GPU runtime (CUDA 12)",
+                    &format!(
+                        "{summary}\n\nCPU remains the default. Alt never switches runtimes or GPU layers by itself (GPU layers: {}).",
+                        self.preferences.runtime.gpu_layers
+                    ),
+                    items,
+                );
+            }
+            "cuda-install" => {
+                self.install_dialog(crate::runtime::Component::CudaInference);
+            }
+            "cuda-select" => {
+                self.open_browser(
+                    super::app::BrowserKind::Runtime,
+                    self.preferences.project.clone(),
+                )?;
+            }
+            "cuda-build-help" => {
+                self.dialog = Some(Dialog::Notice {
+                    title: "Build a CUDA 12 runtime".into(),
+                    body: "Pascal GPUs such as the GTX 1070 need a CUDA 12 build (CUDA 13 drops sm_61).\n\n1. Install the NVIDIA driver (525.60 or newer) and a CUDA 12.x toolkit.\n2. Run: scripts/build-pascal-runtime.sh ~/llama-cuda12\n3. In Alt: Settings → Runtime → Local model runtime executable → ~/llama-cuda12/build/bin/llama-server\n4. Set GPU layers (start with a partial offload), then Benchmark selected model.\n\nMaintainers can pin a verified build for automatic installation with scripts/pin_cuda_runtime.py.".into(),
+                    scroll: 0,
+                });
+            }
+            "cuda-use-offer" => {
+                let path = state["path"].as_str().unwrap_or("").to_owned();
+                self.manager_menu(
+                    "CUDA 12 runtime installed",
+                    &format!("Installed at {path}. It is not selected yet; the CPU runtime stays in use until you choose."),
+                    vec![
+                        ("Use the CUDA runtime".into(), "Applies to the next local model start; GPU layers are unchanged".into(), "cuda-use".into(), json!({"path":path})),
+                        ("Keep the current runtime".into(), "You can select it later in Settings".into(), "close".into(), json!({})),
+                    ],
+                );
+            }
+            "cuda-use" => {
+                ensure!(
+                    !self.busy && !self.connecting,
+                    "Stop the current task first"
+                );
+                let path =
+                    std::path::PathBuf::from(state["path"].as_str().context("Runtime path")?);
+                ensure!(
+                    path.is_file(),
+                    "The CUDA runtime is no longer at {}",
+                    path.display()
+                );
+                self.preferences.runtime_path = Some(path);
+                self.preferences.save(&self.root)?;
+                self.workspace = None;
+                self.connected = false;
+                self.notify(format!(
+                    "CUDA runtime selected. GPU layers stay at {}; raise them in Settings → Runtime → Model and runtime settings.",
+                    self.preferences.runtime.gpu_layers
+                ));
+            }
+            _ => anyhow::bail!("Unknown GPU runtime action"),
         }
         Ok(())
     }

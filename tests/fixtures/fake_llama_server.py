@@ -13,6 +13,8 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 argv = sys.argv[1:]
 if argv[:1] in (["--list-devices"], ["--help"]):
     print("--reasoning-budget N\n--api-key-file FNAME\nAvailable devices:")
+    if os.environ.get("ALT_FAKE_GPU"):
+        print("  CUDA0: NVIDIA GeForce GTX 1070 (8192 MiB, 7900 MiB free)")
     sys.exit(0)
 
 
@@ -23,6 +25,9 @@ def option(name, default=None):
 if os.environ.get("ALT_FAKE_ARGV"):
     with open(os.environ["ALT_FAKE_ARGV"], "w") as handle:
         json.dump(argv, handle)
+if os.environ.get("ALT_FAKE_ENV"):
+    with open(os.environ["ALT_FAKE_ENV"], "w") as handle:
+        json.dump({"LD_LIBRARY_PATH": os.environ.get("LD_LIBRARY_PATH", "")}, handle)
 key = option("--api-key")
 if option("--api-key-file"):
     with open(option("--api-key-file")) as handle:

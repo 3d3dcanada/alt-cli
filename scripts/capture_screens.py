@@ -52,6 +52,7 @@ PLANS = {
             ("wait", "integrate.api.nvidia.com"), ("shot", "nvidia-form"), ("send", b"\x1b")],
     "a04": [("wait", "Alt"), *palette("hosted output guard"), ("wait", "Always stream live"), ("shot", "output-guard")],
     "a06": [("wait", "Alt"), *palette("setting: tool focus"), ("wait", "Compact: smaller context"), ("shot", "tool-focus")],
+    "a08": [("wait", "Alt"), *palette("gpu runtime"), ("wait", "CPU remains the default"), ("shot", "gpu-runtime")],
     "board": [("wait", "Alt"), ("send", b"\x10"), ("wait", "Command palette"), ("send", b"setting:"), ("wait", "Setting: Context"),
               ("shot", "palette-settings"), ("send", b"\x1b"), *palette("setting: tool focus"), ("wait", "Which tools fit"),
               ("shot", "palette-setting-opened"), ("send", b"\x1b")],

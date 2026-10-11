@@ -578,7 +578,7 @@ impl App {
             &[2, 3, 4],
             &[0, 19, 21, 20, 10, 11, 16],
             &[8, 17, 12],
-            &[1, 5, 6, 9, 15, 18],
+            &[1, 5, 6, 22, 9, 15, 18],
             &[7, 13, 14],
         ];
         TABS[tab.min(TABS.len() - 1)]
@@ -724,6 +724,11 @@ impl App {
                 "One short request; suggests thinking, output allowance, compact tools and context."
                     .into(),
             ),
+            (
+                "GPU runtime (CUDA 12)".into(),
+                "Detect an NVIDIA GPU and install or select a CUDA 12 llama-server; CPU stays default."
+                    .into(),
+            ),
         ]
     }
 
@@ -830,6 +835,14 @@ impl App {
                 "Reasoning control translated for this server".into(),
                 MenuAction::Manager {
                     action: "inference-thinking".into(),
+                    state: serde_json::json!({}),
+                },
+            ),
+            (
+                "GPU runtime (CUDA 12)".into(),
+                "Detect an NVIDIA GPU; install or select a CUDA runtime on request".into(),
+                MenuAction::Manager {
+                    action: "cuda-runtime".into(),
                     state: serde_json::json!({}),
                 },
             ),
@@ -1759,10 +1772,16 @@ impl App {
                         self.set_page(Page::Models);
                         self.notify("Model verified and added to your library. Choose Use model to connect it.");
                     }
+                    Ok(JobResult::Installed(Component::CudaInference, path)) => {
+                        // A08: never switch runtimes on the user's behalf.
+                        self.manager_action("cuda-use-offer", serde_json::json!({"path": path}))?;
+                    }
                     Ok(JobResult::Installed(component, path)) => {
                         match component {
                             Component::Engine => self.preferences.engine_path = Some(path),
-                            Component::Inference => self.preferences.runtime_path = Some(path),
+                            Component::Inference | Component::CudaInference => {
+                                self.preferences.runtime_path = Some(path)
+                            }
                         }
                         self.preferences.save(&self.root)?;
                         self.notify(format!(
@@ -2386,7 +2405,7 @@ impl App {
         self.dialog = Some(Dialog::Confirm {
             title: "Install a local component".into(),
             body: format!(
-                "{}\n\nDownload: {} from the official GitHub release.\nAlt verifies a pinned SHA256 and installs into its own data folder. No administrator access or system changes are needed.\n\nThe automatic installer currently supports Linux x86_64.",
+                "{}\n\nDownload: {} from its pinned release.\nAlt verifies a pinned SHA256 and installs into its own data folder. No administrator access or system changes are needed.\n\nThe automatic installer currently supports Linux x86_64.",
                 component.description(),
                 models::human_bytes(component.size())
             ),
