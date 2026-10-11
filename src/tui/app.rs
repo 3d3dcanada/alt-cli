@@ -2829,7 +2829,14 @@ pub async fn run(
         "Open Alt in a terminal, or use `alt run` in a script"
     );
     let mut app = App::load(root, engine, profile)?;
-    let mut terminal = ratatui::try_init()?;
+    // try_init enters raw mode and the alternate screen and installs the panic
+    // hook; drawing goes through a buffered backend so each frame reaches the
+    // terminal in one write, wrapped in a synchronized update. Terminals never
+    // show half a frame, even when motion repaints the whole screen.
+    let _ = ratatui::try_init()?;
+    let mut terminal = ratatui::Terminal::new(ratatui::backend::CrosstermBackend::new(
+        std::io::BufWriter::with_capacity(1 << 20, std::io::stdout()),
+    ))?;
     let _restore = Restore;
     execute!(std::io::stdout(), EnableBracketedPaste)?;
     if app.preferences.mouse {
@@ -2852,7 +2859,9 @@ pub async fn run(
         tokio::select! {
             _=&mut shutdown=>{app.quit=true;},
             _=&mut frame_timer=>{
+                crossterm::queue!(terminal.backend_mut(),crossterm::terminal::BeginSynchronizedUpdate)?;
                 terminal.draw(|frame|view::draw(frame,&mut app))?;
+                execute!(terminal.backend_mut(),crossterm::terminal::EndSynchronizedUpdate)?;
                 last_draw=tokio::time::Instant::now();
                 frame_timer.as_mut().reset(last_draw+app.motion.frame_period());
                 continue;
