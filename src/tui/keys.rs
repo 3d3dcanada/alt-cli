@@ -708,9 +708,15 @@ impl App {
             Ok(JobResult::Tested(draft, models))
         })
     }
-    fn draft(&self, form: &ConnectionForm) -> Result<ConnectionDraft> {
+    pub(super) fn draft(&self, form: &ConnectionForm) -> Result<ConnectionDraft> {
         let key = form.fields[2].text.trim();
         let original = form.original.clone();
+        let mut inference = None;
+        if form.dialect != crate::inference::Dialect::Auto {
+            let mut settings = crate::inference::Settings::legacy(self.preferences.context_tokens);
+            settings.dialect = form.dialect;
+            inference = Some(settings);
+        }
         let profile = Profile {
             provider: form.provider,
             endpoint: form.fields[1].text.trim().trim_end_matches('/').into(),
@@ -720,7 +726,7 @@ impl App {
             uncensored: false,
             api_key_env: (!key.is_empty()).then(|| key.into()),
             local_model: None,
-            inference: None,
+            inference,
             runtime_key: None,
         };
         profile.validate()?;
@@ -813,17 +819,27 @@ impl App {
                 draft,
                 models,
                 selected,
-            } => match key.code {
-                KeyCode::Up => *selected = selected.saturating_sub(1),
-                KeyCode::Down => *selected = (*selected + 1).min(models.len().saturating_sub(1)),
-                KeyCode::Enter => {
-                    let mut draft = (**draft).clone();
-                    draft.profile.model =
-                        models.get(*selected).context("Select a model")?.id.clone();
-                    return self.save_connection(draft);
+                query,
+            } => {
+                let shown = crate::presets::filter_models(models, &query.text).len();
+                match key.code {
+                    KeyCode::Up => *selected = selected.saturating_sub(1),
+                    KeyCode::Down => *selected = (*selected + 1).min(shown.saturating_sub(1)),
+                    KeyCode::Enter => {
+                        let mut draft = (**draft).clone();
+                        draft.profile.model = crate::presets::filter_models(models, &query.text)
+                            .get(*selected)
+                            .context("No model matches the search; edit it or press Esc")?
+                            .id
+                            .clone();
+                        return self.save_connection(draft);
+                    }
+                    _ => {
+                        query.key(key, false);
+                        *selected = 0;
+                    }
                 }
-                _ => {}
-            },
+            }
             Dialog::Input {
                 editor,
                 action,

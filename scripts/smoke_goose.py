@@ -15,6 +15,10 @@ import threading
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 REQUESTS = []
+AUTH = []
+# A03/B03: a fixture key that must reach the provider and never Alt's state.
+SECRET = "alt-fixture-key-" + os.urandom(12).hex()
+os.environ["ALT_SMOKE_KEY"] = SECRET
 MODEL = "alt-protocol-fixture"
 STALL_STARTED = threading.Event()
 STALL_RELEASE = threading.Event()
@@ -50,6 +54,7 @@ class Provider(BaseHTTPRequestHandler):
             self.send_json({"capabilities": ["completion", "tools"], "model_info": {"general.architecture": "llama", "llama.context_length": 8192}})
             return
         REQUESTS.append((self.path, request))
+        AUTH.append(self.headers.get("Authorization"))
         if self.path != "/v1/chat/completions":
             self.send_error(404)
             return
@@ -130,7 +135,7 @@ def main():
                     raise AssertionError(f"alt {arguments} failed\n{result.stderr}\n{result.stdout[-10000:]}")
                 return result.stdout
 
-            run("init", "--model", MODEL, "--endpoint", endpoint, "--provider", args.provider, "--context", "8192")
+            run("init", "--model", MODEL, "--endpoint", endpoint, "--provider", args.provider, "--context", "8192", "--api-key-env", "ALT_SMOKE_KEY")
             print(run("doctor").strip())
             denied = [json.loads(line) for line in run("run", "Run fixture check", "--json").splitlines()]
             assert not (workspace / "fixture-evidence.txt").exists(), "Unapproved shell tool executed"
@@ -198,6 +203,10 @@ def main():
                         cancellation.kill()
                         cancellation.wait()
             assert all(path == "/v1/chat/completions" for path, _ in REQUESTS)
+            assert AUTH and all(a == f"Bearer {SECRET}" for a in AUTH), "Provider key missing from model requests"
+            for path in (root / "state").rglob("*"):
+                if path.is_file():
+                    assert SECRET.encode() not in path.read_bytes(), f"API key value written to {path}"
             assert all(body["model"] == MODEL for _, body in REQUESTS)
             assert all(body.get("max_tokens") == 2048 for _, body in REQUESTS), "Actual server output limit missing"
             if args.provider == "ollama":

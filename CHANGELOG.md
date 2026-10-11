@@ -2,6 +2,21 @@
 
 ## Unreleased — 0.7 (work orders in docs/WORK_ORDERS_0.7.md)
 
+### A03 provider presets and hosted discovery (+ B03 authenticated Ollama)
+
+- Presets fill the endpoint, key-variable name and thinking dialect: NVIDIA NIM,
+  OpenRouter, Groq, Together, DeepSeek, Mistral, Gemini (OpenAI-compatible),
+  Cerebras, LM Studio, vLLM/SGLang, llama.cpp, Ollama and Custom. TUI: Connect →
+  *A hosted API or another server preset*, or Ctrl+P → *Connect a hosted API*.
+  Headless: `alt init --preset nvidia --model z-ai/glm-5.3`.
+- The model picker searches long hosted catalogs as you type; `alt models
+  --filter WORDS` does the same headless.
+- Keys remain environment-variable references; a missing variable is reported
+  before connecting. `smoke_goose` proves the key reaches the provider on every
+  model call and never appears in Alt's state, logs or evidence.
+- B03: Ollama connections with a key variable work end to end (the engine no
+  longer refuses them; the relay already sends the bearer key).
+
 ### A02 open parameter surface
 
 - Request parameters per connection: repeat penalty (spelled per server),

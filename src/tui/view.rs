@@ -1737,14 +1737,17 @@ fn modal(frame: &mut Frame, app: &mut App, area: Rect) {
             draft,
             models,
             selected,
+            query,
         } => {
             frame.render_widget(block(" Choose your model · Step 2 of 2 ", true), rect);
             let rows = Layout::vertical([
                 Constraint::Length(2),
+                Constraint::Length(1),
                 Constraint::Min(4),
                 Constraint::Length(1),
             ])
             .split(inset(rect, 2, 1));
+            let shown = crate::presets::filter_models(&models, &query.text);
             paragraph(
                 frame,
                 rows[0],
@@ -1754,7 +1757,7 @@ fn modal(frame: &mut Frame, app: &mut App, area: Rect) {
                         GOOD(),
                     ),
                     line(
-                        models
+                        shown
                             .get(selected)
                             .map(|m| format!("{} — {}", m.id, m.blurb()))
                             .unwrap_or_default(),
@@ -1762,21 +1765,31 @@ fn modal(frame: &mut Frame, app: &mut App, area: Rect) {
                     ),
                 ],
             );
+            paragraph(
+                frame,
+                rows[1],
+                line(
+                    format!(
+                        "Search: {}▏ · {} of {} · type to filter",
+                        query.text,
+                        shown.len(),
+                        models.len()
+                    ),
+                    ACCENT(),
+                ),
+            );
             selectable_list(
                 frame,
                 app,
-                rows[1],
+                rows[2],
                 "Available models",
-                models
-                    .iter()
-                    .map(|m| (m.id.clone(), m.describe()))
-                    .collect(),
+                shown.iter().map(|m| (m.id.clone(), m.describe())).collect(),
                 selected,
             );
             buttons(
                 frame,
                 app,
-                rows[2],
+                rows[3],
                 &[
                     ("Use this model", "modal-submit"),
                     ("Cancel", "modal-cancel"),

@@ -152,6 +152,8 @@ pub struct ConnectionForm {
     pub provider: Provider,
     pub focus: usize,
     pub original: Option<String>,
+    /// Thinking dialect from a provider preset (A03); Auto otherwise.
+    pub dialect: crate::inference::Dialect,
 }
 #[derive(Debug, Clone, Copy)]
 pub enum BrowserKind {
@@ -230,6 +232,8 @@ pub enum MenuAction {
     Access(crate::project::Policy),
     HardwareChoice(u32),
     Preset(usize),
+    /// A03 provider preset by index into `presets::PRESETS`.
+    ProviderPreset(usize),
     Template(usize),
     Page(Page),
     New,
@@ -256,6 +260,8 @@ pub enum Dialog {
         draft: Box<ConnectionDraft>,
         models: Vec<models::ServerModel>,
         selected: usize,
+        /// Typing filters long hosted catalogs; `selected` indexes the filtered rows.
+        query: Editor,
     },
     Palette {
         query: Editor,
@@ -739,6 +745,12 @@ impl App {
                 "Connect a model…".into(),
                 "Guided setup for Ollama, LM Studio, servers or files".into(),
                 MenuAction::Connect,
+            ),
+            (
+                "Connect a hosted API…".into(),
+                "NVIDIA NIM, OpenRouter, Groq, Together, DeepSeek, Mistral, Gemini, Cerebras"
+                    .into(),
+                MenuAction::Preset(5),
             ),
             (
                 "Choose project folder…".into(),
@@ -1711,6 +1723,7 @@ impl App {
                                 draft: Box::new(draft),
                                 models,
                                 selected: 0,
+                                query: Editor::default(),
                             });
                         }
                     }
@@ -1773,6 +1786,10 @@ impl App {
                 "A GGUF file on this computer",
                 "Import a model; Alt can run it in CPU mode.",
             ),
+            (
+                "A hosted API or another server preset",
+                "NVIDIA NIM, OpenRouter, Groq, Together, DeepSeek, Mistral, Gemini, Cerebras, vLLM…",
+            ),
         ];
         self.dialog=Some(Dialog::Menu{title:"Where will your model run?".into(),description:"Choose an application you already use, or use a model file directly. No coding is needed.".into(),items:labels.iter().enumerate().map(|(i,(label,hint))|(label.to_string(),hint.to_string(),MenuAction::Preset(i))).collect(),selected:0});
     }
@@ -1797,6 +1814,7 @@ impl App {
             provider: p.provider,
             focus: 0,
             original: Some(name.clone()),
+            dialect: p.effective_inference().dialect,
         }));
         Ok(())
     }
@@ -1819,6 +1837,49 @@ impl App {
                 self.set_page(Page::Models);
                 self.open_browser(BrowserKind::Model, self.preferences.project.clone())?;
             }
+            MenuAction::Preset(5) => {
+                self.dialog = Some(Dialog::Menu {
+                    title: "Choose a provider".into(),
+                    description: "A preset fills the address, the key variable name and how thinking is sent. Your key stays in your environment; Alt saves only the variable name.".into(),
+                    items: crate::presets::PRESETS
+                        .iter()
+                        .enumerate()
+                        .map(|(i, p)| {
+                            (
+                                p.name.to_string(),
+                                format!(
+                                    "{}{}",
+                                    p.note,
+                                    p.key_env.map(|k| format!(" · key in {k}")).unwrap_or_default()
+                                ),
+                                MenuAction::ProviderPreset(i),
+                            )
+                        })
+                        .collect(),
+                    selected: 0,
+                });
+            }
+            MenuAction::ProviderPreset(index) => {
+                let preset = crate::presets::PRESETS
+                    .get(index)
+                    .context("That preset is no longer listed")?;
+                self.dialog = Some(Dialog::Connection(ConnectionForm {
+                    fields: [
+                        Editor::new(preset.name),
+                        Editor::new(preset.endpoint),
+                        Editor::new(preset.key_env.unwrap_or("")),
+                    ],
+                    provider: preset.provider,
+                    focus: 1,
+                    original: None,
+                    dialect: preset.dialect,
+                }));
+                if let Some(key) = preset.key_env.filter(|k| std::env::var_os(k).is_none()) {
+                    self.error(format!(
+                        "{key} is not set in Alt's environment. Quit, export it in your shell, then start Alt again; Alt never saves the key itself."
+                    ));
+                }
+            }
             MenuAction::Preset(index) => {
                 let (name, endpoint, provider) = match index {
                     0 => ("Ollama", "http://127.0.0.1:11434", Provider::Ollama),
@@ -1835,6 +1896,7 @@ impl App {
                     provider,
                     focus: 1,
                     original: None,
+                    dialect: crate::inference::Dialect::Auto,
                 }));
             }
             MenuAction::Template(index) => {
@@ -3235,5 +3297,57 @@ mod recovery_tests {
         app.workspace_update(workspace::Update::Inference(status))
             .unwrap();
         assert!(app.dialog.is_none());
+    }
+
+    #[test]
+    fn hosted_presets_fill_the_form_and_the_picker_filters_long_catalogs() {
+        use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
+        let data = tempfile::tempdir().unwrap();
+        let mut app = App::load(data.path().into(), "goose".into(), None).unwrap();
+        let nvidia = crate::presets::PRESETS
+            .iter()
+            .position(|p| p.id == "nvidia")
+            .unwrap();
+        app.menu_action(MenuAction::ProviderPreset(nvidia)).unwrap();
+        let form = match app.recovery_dialog.as_deref().or(app.dialog.as_ref()) {
+            Some(Dialog::Connection(form)) => form.clone(),
+            other => panic!("connection form expected, got {other:?}"),
+        };
+        assert_eq!(form.fields[1].text, "https://integrate.api.nvidia.com/v1");
+        assert_eq!(form.fields[2].text, "NVIDIA_API_KEY");
+        assert_eq!(form.dialect, crate::inference::Dialect::ChatTemplate);
+        let draft = app.draft(&form).unwrap();
+        let models = ["z-ai/glm-5.3", "moonshotai/kimi-k3", "z-ai/glm-4.6"]
+            .into_iter()
+            .map(|id| models::ServerModel {
+                id: id.into(),
+                bytes: None,
+                parameters: None,
+                quant: None,
+                family: None,
+                modified: None,
+            })
+            .collect();
+        app.dialog = Some(Dialog::PickModel {
+            draft: Box::new(draft),
+            models,
+            selected: 0,
+            query: Editor::default(),
+        });
+        for c in "kimi".chars() {
+            app.key(KeyEvent::new(KeyCode::Char(c), KeyModifiers::NONE))
+                .unwrap();
+        }
+        app.key(KeyEvent::new(KeyCode::Enter, KeyModifiers::NONE))
+            .unwrap();
+        let (_, saved) = app.current_profile().unwrap();
+        assert_eq!(saved.model, "moonshotai/kimi-k3");
+        assert_eq!(saved.api_key_env.as_deref(), Some("NVIDIA_API_KEY"));
+        assert_eq!(
+            saved.effective_inference().dialect,
+            crate::inference::Dialect::ChatTemplate
+        );
+        let text = std::fs::read_to_string(data.path().join("config.toml")).unwrap();
+        assert!(text.contains("NVIDIA_API_KEY") && text.contains("chat-template"));
     }
 }

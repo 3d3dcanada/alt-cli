@@ -180,10 +180,8 @@ impl Engine {
                 command
                     .env("GOOSE_PROVIDER", "openai")
                     .env("OPENAI_BASE_URL", &relay.endpoint);
-                ensure!(
-                    profile.api_key_env.is_none(),
-                    "Ollama authentication is not implemented in this slice"
-                );
+                // B03: authenticated Ollama (for example behind a proxy) uses
+                // the same bearer key the relay already attaches to every call.
             }
         }
         let mut engine = Self::spawn(command).await?;
