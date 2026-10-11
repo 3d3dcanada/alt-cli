@@ -91,6 +91,9 @@
 - B09 (audit A12): GGUF files must carry the full 24-byte header (supported version 2
   or 3, plausible tensor and metadata counts) on import and after downloads; a
   magic-only or truncated file is refused before anything loads.
+- B10 (audit A21, part): a paste larger than a text field's 64 KiB limit is refused
+  with a message giving its size and the file-path alternative, instead of
+  vanishing. The 60×18 connection-form layout remains deferred.
 
 ### A10 harness labels and matched re-run script (prepared; owner PC runs it)
 

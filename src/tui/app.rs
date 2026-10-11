@@ -3553,4 +3553,23 @@ mod recovery_tests {
         );
         hold.abort();
     }
+
+    #[test]
+    fn an_oversized_paste_is_refused_with_a_reason() {
+        let data = tempfile::tempdir().unwrap();
+        let mut app = App::load(data.path().into(), "goose".into(), None).unwrap();
+        app.page = Page::Chat;
+        app.composer.replace("keep this");
+        app.paste(&"x".repeat(70 * 1024));
+        assert_eq!(app.composer.text, "keep this", "nothing inserted");
+        assert!(app.status_error);
+        assert!(
+            app.status.contains("70 KiB") || app.dialog.is_some(),
+            "{}",
+            app.status
+        );
+        app.dialog = None;
+        app.paste(" and this");
+        assert_eq!(app.composer.text, "keep this and this");
+    }
 }

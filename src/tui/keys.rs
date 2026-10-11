@@ -130,7 +130,9 @@ impl App {
                 KeyCode::Esc => {
                     self.stop_turn()?;
                 }
-                KeyCode::Enter if alt => self.composer.insert("\n", true),
+                KeyCode::Enter if alt => {
+                    self.composer.insert("\n", true);
+                }
                 KeyCode::Enter if self.tools_focus => {
                     self.action("tool-details")?;
                 }
@@ -981,14 +983,23 @@ impl App {
         if !self.permissions.is_empty() {
             return;
         }
-        match &mut self.dialog {
+        let accepted = match &mut self.dialog {
             Some(Dialog::Connection(form)) => form.fields[form.focus].insert(text, false),
             Some(Dialog::Input {
                 editor, multiline, ..
             }) => editor.insert(text, *multiline),
+            Some(Dialog::Palette { query, .. }) => query.insert(text, false),
             None if self.page == Page::Chat => self.composer.insert(text, true),
             None if self.search_focus => self.session_search.insert(text, false),
-            _ => {}
+            _ => true,
+        };
+        // B10: never drop a paste silently.
+        if !accepted {
+            self.error(format!(
+                "That paste is {} KiB; a text field holds at most {} KiB, so nothing was inserted. Save the text in a project file and refer to it by its path instead.",
+                text.len().div_ceil(1024),
+                super::input::Editor::LIMIT / 1024
+            ));
         }
     }
 
