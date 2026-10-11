@@ -200,7 +200,11 @@ def main():
             assert all(path == "/v1/chat/completions" for path, _ in REQUESTS)
             assert all(body["model"] == MODEL for _, body in REQUESTS)
             assert all(body.get("max_tokens") == 2048 for _, body in REQUESTS), "Actual server output limit missing"
-            assert all("options" not in body for _, body in REQUESTS), "Native-only fields leaked into compatible chat requests"
+            if args.provider == "ollama":
+                # A02: only Alt's explicit context reaches Ollama; engine options never leak.
+                assert all(body.get("options") == {"num_ctx": 8192} for _, body in REQUESTS), "Ollama options must be exactly the selected num_ctx"
+            else:
+                assert all("options" not in body for _, body in REQUESTS), "Native-only fields leaked into compatible chat requests"
             assert any("native tool calls" in json.dumps(body["messages"]) for _, body in REQUESTS), "Operator instructions missing"
             tools = sorted({tool["function"]["name"] for _, body in REQUESTS for tool in body.get("tools", [])})
             assert sorted(name.split("__")[-1] for name in tools) == ["counter", "edit", "evidence", "list", "read", "remember", "run_check", "search", "skill", "terminal"], tools

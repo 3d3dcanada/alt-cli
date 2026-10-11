@@ -22,7 +22,51 @@ pub struct Settings {
     pub cache_v: String,
     pub flash_attention: bool,
     pub thinking: Option<bool>,
+    /// A02 named llama-server settings. Unset means the runtime's default.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub mmproj: Option<PathBuf>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub n_cpu_moe: Option<u32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub override_tensor: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub tensor_split: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub main_gpu: Option<u32>,
+    /// none, linear or yarn.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub rope_scaling: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub rope_scale: Option<f64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub yarn_orig_ctx: Option<u32>,
+    pub mlock: bool,
+    pub no_mmap: bool,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub chat_template_file: Option<PathBuf>,
+    /// Speculative decoding with a smaller draft model.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub draft_model: Option<PathBuf>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub draft_max: Option<u32>,
+    /// Further llama-server arguments, appended last. Alt-owned flags are refused.
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub extra_args: Vec<String>,
 }
+
+/// llama-server flags Alt owns: binding, credentials, the model and its alias.
+pub const RESERVED_RUNTIME_ARGS: [&str; 10] = [
+    "--host",
+    "--port",
+    "--api-key",
+    "--api-key-file",
+    "--alias",
+    "-a",
+    "--model",
+    "-m",
+    "--ctx-size",
+    "-c",
+];
 impl Default for Settings {
     fn default() -> Self {
         Self {
@@ -33,6 +77,20 @@ impl Default for Settings {
             cache_v: "f16".into(),
             flash_attention: false,
             thinking: None,
+            mmproj: None,
+            n_cpu_moe: None,
+            override_tensor: None,
+            tensor_split: None,
+            main_gpu: None,
+            rope_scaling: None,
+            rope_scale: None,
+            yarn_orig_ctx: None,
+            mlock: false,
+            no_mmap: false,
+            chat_template_file: None,
+            draft_model: None,
+            draft_max: None,
+            extra_args: Vec::new(),
         }
     }
 }
@@ -53,6 +111,57 @@ impl Settings {
             self.cache_v == "f16" || self.flash_attention,
             "Quantized V cache requires compatible flash attention; use f16 on unsupported hardware"
         );
+        ensure!(
+            self.rope_scaling
+                .as_deref()
+                .is_none_or(|r| ["none", "linear", "yarn"].contains(&r)),
+            "RoPE scaling must be none, linear or yarn"
+        );
+        ensure!(
+            self.rope_scale
+                .is_none_or(|n| n.is_finite() && n > 0.0 && n <= 64.0),
+            "RoPE scale must be above 0 and at most 64"
+        );
+        ensure!(
+            self.tensor_split.as_deref().is_none_or(|t| {
+                !t.is_empty()
+                    && t.split(',')
+                        .all(|n| n.trim().parse::<f64>().is_ok_and(|n| n >= 0.0))
+            }),
+            "Tensor split is a comma-separated list of proportions, such as 3,1"
+        );
+        ensure!(
+            self.override_tensor
+                .as_deref()
+                .is_none_or(|t| !t.trim().is_empty() && !t.chars().any(char::is_control)),
+            "Tensor override must be a non-empty pattern=buffer list"
+        );
+        ensure!(
+            self.n_cpu_moe.is_none_or(|n| n <= 1024)
+                && self.main_gpu.is_none_or(|n| n < 64)
+                && self.draft_max.is_none_or(|n| (1..=64).contains(&n))
+                && self.yarn_orig_ctx.is_none_or(|n| n >= 256),
+            "MoE CPU layers 0–1024, main GPU 0–63, draft tokens 1–64, YaRN original context at least 256"
+        );
+        ensure!(
+            self.draft_max.is_none() || self.draft_model.is_some(),
+            "Choose a draft model before setting draft tokens"
+        );
+        ensure!(
+            self.extra_args.len() <= 64,
+            "Use at most 64 extra runtime arguments"
+        );
+        for arg in &self.extra_args {
+            ensure!(
+                !arg.chars().any(char::is_control),
+                "Extra runtime arguments may not contain control characters"
+            );
+            let flag = arg.split('=').next().unwrap_or("");
+            ensure!(
+                !RESERVED_RUNTIME_ARGS.contains(&flag),
+                "Alt owns `{flag}` (binding, credentials, model, alias and context); remove it from extra runtime arguments"
+            );
+        }
         Ok(())
     }
 }
@@ -291,6 +400,110 @@ pub async fn install(
     Ok(installed)
 }
 
+/// The exact llama-server argv Alt launches, in order. Pure, for review and tests.
+pub fn server_args(
+    settings: &Settings,
+    profile: &Profile,
+    model: &Path,
+    port: u16,
+    threads: usize,
+    key_file: &Path,
+) -> Vec<std::ffi::OsString> {
+    let mut args: Vec<std::ffi::OsString> = vec!["--model".into(), model.into()];
+    for (flag, value) in [
+        ("--ctx-size", profile.context_tokens.to_string()),
+        ("--host", "127.0.0.1".into()),
+        ("--port", port.to_string()),
+        ("--threads", threads.to_string()),
+        ("--parallel", "1".into()),
+        ("--n-gpu-layers", settings.gpu_layers.to_string()),
+        ("--batch-size", settings.batch.to_string()),
+        ("--ubatch-size", settings.batch.min(512).to_string()),
+        ("--cache-type-k", settings.cache_k.clone()),
+        ("--cache-type-v", settings.cache_v.clone()),
+        (
+            "--flash-attn",
+            if settings.flash_attention {
+                "on"
+            } else {
+                "off"
+            }
+            .into(),
+        ),
+    ] {
+        args.push(flag.into());
+        args.push(value.into());
+    }
+    args.push("--jinja".into());
+    args.push("--alias".into());
+    args.push(profile.model.clone().into());
+    args.push("--api-key-file".into());
+    args.push(key_file.into());
+    let mut push = |flag: &str, value: Option<std::ffi::OsString>| {
+        if let Some(value) = value {
+            args.push(flag.into());
+            args.push(value);
+        }
+    };
+    push("--mmproj", settings.mmproj.as_ref().map(Into::into));
+    push(
+        "--n-cpu-moe",
+        settings.n_cpu_moe.map(|n| n.to_string().into()),
+    );
+    push(
+        "--override-tensor",
+        settings.override_tensor.clone().map(Into::into),
+    );
+    push(
+        "--tensor-split",
+        settings.tensor_split.clone().map(Into::into),
+    );
+    push(
+        "--main-gpu",
+        settings.main_gpu.map(|n| n.to_string().into()),
+    );
+    push(
+        "--rope-scaling",
+        settings.rope_scaling.clone().map(Into::into),
+    );
+    push(
+        "--rope-scale",
+        settings.rope_scale.map(|n| n.to_string().into()),
+    );
+    push(
+        "--yarn-orig-ctx",
+        settings.yarn_orig_ctx.map(|n| n.to_string().into()),
+    );
+    push(
+        "--chat-template-file",
+        settings.chat_template_file.as_ref().map(Into::into),
+    );
+    push(
+        "--model-draft",
+        settings.draft_model.as_ref().map(Into::into),
+    );
+    push(
+        "--draft-max",
+        settings.draft_max.map(|n| n.to_string().into()),
+    );
+    if settings.mlock {
+        args.push("--mlock".into());
+    }
+    if settings.no_mmap {
+        args.push("--no-mmap".into());
+    }
+    if let Some(enabled) = settings.thinking {
+        args.push("--chat-template-kwargs".into());
+        args.push(
+            serde_json::json!({"enable_thinking":enabled})
+                .to_string()
+                .into(),
+        );
+    }
+    args.extend(settings.extra_args.iter().map(Into::into));
+    args
+}
+
 pub struct LocalRuntime {
     child: Child,
     pub endpoint: String,
@@ -389,51 +602,18 @@ impl LocalRuntime {
         };
         let mut command = Command::new(&binary);
         command
-            .args(["--model"])
-            .arg(&artifact.path)
-            .args([
-                "--ctx-size",
-                &profile.context_tokens.to_string(),
-                "--host",
-                "127.0.0.1",
-                "--port",
-                &port.to_string(),
-                "--threads",
-                &threads.to_string(),
-                "--parallel",
-                "1",
-                "--n-gpu-layers",
-                &preferences.runtime.gpu_layers.to_string(),
-                "--batch-size",
-                &preferences.runtime.batch.to_string(),
-                "--ubatch-size",
-                &preferences.runtime.batch.min(512).to_string(),
-                "--cache-type-k",
-                &preferences.runtime.cache_k,
-                "--cache-type-v",
-                &preferences.runtime.cache_v,
-                "--flash-attn",
-                if preferences.runtime.flash_attention {
-                    "on"
-                } else {
-                    "off"
-                },
-                "--jinja",
-                "--alias",
-                &profile.model,
-            ])
-            .arg("--api-key-file")
-            .arg(key_file.path())
+            .args(server_args(
+                &preferences.runtime,
+                profile,
+                &artifact.path,
+                port,
+                threads,
+                key_file.path(),
+            ))
             .stdin(Stdio::null())
             .stdout(output.try_clone()?)
             .stderr(output)
             .kill_on_drop(true);
-        if let Some(enabled) = preferences.runtime.thinking {
-            command.args([
-                "--chat-template-kwargs",
-                &serde_json::json!({"enable_thinking":enabled}).to_string(),
-            ]);
-        }
         if let Some(tokens) = profile.effective_inference().reasoning_tokens {
             // Fail visibly on older runtimes rather than claiming an unsupported allocation.
             let help = tokio::time::timeout(

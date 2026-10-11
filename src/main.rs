@@ -176,6 +176,12 @@ enum Action {
         #[arg(long, conflicts_with = "thinking")]
         thinking_default: bool,
     },
+    /// Open request and owned-runtime parameters (penalties, seed, stop,
+    /// extra JSON, Ollama context, llama-server options).
+    Params {
+        #[command(subcommand)]
+        command: ParamsAction,
+    },
     /// Versioned build, Git, HTTP, browser and security workflows.
     Packs {
         #[command(subcommand)]
@@ -288,6 +294,16 @@ enum Action {
         #[arg(long)]
         instruction_draft: Option<PathBuf>,
     },
+}
+
+#[derive(Subcommand)]
+enum ParamsAction {
+    /// Set one parameter, for example `alt params set repeat_penalty 1.1`.
+    Set { key: String, value: String },
+    /// Return one parameter to its default.
+    Unset { key: String },
+    /// Show every parameter, the effective request fields and the runtime argv.
+    Show,
 }
 
 #[derive(Subcommand)]
@@ -746,6 +762,18 @@ async fn run() -> Result<()> {
             if changed {
                 config.save(&root)?;
             }
+            println!("{}", serde_json::to_string_pretty(&report)?);
+            return Ok(());
+        }
+        Action::Params { command } => {
+            let profile = args.profile.as_deref();
+            let report = match command {
+                ParamsAction::Set { key, value } => {
+                    alt_cli::params::change(&root, profile, &key, Some(&value))?
+                }
+                ParamsAction::Unset { key } => alt_cli::params::change(&root, profile, &key, None)?,
+                ParamsAction::Show => alt_cli::params::show(&root, profile)?,
+            };
             println!("{}", serde_json::to_string_pretty(&report)?);
             return Ok(());
         }

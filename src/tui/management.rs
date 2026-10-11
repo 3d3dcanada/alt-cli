@@ -61,6 +61,9 @@ impl App {
             self.dialog = None;
             return Ok(());
         }
+        if action.starts_with("params-") {
+            return self.manage_params(action, state);
+        }
         if action.starts_with("inference-") {
             return self.manage_inference(action, state);
         }
@@ -866,6 +869,92 @@ impl App {
         }
         Ok(())
     }
+    /// A02: labelled request and runtime parameters with a raw JSON view.
+    fn manage_params(&mut self, action: &str, state: Value) -> Result<()> {
+        let profile = self.current_profile().map(|(name, _)| name.to_owned());
+        match action {
+            "params-menu" => {
+                let report = crate::params::show(&self.root, profile.as_deref())?;
+                let mut items = vec![(
+                    "Show raw JSON".into(),
+                    "Every value, the exact request fields and the llama-server argv".into(),
+                    "params-raw".into(),
+                    json!({}),
+                )];
+                for row in report["parameters"].as_array().into_iter().flatten() {
+                    let scope = if row["scope"] == "request" {
+                        "request"
+                    } else {
+                        "own runtime"
+                    };
+                    items.push((
+                        format!(
+                            "{}: {}",
+                            row["label"].as_str().unwrap_or(""),
+                            crate::params::display(&row["value"])
+                        ),
+                        format!("{scope} · {}", row["hint"].as_str().unwrap_or("")),
+                        "params-field".into(),
+                        json!({"key":row["key"],"label":row["label"],"hint":row["hint"],"current":crate::params::display(&row["value"])}),
+                    ));
+                }
+                self.manager_menu(
+                    "Advanced parameters",
+                    &format!(
+                        "Request parameters belong to {}; runtime parameters apply when Alt starts its own llama-server. Unset values send nothing. Changes apply on the next connection.",
+                        profile.as_deref().unwrap_or("the selected connection")
+                    ),
+                    items,
+                );
+            }
+            "params-raw" => {
+                let report = crate::params::show(&self.root, profile.as_deref())?;
+                self.dialog = Some(Dialog::Notice {
+                    title: "Advanced parameters (raw JSON)".into(),
+                    body: serde_json::to_string_pretty(&report)?,
+                    scroll: 0,
+                });
+            }
+            "params-field" => {
+                let current = state["current"].as_str().unwrap_or("default");
+                self.manager_input(
+                    &format!("Set {}", state["label"].as_str().unwrap_or("parameter")),
+                    &format!(
+                        "{} Leave blank to return to the default.",
+                        state["hint"].as_str().unwrap_or("")
+                    ),
+                    "params-save",
+                    state.clone(),
+                    if current == "default" { "" } else { current },
+                );
+            }
+            "params-save" => {
+                ensure!(
+                    !self.busy && !self.connecting,
+                    "Stop the current task before changing parameters"
+                );
+                let key = state["key"].as_str().context("Parameter")?;
+                let value = state["value"].as_str().unwrap_or("").trim();
+                crate::params::change(
+                    &self.root,
+                    profile.as_deref(),
+                    key,
+                    (!value.is_empty()).then_some(value),
+                )?;
+                self.config = crate::config::Config::load(&self.root)?;
+                self.preferences = crate::config::Preferences::load(&self.root)?;
+                self.workspace = None;
+                self.connected = false;
+                self.notify(format!(
+                    "{} saved. It applies to the next connection; the model and provider are unchanged.",
+                    state["label"].as_str().unwrap_or("Parameter")
+                ));
+                self.manager_action("params-menu", json!({}))?;
+            }
+            _ => anyhow::bail!("Unknown parameter action"),
+        }
+        Ok(())
+    }
     /// Labelled recovery after a reasoning-only cutoff. Nothing is resent
     /// automatically and spent tokens stay charged.
     pub(super) fn cutoff_recovery(&mut self) -> Result<()> {
@@ -956,6 +1045,12 @@ impl App {
                 let prompt = status.input_tokens.map(|v| format!("{v} tokens")).unwrap_or_else(|| "Unknown; the selected server has not supplied a count".into());
                 let thinking = status.reasoning_allowance.map(|v| format!("{v} tokens inside the output allowance")).unwrap_or_else(|| "Selected server default".into());
                 let body = format!("Stage: {}\nModel calls issued: {}\nModel calls remaining: {}\nGenerated tokens remaining: {}\n\nMeasured prompt: {}\nInput reserve: {} tokens\nOutput allowance for the last call: {} tokens\nThinking allowance: {}\nConfigured action headroom: {} tokens\n\nRemaining tokens exclude in-flight reservations. External input counts stay unknown unless measured. Waiting for output includes the server queue and prompt processing; it does not measure reasoning.\n\nFor an input-reserve error, reduce Total output tokens or choose a larger measured native context in Connections. Save settings, then use Allowance → Apply saved allocation and reconnect. The original request remains saved.", status.stage.label(), status.requests_issued, limit(status.remaining_requests), limit(status.remaining_generated_tokens), prompt, status.input_allowance, status.output_allowance, thinking, status.action_headroom);
+                let requested = self.session.as_ref().map(|s| s.profile.context_tokens);
+                let body = match (status.ollama_context, requested) {
+                    (Some(loaded), Some(requested)) if loaded != requested as u64 => format!("{body}\n\nOllama loaded this model with {loaded} context tokens (read from /api/ps), not the {requested} requested. This Ollama version ignores options.num_ctx on its OpenAI-compatible API: create a tag with PARAMETER num_ctx {requested}, or set OLLAMA_CONTEXT_LENGTH on the server."),
+                    (Some(loaded), _) => format!("{body}\n\nOllama loaded context (from /api/ps): {loaded} tokens."),
+                    _ => body,
+                };
                 self.dialog = Some(Dialog::Notice { title: "Observed inference allowance".into(), body, scroll: 0 });
             },
             "inference-live-requests" => {
