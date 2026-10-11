@@ -214,8 +214,14 @@ pub enum ConfirmAction {
 #[derive(Debug, Clone)]
 pub enum MenuAction {
     NewPractice,
-    Manager { action: String, state: Value },
-    StartJob { command: String, keep: bool },
+    Manager {
+        action: String,
+        state: Value,
+    },
+    StartJob {
+        command: String,
+        keep: bool,
+    },
     RequireCheck(String),
     Unpin(String),
     RunCheck(String),
@@ -233,6 +239,8 @@ pub enum MenuAction {
     RecentProject(usize),
     NewFolder,
     Connect,
+    /// A settings row by its global index; the palette reaches every setting.
+    Setting(usize),
 }
 
 #[derive(Debug, Clone)]
@@ -801,6 +809,26 @@ impl App {
                 MenuAction::Access(crate::project::Policy::Trusted),
             ),
         ]);
+        // Every settings row, so nothing in Settings is unreachable from here.
+        let context = self
+            .current_profile()
+            .map(|(_, p)| p.context_tokens)
+            .unwrap_or(self.preferences.context_tokens);
+        let budget = self
+            .current_profile()
+            .map(|(_, p)| p.max_turns)
+            .unwrap_or(self.preferences.max_turns);
+        for (index, (label, hint)) in self
+            .settings_all_items(context, budget)
+            .into_iter()
+            .enumerate()
+        {
+            items.push((
+                format!("Setting: {label}"),
+                hint,
+                MenuAction::Setting(index),
+            ));
+        }
         items
     }
 
@@ -1772,6 +1800,20 @@ impl App {
                 });
             }
             MenuAction::Connect => self.connection_wizard(),
+            MenuAction::Setting(index) => {
+                // Show the row in its tab so the result is visible, then run it.
+                if let Some(tab) = (0..Self::SETTINGS_TABS.len())
+                    .find(|tab| Self::settings_tab_indexes(*tab).contains(&index))
+                {
+                    self.settings_tab = tab;
+                    self.settings_selected = Self::settings_tab_indexes(tab)
+                        .iter()
+                        .position(|i| *i == index)
+                        .unwrap_or(0);
+                }
+                self.set_page(Page::Settings);
+                self.setting_action(index)?;
+            }
         }
         Ok(())
     }
@@ -3015,5 +3057,21 @@ mod recovery_tests {
                 .any(|(label, _, _)| label.contains("Terminal jobs")),
             "unrelated pages must be filtered out"
         );
+    }
+
+    #[test]
+    fn every_settings_row_is_in_the_palette() {
+        let data = tempfile::tempdir().unwrap();
+        let app = App::load(data.path().into(), "goose".into(), None).unwrap();
+        let rows = app.settings_all_items(8192, 12).len();
+        let reachable: std::collections::BTreeSet<usize> = app
+            .palette_items()
+            .into_iter()
+            .filter_map(|(_, _, action)| match action {
+                MenuAction::Setting(index) => Some(index),
+                _ => None,
+            })
+            .collect();
+        assert_eq!(reachable, (0..rows).collect());
     }
 }

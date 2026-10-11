@@ -1,0 +1,67 @@
+{
+  "schema": 1,
+  "commit": "fa0c8e4130ec4d13c59193436679c4e059c22dee",
+  "release_tag": "v0.6.0-beta.3",
+  "binary_sha256": "37a6e2eb0768411de9b51447c35f75e07b273a9da3b5ff83fbdae899abd76164",
+  "scope": "Disposable reproductions using actual released binaries. No network, model, or normal user-state access.",
+  "checks": {
+    "retention_and_backup": {
+      "retention": {
+        "command": [
+          "/workspace/.alt-pc-ready/published-beta3/unpack/alt-0.6.0-linux-x86_64/alt",
+          "--data-dir",
+          "/tmp/alt-audit-retention-o9h2prxv/state",
+          "state",
+          "retain",
+          "--days",
+          "1",
+          "--apply"
+        ],
+        "exit": 0,
+        "stdout": "{\n  \"applied\": true,\n  \"keep_days\": 1,\n  \"preserved\": \"Conversation databases, project checkpoints, migrations, model files and imported originals\",\n  \"targets\": []\n}\n",
+        "stderr": "",
+        "stale_inference_retained": true,
+        "stale_timestamp": 1
+      },
+      "backup": {
+        "command": [
+          "/workspace/.alt-pc-ready/published-beta3/unpack/alt-0.6.0-linux-x86_64/alt",
+          "--data-dir",
+          "/tmp/alt-audit-retention-o9h2prxv/state",
+          "state",
+          "backup",
+          "/tmp/alt-audit-retention-o9h2prxv/backup.tar.gz"
+        ],
+        "exit": 1,
+        "stdout": "",
+        "stderr": "alt: State backup exceeds 512 MiB; review storage before backing up\n",
+        "sparse_test_file_bytes": 536870913,
+        "backup_exists": false
+      },
+      "finding_reproduced": true
+    },
+    "partial_installation": {
+      "command": [
+        "bash",
+        "/workspace/.alt-pc-ready/published-beta3/unpack/alt-0.6.0-linux-x86_64/install.sh"
+      ],
+      "exit": 1,
+      "stdout": "alt 0.6.0\n",
+      "stderr": "cp: cannot overwrite non-directory '/tmp/alt-audit-update-jf4v7iq0/prefix/share/doc/alt/docs' with directory '/workspace/.alt-pc-ready/published-beta3/unpack/alt-0.6.0-linux-x86_64/docs'\n",
+      "environment_overrides": {
+        "ALT_PREFIX": "/tmp/alt-audit-update-jf4v7iq0/prefix",
+        "ALT_DATA_DIR": "/tmp/alt-audit-update-jf4v7iq0/empty-state"
+      },
+      "setup": "A genuine beta 1 binary installed at prefix/bin/alt; prefix/share/doc/alt/docs is a regular file.",
+      "previous_archive_sha256": "f61dc2b54059b6b1c185540f24ca5480804c7d3253c5eb600510026eec7f1b90",
+      "before_sha256": "7017be5b3e526d53dee7b08dca16aa109d4c9244d8e9d36ecba52bdad678f4b7",
+      "after_sha256": "37a6e2eb0768411de9b51447c35f75e07b273a9da3b5ff83fbdae899abd76164",
+      "saved_previous_sha256": "7017be5b3e526d53dee7b08dca16aa109d4c9244d8e9d36ecba52bdad678f4b7",
+      "installed_commit": "fa0c8e4130ec4d13c59193436679c4e059c22dee",
+      "binary_changed_despite_failed_installer": true,
+      "binary_equals_beta3": true,
+      "previous_preserved": true
+    }
+  },
+  "temporary_resources_removed": true
+}
