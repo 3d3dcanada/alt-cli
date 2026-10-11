@@ -55,6 +55,7 @@ PLANS = {
     "a08": [("wait", "Alt"), *palette("gpu runtime"), ("wait", "CPU remains the default"), ("shot", "gpu-runtime")],
     "b07": [("wait", "Alt"), *palette("connect a model"), ("wait", "Where will your model run?"), ("send", b"\x1b[B\r"),
             ("wait", "Type model ID"), ("shot", "connection-form"), ("send", b"\x1bm"), ("wait", "Enter a model identifier"), ("shot", "manual-model")],
+    "h01": [("wait", "Alt"), ("wait", "Tip: your assistant"), ("shot", "home"), ("send", b"\x1b[B\x1b[B"), ("shot", "home-selected")],
     "board": [("wait", "Alt"), ("send", b"\x10"), ("wait", "Command palette"), ("send", b"setting:"), ("wait", "Setting: Context"),
               ("shot", "palette-settings"), ("send", b"\x1b"), *palette("setting: tool focus"), ("wait", "Which tools fit"),
               ("shot", "palette-setting-opened"), ("send", b"\x1b")],

@@ -94,6 +94,10 @@
 - B10 (audit A21, part): a paste larger than a text field's 64 KiB limit is refused
   with a message giving its size and the file-path alternative, instead of
   vanishing. The 60×18 connection-form layout remains deferred.
+- H01 (harvested from `build/final-pass-2026-10-08`): on terminals of at least about
+  96×30, Home is a dashboard with model, project and tools status cards and a
+  two-column grid of action cards, drawn through the theme engine; 80×24 keeps the
+  Start-here list. Same indexes, keys and mouse targets.
 
 ### A10 harness labels and matched re-run script (prepared; owner PC runs it)
 

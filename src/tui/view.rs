@@ -607,6 +607,161 @@ fn footer(frame: &mut Frame, app: &mut App, area: Rect) {
     );
 }
 
+/// Status cards plus a two-column grid of action cards (H01, harvested from the
+/// final-pass branch and drawn through the active theme). Indexes match the
+/// Start-here list, so keyboard, mouse and actions are unchanged.
+fn dashboard(frame: &mut Frame, app: &mut App, area: Rect, labels: &[(&str, &str)]) {
+    let rows = Layout::vertical([
+        Constraint::Length(4),
+        Constraint::Length(4 * labels.len().div_ceil(2) as u16),
+        Constraint::Min(0),
+    ])
+    .split(area);
+    let cards = Layout::horizontal([Constraint::Ratio(1, 3); 3]).split(rows[0]);
+    let (model, model_detail) = app
+        .current_profile()
+        .map(|(_, p)| {
+            (
+                p.model.clone(),
+                format!(
+                    "{}K context · thinking {}",
+                    p.context_tokens / 1024,
+                    match p.effective_inference().effective_thinking() {
+                        crate::inference::Thinking::Default => "default".to_string(),
+                        other => other.label().to_lowercase(),
+                    }
+                ),
+            )
+        })
+        .unwrap_or_else(|| {
+            (
+                "Choose your first model".into(),
+                "Connect → local or hosted".into(),
+            )
+        });
+    let project = app
+        .preferences
+        .project
+        .file_name()
+        .map(|n| n.to_string_lossy().into_owned())
+        .unwrap_or_else(|| app.preferences.project.display().to_string());
+    let project_detail = if app.project_missing {
+        "Folder missing; choose another".to_string()
+    } else {
+        format!("{} check(s) configured", app.task_view.checks.len())
+    };
+    let tools = if app.engine_ready() {
+        "Agent engine ready"
+    } else {
+        "Agent engine missing"
+    };
+    let theme = theme::cur();
+    let statuses = [
+        (
+            " ◈ MODEL ",
+            model,
+            model_detail,
+            if app.config.profiles.is_empty() {
+                WARN()
+            } else {
+                GOOD()
+            },
+        ),
+        (
+            " ▣ PROJECT ",
+            project,
+            project_detail,
+            if app.project_missing { BAD() } else { TEXT() },
+        ),
+        (
+            " ◇ TOOLS ",
+            tools.to_string(),
+            app.preferences.access_policy.label().to_string(),
+            if app.engine_ready() { GOOD() } else { WARN() },
+        ),
+    ];
+    for (i, (title, value, detail, color)) in statuses.into_iter().enumerate() {
+        frame.render_widget(
+            Paragraph::new(vec![line(value, color), line(detail, MUTED())])
+                .block(block(title, false)),
+            cards[i],
+        );
+    }
+    let grid = rows[1];
+    let columns = Layout::horizontal([Constraint::Ratio(1, 2); 2]).split(grid);
+    let icons = ['◈', '◇', '▣', '✓', '⇄', '✦', '⚙', '≡'];
+    for (i, (title, hint)) in labels.iter().enumerate() {
+        let column = columns[i % 2];
+        let y = grid.y + (i / 2) as u16 * 4;
+        if y + 4 > grid.bottom() {
+            break;
+        }
+        let rect = Rect::new(column.x, y, column.width, 4);
+        let selected = i == app.home_selected && !app.nav_focus;
+        let card = block(
+            format!(
+                " {} {} ",
+                icons.get(i).copied().unwrap_or(theme.pointer),
+                title
+            ),
+            selected,
+        );
+        let card = if selected {
+            card.style(Style::default().bg(SELECT()).fg(TEXT()))
+        } else {
+            card
+        };
+        frame.render_widget(
+            Paragraph::new(line(*hint, if selected { TEXT() } else { MUTED() }))
+                .wrap(Wrap { trim: true })
+                .block(card),
+            rect,
+        );
+        app.hits.push((rect, Hit::Home(i)));
+    }
+    if rows[2].height >= 6 {
+        let cols = Layout::horizontal([Constraint::Percentage(52), Constraint::Percentage(48)])
+            .split(rows[2]);
+        frame.render_widget(
+            Paragraph::new(vec![
+                line("1  Describe the result you want.", TEXT()),
+                line("2  Review commands and file changes.", TEXT()),
+                line("3  Check the results together.", TEXT()),
+                line(
+                    "Esc stops a task · conversations are saved as you work",
+                    MUTED(),
+                ),
+            ])
+            .wrap(Wrap { trim: false })
+            .block(block(" How it works ", false)),
+            cols[0],
+        );
+        let context = app
+            .current_profile()
+            .map(|(_, p)| p.context_tokens)
+            .unwrap_or(app.preferences.context_tokens);
+        frame.render_widget(
+            Paragraph::new(vec![
+                line(
+                    format!("Context budget: {}K tokens", context / 1024),
+                    ACCENT(),
+                ),
+                line(
+                    "Ctrl+P → Probe this model suggests thinking and output settings.",
+                    TEXT(),
+                ),
+                line(
+                    "Hosted APIs: Connect → a hosted API or another server preset.",
+                    MUTED(),
+                ),
+            ])
+            .wrap(Wrap { trim: false })
+            .block(block(" Models and settings ", false)),
+            cols[1],
+        );
+    }
+}
+
 fn home(frame: &mut Frame, app: &mut App, area: Rect) {
     let parts = Layout::vertical([
         Constraint::Length(5),
@@ -694,6 +849,19 @@ fn home(frame: &mut Frame, app: &mut App, area: Rect) {
             "Save goals, decisions, and next steps for future messages.",
         ),
     ];
+    // H01: graphical dashboard on roomy terminals; the list stays at 80×24.
+    if parts[1].width >= 96 && parts[1].height >= 26 {
+        dashboard(frame, app, parts[1], &labels);
+        paragraph(
+            frame,
+            parts[2],
+            line(
+                "Tip: your assistant can be wrong. Tool results show what actually happened.",
+                MUTED(),
+            ),
+        );
+        return;
+    }
     let (choices, guidance) = if parts[1].height >= 22 {
         let areas = Layout::vertical([Constraint::Length(18), Constraint::Min(4)]).split(parts[1]);
         (areas[0], Some(areas[1]))
@@ -2478,6 +2646,25 @@ mod tests {
         app.apply_update(&serde_json::json!({"update":{"sessionUpdate":"tool_call_update","toolCallId":"nonzero","status":"completed","rawOutput":{"exit_code":7}}}));
         assert_eq!(app.tools.last().unwrap().status, "failed");
         assert!(app.tools.last().unwrap().content.contains("Exit code: 7"));
+    }
+    #[test]
+    fn home_is_a_card_dashboard_when_wide_and_a_list_at_80x24() {
+        let dir = tempfile::tempdir().unwrap();
+        let mut app = App::load(dir.path().to_path_buf(), "goose".into(), None).unwrap();
+        let wide = render(&mut app, 120, 40);
+        assert!(wide.contains("◈ MODEL") && wide.contains("▣ PROJECT") && wide.contains("◇ TOOLS"));
+        assert!(wide.contains("Try a practice project"));
+        assert!(!wide.contains("Start here"));
+        // Every action card is a mouse target with the list's indexes.
+        let cards = app
+            .hits
+            .iter()
+            .filter(|(_, hit)| matches!(hit, Hit::Home(_)))
+            .count();
+        assert_eq!(cards, 8);
+        let narrow = render(&mut app, 80, 24);
+        assert!(narrow.contains("Start here"));
+        assert!(!narrow.contains("◈ MODEL"));
     }
     #[test]
     fn corrupt_settings_are_preserved_and_setup_still_opens() {
