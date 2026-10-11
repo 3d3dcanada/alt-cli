@@ -80,6 +80,9 @@
 - B02 (audit A04, part): a message sent before the model is ready is held apart from
   the composer. Text typed while connecting stays for the next message; on failure,
   cancel or a closed connection the held message comes back exactly once, ahead of it.
+- B06 (audit A10): an explicitly selected llama-server or agent engine is
+  authoritative. If it is missing, Alt says so and names the path instead of
+  silently using the managed or PATH copy.
 
 ### A10 harness labels and matched re-run script (prepared; owner PC runs it)
 
