@@ -60,8 +60,20 @@ def main():
                 offset = len(REQUESTS)
                 def click(label):
                     term.wait(label)
-                    for _ in range(3): term.pump(.03)
-                    y, text = next((y, line) for y, line in enumerate(term.screen.display) if label in line and 'Reconnect' in line and 'Send' in line)
+                    # Poll like wait(): the composer's button row must be on
+                    # screen (not a dialog or a frame still being received).
+                    # The row must also hold still across two looks, so a
+                    # transient layout is never the click target.
+                    deadline = time.monotonic() + 10
+                    previous = None
+                    while True:
+                        term.pump(.1)
+                        found = [(y, line) for y, line in enumerate(term.screen.display) if label in line and 'Reconnect' in line and 'Send' in line]
+                        if (found and found == previous) or time.monotonic() > deadline:
+                            break
+                        previous = found
+                    assert found, f'Missing the {label} button row\n' + '\n'.join(term.screen.display)
+                    y, text = found[0]
                     x = text.index(label) + 1
                     term.send(('\x1b[<0;{};{}M\x1b[<0;{};{}m'.format(x, y + 1, x, y + 1)).encode())
                 def choose(index): term.send(b'\x1b[B' * index + b'\r')

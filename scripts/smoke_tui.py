@@ -209,6 +209,10 @@ with tempfile.TemporaryDirectory(prefix="alt-tui-smoke-") as directory:
         assert termios.tcgetattr(slave) == original
         with sqlite3.connect(state / "sessions.db") as db:
             session_id = db.execute("SELECT id FROM sessions LIMIT 1").fetchone()[0]
+        # Discard the first process's unread final frames so the resumed
+        # session is judged only by what it draws itself.
+        while select.select([master], [], [], 0.1)[0]:
+            os.read(master, 65536)
         screen = pyte.Screen(80, 24)
         terminal_stream = pyte.ByteStream(screen)
         process = subprocess.Popen(base + ["tui", "--resume", session_id], stdin=slave, stdout=slave, stderr=slave,

@@ -2,7 +2,7 @@
 // the per-frame theme instead of hard-coded values.
 #![allow(non_snake_case)]
 
-use super::{app::*, input::Editor, theme};
+use super::{app::*, fx, input::Editor, motion, theme};
 use crate::{display_text, models::human_bytes};
 use ratatui::{
     Frame,
@@ -10,7 +10,8 @@ use ratatui::{
     style::{Color, Modifier, Style},
     text::{Line, Span, Text},
     widgets::{
-        Block, BorderType, Borders, Clear, Gauge, List, ListItem, ListState, Paragraph, Wrap,
+        Block, BorderType, Borders, Clear, Gauge, List, ListItem, ListState, Paragraph, Widget,
+        Wrap,
     },
 };
 
@@ -62,7 +63,12 @@ fn block(title: impl Into<Line<'static>>, focused: bool) -> Block<'static> {
         .border_type(BorderType::Rounded)
         .title(title)
         .title_style(style(ACCENT()))
-        .border_style(style(if focused { BORDER_FOCUSED() } else { BORDER() }))
+        .border_style(style(if focused {
+            // The focus ring breathes toward the second accent while a task runs.
+            motion::blend(BORDER_FOCUSED(), ACCENT2(), motion::breath() * 0.6)
+        } else {
+            BORDER()
+        }))
         .style(Style::default().bg(PANEL()).fg(TEXT()))
 }
 fn line(text: impl Into<String>, color: Color) -> Line<'static> {
@@ -114,10 +120,34 @@ fn buttons(frame: &mut Frame, app: &mut App, area: Rect, items: &[(&str, &'stati
     }
 }
 
+/// Background jobs get the progress footer only once they have run for a
+/// moment, so an instant refresh never shifts the whole layout up and back.
+pub(crate) const JOB_FOOTER_DELAY: std::time::Duration = std::time::Duration::from_millis(250);
+fn shown_job(app: &App) -> Option<&Job> {
+    app.job
+        .as_ref()
+        .filter(|job| job.started.elapsed() >= JOB_FOOTER_DELAY)
+}
+
+/// A smooth horizontal bar: whole cells plus one eighth-block partial cell.
+pub(crate) fn meter_bar(fill: f64, width: usize) -> String {
+    const PARTS: [char; 8] = [' ', '▏', '▎', '▍', '▌', '▋', '▊', '▉'];
+    let eighths = (fill.clamp(0.0, 1.0) * width as f64 * 8.0).round() as usize;
+    let full = (eighths / 8).min(width);
+    let mut bar = "█".repeat(full);
+    if full < width {
+        let part = eighths % 8;
+        bar.push(if part == 0 { '·' } else { PARTS[part] });
+        bar.push_str(&"·".repeat(width - full - 1));
+    }
+    bar
+}
+
 pub fn draw(frame: &mut Frame, app: &mut App) {
     let area = frame.area();
     theme::set(*app.theme);
     app.frame = app.frame.wrapping_add(1);
+    app.motion.tick(app.busy);
     app.hits.clear();
     frame.render_widget(
         Block::default().style(Style::default().bg(BG()).fg(TEXT())),
@@ -138,7 +168,7 @@ pub fn draw(frame: &mut Frame, app: &mut App) {
     let root = Layout::vertical([
         Constraint::Length(3),
         Constraint::Min(10),
-        Constraint::Length(if app.job.is_some() { 6 } else { 3 }),
+        Constraint::Length(if shown_job(app).is_some() { 6 } else { 3 }),
     ])
     .split(area);
     let header = Layout::horizontal([Constraint::Length(27), Constraint::Min(10)])
@@ -157,6 +187,13 @@ pub fn draw(frame: &mut Frame, app: &mut App) {
             line(crate::BUILD_LABEL, MUTED()),
         ],
     );
+    // M04: the wordmark is a two-accent gradient.
+    fx::gradient(
+        frame.buffer_mut(),
+        Rect::new(header[0].x, header[0].y, 7.min(header[0].width), 1),
+        ACCENT(),
+        ACCENT2(),
+    );
     let model = app
         .session
         .as_ref()
@@ -168,12 +205,11 @@ pub fn draw(frame: &mut Frame, app: &mut App) {
     // second line animates while a task runs so the state is visible at a glance.
     let meter = match (app.context_used, app.context_size) {
         (Some(used), Some(size)) if size > 0 => {
-            let width = 10usize;
-            let filled = ((used.min(size) as f64 / size as f64) * width as f64).round() as usize;
+            // The bar glides to each new reading in eighth-cell steps.
+            let fill = app.motion.glide("ctx", used.min(size) as f64 / size as f64);
             format!(
-                " ctx ▕{}{}▏ {}K/{}K",
-                "▮".repeat(filled.min(width)),
-                "·".repeat(width.saturating_sub(filled.min(width))),
+                " ctx ▕{}▏ {}K/{}K",
+                meter_bar(fill, 10),
                 used / 1024,
                 size / 1024
             )
@@ -188,13 +224,13 @@ pub fn draw(frame: &mut Frame, app: &mut App) {
                 "Waiting for your approval"
             },
             WARN(),
-            th.spinner[(app.frame as usize) % th.spinner.len()],
+            th.spinner[motion::spin(th.spinner.len())],
         )
     } else if app.connecting {
         (
             "Connecting…",
             WARN(),
-            th.spinner[(app.frame as usize) % th.spinner.len()],
+            th.spinner[motion::spin(th.spinner.len())],
         )
     } else if app.connected {
         ("Connected · saved locally", GOOD(), "")
@@ -269,11 +305,318 @@ pub fn draw(frame: &mut Frame, app: &mut App) {
         Page::Jobs => jobs(frame, app, content),
         Page::Context => context(frame, app, content),
     }
+    page_transition(frame, app, content);
+    toasts(frame, app, content);
     footer(frame, app, root[2]);
-    if app.dialog.is_some() || !app.permissions.is_empty() {
-        app.hits.clear();
-        modal(frame, app, area);
+    dialog_layer(frame, app, area);
+    pointer_feedback(frame, app);
+    splash(frame, app, area);
+}
+
+/// M04: the target under the mouse glows softly; a click flashes it.
+fn pointer_feedback(frame: &mut Frame, app: &mut App) {
+    let target = app.motion.hover.and_then(|(x, y)| {
+        app.hits
+            .iter()
+            .rev()
+            .find(|(rect, hit)| rect.contains((x, y).into()) && !matches!(hit, Hit::Composer))
+            .map(|(rect, _)| *rect)
+    });
+    let buf = frame.buffer_mut();
+    if let Some((rect, strength)) = app.motion.hover(target) {
+        fx::tint(
+            buf,
+            rect,
+            ACCENT(),
+            0.16 * motion::stepped(strength, 3),
+            PANEL(),
+        );
     }
+    if let Some((rect, t)) = app.motion.press() {
+        fx::tint(
+            buf,
+            rect,
+            ACCENT(),
+            0.45 * (1.0 - motion::stepped(t, 3)),
+            PANEL(),
+        );
+    }
+}
+
+/// M04: a short wordmark splash on launch (Full motion only, 720 ms). Any key
+/// passes straight through and ends it; the interface then cascades in.
+fn splash(frame: &mut Frame, app: &mut App, area: Rect) {
+    let Some(t) = app.motion.splash() else {
+        return;
+    };
+    let buf = frame.buffer_mut();
+    for y in area.top()..area.bottom() {
+        for x in area.left()..area.right() {
+            let cell = &mut buf[(x, y)];
+            cell.reset();
+            cell.bg = BG();
+        }
+    }
+    const LOGO: [&str; 2] = ["▄▀█ █   ▀█▀", "█▀█ █▄▄  █ "];
+    const TAGLINE: &str = "L O C A L   W O R K S P A C E";
+    let reveal = motion::stepped(motion::ease_out_cubic(t / 0.45), 4);
+    let top = area.y + area.height.saturating_sub(6) / 2;
+    let logo_x = area.x + area.width.saturating_sub(11) / 2;
+    for (row, text) in LOGO.iter().enumerate() {
+        for (i, ch) in text.chars().enumerate() {
+            let color = motion::blend(ACCENT(), ACCENT2(), i as f64 / 10.0);
+            buf[(logo_x + i as u16, top + row as u16)]
+                .set_char(ch)
+                .set_fg(motion::blend(BG(), color, reveal))
+                .set_bg(BG());
+        }
+    }
+    let tag_x = area.x + area.width.saturating_sub(TAGLINE.len() as u16) / 2;
+    buf.set_string(
+        tag_x,
+        top + 3,
+        TAGLINE,
+        Style::default()
+            .fg(motion::blend(BG(), MUTED(), reveal))
+            .bg(BG()),
+    );
+    let bar = meter_bar(motion::stepped(motion::ease_in_out_cubic(t), 12), 24);
+    let bar_x = area.x + area.width.saturating_sub(24) / 2;
+    buf.set_string(
+        bar_x,
+        top + 5,
+        bar,
+        Style::default()
+            .fg(motion::blend(BG(), ACCENT(), reveal))
+            .bg(BG()),
+    );
+}
+
+/// M02: a new page cascades in: rows settle top to bottom, each sliding a few
+/// columns from the right and fading up from the background (a staggered
+/// entrance). Each row passes through two stages, so the whole transition
+/// costs about three repaints of the page. Reduced keeps the fade; Off draws
+/// in place.
+fn page_transition(frame: &mut Frame, app: &mut App, content: Rect) {
+    let index = Page::ALL.iter().position(|p| *p == app.page).unwrap_or(0) as u8;
+    app.motion.page(index);
+    let Some(t) = app.motion.progress(app.motion.page_since, motion::PAGE_MS) else {
+        return;
+    };
+    let moves = app.motion.level.moves();
+    let height = content.height.max(1) as f64;
+    let buf = frame.buffer_mut();
+    for y in content.top()..content.bottom() {
+        // Rows start 0–45% into the transition and take 55% of it to settle.
+        let delay = (y - content.y) as f64 / height * 0.45;
+        let local = ((t - delay) / 0.55).clamp(0.0, 1.0);
+        let (fade, dx) = match motion::stepped(motion::ease_out_cubic(local), 3) {
+            s if s < 0.33 => (0.8, 4),
+            s if s < 0.66 => (0.35, 1),
+            _ => continue,
+        };
+        let row = Rect::new(content.x, y, content.width, 1);
+        if moves {
+            fx::slide_right(buf, row, dx.min(content.width / 10), BG());
+        }
+        fx::fade(buf, row, BG(), fade, TEXT());
+    }
+}
+
+/// M03: notices float in at the top right of the page and fade away. They
+/// echo the status line (which stays put) and never take clicks.
+fn toasts(frame: &mut Frame, app: &mut App, content: Rect) {
+    // A toast only ever shows the current status; any later status (an
+    // error, progress, a direct update) retires it at once.
+    if app
+        .motion
+        .toasts
+        .last()
+        .is_some_and(|t| t.text != app.status.trim() || app.status_error)
+    {
+        app.motion.toasts.clear();
+    }
+    if app.motion.toasts.is_empty() || content.width < 30 || content.height < 8 {
+        return;
+    }
+    let width = content.width.saturating_sub(2).min(46);
+    let now = app.motion.now();
+    let moves = app.motion.level.moves();
+    let mut y = content.y;
+    for toast in app.motion.toasts.clone().iter().rev() {
+        let glyph = match toast.tone {
+            motion::Tone::Good => "✓ ",
+            motion::Tone::Bad => "✕ ",
+            motion::Tone::Info => "• ",
+        };
+        let mut text = format!("{glyph}{}", toast.text);
+        if toast.count > 1 {
+            text.push_str(&format!("  ×{}", toast.count));
+        }
+        let lines = textwrap_lines(&text, width.saturating_sub(4) as usize, 2);
+        let height = lines.len() as u16 + 2;
+        if y + height > content.bottom() {
+            break;
+        }
+        let age = now - toast.born;
+        // Four stages in and out keep a toast to a few small repaints.
+        let enter = motion::stepped(motion::ease_out_cubic(age / motion::TOAST_EDGE_MS), 4);
+        let leave = motion::stepped((motion::TOAST_MS - age) / motion::TOAST_EDGE_MS, 4);
+        let shift = if moves {
+            ((1.0 - enter) * (width as f64 * 0.5)).round() as u16
+        } else {
+            0
+        };
+        let x = content.right().saturating_sub(width + 1) + shift;
+        let rect = Rect::new(x, y, width.min(content.right().saturating_sub(x)), height);
+        let tone = match toast.tone {
+            motion::Tone::Good => GOOD(),
+            motion::Tone::Bad => BAD(),
+            motion::Tone::Info => ACCENT(),
+        };
+        frame.render_widget(Clear, rect);
+        frame.render_widget(
+            Paragraph::new(
+                lines
+                    .into_iter()
+                    .enumerate()
+                    .map(|(i, l)| match l.strip_prefix(glyph).filter(|_| i == 0) {
+                        Some(rest) => Line::from(vec![
+                            Span::styled(glyph, style(tone).add_modifier(Modifier::BOLD)),
+                            Span::styled(rest.to_owned(), style(TEXT())),
+                        ]),
+                        None => line(l, TEXT()),
+                    })
+                    .collect::<Vec<_>>(),
+            )
+            .block(
+                Block::default()
+                    .borders(Borders::LEFT | Borders::TOP | Borders::BOTTOM | Borders::RIGHT)
+                    .border_type(BorderType::Rounded)
+                    .border_style(style(tone))
+                    .style(Style::default().bg(PANEL()).fg(TEXT())),
+            ),
+            rect,
+        );
+        let buf = frame.buffer_mut();
+        let fade = 1.0 - enter.min(leave);
+        if fade > 0.0 {
+            fx::fade(buf, rect, BG(), fade, TEXT());
+        }
+        fx::shadow(
+            buf,
+            rect,
+            motion::blend(BG(), Color::Rgb(0, 0, 0), 0.55),
+            0.5 * (1.0 - fade),
+        );
+        y += height + 1;
+    }
+}
+
+/// Greedy word wrap into at most `max` lines; the last line ends in "…" when cut.
+fn textwrap_lines(text: &str, width: usize, max: usize) -> Vec<String> {
+    let width = width.max(8);
+    let mut lines: Vec<String> = Vec::new();
+    let mut current = String::new();
+    for word in display_text(text).split_whitespace() {
+        let fits =
+            current.chars().count() + word.chars().count() + usize::from(!current.is_empty())
+                <= width;
+        if !fits && !current.is_empty() {
+            lines.push(std::mem::take(&mut current));
+        }
+        if !current.is_empty() {
+            current.push(' ');
+        }
+        current.push_str(&word.chars().take(width).collect::<String>());
+    }
+    if !current.is_empty() {
+        lines.push(current);
+    }
+    if lines.len() > max {
+        lines.truncate(max);
+        let last = &mut lines[max - 1];
+        let keep: String = last.chars().take(width.saturating_sub(1)).collect();
+        *last = format!("{keep}…");
+    }
+    lines
+}
+
+/// Identity of the dialog on screen; a new identity replays the entrance.
+fn dialog_key(app: &App) -> Option<String> {
+    if let Some((id, _)) = app.permissions.front() {
+        return Some(format!("permission:{id}"));
+    }
+    app.dialog.as_ref().map(|dialog| match dialog {
+        Dialog::Menu { title, .. } => format!("menu:{title}"),
+        other => format!("{:?}", std::mem::discriminant(other)),
+    })
+}
+
+/// M02: dialogs dim the page behind them, cast a shadow and pop in (scale
+/// 86% → 100% with a slight overshoot); closing fades them back out.
+fn dialog_layer(frame: &mut Frame, app: &mut App, area: Rect) {
+    let key = dialog_key(app);
+    let entrance = app.motion.modal(key.clone());
+    if key.is_none() {
+        if let Some((t, retained)) = app.motion.closing() {
+            fx::fade_out(
+                frame.buffer_mut(),
+                retained.rect,
+                &retained.cells,
+                motion::stepped(motion::ease_out_cubic(t), 2),
+                TEXT(),
+                BG(),
+            );
+        }
+        return;
+    }
+    app.hits.clear();
+    let shade = motion::blend(BG(), Color::Rgb(0, 0, 0), 0.55);
+    // The backdrop dims in one step; only the dialog itself animates.
+    fx::fade(frame.buffer_mut(), area, shade, 0.5, TEXT());
+    let entrance = entrance.map(|t| motion::stepped(t, 3));
+    // Only the entrance needs what lay beneath; a settled dialog costs no
+    // full-screen snapshot.
+    let moves = app.motion.level.moves();
+    let before = (entrance.is_some() && moves).then(|| fx::snapshot(frame.buffer_mut(), area));
+    app.motion.dialog_rect = None;
+    modal(frame, app, area);
+    let buf = frame.buffer_mut();
+    let Some(rect) = app.motion.dialog_rect.map(|r| r.intersection(area)) else {
+        return;
+    };
+    let visible = match (entrance, &before) {
+        (Some(t), Some(before)) => {
+            let visible = fx::scaled(rect, 0.86 + 0.14 * motion::ease_out_back(t));
+            fx::clip_to(buf, area, before, rect, visible);
+            // A ring on the growing edge keeps the reveal a clean box.
+            if visible != rect {
+                Block::default()
+                    .borders(Borders::ALL)
+                    .border_type(BorderType::Rounded)
+                    .border_style(style(BORDER_FOCUSED()))
+                    .render(visible, buf);
+            }
+            visible
+        }
+        _ => rect,
+    };
+    if let Some(t) = entrance {
+        fx::fade(
+            buf,
+            visible,
+            BG(),
+            (1.0 - motion::ease_out_cubic(t)) * 0.7,
+            TEXT(),
+        );
+    } else {
+        app.motion.modal_retained = Some(motion::Retained {
+            rect,
+            cells: fx::snapshot(buf, rect),
+        });
+    }
+    fx::shadow(buf, visible, shade, 0.7);
 }
 
 /// Live activity/context column; rendered beside Chat and in Split layout.
@@ -325,14 +668,21 @@ fn activity_column(frame: &mut Frame, app: &mut App, area: Rect) {
             ),
         ],
     );
+    let flashes: Vec<Option<f64>> = app
+        .tools
+        .iter()
+        .map(|tool| app.motion.flash(&tool.id, &tool.status))
+        .collect();
+    let spinner = th.spinner[motion::spin(th.spinner.len())];
     let items = app
         .tools
         .iter()
         .map(|tool| {
             let (led, status_color) = match tool.status.as_str() {
-                "completed" => (th.led_on, GOOD()),
-                "failed" => (th.led_on, BAD()),
-                _ => (th.led_off, WARN()),
+                "completed" => (th.led_on.to_string(), GOOD()),
+                "failed" => (th.led_on.to_string(), BAD()),
+                _ if app.busy && app.motion.level.fades() => (spinner.to_string(), WARN()),
+                _ => (th.led_off.to_string(), WARN()),
             };
             ListItem::new(vec![
                 Line::from(vec![
@@ -368,10 +718,17 @@ fn activity_column(frame: &mut Frame, app: &mut App, area: Rect) {
             if y >= inner.bottom() {
                 break;
             }
-            app.hits.push((
-                Rect::new(inner.x, y, inner.width, 2.min(inner.bottom() - y)),
-                Hit::Row(i),
-            ));
+            let row = Rect::new(inner.x, y, inner.width, 2.min(inner.bottom() - y));
+            if let Some(t) = flashes.get(i).copied().flatten() {
+                let color = match app.tools[i].status.as_str() {
+                    "completed" => GOOD(),
+                    "failed" => BAD(),
+                    _ => WARN(),
+                };
+                let fade = 1.0 - motion::stepped(motion::ease_out_cubic(t), 4);
+                fx::tint(frame.buffer_mut(), row, color, 0.42 * fade, PANEL());
+            }
+            app.hits.push((row, Hit::Row(i)));
         }
     }
     buttons(
@@ -513,7 +870,9 @@ fn nav(frame: &mut Frame, app: &mut App, area: Rect) {
 
 fn footer(frame: &mut Frame, app: &mut App, area: Rect) {
     let inner = inset(area, 2, 0);
-    let status_y = if let Some(job) = &app.job {
+    let status_y = if shown_job(app).is_some()
+        && let Some(job) = &app.job
+    {
         let ratio = if job.progress.total > 0 {
             job.progress.received as f64 / job.progress.total as f64
         } else {
@@ -535,6 +894,13 @@ fn footer(frame: &mut Frame, app: &mut App, area: Rect) {
                 job.started.elapsed().as_secs()
             )
         };
+        // Progress glides between reports; a fresh job starts from empty.
+        let ratio = if ratio <= 0.0 {
+            app.motion.glide("job", 0.0);
+            0.0
+        } else {
+            app.motion.glide("job", ratio)
+        };
         let progress = Rect::new(inner.x, inner.y, inner.width.saturating_sub(10), 1);
         frame.render_widget(
             Gauge::default()
@@ -543,6 +909,9 @@ fn footer(frame: &mut Frame, app: &mut App, area: Rect) {
                 .gauge_style(Style::default().fg(ACCENT()).bg(SELECT())),
             progress,
         );
+        if job.progress.total == 0 && app.motion.level.moves() {
+            shimmer(frame.buffer_mut(), progress, app.motion.now());
+        }
         let stage = job.progress.stage.clone();
         button(
             frame,
@@ -605,6 +974,25 @@ fn footer(frame: &mut Frame, app: &mut App, area: Rect) {
         Rect::new(inner.x, status_y + 1, inner.width, 1),
         line(hint, MUTED()),
     );
+}
+
+/// A soft band of light sweeping across a bar whose length is unknown.
+fn shimmer(buf: &mut ratatui::buffer::Buffer, area: Rect, now: f64) {
+    let span = area.width as f64 + 16.0;
+    let centre = (now / 1500.0).fract() * span - 8.0;
+    for x in area.left()..area.right() {
+        let distance = ((x - area.x) as f64 - centre).abs();
+        if distance < 8.0 {
+            let strength = 0.55 * (1.0 - distance / 8.0).powi(2);
+            fx::tint(
+                buf,
+                Rect::new(x, area.y, 1, 1),
+                ACCENT(),
+                strength,
+                SELECT(),
+            );
+        }
+    }
 }
 
 /// Status cards plus a two-column grid of action cards (H01, harvested from the
@@ -980,7 +1368,20 @@ fn chat(frame: &mut Frame, app: &mut App, area: Rect) {
                 line("No model selected? Open Connections first.", MUTED()),
             ]);
         }
-        for message in &app.messages {
+        let newest = app.messages.len().saturating_sub(1);
+        let reveal = app
+            .messages
+            .back()
+            .filter(|m| m.role != "You" && m.role != "Notice")
+            .map(|m| {
+                let len = m.text.chars().count();
+                (len, app.motion.reveal(newest, len, app.busy))
+            });
+        for (index, message) in app.messages.iter().enumerate() {
+            let partial = reveal
+                .filter(|(len, shown)| index == newest && shown < len)
+                .map(|(_, shown)| message.text.chars().take(shown).collect::<String>());
+            let body = partial.as_deref().unwrap_or(&message.text);
             lines.push(line("", TEXT()));
             let (badge_color, led) = if message.role == "You" {
                 (ACCENT2(), th.led_on)
@@ -997,7 +1398,7 @@ fn chat(frame: &mut Frame, app: &mut App, area: Rect) {
                 ),
             ]));
             let mut code = false;
-            for text in message.text.lines() {
+            for text in body.lines() {
                 if text.starts_with("```") {
                     code = !code;
                     lines.push(line(text, MUTED()));
@@ -1014,9 +1415,18 @@ fn chat(frame: &mut Frame, app: &mut App, area: Rect) {
                     },
                 ));
             }
+            if partial.is_some() {
+                // A soft cursor rides the end of a reply that is still arriving.
+                match lines.last_mut() {
+                    Some(last) if !body.ends_with('\n') => {
+                        last.spans.push(Span::styled("▍", style(ACCENT())))
+                    }
+                    _ => lines.push(line("▍", ACCENT())),
+                }
+            }
         }
         if app.busy {
-            let frame_index = (app.frame as usize) % th.spinner.len();
+            let frame_index = motion::spin(th.spinner.len());
             lines.push(Line::from(vec![
                 Span::styled(format!("{} ", th.spinner[frame_index]), style(WARN())),
                 Span::styled(
@@ -1727,6 +2137,7 @@ fn modal(frame: &mut Frame, app: &mut App, area: Rect) {
             _ => 24,
         },
     );
+    app.motion.dialog_rect = Some(rect);
     frame.render_widget(Clear, rect);
     match dialog {
         Dialog::Menu {
@@ -2155,6 +2566,7 @@ fn permission_modal(frame: &mut Frame, app: &mut App, area: Rect) {
     };
     let tool = &params["toolCall"];
     let rect = centered(area, 94, area.height.saturating_sub(2));
+    app.motion.dialog_rect = Some(rect);
     frame.render_widget(Clear, rect);
     frame.render_widget(
         block(" Review this action ", true).border_style(style(WARN())),
@@ -2572,6 +2984,361 @@ mod tests {
             })
             .collect::<Vec<_>>()
             .join("\n")
+    }
+    #[test]
+    fn meters_fill_in_eighth_cell_steps() {
+        assert_eq!(meter_bar(0.0, 4), "····");
+        assert_eq!(meter_bar(1.0, 4), "████");
+        assert_eq!(meter_bar(0.5, 4), "██··");
+        assert_eq!(meter_bar(0.5625, 4), "██▎·");
+        assert_eq!(meter_bar(0.59375, 4), "██▍·");
+        for step in 0..=80 {
+            assert_eq!(meter_bar(step as f64 / 80.0, 10).chars().count(), 10);
+        }
+    }
+    #[tokio::test]
+    async fn motion_is_a_saved_setting_reachable_from_settings_and_palette() {
+        let (dir, mut app) = setup();
+        assert!(App::settings_tab_indexes(0).contains(&23));
+        assert!(
+            app.palette_items()
+                .iter()
+                .any(|(label, _, _)| label.starts_with("Setting: Motion:"))
+        );
+        app.manager_action("motion", serde_json::json!({})).unwrap();
+        assert!(render(&mut app, 80, 24).contains("Reduced"));
+        app.manager_action("motion-select", serde_json::json!({"level":"reduced"}))
+            .unwrap();
+        assert_eq!(app.motion.level, motion::Level::Reduced);
+        let saved = std::fs::read_to_string(dir.path().join("preferences.toml")).unwrap();
+        assert!(saved.contains("motion = \"reduced\""), "{saved}");
+    }
+    #[tokio::test]
+    async fn adaptive_pacing_runs_fast_only_while_animating() {
+        let (_dir, mut app) = setup();
+        app.motion = motion::Motion::new(motion::Level::Full);
+        app.motion.splash_until = None;
+        app.motion.pin(Some(0.0));
+        assert_eq!(app.motion.frame_period(), motion::IDLE_FRAME);
+        app.context_used = Some(1024);
+        app.context_size = Some(8192);
+        render(&mut app, 100, 30);
+        app.context_used = Some(6144);
+        render(&mut app, 100, 30);
+        assert_eq!(app.motion.frame_period(), motion::ACTIVE_FRAME);
+        app.motion.pin(Some(motion::GLIDE_MS + 1.0));
+        let text = render(&mut app, 100, 30);
+        assert!(text.contains("6K/8K"), "{text}");
+        assert_eq!(app.motion.frame_period(), motion::IDLE_FRAME);
+    }
+    fn animated(app: &mut App) {
+        app.motion = motion::Motion::new(motion::Level::Full);
+        app.motion.splash_until = None;
+        app.motion.pin(Some(0.0));
+    }
+    #[tokio::test]
+    async fn pages_slide_in_and_settle_on_the_exact_final_frame() {
+        let (_dir, mut app) = setup();
+        app.set_page(Page::Help);
+        let still = render(&mut app, 100, 30);
+        animated(&mut app);
+        render(&mut app, 100, 30);
+        app.set_page(Page::Sessions);
+        app.motion.pin(Some(1000.0));
+        let first = render(&mut app, 100, 30);
+        app.motion.pin(Some(1000.0 + motion::PAGE_MS + 1.0));
+        let settled = render(&mut app, 100, 30);
+        assert_ne!(first, settled, "the first frame is mid-slide");
+        assert!(!app.motion.active());
+        app.motion.set_level(motion::Level::Off);
+        assert_eq!(settled, render(&mut app, 100, 30));
+        app.set_page(Page::Help);
+        assert_eq!(still, render(&mut app, 100, 30), "Off draws in place");
+        // Reduced fades without moving: text is in place on the first frame.
+        app.motion.set_level(motion::Level::Reduced);
+        app.set_page(Page::Sessions);
+        assert_eq!(settled, render(&mut app, 100, 30));
+        assert!(app.motion.active());
+    }
+    #[tokio::test]
+    async fn dialogs_pop_in_cast_a_shadow_and_fade_out() {
+        let (_dir, mut app) = setup();
+        animated(&mut app);
+        render(&mut app, 100, 30);
+        app.connection_wizard();
+        let opening = render(&mut app, 100, 30);
+        app.motion.pin(Some(motion::MODAL_IN_MS + 1.0));
+        let open = render(&mut app, 100, 30);
+        assert_ne!(opening, open, "the first frame is a smaller reveal");
+        assert!(open.contains("Where will your model run?"));
+        let hits = app.hits.len();
+        assert!(hits > 0, "dialog targets are live from the first frame");
+        app.dialog = None;
+        app.motion.pin(Some(motion::MODAL_IN_MS + 2.0));
+        let closing = render(&mut app, 100, 30);
+        assert!(
+            !closing.contains("Where will your model run?"),
+            "a closing dialog's text is gone at once"
+        );
+        assert!(app.motion.active(), "its colours fade out");
+        app.motion
+            .pin(Some(motion::MODAL_IN_MS + motion::MODAL_OUT_MS + 3.0));
+        let closed = render(&mut app, 100, 30);
+        assert!(!closed.contains("Where will your model run?"));
+        assert!(!app.motion.active());
+    }
+    #[tokio::test]
+    async fn notices_float_in_as_toasts_and_progress_stays_in_the_status_line() {
+        let (_dir, mut app) = setup();
+        animated(&mut app);
+        app.set_page(Page::Help);
+        render(&mut app, 100, 30);
+        app.notify("Theme changed to IRIS. Everything else is unchanged.");
+        app.notify("Theme changed to IRIS. Everything else is unchanged.");
+        app.motion.pin(Some(motion::TOAST_EDGE_MS + 1.0));
+        let text = render(&mut app, 100, 30);
+        assert!(text.contains("×2"), "identical notices collapse\n{text}");
+        assert_eq!(app.motion.toasts[0].tone, motion::Tone::Good);
+        app.progress_status("Reading project files");
+        assert_eq!(app.motion.toasts.len(), 1, "progress never toasts");
+        assert_eq!(app.status, "Reading project files");
+        let text = render(&mut app, 100, 30);
+        assert!(
+            app.motion.toasts.is_empty(),
+            "a newer status retires the toast"
+        );
+        assert!(!text.contains("×2"));
+        app.notify("Theme changed to IRIS. Everything else is unchanged.");
+        app.motion
+            .pin(Some(motion::TOAST_MS + motion::TOAST_EDGE_MS + 1.0));
+        let text = render(&mut app, 100, 30);
+        assert!(!text.contains("×2"), "toasts expire");
+        assert!(app.motion.toasts.is_empty());
+    }
+    #[tokio::test]
+    async fn streaming_replies_reveal_with_a_cursor_and_history_is_whole() {
+        let (_dir, mut app) = setup();
+        animated(&mut app);
+        app.set_page(Page::Chat);
+        let reply = "Here is the plan. ".repeat(12);
+        app.messages.push_back(Message {
+            role: "Alt",
+            text: reply.clone(),
+        });
+        let history = render(&mut app, 120, 40);
+        assert!(
+            !history.contains('▍'),
+            "a reply that is not streaming shows at once"
+        );
+        app.busy = true;
+        app.messages.push_back(Message {
+            role: "Alt",
+            text: reply.clone(),
+        });
+        app.motion.pin(Some(1000.0));
+        render(&mut app, 120, 40);
+        app.motion.pin(Some(1100.0));
+        let partial = render(&mut app, 120, 40);
+        assert!(partial.contains('▍'), "{partial}");
+        app.motion.pin(Some(2000.0));
+        app.busy = false;
+        let done = render(&mut app, 120, 40);
+        assert!(!done.contains('▍'), "{done}");
+    }
+    #[tokio::test]
+    async fn tool_status_changes_flash_and_running_tools_spin() {
+        let (_dir, mut app) = setup();
+        animated(&mut app);
+        app.layout = LayoutMode::Split;
+        app.set_page(Page::Help);
+        app.busy = true;
+        app.tools.push(Tool {
+            id: "t1".into(),
+            title: "Read README.md".into(),
+            status: "pending".into(),
+            input: serde_json::Value::Null,
+            content: String::new(),
+        });
+        render(&mut app, 140, 40);
+        app.tools[0].status = "completed".into();
+        app.motion.pin(Some(10.0));
+        render(&mut app, 140, 40);
+        assert!(app.motion.active(), "the change flashes");
+        app.motion.pin(Some(10.0 + motion::FLASH_MS + 1.0));
+        render(&mut app, 140, 40);
+        assert!(!app.motion.active());
+    }
+    fn render_buffer(app: &mut App, width: u16, height: u16) -> ratatui::buffer::Buffer {
+        let mut terminal = Terminal::new(TestBackend::new(width, height)).unwrap();
+        terminal.draw(|f| draw(f, app)).unwrap();
+        terminal.backend().buffer().clone()
+    }
+    #[tokio::test]
+    async fn splash_shows_the_wordmark_briefly_and_keys_pass_straight_through() {
+        let (_dir, mut app) = setup();
+        app.motion = motion::Motion::new(motion::Level::Full);
+        app.motion.pin(Some(100.0));
+        let text = render(&mut app, 80, 24);
+        assert!(text.contains("▄▀█ █   ▀█▀"), "{text}");
+        assert!(!text.contains("Start here"), "the splash covers the screen");
+        app.key(KeyEvent::new(KeyCode::Char('2'), KeyModifiers::ALT))
+            .unwrap();
+        assert_eq!(app.page, Page::Chat, "the key still acted");
+        let text = render(&mut app, 80, 24);
+        assert!(!text.contains("▄▀█ █   ▀█▀"));
+        assert!(app.motion.active(), "the interface cascades in");
+        // Left alone, it ends by itself within its budget.
+        let (_dir, mut app) = setup();
+        app.motion = motion::Motion::new(motion::Level::Full);
+        app.motion.pin(Some(motion::SPLASH_MS + 1.0));
+        assert!(!render(&mut app, 80, 24).contains("▄▀█"));
+        let (_dir, mut app) = setup();
+        app.motion = motion::Motion::new(motion::Level::Reduced);
+        assert!(
+            !render(&mut app, 80, 24).contains("▄▀█"),
+            "Reduced has no splash"
+        );
+    }
+    #[tokio::test]
+    async fn hover_glows_and_clicks_flash_the_target() {
+        use crossterm::event::{MouseButton, MouseEventKind};
+        let (_dir, mut app) = setup();
+        animated(&mut app);
+        app.set_page(Page::Help);
+        render_buffer(&mut app, 100, 30);
+        let (rect, _) = app
+            .hits
+            .iter()
+            .find(|(_, hit)| matches!(hit, Hit::Nav(Page::Models)))
+            .cloned()
+            .unwrap();
+        let plain = render_buffer(&mut app, 100, 30)[(rect.x + 2, rect.y)].bg;
+        app.mouse(MouseEventKind::Moved, rect.x + 2, rect.y)
+            .unwrap();
+        app.motion.pin(Some(motion::HOVER_MS + 1.0));
+        render_buffer(&mut app, 100, 30);
+        app.motion.pin(Some(2.0 * motion::HOVER_MS + 2.0));
+        let hovered = render_buffer(&mut app, 100, 30)[(rect.x + 2, rect.y)].bg;
+        assert_ne!(plain, hovered, "hover tints the target");
+        app.mouse(MouseEventKind::Down(MouseButton::Left), rect.x + 2, rect.y)
+            .unwrap();
+        assert_eq!(app.page, Page::Models);
+        assert!(app.motion.press().is_some(), "the click flashes");
+    }
+    #[tokio::test]
+    async fn focus_rings_breathe_only_while_a_task_runs_and_the_wordmark_is_a_gradient() {
+        let (_dir, mut app) = setup();
+        animated(&mut app);
+        app.set_page(Page::Settings);
+        let colors = |app: &mut App| {
+            let buffer = render_buffer(app, 100, 30);
+            (0..30)
+                .flat_map(|y| (0..100).map(move |x| (x, y)))
+                .map(|(x, y)| buffer[(x, y)].fg)
+                .collect::<Vec<_>>()
+        };
+        app.motion.pin(Some(1000.0));
+        let idle_a = colors(&mut app);
+        app.motion.pin(Some(2300.0));
+        let idle_b = colors(&mut app);
+        assert_eq!(idle_a, idle_b, "an idle screen does not change");
+        app.busy = true;
+        app.motion.pin(Some(1300.0));
+        let busy_a = colors(&mut app);
+        app.motion.pin(Some(2600.0));
+        let busy_b = colors(&mut app);
+        assert_ne!(busy_a, busy_b, "the focus ring breathes while working");
+        let buffer = render_buffer(&mut app, 100, 30);
+        assert_ne!(
+            buffer[(2, 0)].fg,
+            buffer[(4, 0)].fg,
+            "A and T differ in hue"
+        );
+    }
+    /// Frame-time budget (M05): drawing with every effect active must stay far
+    /// inside the 16 ms animation frame. The same scripted session (page
+    /// changes, dialogs opening and closing, toasts, a gliding meter, a busy
+    /// task) runs with motion Off and Full; Full is reported against Off.
+    /// Debug builds are several times slower than release, so the default
+    /// debug budget is generous; `ALT_FRAME_BUDGET_MS` sets an exact one.
+    fn scripted_frames(level: motion::Level) -> Vec<f64> {
+        let dir = tempfile::tempdir().unwrap();
+        let mut app = App::load(dir.path().to_path_buf(), "goose".into(), None).unwrap();
+        app.preferences.project = dir.path().to_path_buf();
+        app.motion = motion::Motion::new(level);
+        app.motion.splash_until = None;
+        app.layout = LayoutMode::Split;
+        app.busy = true;
+        app.context_size = Some(8192);
+        for i in 0..40 {
+            app.messages.push_back(Message {
+                role: if i % 2 == 0 { "You" } else { "Alt" },
+                text: "A line of conversation with some length to wrap. ".repeat(4),
+            });
+        }
+        let mut terminal = Terminal::new(TestBackend::new(160, 48)).unwrap();
+        let mut times = Vec::new();
+        for frame in 0..300u32 {
+            app.motion.pin(Some(frame as f64 * 16.0));
+            if frame % 40 == 0 {
+                app.set_page(if frame % 80 == 0 {
+                    Page::Chat
+                } else {
+                    Page::Home
+                });
+                app.notify(format!("Notice {frame}"));
+                app.context_used = Some(1024 + frame as u64 * 20);
+            }
+            match frame % 60 {
+                20 => app.connection_wizard(),
+                40 => app.dialog = None,
+                _ => {}
+            }
+            let started = std::time::Instant::now();
+            terminal.draw(|f| draw(f, &mut app)).unwrap();
+            times.push(started.elapsed().as_secs_f64() * 1000.0);
+        }
+        times.sort_by(|a, b| a.partial_cmp(b).unwrap());
+        times
+    }
+    #[test]
+    fn frame_time_stays_inside_budget_with_every_effect_active() {
+        let runtime = tokio::runtime::Runtime::new().unwrap();
+        let _guard = runtime.enter();
+        let off = scripted_frames(motion::Level::Off);
+        let full = scripted_frames(motion::Level::Full);
+        let pick = |t: &[f64], q: usize| t[t.len() * q / 100];
+        eprintln!(
+            "frame time at 160x48 (median / p95 ms): off {:.2} / {:.2}, full {:.2} / {:.2}",
+            pick(&off, 50),
+            pick(&off, 95),
+            pick(&full, 50),
+            pick(&full, 95)
+        );
+        let budget: f64 = std::env::var("ALT_FRAME_BUDGET_MS")
+            .ok()
+            .and_then(|v| v.parse().ok())
+            .unwrap_or(if cfg!(debug_assertions) { 60.0 } else { 8.0 });
+        assert!(
+            pick(&full, 95) < budget,
+            "p95 {:.2} ms over the {budget} ms budget",
+            pick(&full, 95)
+        );
+    }
+    #[tokio::test]
+    async fn quitting_skips_the_prompt_for_view_refreshes_but_not_real_work() {
+        let (_dir, mut app) = setup();
+        app.set_page(Page::Files);
+        if let Some(job) = &app.job {
+            assert!(job.replaceable, "a page refresh is disposable");
+        }
+        app.action("quit").unwrap();
+        assert!(app.quit && app.dialog.is_none(), "a refresh never asks");
+        let (_dir, mut app) = setup();
+        app.busy = true;
+        app.action("quit").unwrap();
+        assert!(!app.quit, "a running task asks first");
+        assert!(matches!(app.dialog, Some(Dialog::Confirm { .. })));
     }
     #[tokio::test]
     async fn every_page_and_dialog_renders_at_supported_sizes() {

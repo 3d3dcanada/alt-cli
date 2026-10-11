@@ -361,8 +361,10 @@ pub struct App {
     pub recovery_dialog: Option<Box<Dialog>>,
     pub project_missing: bool,
     pub theme: &'static crate::tui::theme::Theme,
-    /// Monotonic render counter; drives spinner animation.
+    /// Monotonic render counter.
     pub frame: u64,
+    /// Animation clock and transition state (M01).
+    pub motion: super::motion::Motion,
     pub layout: LayoutMode,
     pub home_selected: usize,
     pub connection_selected: usize,
@@ -468,6 +470,7 @@ impl App {
         };
         let (tx, rx) = mpsc::channel(32);
         let theme = crate::tui::theme::by_name(preferences.theme.as_str());
+        let motion = super::motion::Motion::new(super::motion::Level::resolve(&preferences.motion));
         let layout = LayoutMode::from_saved(&preferences.layout);
         let mut app = Self {
             workbench: Default::default(),
@@ -488,6 +491,7 @@ impl App {
             project_missing: false,
             theme,
             frame: 0,
+            motion,
             layout,
             home_selected: 0,
             connection_selected: 0,
@@ -575,7 +579,7 @@ impl App {
     /// `setting_action` and `settings_all_items` exactly.
     pub fn settings_tab_indexes(tab: usize) -> &'static [usize] {
         const TABS: [&[usize]; 5] = [
-            &[2, 3, 4],
+            &[2, 3, 4, 23],
             &[0, 19, 21, 20, 10, 11, 16],
             &[8, 17, 12],
             &[1, 5, 6, 22, 9, 15, 18],
@@ -727,6 +731,11 @@ impl App {
             (
                 "GPU runtime (CUDA 12)".into(),
                 "Detect an NVIDIA GPU and install or select a CUDA 12 llama-server; CPU stays default."
+                    .into(),
+            ),
+            (
+                format!("Motion: {}", self.motion.level.label()),
+                "Full, Reduced (fades only) or Off. ALT_MOTION overrides; the Linux console is always Off."
                     .into(),
             ),
         ]
@@ -964,6 +973,35 @@ impl App {
         runtime::find_runtime(&self.root, &self.preferences).is_some()
     }
     pub fn notify(&mut self, text: impl Into<String>) {
+        self.status = text.into();
+        self.status_error = false;
+        let lowered = self.status.to_lowercase();
+        let tone = if ["fail", "could not", "cannot", "error", "denied"]
+            .iter()
+            .any(|word| lowered.contains(word))
+        {
+            super::motion::Tone::Bad
+        } else if [
+            "saved",
+            "connected",
+            "changed",
+            "applied",
+            "completed",
+            "passed",
+            "ready",
+        ]
+        .iter()
+        .any(|word| lowered.contains(word))
+        {
+            super::motion::Tone::Good
+        } else {
+            super::motion::Tone::Info
+        };
+        let text = self.status.clone();
+        self.motion.toast(&text, tone);
+    }
+    /// Status-line progress without a floating notice (frequent stage updates).
+    pub fn progress_status(&mut self, text: impl Into<String>) {
         self.status = text.into();
         self.status_error = false;
     }
@@ -1414,7 +1452,7 @@ impl App {
                 self.add_message("Notice", &error);
                 self.error(error);
             }
-            workspace::Update::Progress(progress) => self.notify(progress.stage),
+            workspace::Update::Progress(progress) => self.progress_status(progress.stage),
             workspace::Update::Inference(status) => {
                 let seen = self
                     .inference_status
@@ -2791,14 +2829,25 @@ pub async fn run(
         "Open Alt in a terminal, or use `alt run` in a script"
     );
     let mut app = App::load(root, engine, profile)?;
-    let mut terminal = ratatui::try_init()?;
+    // try_init enters raw mode and the alternate screen and installs the panic
+    // hook; drawing goes through a buffered backend so each frame reaches the
+    // terminal in one write, wrapped in a synchronized update. Terminals never
+    // show half a frame, even when motion repaints the whole screen.
+    let _ = ratatui::try_init()?;
+    let mut terminal = ratatui::Terminal::new(ratatui::backend::CrosstermBackend::new(
+        std::io::BufWriter::with_capacity(1 << 20, std::io::stdout()),
+    ))?;
     let _restore = Restore;
     execute!(std::io::stdout(), EnableBracketedPaste)?;
     if app.preferences.mouse {
         execute!(std::io::stdout(), EnableMouseCapture)?;
     }
     let mut events = EventStream::new();
-    let mut tick = tokio::time::interval(Duration::from_millis(60));
+    // M01: adaptive frame pacing. 16 ms while something animates, 60 ms when
+    // idle; any input or update redraws on the next 16 ms boundary at most.
+    let frame_timer = tokio::time::sleep(Duration::ZERO);
+    tokio::pin!(frame_timer);
+    let mut last_draw = tokio::time::Instant::now();
     let mut hardware = tokio::spawn(runtime::hardware());
     let mut hardware_pending = true;
     let shutdown = crate::process::shutdown_signal();
@@ -2809,7 +2858,14 @@ pub async fn run(
     while !app.quit {
         tokio::select! {
             _=&mut shutdown=>{app.quit=true;},
-            _=tick.tick()=>{terminal.draw(|frame|view::draw(frame,&mut app))?;},
+            _=&mut frame_timer=>{
+                crossterm::queue!(terminal.backend_mut(),crossterm::terminal::BeginSynchronizedUpdate)?;
+                terminal.draw(|frame|view::draw(frame,&mut app))?;
+                execute!(terminal.backend_mut(),crossterm::terminal::EndSynchronizedUpdate)?;
+                last_draw=tokio::time::Instant::now();
+                frame_timer.as_mut().reset(last_draw+app.motion.frame_period());
+                continue;
+            },
             result=&mut hardware,if hardware_pending=>{hardware_pending=false;if let Ok(info)=result{app.hardware=info;}},
             update=async{app.workspace.as_mut().expect("guarded workspace").updates.recv().await},if app.workspace.is_some()=>{
                 let result=if let Some(update)=update{app.workspace_update(update)}else{app.workspace=None;app.connected=false;app.connecting=false;app.busy=false;Ok(())};
@@ -2829,6 +2885,13 @@ pub async fn run(
                 };
                 if let Err(error)=result{app.error(error);}
             }
+        }
+        // Something changed: show it within one fast frame.
+        let soon = last_draw + super::motion::ACTIVE_FRAME;
+        if frame_timer.deadline() > soon {
+            frame_timer
+                .as_mut()
+                .reset(soon.max(tokio::time::Instant::now()));
         }
     }
     if let Some(job) = app.job.take() {
