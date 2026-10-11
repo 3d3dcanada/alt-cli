@@ -126,6 +126,33 @@ replace a handle instead of reproducing a large exact old string. Stale handles
 and concurrent user edits fail without overwriting the new file. Unsupported
 syntax still has an exact-text fallback. File changes keep diff/checkpoint/undo.
 
+## Control thinking on any server
+
+Thinking models can spend the whole output allowance reasoning and never act. In
+the 2026-10-08 PC trial, Spark 4B at 1,024 output tokens made no tool call on 8/8
+tasks. Choose one **Thinking** setting (Settings → Models → Thinking, Ctrl+P →
+*Model thinking*, or `alt inference --thinking off|low|medium|high|default|budget:N`).
+Alt translates it into fields the server understands:
+
+| Server dialect | Fields sent |
+| --- | --- |
+| llama.cpp (owned runtime, or declared) | `chat_template_kwargs.enable_thinking` + `reasoning_budget_tokens` (low ¼, medium ½, high all of the output minus action headroom) |
+| Ollama | `think` + `reasoning_effort` |
+| vLLM / SGLang / NVIDIA NIM | `chat_template_kwargs.enable_thinking` and `.thinking` + `reasoning_effort` |
+| OpenAI-style | `reasoning_effort` |
+
+*Automatic* picks llama.cpp for owned models, Ollama for Ollama connections and
+`reasoning_effort` otherwise; set the dialect explicitly with *Server dialect for
+thinking* or `alt inference --dialect chat-template`. *Server default* sends no
+field. A token budget is llama.cpp-only. Each request receipt records the exact
+fields sent.
+
+When a response ends at the output limit with reasoning but no answer and no tool
+call, Alt marks a **thinking cutoff**. The spent tokens stay charged and nothing is
+resent. The TUI offers *Resend with thinking off*, *Resend with low thinking* (this
+connection only; your message returns to the composer) or *Raise the output
+allowance*. Headless `--json` emits a `reasoning_cutoff` event with the same choices.
+
 ## Explore alternatives under one allowance
 
 Choose **Explore verified candidates** in the same settings menu. Describe the

@@ -152,6 +152,8 @@ pub struct ConnectionForm {
     pub provider: Provider,
     pub focus: usize,
     pub original: Option<String>,
+    /// Thinking dialect from a provider preset (A03); Auto otherwise.
+    pub dialect: crate::inference::Dialect,
 }
 #[derive(Debug, Clone, Copy)]
 pub enum BrowserKind {
@@ -195,7 +197,7 @@ pub enum InputAction {
     RuntimePath,
     ProjectPath,
     NewProjectPath,
-    ManualModel(ConnectionDraft),
+    ManualModel(Box<ConnectionDraft>),
 }
 #[derive(Debug, Clone)]
 pub enum ConfirmAction {
@@ -214,8 +216,14 @@ pub enum ConfirmAction {
 #[derive(Debug, Clone)]
 pub enum MenuAction {
     NewPractice,
-    Manager { action: String, state: Value },
-    StartJob { command: String, keep: bool },
+    Manager {
+        action: String,
+        state: Value,
+    },
+    StartJob {
+        command: String,
+        keep: bool,
+    },
     RequireCheck(String),
     Unpin(String),
     RunCheck(String),
@@ -224,6 +232,8 @@ pub enum MenuAction {
     Access(crate::project::Policy),
     HardwareChoice(u32),
     Preset(usize),
+    /// A03 provider preset by index into `presets::PRESETS`.
+    ProviderPreset(usize),
     Template(usize),
     Page(Page),
     New,
@@ -233,6 +243,8 @@ pub enum MenuAction {
     RecentProject(usize),
     NewFolder,
     Connect,
+    /// A settings row by its global index; the palette reaches every setting.
+    Setting(usize),
 }
 
 #[derive(Debug, Clone)]
@@ -245,9 +257,11 @@ pub enum Dialog {
     },
     Connection(ConnectionForm),
     PickModel {
-        draft: ConnectionDraft,
+        draft: Box<ConnectionDraft>,
         models: Vec<models::ServerModel>,
         selected: usize,
+        /// Typing filters long hosted catalogs; `selected` indexes the filtered rows.
+        query: Editor,
     },
     Palette {
         query: Editor,
@@ -388,9 +402,13 @@ pub struct App {
     pub permission_selected: usize,
     pub permission_scroll: u16,
     pub trust_session: bool,
+    /// Separate explicit opt-in for terminal/external (host-scope) actions.
+    pub trust_host: bool,
     pub context_used: Option<u64>,
     pub context_size: Option<u64>,
     pub inference_status: Option<crate::inference::Status>,
+    /// A reasoning-only cutoff arrived; offer recovery when the turn ends.
+    pub cutoff_pending: bool,
     pub brief: String,
     pub job: Option<Job>,
     pub job_tx: mpsc::Sender<ScopedJobEvent>,
@@ -511,9 +529,11 @@ impl App {
             permission_selected: 0,
             permission_scroll: 0,
             trust_session: false,
+            trust_host: false,
             context_used: None,
             context_size: None,
             inference_status: None,
+            cutoff_pending: false,
             brief,
             job: None,
             job_tx: tx,
@@ -539,6 +559,8 @@ impl App {
         if !app.preferences.project.is_dir() {
             app.project_missing = true;
             app.open_project_chooser();
+        } else if let Some(warning) = crate::project::broad_root_warning(&app.preferences.project) {
+            app.error(warning);
         }
         Ok(app)
     }
@@ -554,9 +576,9 @@ impl App {
     pub fn settings_tab_indexes(tab: usize) -> &'static [usize] {
         const TABS: [&[usize]; 5] = [
             &[2, 3, 4],
-            &[0, 10, 11, 16],
+            &[0, 19, 21, 20, 10, 11, 16],
             &[8, 17, 12],
-            &[1, 5, 6, 9, 15, 18],
+            &[1, 5, 6, 22, 9, 15, 18],
             &[7, 13, 14],
         ];
         TABS[tab.min(TABS.len() - 1)]
@@ -682,6 +704,31 @@ impl App {
                 "Measure generation, memory, cancellation cleanup and restart for 2K, 4K and 8K."
                     .into(),
             ),
+            (
+                format!(
+                    "Thinking: {}",
+                    self.current_profile()
+                        .map(|(_, p)| p.effective_inference().effective_thinking().label())
+                        .unwrap_or_else(|| "choose a model first".into())
+                ),
+                "Off, low, medium, high or server default; sent in fields this server understands."
+                    .into(),
+            ),
+            (
+                "Advanced parameters".into(),
+                "Penalties, seed, stop, extra request JSON, Ollama context and llama-server options."
+                    .into(),
+            ),
+            (
+                "Probe this model".into(),
+                "One short request; suggests thinking, output allowance, compact tools and context."
+                    .into(),
+            ),
+            (
+                "GPU runtime (CUDA 12)".into(),
+                "Detect an NVIDIA GPU and install or select a CUDA 12 llama-server; CPU stays default."
+                    .into(),
+            ),
         ]
     }
 
@@ -708,6 +755,12 @@ impl App {
                 "Connect a model…".into(),
                 "Guided setup for Ollama, LM Studio, servers or files".into(),
                 MenuAction::Connect,
+            ),
+            (
+                "Connect a hosted API…".into(),
+                "NVIDIA NIM, OpenRouter, Groq, Together, DeepSeek, Mistral, Gemini, Cerebras"
+                    .into(),
+                MenuAction::Preset(5),
             ),
             (
                 "Choose project folder…".into(),
@@ -778,6 +831,54 @@ impl App {
                 },
             ),
             (
+                "Model thinking: off, low, medium, high".into(),
+                "Reasoning control translated for this server".into(),
+                MenuAction::Manager {
+                    action: "inference-thinking".into(),
+                    state: serde_json::json!({}),
+                },
+            ),
+            (
+                "GPU runtime (CUDA 12)".into(),
+                "Detect an NVIDIA GPU; install or select a CUDA runtime on request".into(),
+                MenuAction::Manager {
+                    action: "cuda-runtime".into(),
+                    state: serde_json::json!({}),
+                },
+            ),
+            (
+                "Probe this model".into(),
+                "One short request; suggests thinking, output, tools and context".into(),
+                MenuAction::Manager {
+                    action: "probe-run".into(),
+                    state: serde_json::json!({}),
+                },
+            ),
+            (
+                "Advanced parameters".into(),
+                "Penalties, seed, stop, extra JSON, Ollama context, llama-server options".into(),
+                MenuAction::Manager {
+                    action: "params-menu".into(),
+                    state: serde_json::json!({}),
+                },
+            ),
+            (
+                "Hosted output guard".into(),
+                "Discard leaked-token garbage once and resend; retries for 429/5xx".into(),
+                MenuAction::Manager {
+                    action: "inference-guard".into(),
+                    state: serde_json::json!({}),
+                },
+            ),
+            (
+                "Recover from a thinking cutoff".into(),
+                "Resend with thinking off or a larger allowance".into(),
+                MenuAction::Manager {
+                    action: "inference-cutoff".into(),
+                    state: serde_json::json!({}),
+                },
+            ),
+            (
                 "Inference allowance".into(),
                 "Live request/token budgets".into(),
                 MenuAction::Manager {
@@ -801,6 +902,26 @@ impl App {
                 MenuAction::Access(crate::project::Policy::Trusted),
             ),
         ]);
+        // Every settings row, so nothing in Settings is unreachable from here.
+        let context = self
+            .current_profile()
+            .map(|(_, p)| p.context_tokens)
+            .unwrap_or(self.preferences.context_tokens);
+        let budget = self
+            .current_profile()
+            .map(|(_, p)| p.max_turns)
+            .unwrap_or(self.preferences.max_turns);
+        for (index, (label, hint)) in self
+            .settings_all_items(context, budget)
+            .into_iter()
+            .enumerate()
+        {
+            items.push((
+                format!("Setting: {label}"),
+                hint,
+                MenuAction::Setting(index),
+            ));
+        }
         items
     }
 
@@ -1095,6 +1216,7 @@ impl App {
         self.tools.clear();
         self.permissions.clear();
         self.trust_session = false;
+        self.trust_host = false;
         self.context_used = None;
         self.context_size = None;
         self.inference_status = None;
@@ -1142,11 +1264,33 @@ impl App {
             return Ok(());
         }
         if !self.connected {
+            // B02: the submitted message is held separately, so anything typed
+            // while connecting stays in the composer for the next message.
             self.pending_prompt = Some(self.composer.text.clone());
+            self.composer.clear();
             self.start_workspace(self.session.clone())?;
+            self.notify("Connecting. Your message will be sent when the model is ready; you can type the next one meanwhile.");
             return Ok(());
         }
         let text = self.composer.text.clone();
+        self.composer.clear();
+        self.send_text(text)
+    }
+
+    /// Put an unsent submitted message back, keeping anything typed since,
+    /// so neither is lost and the message appears exactly once.
+    fn restore_pending(&mut self) {
+        if let Some(prompt) = self.pending_prompt.take() {
+            let typed = self.composer.text.trim().to_owned();
+            if typed.is_empty() {
+                self.composer.replace(prompt);
+            } else if typed != prompt.trim() {
+                self.composer.replace(format!("{prompt}\n\n{typed}"));
+            }
+        }
+    }
+
+    fn send_text(&mut self, text: String) -> Result<()> {
         self.workspace
             .as_ref()
             .context("Reconnect your workspace")?
@@ -1154,7 +1298,6 @@ impl App {
                 text: text.clone(),
                 brief: self.brief.clone(),
             })?;
-        self.composer.clear();
         self.add_message("You", text);
         self.busy = true;
         self.turn_tools = 0;
@@ -1172,7 +1315,7 @@ impl App {
             }
             self.connecting = false;
             self.connected = false;
-            self.pending_prompt = None;
+            self.restore_pending();
             self.notify("Connection cancelled. Your message is still here.");
             return Ok(());
         }
@@ -1203,13 +1346,16 @@ impl App {
                 self.notify("Ready. Describe what you want to do.");
                 self.refresh_sessions()?;
                 if let Some(prompt) = self.pending_prompt.take() {
-                    self.composer.replace(prompt);
-                    self.send_prompt()?;
+                    self.send_text(prompt)?;
                 }
             }
             workspace::Update::Event(Event::Update(params)) => self.apply_update(&params),
             workspace::Update::Event(Event::Permission { id, params }) => {
-                if self.trust_session && !self.cancelling {
+                let trusted = match crate::toolbox::ApprovalScope::of(&params) {
+                    crate::toolbox::ApprovalScope::Project => self.trust_session,
+                    crate::toolbox::ApprovalScope::Host => self.trust_host,
+                };
+                if trusted && !self.cancelling {
                     self.workspace.as_ref().context("Workspace closed")?.send(
                         workspace::Command::Permission {
                             id,
@@ -1254,22 +1400,40 @@ impl App {
                     self.pending_task_notice = Some(self.turn_tools > 0 && reason != "cancelled");
                 }
                 self.refresh_sessions()?;
+                if self.cutoff_pending && reason != "cancelled" {
+                    self.cutoff_pending = false;
+                    self.add_message("Notice", "The model used its whole output allowance on thinking and gave no answer or tool call. Those tokens stay charged. Choose a recovery; nothing is resent automatically.");
+                    self.cutoff_recovery()?;
+                }
             }
             workspace::Update::Error(error) => {
                 self.busy = false;
                 self.connecting = false;
                 self.permissions.clear();
-                if let Some(prompt) = self.pending_prompt.take() {
-                    self.composer.replace(prompt);
-                }
+                self.restore_pending();
                 self.add_message("Notice", &error);
                 self.error(error);
             }
             workspace::Update::Progress(progress) => self.notify(progress.stage),
-            workspace::Update::Inference(status) => self.inference_status = Some(status),
+            workspace::Update::Inference(status) => {
+                let seen = self
+                    .inference_status
+                    .as_ref()
+                    .filter(|s| s.connection_id == status.connection_id)
+                    .map_or(0, |s| s.reasoning_cutoffs);
+                if status.reasoning_cutoffs > seen {
+                    self.cutoff_pending = true;
+                }
+                self.inference_status = Some(status);
+                if self.cutoff_pending && !self.busy && self.dialog.is_none() {
+                    self.cutoff_pending = false;
+                    self.cutoff_recovery()?;
+                }
+            }
             workspace::Update::Closed => {
                 self.connected = false;
                 self.connecting = false;
+                self.restore_pending();
                 self.busy = false;
                 self.permissions.clear();
                 self.workspace = None;
@@ -1282,7 +1446,11 @@ impl App {
         if let Some((id, params)) = self.permissions.pop_front() {
             let allow = choice > 0;
             if choice == 2 {
-                self.trust_session = true;
+                // A blanket choice covers only the scope the user is looking at.
+                match crate::toolbox::ApprovalScope::of(&params) {
+                    crate::toolbox::ApprovalScope::Project => self.trust_session = true,
+                    crate::toolbox::ApprovalScope::Host => self.trust_host = true,
+                }
             }
             self.workspace
                 .as_ref()
@@ -1413,6 +1581,10 @@ impl App {
                 match *result {
                     Ok(JobResult::Resume(_) | JobResult::PreparedWorkspace(..)) if cancelled => {
                         self.notify("Conversation loading cancelled. Your message is kept.");
+                    }
+                    // B08: a cancelled check never reopens a dialog later.
+                    Ok(JobResult::Tested(..) | JobResult::Inventory(..)) if cancelled => {
+                        self.notify("Connection check cancelled. Nothing was saved.");
                     }
                     Ok(JobResult::Resume(session)) => self.start_workspace(Some(session))?,
                     Ok(JobResult::PreparedWorkspace(options, history, brief)) => {
@@ -1604,10 +1776,16 @@ impl App {
                         if models.is_empty() {
                             self.error("The server is reachable but has no models. Load one in your model application, then test again.");
                         } else {
+                            // An edited connection starts on its current model.
+                            let selected = models
+                                .iter()
+                                .position(|m| m.id == draft.profile.model)
+                                .unwrap_or(0);
                             self.dialog = Some(Dialog::PickModel {
-                                draft,
+                                draft: Box::new(draft),
                                 models,
-                                selected: 0,
+                                selected,
+                                query: Editor::default(),
                             });
                         }
                     }
@@ -1622,10 +1800,16 @@ impl App {
                         self.set_page(Page::Models);
                         self.notify("Model verified and added to your library. Choose Use model to connect it.");
                     }
+                    Ok(JobResult::Installed(Component::CudaInference, path)) => {
+                        // A08: never switch runtimes on the user's behalf.
+                        self.manager_action("cuda-use-offer", serde_json::json!({"path": path}))?;
+                    }
                     Ok(JobResult::Installed(component, path)) => {
                         match component {
                             Component::Engine => self.preferences.engine_path = Some(path),
-                            Component::Inference => self.preferences.runtime_path = Some(path),
+                            Component::Inference | Component::CudaInference => {
+                                self.preferences.runtime_path = Some(path)
+                            }
                         }
                         self.preferences.save(&self.root)?;
                         self.notify(format!(
@@ -1670,6 +1854,10 @@ impl App {
                 "A GGUF file on this computer",
                 "Import a model; Alt can run it in CPU mode.",
             ),
+            (
+                "A hosted API or another server preset",
+                "NVIDIA NIM, OpenRouter, Groq, Together, DeepSeek, Mistral, Gemini, Cerebras, vLLM…",
+            ),
         ];
         self.dialog=Some(Dialog::Menu{title:"Where will your model run?".into(),description:"Choose an application you already use, or use a model file directly. No coding is needed.".into(),items:labels.iter().enumerate().map(|(i,(label,hint))|(label.to_string(),hint.to_string(),MenuAction::Preset(i))).collect(),selected:0});
     }
@@ -1694,6 +1882,7 @@ impl App {
             provider: p.provider,
             focus: 0,
             original: Some(name.clone()),
+            dialect: p.effective_inference().dialect,
         }));
         Ok(())
     }
@@ -1716,6 +1905,49 @@ impl App {
                 self.set_page(Page::Models);
                 self.open_browser(BrowserKind::Model, self.preferences.project.clone())?;
             }
+            MenuAction::Preset(5) => {
+                self.dialog = Some(Dialog::Menu {
+                    title: "Choose a provider".into(),
+                    description: "A preset fills the address, the key variable name and how thinking is sent. Your key stays in your environment; Alt saves only the variable name.".into(),
+                    items: crate::presets::PRESETS
+                        .iter()
+                        .enumerate()
+                        .map(|(i, p)| {
+                            (
+                                p.name.to_string(),
+                                format!(
+                                    "{}{}",
+                                    p.note,
+                                    p.key_env.map(|k| format!(" · key in {k}")).unwrap_or_default()
+                                ),
+                                MenuAction::ProviderPreset(i),
+                            )
+                        })
+                        .collect(),
+                    selected: 0,
+                });
+            }
+            MenuAction::ProviderPreset(index) => {
+                let preset = crate::presets::PRESETS
+                    .get(index)
+                    .context("That preset is no longer listed")?;
+                self.dialog = Some(Dialog::Connection(ConnectionForm {
+                    fields: [
+                        Editor::new(preset.name),
+                        Editor::new(preset.endpoint),
+                        Editor::new(preset.key_env.unwrap_or("")),
+                    ],
+                    provider: preset.provider,
+                    focus: 1,
+                    original: None,
+                    dialect: preset.dialect,
+                }));
+                if let Some(key) = preset.key_env.filter(|k| std::env::var_os(k).is_none()) {
+                    self.error(format!(
+                        "{key} is not set in Alt's environment. Quit, export it in your shell, then start Alt again; Alt never saves the key itself."
+                    ));
+                }
+            }
             MenuAction::Preset(index) => {
                 let (name, endpoint, provider) = match index {
                     0 => ("Ollama", "http://127.0.0.1:11434", Provider::Ollama),
@@ -1732,6 +1964,7 @@ impl App {
                     provider,
                     focus: 1,
                     original: None,
+                    dialect: crate::inference::Dialect::Auto,
                 }));
             }
             MenuAction::Template(index) => {
@@ -1772,6 +2005,20 @@ impl App {
                 });
             }
             MenuAction::Connect => self.connection_wizard(),
+            MenuAction::Setting(index) => {
+                // Show the row in its tab so the result is visible, then run it.
+                if let Some(tab) = (0..Self::SETTINGS_TABS.len())
+                    .find(|tab| Self::settings_tab_indexes(*tab).contains(&index))
+                {
+                    self.settings_tab = tab;
+                    self.settings_selected = Self::settings_tab_indexes(tab)
+                        .iter()
+                        .position(|i| *i == index)
+                        .unwrap_or(0);
+                }
+                self.set_page(Page::Settings);
+                self.setting_action(index)?;
+            }
         }
         Ok(())
     }
@@ -1793,6 +2040,7 @@ impl App {
         self.tools.clear();
         self.composer.clear();
         self.trust_session = false;
+        self.trust_host = false;
         self.set_page(Page::Chat);
         self.notify(
             "New conversation. Describe what you want to do, or choose a starting task from Home.",
@@ -1880,6 +2128,15 @@ impl App {
         self.messages.clear();
         self.tools.clear();
         self.dialog = None;
+        if let Some(warning) = crate::project::broad_root_warning(&self.preferences.project) {
+            self.dialog = Some(Dialog::Notice {
+                title: "This project folder is very broad".into(),
+                body: warning.into(),
+                scroll: 0,
+            });
+            self.error(warning);
+            return Ok(());
+        }
         self.notify("Project folder selected. Home → Prepare project checks helps set up how changes will be tested.");
         Ok(())
     }
@@ -1966,6 +2223,7 @@ impl App {
                     api_key_env: None,
                     local_model: Some(model.id),
                     inference: None,
+                    runtime_key: None,
                 };
                 self.config.upsert(name.clone(), profile)?;
                 self.config.default_profile = name;
@@ -2175,7 +2433,7 @@ impl App {
         self.dialog = Some(Dialog::Confirm {
             title: "Install a local component".into(),
             body: format!(
-                "{}\n\nDownload: {} from the official GitHub release.\nAlt verifies a pinned SHA256 and installs into its own data folder. No administrator access or system changes are needed.\n\nThe automatic installer currently supports Linux x86_64.",
+                "{}\n\nDownload: {} from its pinned release.\nAlt verifies a pinned SHA256 and installs into its own data folder. No administrator access or system changes are needed.\n\nThe automatic installer currently supports Linux x86_64.",
                 component.description(),
                 models::human_bytes(component.size())
             ),
@@ -2394,7 +2652,7 @@ impl App {
             }
             InputAction::ManualModel(mut draft) => {
                 draft.profile.model = text.trim().into();
-                self.save_connection(draft)?;
+                self.save_connection(*draft)?;
             }
         }
         Ok(())
@@ -2417,7 +2675,7 @@ impl App {
         self.config.save(&self.root)?;
         self.dialog = None;
         self.set_page(Page::Home);
-        self.notify("Connection saved. Choose a project and start a conversation.");
+        self.notify("Connection saved. Choose a project and start a conversation. Ctrl+P → Probe this model suggests settings for it.");
         Ok(())
     }
 }
@@ -2785,6 +3043,7 @@ mod recovery_tests {
                 api_key_env: None,
                 local_model: None,
                 inference: None,
+                runtime_key: None,
             },
         };
         app.launch_job("Loading", move |_, _| async move {
@@ -3015,5 +3274,302 @@ mod recovery_tests {
                 .any(|(label, _, _)| label.contains("Terminal jobs")),
             "unrelated pages must be filtered out"
         );
+    }
+
+    #[test]
+    fn every_settings_row_is_in_the_palette() {
+        let data = tempfile::tempdir().unwrap();
+        let app = App::load(data.path().into(), "goose".into(), None).unwrap();
+        let rows = app.settings_all_items(8192, 12).len();
+        let reachable: std::collections::BTreeSet<usize> = app
+            .palette_items()
+            .into_iter()
+            .filter_map(|(_, _, action)| match action {
+                MenuAction::Setting(index) => Some(index),
+                _ => None,
+            })
+            .collect();
+        assert_eq!(reachable, (0..rows).collect());
+    }
+
+    #[test]
+    fn session_trust_never_covers_terminal_requests() {
+        let data = tempfile::tempdir().unwrap();
+        let mut app = App::load(data.path().into(), "goose".into(), None).unwrap();
+        let host =
+            serde_json::json!({"toolCall":{"title":"Terminal"},"_meta":{"alt":{"scope":"host"}}});
+        let project =
+            serde_json::json!({"toolCall":{"title":"Edit"},"_meta":{"alt":{"scope":"project"}}});
+        app.trust_session = true;
+        app.workspace_update(workspace::Update::Event(Event::Permission {
+            id: serde_json::json!(1),
+            params: host.clone(),
+        }))
+        .unwrap();
+        assert_eq!(app.permissions.len(), 1, "terminal must still ask");
+        // Choosing the blanket option on a project request trusts project scope only.
+        app.trust_session = false;
+        app.permissions.clear();
+        app.permissions.push_back((serde_json::json!(2), project));
+        let _ = app.permission(2);
+        assert!(app.trust_session && !app.trust_host);
+        app.permissions.push_back((serde_json::json!(3), host));
+        let _ = app.permission(2);
+        assert!(app.trust_host);
+    }
+
+    #[tokio::test]
+    async fn a_reasoning_cutoff_offers_recovery_without_resending() {
+        let data = tempfile::tempdir().unwrap();
+        let mut app = App::load(data.path().into(), "goose".into(), None).unwrap();
+        let mut status = crate::inference::Status {
+            connection_id: "c1".into(),
+            stage: crate::inference::Stage::Ready,
+            requests_issued: 1,
+            remaining_requests: None,
+            remaining_generated_tokens: None,
+            input_tokens: None,
+            input_allowance: 6144,
+            output_allowance: 2048,
+            action_headroom: 256,
+            reasoning_allowance: None,
+            reasoning_cutoffs: 0,
+            ollama_context: None,
+            provider_retries: 0,
+            provider_faults: 0,
+        };
+        app.workspace_update(workspace::Update::Inference(status.clone()))
+            .unwrap();
+        assert!(app.dialog.is_none());
+        status.reasoning_cutoffs = 1;
+        status.stage = crate::inference::Stage::ReasoningCutoff;
+        app.busy = true;
+        app.workspace_update(workspace::Update::Inference(status.clone()))
+            .unwrap();
+        assert!(app.dialog.is_none(), "wait for the turn to end");
+        app.workspace_update(workspace::Update::Done(
+            serde_json::json!({"stopReason":"end_turn"}),
+        ))
+        .unwrap();
+        match &app.dialog {
+            Some(Dialog::Menu { title, items, .. }) => {
+                assert!(title.contains("thinking"));
+                assert!(
+                    items
+                        .iter()
+                        .any(|(label, _, _)| label == "Resend with thinking off")
+                );
+            }
+            _ => panic!("cutoff recovery menu expected"),
+        }
+        // The same count on the same connection does not reopen it.
+        app.dialog = None;
+        app.workspace_update(workspace::Update::Inference(status))
+            .unwrap();
+        assert!(app.dialog.is_none());
+    }
+
+    #[test]
+    fn hosted_presets_fill_the_form_and_the_picker_filters_long_catalogs() {
+        use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
+        let data = tempfile::tempdir().unwrap();
+        let mut app = App::load(data.path().into(), "goose".into(), None).unwrap();
+        let nvidia = crate::presets::PRESETS
+            .iter()
+            .position(|p| p.id == "nvidia")
+            .unwrap();
+        app.menu_action(MenuAction::ProviderPreset(nvidia)).unwrap();
+        let form = match app.recovery_dialog.as_deref().or(app.dialog.as_ref()) {
+            Some(Dialog::Connection(form)) => form.clone(),
+            other => panic!("connection form expected, got {other:?}"),
+        };
+        assert_eq!(form.fields[1].text, "https://integrate.api.nvidia.com/v1");
+        assert_eq!(form.fields[2].text, "NVIDIA_API_KEY");
+        assert_eq!(form.dialect, crate::inference::Dialect::ChatTemplate);
+        let draft = app.draft(&form).unwrap();
+        let models = ["z-ai/glm-5.3", "moonshotai/kimi-k3", "z-ai/glm-4.6"]
+            .into_iter()
+            .map(|id| models::ServerModel {
+                id: id.into(),
+                bytes: None,
+                parameters: None,
+                quant: None,
+                family: None,
+                modified: None,
+            })
+            .collect();
+        app.dialog = Some(Dialog::PickModel {
+            draft: Box::new(draft),
+            models,
+            selected: 0,
+            query: Editor::default(),
+        });
+        for c in "kimi".chars() {
+            app.key(KeyEvent::new(KeyCode::Char(c), KeyModifiers::NONE))
+                .unwrap();
+        }
+        app.key(KeyEvent::new(KeyCode::Enter, KeyModifiers::NONE))
+            .unwrap();
+        let (_, saved) = app.current_profile().unwrap();
+        assert_eq!(saved.model, "moonshotai/kimi-k3");
+        assert_eq!(saved.api_key_env.as_deref(), Some("NVIDIA_API_KEY"));
+        assert_eq!(
+            saved.effective_inference().dialect,
+            crate::inference::Dialect::ChatTemplate
+        );
+        let text = std::fs::read_to_string(data.path().join("config.toml")).unwrap();
+        assert!(text.contains("NVIDIA_API_KEY") && text.contains("chat-template"));
+    }
+
+    #[test]
+    fn editing_a_connection_keeps_its_custom_settings() {
+        // Audit A03: a customised 4K profile must survive a name/endpoint edit.
+        let data = tempfile::tempdir().unwrap();
+        let mut settings = crate::inference::Settings::legacy(4096);
+        settings.output_tokens = 1024;
+        settings.max_requests = Some(9);
+        settings.total_generated_tokens = Some(5000);
+        settings.temperature = Some(0.3);
+        settings.thinking = crate::inference::Thinking::Off;
+        let profile = Profile {
+            provider: Provider::Openai,
+            endpoint: "http://127.0.0.1:8080/v1".into(),
+            model: "mimo-9b".into(),
+            context_tokens: 4096,
+            max_turns: 7,
+            uncensored: true,
+            api_key_env: None,
+            local_model: None,
+            inference: Some(settings.clone()),
+            runtime_key: None,
+        };
+        Config::create(data.path(), profile).unwrap();
+        let mut app = App::load(data.path().into(), "goose".into(), None).unwrap();
+        app.edit_connection().unwrap();
+        let mut form = match app.dialog.clone() {
+            Some(Dialog::Connection(form)) => form,
+            _ => panic!("connection form expected"),
+        };
+        form.fields[0] = Editor::new("renamed");
+        form.fields[1] = Editor::new("http://127.0.0.1:8081/v1");
+        let draft = app.draft(&form).unwrap();
+        assert_eq!(draft.profile.model, "mimo-9b");
+        app.save_connection(draft).unwrap();
+        let saved = &app.config.profiles["renamed"];
+        assert!(!app.config.profiles.contains_key("local"));
+        assert_eq!(saved.endpoint, "http://127.0.0.1:8081/v1");
+        assert_eq!(saved.context_tokens, 4096);
+        assert_eq!(saved.max_turns, 7);
+        assert!(saved.uncensored);
+        assert_eq!(
+            serde_json::to_value(saved.effective_inference()).unwrap(),
+            serde_json::to_value(settings).unwrap()
+        );
+    }
+
+    #[test]
+    fn text_typed_while_connecting_survives_failure_and_cancel_exactly_once() {
+        let data = tempfile::tempdir().unwrap();
+        let mut app = App::load(data.path().into(), "goose".into(), None).unwrap();
+        // Failure: the submitted message comes back first, the new draft after it.
+        app.pending_prompt = Some("Fix the parser".into());
+        app.composer.replace("Also update the docs");
+        app.workspace_update(workspace::Update::Error("Server unavailable".into()))
+            .unwrap();
+        assert_eq!(app.composer.text, "Fix the parser\n\nAlso update the docs");
+        assert!(app.pending_prompt.is_none());
+        // Cancelling a connection restores it without duplicating identical text.
+        app.composer.replace("Fix the parser");
+        app.pending_prompt = Some("Fix the parser".into());
+        app.connecting = true;
+        app.stop_turn().unwrap();
+        assert_eq!(app.composer.text, "Fix the parser");
+        // A closed connection also gives the message back.
+        app.composer.clear();
+        app.pending_prompt = Some("Run the tests".into());
+        app.workspace_update(workspace::Update::Closed).unwrap();
+        assert_eq!(app.composer.text, "Run the tests");
+    }
+
+    #[test]
+    fn manual_model_entry_has_a_key_terminals_can_send() {
+        use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
+        let data = tempfile::tempdir().unwrap();
+        let mut app = App::load(data.path().into(), "goose".into(), None).unwrap();
+        app.menu_action(MenuAction::Preset(1)).unwrap();
+        assert!(matches!(app.dialog, Some(Dialog::Connection(_))));
+        app.key(KeyEvent::new(KeyCode::Char('m'), KeyModifiers::ALT))
+            .unwrap();
+        match &app.dialog {
+            Some(Dialog::Input { title, action, .. }) => {
+                assert_eq!(title, "Enter a model identifier");
+                assert!(matches!(action, InputAction::ManualModel(_)));
+            }
+            _ => panic!("manual model entry expected"),
+        }
+        let mut editor = Editor::default();
+        editor.insert("my-exact-model:7b", false);
+        if let Some(Dialog::Input { editor: e, .. }) = &mut app.dialog {
+            *e = editor;
+        }
+        app.key(KeyEvent::new(KeyCode::Enter, KeyModifiers::NONE))
+            .unwrap();
+        assert_eq!(app.current_profile().unwrap().1.model, "my-exact-model:7b");
+    }
+
+    #[tokio::test]
+    async fn a_cancelled_connection_check_returns_quickly_and_opens_nothing() {
+        // Audit A19: a stalled server, then Esc.
+        let stalled = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let address = stalled.local_addr().unwrap();
+        let hold = tokio::spawn(async move {
+            let (_socket, _) = stalled.accept().await.unwrap();
+            std::future::pending::<()>().await;
+        });
+        let data = tempfile::tempdir().unwrap();
+        let mut app = App::load(data.path().into(), "goose".into(), None).unwrap();
+        app.menu_action(MenuAction::Preset(1)).unwrap();
+        if let Some(Dialog::Connection(form)) = &mut app.dialog {
+            form.fields[1] = Editor::new(format!("http://{address}/v1"));
+        }
+        app.test_form().unwrap();
+        tokio::time::sleep(Duration::from_millis(200)).await;
+        let started = Instant::now();
+        app.job
+            .as_ref()
+            .unwrap()
+            .cancel
+            .store(true, Ordering::Relaxed);
+        let event = tokio::time::timeout(Duration::from_secs(1), app.job_rx.recv())
+            .await
+            .expect("cancellation must return control within one second")
+            .unwrap();
+        app.job_event(event).unwrap();
+        assert!(started.elapsed() < Duration::from_secs(1));
+        assert!(app.job.is_none());
+        assert!(
+            matches!(app.dialog, Some(Dialog::Connection(_))),
+            "the form stays; no model dialog opens"
+        );
+        hold.abort();
+    }
+
+    #[test]
+    fn an_oversized_paste_is_refused_with_a_reason() {
+        let data = tempfile::tempdir().unwrap();
+        let mut app = App::load(data.path().into(), "goose".into(), None).unwrap();
+        app.page = Page::Chat;
+        app.composer.replace("keep this");
+        app.paste(&"x".repeat(70 * 1024));
+        assert_eq!(app.composer.text, "keep this", "nothing inserted");
+        assert!(app.status_error);
+        assert!(
+            app.status.contains("70 KiB") || app.dialog.is_some(),
+            "{}",
+            app.status
+        );
+        app.dialog = None;
+        app.paste(" and this");
+        assert_eq!(app.composer.text, "keep this and this");
     }
 }

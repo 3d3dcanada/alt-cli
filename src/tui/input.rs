@@ -21,7 +21,11 @@ impl Editor {
         self.text.clear();
         self.cursor = 0;
     }
-    pub fn insert(&mut self, text: &str, multiline: bool) {
+    /// Editor capacity in bytes; larger input is refused, not truncated.
+    pub const LIMIT: usize = 64 * 1024;
+    /// Insert text at the cursor. Returns false (and changes nothing) when the
+    /// result would exceed [`Self::LIMIT`], so callers can say why.
+    pub fn insert(&mut self, text: &str, multiline: bool) -> bool {
         let clean: String = text
             .chars()
             .filter_map(|c| {
@@ -36,11 +40,12 @@ impl Editor {
                 }
             })
             .collect();
-        if self.text.len() + clean.len() > 64 * 1024 {
-            return;
+        if self.text.len() + clean.len() > Self::LIMIT {
+            return false;
         }
         self.text.insert_str(self.cursor, &clean);
         self.cursor += clean.len();
+        true
     }
     fn previous(&self) -> usize {
         self.text[..self.cursor]
@@ -62,7 +67,9 @@ impl Editor {
             KeyCode::Char('a') if ctrl => self.cursor = 0,
             KeyCode::Char('e') if ctrl => self.cursor = self.text.len(),
             KeyCode::Char('u') if ctrl => self.clear(),
-            KeyCode::Char(c) if !ctrl => self.insert(&c.to_string(), multiline),
+            KeyCode::Char(c) if !ctrl => {
+                self.insert(&c.to_string(), multiline);
+            }
             KeyCode::Left => self.cursor = self.previous(),
             KeyCode::Right => self.cursor = self.next(),
             KeyCode::Backspace => {
@@ -86,7 +93,9 @@ impl Editor {
                     .map(|n| self.cursor + n)
                     .unwrap_or(self.text.len())
             }
-            KeyCode::Enter if multiline => self.insert("\n", true),
+            KeyCode::Enter if multiline => {
+                self.insert("\n", true);
+            }
             KeyCode::Up | KeyCode::Down if multiline => {
                 let start = self.text[..self.cursor]
                     .rfind('\n')

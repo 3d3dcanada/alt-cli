@@ -1,0 +1,54 @@
+{
+  "ctrl_n_clears_draft": true,
+  "quit_restart_loses_draft": true,
+  "ctrl_m_issues_inventory_request": true,
+  "ctrl_m_shows_manual_id": false,
+  "editing_profile": {
+    "before": {
+      "default_profile": "local",
+      "profiles": {
+        "local": {
+          "provider": "openai",
+          "endpoint": "http://127.0.0.1:33035/v1",
+          "model": "fixture",
+          "context_tokens": 4096,
+          "max_turns": 12,
+          "uncensored": true,
+          "inference": {
+            "version": 1,
+            "output_tokens": 256,
+            "action_headroom": 128,
+            "temperature": 0.35,
+            "llama_extensions": false,
+            "total_generated_tokens": 2048,
+            "max_requests": 7,
+            "output_parameter": "max_tokens"
+          }
+        }
+      }
+    },
+    "after": {
+      "default_profile": "local",
+      "profiles": {
+        "local": {
+          "provider": "openai",
+          "endpoint": "http://127.0.0.1:33035/v1",
+          "model": "fixture",
+          "context_tokens": 8192,
+          "max_turns": 12,
+          "uncensored": false
+        }
+      }
+    }
+  },
+  "connection_60x18": {
+    "api_key_label_visible": true,
+    "manual_id_hint_visible": false,
+    "check_button_visible": true
+  },
+  "connection_80x24": {
+    "api_key_label_visible": true,
+    "manual_id_hint_visible": true,
+    "check_button_visible": true
+  }
+}

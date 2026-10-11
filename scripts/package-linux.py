@@ -44,7 +44,20 @@ with tempfile.TemporaryDirectory(prefix="alt-package-") as temp:
         subprocess.run(['openssl','dgst','-sha256','-sign',os.environ['ALT_SIGNING_KEY'],'-out',str(package/'PLATFORM.json.sig'),str(package/'PLATFORM.json')],check=True)
     for doc in ["README.md", "LICENSE", "THIRD_PARTY.md"]:
         shutil.copy2(repo / doc, package / doc)
-    shutil.copytree(repo / "docs", package / "docs")
+    # B11/A09: ship guides and screenshots, not the historical raw evidence.
+    def offline_docs(directory, names):
+        relative = Path(directory).relative_to(repo / "docs")
+        if relative == Path("."):
+            return [n for n in names if n == "evidence"]
+        if relative.parts[0] == "research":
+            return [n for n in names if (Path(directory) / n).is_file() and not n.endswith(".md")]
+        return []
+    shutil.copytree(repo / "docs", package / "docs", ignore=offline_docs)
+    (package / "docs" / "EVIDENCE.md").write_text(
+        "# Raw evidence\n\nThis package carries the guides, summaries and screenshots. Raw evaluation\n"
+        f"evidence (request logs, receipts, matrices) stays in the source repository at the\n"
+        f"commit this package was built from ({build.get('commit', 'see BUILD.json')}), under docs/evidence and docs/research.\n"
+    )
     shutil.copytree(repo / "prompts", package / "prompts")
     shutil.copytree(repo / "skills", package / "skills")
     shutil.copytree(repo / "training", package / "training",ignore=shutil.ignore_patterns('__pycache__','*.pyc'))

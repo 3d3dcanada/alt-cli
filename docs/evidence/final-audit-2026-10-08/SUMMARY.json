@@ -1,0 +1,168 @@
+{
+  "schema": 1,
+  "review_date": "2026-10-08",
+  "baseline": {
+    "commit": "fa0c8e4130ec4d13c59193436679c4e059c22dee",
+    "release_tag": "v0.6.0-beta.3",
+    "runtime_source_sha256": "54bb6215b1e87579f3534c347f38019cf569e91386237352e314ba5d025976f1"
+  },
+  "scope": {
+    "application_source_modified": false,
+    "new_live_model_requests": 0,
+    "training_performed": false,
+    "physical_gpu_qualification": false,
+    "normal_user_state_used": false
+  },
+  "existing_tests_rerun": {
+    "compact_context": 13,
+    "pc_ready": 3,
+    "passed": 16,
+    "failed": 0,
+    "log": "targeted-existing-tests.log"
+  },
+  "finding_count": 28,
+  "planned_work_order_count": 14,
+  "findings": [
+    {
+      "id": "A01",
+      "priority_and_evidence": "P1, reproduced",
+      "finding": "A check can modify the disposable source, pass a real pinned assertion, and mark the unchanged incorrect working source behaviorally accepted. The executed source revision is not rechecked."
+    },
+    {
+      "id": "A02",
+      "priority_and_evidence": "P1, reproduced",
+      "finding": "An external editor write between the stale-content check and replacement is lost; Undo restores the older proposal image rather than the intervening user version."
+    },
+    {
+      "id": "A03",
+      "priority_and_evidence": "P1, reproduced",
+      "finding": "Saving an otherwise unchanged connection resets custom inference settings and the uncensored claim. The example changed context from 4K to 8K and removed its output, request, token and sampling settings."
+    },
+    {
+      "id": "A04",
+      "priority_and_evidence": "P1/P2, reproduced",
+      "finding": "Text typed during initial connection is overwritten by the frozen submitted prompt. New and quit/restart also discard unsent drafts without restoration."
+    },
+    {
+      "id": "A05",
+      "priority_and_evidence": "P1, reproduced",
+      "finding": "In Compact mode a third turn can omit a correction supplied in turn two. The original goal survives, but intervening request notes are excluded and each engine turn starts a new native session."
+    },
+    {
+      "id": "A08",
+      "priority_and_evidence": "P2, reproduced",
+      "finding": "A completed check loses its output and saved result if the project lock is briefly occupied while evidence is committed. The CLI returns only a busy error."
+    },
+    {
+      "id": "A09",
+      "priority_and_evidence": "P2, reproduced",
+      "finding": "An inherited feature flag can change while the old passing result remains marked current. Rerunning immediately with that same changed environment fails."
+    },
+    {
+      "id": "A20",
+      "priority_and_evidence": "P2, reproduced",
+      "finding": "CLI check configuration has a circular prerequisite for `{report}`; reconfiguring also resets its existing contract."
+    },
+    {
+      "id": "A28",
+      "priority_and_evidence": "P2, reproduced",
+      "finding": "Apply/Undo ignores external permission changes and can widen a file from 0600 back to 0644."
+    },
+    {
+      "id": "A06",
+      "priority_and_evidence": "P1, reproduced + trace",
+      "finding": "Any matched filename suppresses lexical retrieval. “Implement median … do not change Cargo.toml” includes Cargo.toml and omits the implementation, even in a two-file project with available context."
+    },
+    {
+      "id": "A07",
+      "priority_and_evidence": "P1/P2, trace",
+      "finding": "An independent test crate's `src/lib.rs` warning is mapped to the implementation crate. Arbitrary diagnostic line spans become editable handles; the model replaces incomplete function spans and damages the function before receiving syntax feedback. Duplicate spans consume context."
+    },
+    {
+      "id": "A22",
+      "priority_and_evidence": "P2, trace/source",
+      "finding": "The Rust failure reports actual/expected values without its concrete input, and the instruction optimizer reads only stderr although the assertion failure is in stdout. Useful failure information is omitted."
+    },
+    {
+      "id": "A23",
+      "priority_and_evidence": "P2, source",
+      "finding": "Check output beyond 128 KiB per stream is discarded. A late diagnostic can be unavailable even though counters detect failure."
+    },
+    {
+      "id": "A26",
+      "priority_and_evidence": "P1 qualification gap",
+      "finding": "Current software CI proves application/protocol behavior; automated model-matrix choices omit the actual target 7B/9B artifacts. Existing real-model cohorts are too small or differently configured to establish general improvement."
+    },
+    {
+      "id": "A10",
+      "priority_and_evidence": "P1, reproduced",
+      "finding": "An invalid explicitly selected runtime silently resolves to a different managed/PATH runtime. The same fallback pattern affects configured engine paths."
+    },
+    {
+      "id": "A11",
+      "priority_and_evidence": "P1, source",
+      "finding": "TUI benchmarking/qualification can start a second owned model while an idle connected workspace still holds the first, threatening the target's 8 GB VRAM and invalidating measurements. No physical OOM was attempted."
+    },
+    {
+      "id": "A12",
+      "priority_and_evidence": "P2, reproduced",
+      "finding": "Import accepts a four-byte GGUF magic-only file and records no split pieces for a numbered first shard. Imported additional shards lack the downloaded-set integrity coverage."
+    },
+    {
+      "id": "A13",
+      "priority_and_evidence": "P2, reproduced",
+      "finding": "Authenticated Ollama inventory succeeds, then engine initialization rejects the same configuration, although the relay already attaches bearer authentication."
+    },
+    {
+      "id": "A14",
+      "priority_and_evidence": "P1, reproduced",
+      "finding": "Headless `extensions check` executes the configured host program even with `--access review-only` or `--access guided`. The TUI enforces the Full-access requirement."
+    },
+    {
+      "id": "A15",
+      "priority_and_evidence": "P2, reproduced",
+      "finding": "Closing an MCP discovery connection can leave a helper that ignores TERM running after the leader exits."
+    },
+    {
+      "id": "A24",
+      "priority_and_evidence": "P2 hardening, source",
+      "finding": "The owned llama.cpp loopback port has no per-launch credential; readiness trusts an unauthenticated health response after releasing its port reservation. Other local accounts can access the underlying endpoint."
+    },
+    {
+      "id": "A16",
+      "priority_and_evidence": "P1, reproduced",
+      "finding": "Inference traces accumulate outside retention coverage. State above 512 MiB cannot be backed up, and package upgrades require that backup. Normal long-lived use lacks a supported cleanup path for its largest evidence bucket."
+    },
+    {
+      "id": "A17",
+      "priority_and_evidence": "P2, reproduced",
+      "finding": "The installer can exit unsuccessfully after replacing the executable, when later documentation copying fails. The prior binary is preserved, but the installed generation is partial."
+    },
+    {
+      "id": "A18",
+      "priority_and_evidence": "P2, reproduced/source",
+      "finding": "Allowance recovery lacks a keyboard/palette route. The manual model-ID shortcut uses Ctrl+M, which ordinary terminals encode as Enter; the PTY reproduction instead runs inventory."
+    },
+    {
+      "id": "A19",
+      "priority_and_evidence": "P2, reproduced",
+      "finding": "Canceled connection inventory ignores its cancellation token and later reopens the model dialog."
+    },
+    {
+      "id": "A21",
+      "priority_and_evidence": "P3, reproduced/source",
+      "finding": "The 60×18 connection form overlaps controls/help; input above 64 KiB is silently ignored."
+    },
+    {
+      "id": "A25",
+      "priority_and_evidence": "P2 efficiency gap",
+      "finding": "The desktop package includes 9,129 historical documentation/evidence files totaling 150.85 MB, about 78% of its unpacked payload."
+    },
+    {
+      "id": "A27",
+      "priority_and_evidence": "P2 qualification gap",
+      "finding": "Current stress loops do not establish weeks of one growing workspace. Cross-file backup consistency during active changes and stable multi-file snapshot capture need dedicated qualification."
+    }
+  ],
+  "status": "Audit and plan only. Findings remain open in the baseline; no application fix or model-quality gain is claimed."
+}

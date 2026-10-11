@@ -1,0 +1,56 @@
+[
+  {
+    "args": [
+      "configure-check",
+      "feature",
+      "--",
+      "python3",
+      "check.py"
+    ],
+    "exit": 0,
+    "stdout": "{\n  \"argv\": [\n    \"python3\",\n    \"check.py\"\n  ],\n  \"contract\": {\n    \"assertion\": null,\n    \"kind\": \"custom\",\n    \"report\": null\n  },\n  \"name\": \"feature\",\n  \"timeout_secs\": 120\n}\n",
+    "stderr": "",
+    "APP_FEATURE_MODE": "enabled"
+  },
+  {
+    "args": [
+      "require",
+      "feature-enabled",
+      "--check",
+      "feature"
+    ],
+    "exit": 0,
+    "stdout": "{\n  \"behavioral_acceptance\": false,\n  \"complete\": false,\n  \"requirements\": [\n    {\n      \"check_kind\": \"custom\",\n      \"coverage\": \"command result; behavioral coverage unknown\",\n      \"evidence\": null,\n      \"requirement\": {\n        \"check_name\": \"feature\",\n        \"description\": \"\",\n        \"name\": \"feature-enabled\"\n      },\n      \"status\": \"not run\"\n    }\n  ],\n  \"scope\": \"Required checks are incomplete\",\n  \"source_snapshot\": \"e1fda80fd7241b22e34f9dbc3ab4c283080e67ae43e53abf9c8c5ffa8073226d\"\n}\n",
+    "stderr": "",
+    "APP_FEATURE_MODE": "enabled"
+  },
+  {
+    "args": [
+      "check",
+      "feature"
+    ],
+    "exit": 0,
+    "stdout": "{\n  \"id\": \"460e2d6e-3fff-4cd0-a75d-fddb26b3d2ab\",\n  \"task\": \"manual-fa847ba6-a622-413f-b0eb-55e7b0af31fb\",\n  \"name\": \"feature\",\n  \"argv\": [\n    \"python3\",\n    \"check.py\"\n  ],\n  \"exit_code\": 0,\n  \"timed_out\": false,\n  \"cancelled\": false,\n  \"output\": \"stdout:\\nRan 1 test\\n\\nstderr:\\n\",\n  \"output_truncated\": false,\n  \"snapshot\": \"e1fda80fd7241b22e34f9dbc3ab4c283080e67ae43e53abf9c8c5ffa8073226d\",\n  \"isolation\": \"Unisolated: trusted command in disposable source copy\",\n  \"elapsed_ms\": 19,\n  \"error\": null,\n  \"environment\": {\n    \"argv_sha256\": \"907483faa4531c226cc1495063be8813873014482926b6124b4a678052d639e8\",\n    \"environment_PATH_sha256\": \"89f45694eeac679d66982fb225aab97d2049249d842ac30dd09e31f18cdd97c7\",\n    \"executable\": \"/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python3.12\",\n    \"executable_metadata\": \"30894944:Ok(SystemTime { tv_sec: 1788486252, tv_nsec: 0 })\",\n    \"installed_dependencies\": \"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\",\n    \"observed_version_python3\": \"Python 3.12.14\",\n    \"verification_contract\": \"3\"\n  },\n  \"tests_run\": 1,\n  \"contract\": {\n    \"kind\": \"custom\",\n    \"report\": null,\n    \"assertion\": null\n  },\n  \"structured\": null\n}\n",
+    "stderr": "",
+    "APP_FEATURE_MODE": "enabled"
+  },
+  {
+    "args": [
+      "verify"
+    ],
+    "exit": 0,
+    "stdout": "{\n  \"complete\": true,\n  \"behavioral_acceptance\": false,\n  \"scope\": \"Required commands passed; independent behavioral acceptance is not established\",\n  \"requirements\": [\n    {\n      \"requirement\": {\n        \"name\": \"feature-enabled\",\n        \"description\": \"\",\n        \"check_name\": \"feature\"\n      },\n      \"status\": \"passed on current files\",\n      \"evidence\": \"460e2d6e-3fff-4cd0-a75d-fddb26b3d2ab\",\n      \"check_kind\": \"custom\",\n      \"coverage\": \"command result; behavioral coverage unknown\"\n    }\n  ],\n  \"source_snapshot\": \"e1fda80fd7241b22e34f9dbc3ab4c283080e67ae43e53abf9c8c5ffa8073226d\"\n}\n",
+    "stderr": "",
+    "APP_FEATURE_MODE": "disabled"
+  },
+  {
+    "args": [
+      "check",
+      "feature"
+    ],
+    "exit": 1,
+    "stdout": "{\n  \"id\": \"cb8a1be6-10e2-4480-9b5a-d13d1732b85e\",\n  \"task\": \"manual-fa847ba6-a622-413f-b0eb-55e7b0af31fb\",\n  \"name\": \"feature\",\n  \"argv\": [\n    \"python3\",\n    \"check.py\"\n  ],\n  \"exit_code\": 1,\n  \"timed_out\": false,\n  \"cancelled\": false,\n  \"output\": \"stdout:\\n\\nstderr:\\nTraceback (most recent call last):\\n  File \\\"/tmp/.tmpNUFQKv/check.py\\\", line 2, in <module>\\n    assert os.environ.get(\\\"APP_FEATURE_MODE\\\")==\\\"enabled\\\"\\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\\nAssertionError\\n\",\n  \"output_truncated\": false,\n  \"snapshot\": \"e1fda80fd7241b22e34f9dbc3ab4c283080e67ae43e53abf9c8c5ffa8073226d\",\n  \"isolation\": \"Unisolated: trusted command in disposable source copy\",\n  \"elapsed_ms\": 19,\n  \"error\": null,\n  \"environment\": {\n    \"argv_sha256\": \"907483faa4531c226cc1495063be8813873014482926b6124b4a678052d639e8\",\n    \"environment_PATH_sha256\": \"89f45694eeac679d66982fb225aab97d2049249d842ac30dd09e31f18cdd97c7\",\n    \"executable\": \"/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python3.12\",\n    \"executable_metadata\": \"30894944:Ok(SystemTime { tv_sec: 1788486252, tv_nsec: 0 })\",\n    \"installed_dependencies\": \"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\",\n    \"observed_version_python3\": \"Python 3.12.14\",\n    \"verification_contract\": \"3\"\n  },\n  \"tests_run\": null,\n  \"contract\": {\n    \"kind\": \"custom\",\n    \"report\": null,\n    \"assertion\": null\n  },\n  \"structured\": null\n}\n",
+    "stderr": "alt: Check did not pass; evidence saved\n",
+    "APP_FEATURE_MODE": "disabled"
+  }
+]

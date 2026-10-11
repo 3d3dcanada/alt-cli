@@ -28,7 +28,7 @@ Create a Python environment for terminal/schema checks:
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
-python3 -m pip install -r requirements-dev.txt
+python3 -m pip install --require-hashes -r requirements-dev.txt
 python3 scripts/smoke_tui.py
 python3 scripts/smoke_task_tui.py
 python3 scripts/smoke_workbench_tui.py
@@ -97,3 +97,11 @@ Workflows produce reviewable candidates; they do not publish a release automatic
 A release needs its exact tested archive, build identity, dependency/SBOM evidence,
 matching upgrade/rollback fixtures and explicitly recorded outstanding gates.
 Repository source publication and binary-release qualification are separate steps.
+
+## Evidence and repository weight
+
+Commit summaries, small receipts and screenshots. Raw evidence over 1 MiB (request
+logs, response captures, matrices) goes to a release asset, with a summary and its
+checksum in git. Never commit model weights, archives or keys:
+`python3 scripts/check_repo_weight.py` and `python3 scripts/secret_scan.py` run in CI,
+and `scripts/secret_scan.py` should run before every push.

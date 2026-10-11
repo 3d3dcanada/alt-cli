@@ -99,8 +99,9 @@ alt --access trusted jobs start 'cargo test' --wait --timeout 300
 
 Use `alt plain` for a plain terminal conversation with per-action approval and
 `/quit` to leave. Use `alt run ... --json` for scripts. Headless tool permission is
-denied unless `--allow-tools` is supplied; Full access is separately selected with
-`--access trusted`. JSON includes verification independently of the model answer.
+denied unless `--allow-tools` is supplied; it covers project actions only, and
+terminal or external tools need `--allow-terminal`. Full access is separately
+selected with `--access trusted`. JSON includes verification independently of the model answer.
 
 ## Verification, memory and context
 

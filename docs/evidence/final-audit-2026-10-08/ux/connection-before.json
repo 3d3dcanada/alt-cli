@@ -1,0 +1,23 @@
+{
+  "default_profile": "local",
+  "profiles": {
+    "local": {
+      "provider": "openai",
+      "endpoint": "http://127.0.0.1:33035/v1",
+      "model": "fixture",
+      "context_tokens": 4096,
+      "max_turns": 12,
+      "uncensored": true,
+      "inference": {
+        "version": 1,
+        "output_tokens": 256,
+        "action_headroom": 128,
+        "temperature": 0.35,
+        "llama_extensions": false,
+        "total_generated_tokens": 2048,
+        "max_requests": 7,
+        "output_parameter": "max_tokens"
+      }
+    }
+  }
+}

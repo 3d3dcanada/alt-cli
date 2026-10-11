@@ -20,6 +20,7 @@ fn profile() -> Profile {
         api_key_env: None,
         local_model: None,
         inference: None,
+        runtime_key: None,
     }
 }
 
@@ -190,8 +191,20 @@ fn cli_streams_exports_resumes_and_denies_by_default() {
     );
     assert_eq!(events.last().unwrap()["type"], "turn_end");
     let id = events[0]["session"]["id"].as_str().unwrap();
-    let resume = cli()
+    // An engine-native request carries no Alt project tag, so it is host scope:
+    // --allow-tools alone must not approve it; --allow-terminal is the opt-in.
+    let project_only = cli()
         .args(["run", "tools", "--resume", id, "--allow-tools"])
+        .output()
+        .unwrap();
+    assert!(project_only.status.success());
+    let text = String::from_utf8_lossy(&project_only.stdout);
+    assert!(
+        text.contains("denied") && !text.contains("allowed"),
+        "{text}"
+    );
+    let resume = cli()
+        .args(["run", "tools", "--resume", id, "--allow-terminal"])
         .output()
         .unwrap();
     assert!(
