@@ -687,6 +687,21 @@ impl App {
                     ),
                 );
                 items.push((
+                    format!("Provider retries: {}", settings.retries),
+                    "429, 5xx and dropped connections; each retry counts as a model call. 0 disables".into(),
+                    "inference-field".into(),
+                    json!({"profile":name,"field":"retries","label":"Provider retries","current":settings.retries.to_string(),"hint":"0–8 retries with capped backoff that honours Retry-After"}),
+                ));
+                items.push((
+                    format!("Output guard: {}", settings.output_guard.label()),
+                    format!(
+                        "{} for this connection · discards leaked template tokens or mixed-script noise once and resends",
+                        if settings.guard_active(&profile) { "active" } else { "inactive" }
+                    ),
+                    "inference-guard".into(),
+                    json!({"profile":name}),
+                ));
+                items.push((
                     "Output parameter compatibility".into(),
                     format!("Current: {:?}; select the field required by this endpoint",settings.output_parameter),
                     "inference-parameter".into(),json!({"profile":name}),
@@ -764,6 +779,30 @@ impl App {
                     choices,
                 );
             }
+            "inference-guard" => self.manager_menu(
+                "Hosted output guard",
+                "Some hosted models sometimes stream garbage with leaked template tokens. The guard holds each response until it is complete, checks it, and discards a degenerate one once, recording a provider fault (tokens stay charged). Holding responses delays streaming text.",
+                [
+                    crate::inference::OutputGuard::Auto,
+                    crate::inference::OutputGuard::On,
+                    crate::inference::OutputGuard::Off,
+                ]
+                .into_iter()
+                .map(|g| {
+                    (
+                        g.label().to_string(),
+                        match g {
+                            crate::inference::OutputGuard::Auto => "Remote servers are checked; this computer streams live",
+                            crate::inference::OutputGuard::On => "Always hold and check responses",
+                            crate::inference::OutputGuard::Off => "Always stream live; no check",
+                        }
+                        .to_string(),
+                        "inference-save".into(),
+                        json!({"profile":name,"field":"output_guard","value":format!("{g:?}").to_lowercase()}),
+                    )
+                })
+                .collect(),
+            ),
             "inference-dialect" => self.manager_menu(
                 "Server dialect for thinking",
                 "Pick the server family so the thinking choice uses fields it understands. Automatic uses llama.cpp for owned models, Ollama for Ollama connections and reasoning_effort otherwise.",
@@ -799,6 +838,15 @@ impl App {
                         next.thinking = value.parse()?;
                         if next.thinking != crate::inference::Thinking::Default {
                             next.reasoning_tokens = None;
+                        }
+                    }
+                    "retries" => next.retries = value.parse()?,
+                    "output_guard" => {
+                        next.output_guard = match value {
+                            "auto" => crate::inference::OutputGuard::Auto,
+                            "on" => crate::inference::OutputGuard::On,
+                            "off" => crate::inference::OutputGuard::Off,
+                            _ => anyhow::bail!("Choose auto, on or off"),
                         }
                     }
                     "thinking_budget" => {
@@ -1045,6 +1093,7 @@ impl App {
                 let prompt = status.input_tokens.map(|v| format!("{v} tokens")).unwrap_or_else(|| "Unknown; the selected server has not supplied a count".into());
                 let thinking = status.reasoning_allowance.map(|v| format!("{v} tokens inside the output allowance")).unwrap_or_else(|| "Selected server default".into());
                 let body = format!("Stage: {}\nModel calls issued: {}\nModel calls remaining: {}\nGenerated tokens remaining: {}\n\nMeasured prompt: {}\nInput reserve: {} tokens\nOutput allowance for the last call: {} tokens\nThinking allowance: {}\nConfigured action headroom: {} tokens\n\nRemaining tokens exclude in-flight reservations. External input counts stay unknown unless measured. Waiting for output includes the server queue and prompt processing; it does not measure reasoning.\n\nFor an input-reserve error, reduce Total output tokens or choose a larger measured native context in Connections. Save settings, then use Allowance → Apply saved allocation and reconnect. The original request remains saved.", status.stage.label(), status.requests_issued, limit(status.remaining_requests), limit(status.remaining_generated_tokens), prompt, status.input_allowance, status.output_allowance, thinking, status.action_headroom);
+                let body = format!("{body}\n\nProvider retries on this connection: {} · provider faults discarded: {}", status.provider_retries, status.provider_faults);
                 let requested = self.session.as_ref().map(|s| s.profile.context_tokens);
                 let body = match (status.ollama_context, requested) {
                     (Some(loaded), Some(requested)) if loaded != requested as u64 => format!("{body}\n\nOllama loaded this model with {loaded} context tokens (read from /api/ps), not the {requested} requested. This Ollama version ignores options.num_ctx on its OpenAI-compatible API: create a tag with PARAMETER num_ctx {requested}, or set OLLAMA_CONTEXT_LENGTH on the server."),
