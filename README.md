@@ -94,6 +94,7 @@ separately from application tests; see [Status and evidence](#status-and-evidenc
 | Small-model effort | Explicit output/sampling, actual request receipts, host workflow, one active skill, source/import outlines and serial independently checked candidates |
 | Offline improvement | Development-only instruction proposals with review/rollback; pending trajectory capture, SFT resume/export tooling and verified rewards |
 | Recovery | State backup/restore, history retention, preserved imported weights, diagnostics and package rollback |
+| Interface | Five themes, four layouts, mouse and keyboard; motion (page cascade, dialog pop, toasts, streaming cursor, gliding meters) with Full, Reduced and Off levels |
 
 **Full access** uses normal host permissions. **Guided changes** reviews edits and
 uses Bubblewrap for isolated checks; it reports unavailable isolation instead of
@@ -164,7 +165,7 @@ Keys are referenced by environment-variable name, not saved in model profiles.
 - [Small-model implementation plan](docs/SMALL_MODEL_IMPLEMENTATION_PLAN.md) · [Training handoff](training/README.md)
 - [Small-model usage](docs/SMALL_MODEL_USAGE.md) · [Delivered work orders and remaining gates](docs/SMALL_MODEL_DELIVERY.md)
 - [Installation and updates](docs/INSTALLATION.md) · [Troubleshooting](docs/TROUBLESHOOTING.md)
-- [Workspace guide](docs/WORKSPACE_GUIDE.md) · [CLI reference](docs/CLI.md)
+- [Workspace guide](docs/WORKSPACE_GUIDE.md) · [Motion](docs/MOTION.md) · [CLI reference](docs/CLI.md)
 - [Verification contracts](docs/VERIFICATION_CONTRACTS.md) · [Runtime qualification](docs/QUALIFICATION.md)
 - [Architecture](docs/ARCHITECTURE.md) · [Contributing](CONTRIBUTING.md) · [Changelog](CHANGELOG.md)
 - [Implementation and evidence](docs/IMPLEMENTATION.md) · [0.7 work orders](docs/WORK_ORDERS_0.7.md) · [PC test guide](docs/PC_TESTING.md)

@@ -567,16 +567,20 @@ fn dialog_layer(frame: &mut Frame, app: &mut App, area: Rect) {
     // The backdrop dims in one step; only the dialog itself animates.
     fx::fade(frame.buffer_mut(), area, shade, 0.5, TEXT());
     let entrance = entrance.map(|t| motion::stepped(t, 3));
-    let before = fx::snapshot(frame.buffer_mut(), area);
+    // Only the entrance needs what lay beneath; a settled dialog costs no
+    // full-screen snapshot.
+    let moves = app.motion.level.moves();
+    let before = (entrance.is_some() && moves).then(|| fx::snapshot(frame.buffer_mut(), area));
+    app.motion.dialog_rect = None;
     modal(frame, app, area);
     let buf = frame.buffer_mut();
-    let Some(rect) = fx::changed(buf, area, &before) else {
+    let Some(rect) = app.motion.dialog_rect.map(|r| r.intersection(area)) else {
         return;
     };
-    let visible = match entrance {
-        Some(t) if app.motion.level.moves() => {
+    let visible = match (entrance, &before) {
+        (Some(t), Some(before)) => {
             let visible = fx::scaled(rect, 0.86 + 0.14 * motion::ease_out_back(t));
-            fx::clip_to(buf, area, &before, rect, visible);
+            fx::clip_to(buf, area, before, rect, visible);
             // A ring on the growing edge keeps the reveal a clean box.
             if visible != rect {
                 Block::default()
@@ -2122,6 +2126,7 @@ fn modal(frame: &mut Frame, app: &mut App, area: Rect) {
             _ => 24,
         },
     );
+    app.motion.dialog_rect = Some(rect);
     frame.render_widget(Clear, rect);
     match dialog {
         Dialog::Menu {
@@ -2550,6 +2555,7 @@ fn permission_modal(frame: &mut Frame, app: &mut App, area: Rect) {
     };
     let tool = &params["toolCall"];
     let rect = centered(area, 94, area.height.saturating_sub(2));
+    app.motion.dialog_rect = Some(rect);
     frame.render_widget(Clear, rect);
     frame.render_widget(
         block(" Review this action ", true).border_style(style(WARN())),
@@ -3235,6 +3241,76 @@ mod tests {
             buffer[(2, 0)].fg,
             buffer[(4, 0)].fg,
             "A and T differ in hue"
+        );
+    }
+    /// Frame-time budget (M05): drawing with every effect active must stay far
+    /// inside the 16 ms animation frame. The same scripted session (page
+    /// changes, dialogs opening and closing, toasts, a gliding meter, a busy
+    /// task) runs with motion Off and Full; Full is reported against Off.
+    /// Debug builds are several times slower than release, so the default
+    /// debug budget is generous; `ALT_FRAME_BUDGET_MS` sets an exact one.
+    fn scripted_frames(level: motion::Level) -> Vec<f64> {
+        let dir = tempfile::tempdir().unwrap();
+        let mut app = App::load(dir.path().to_path_buf(), "goose".into(), None).unwrap();
+        app.preferences.project = dir.path().to_path_buf();
+        app.motion = motion::Motion::new(level);
+        app.motion.splash_until = None;
+        app.layout = LayoutMode::Split;
+        app.busy = true;
+        app.context_size = Some(8192);
+        for i in 0..40 {
+            app.messages.push_back(Message {
+                role: if i % 2 == 0 { "You" } else { "Alt" },
+                text: "A line of conversation with some length to wrap. ".repeat(4),
+            });
+        }
+        let mut terminal = Terminal::new(TestBackend::new(160, 48)).unwrap();
+        let mut times = Vec::new();
+        for frame in 0..300u32 {
+            app.motion.pin(Some(frame as f64 * 16.0));
+            if frame % 40 == 0 {
+                app.set_page(if frame % 80 == 0 {
+                    Page::Chat
+                } else {
+                    Page::Home
+                });
+                app.notify(format!("Notice {frame}"));
+                app.context_used = Some(1024 + frame as u64 * 20);
+            }
+            match frame % 60 {
+                20 => app.connection_wizard(),
+                40 => app.dialog = None,
+                _ => {}
+            }
+            let started = std::time::Instant::now();
+            terminal.draw(|f| draw(f, &mut app)).unwrap();
+            times.push(started.elapsed().as_secs_f64() * 1000.0);
+        }
+        times.sort_by(|a, b| a.partial_cmp(b).unwrap());
+        times
+    }
+    #[test]
+    fn frame_time_stays_inside_budget_with_every_effect_active() {
+        let runtime = tokio::runtime::Runtime::new().unwrap();
+        let _guard = runtime.enter();
+        let off = scripted_frames(motion::Level::Off);
+        let full = scripted_frames(motion::Level::Full);
+        let pick = |t: &[f64], q: usize| t[t.len() * q / 100];
+        eprintln!(
+            "frame time at 160x48 (median / p95 ms): off {:.2} / {:.2}, full {:.2} / {:.2}",
+            pick(&off, 50),
+            pick(&off, 95),
+            pick(&full, 50),
+            pick(&full, 95)
+        );
+        let budget: f64 = std::env::var("ALT_FRAME_BUDGET_MS")
+            .ok()
+            .and_then(|v| v.parse().ok())
+            .unwrap_or(if cfg!(debug_assertions) { 60.0 } else { 8.0 });
+        assert!(
+            pick(&full, 95) < budget,
+            "p95 {:.2} ms over the {budget} ms budget",
+            pick(&full, 95)
         );
     }
     #[tokio::test]

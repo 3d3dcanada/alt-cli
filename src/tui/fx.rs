@@ -66,25 +66,6 @@ pub fn snapshot(buf: &Buffer, area: Rect) -> Vec<Cell> {
     cells
 }
 
-/// The smallest rectangle covering every cell that differs from `before`.
-pub fn changed(buf: &Buffer, area: Rect, before: &[Cell]) -> Option<Rect> {
-    let area = area.intersection(buf.area);
-    let (mut left, mut top, mut right, mut bottom) = (u16::MAX, u16::MAX, 0u16, 0u16);
-    let mut iter = before.iter();
-    for y in area.top()..area.bottom() {
-        for x in area.left()..area.right() {
-            if iter.next().is_some_and(|cell| *cell != buf[(x, y)]) {
-                left = left.min(x);
-                right = right.max(x);
-                top = top.min(y);
-                bottom = bottom.max(y);
-            }
-        }
-    }
-    (left <= right && top <= bottom)
-        .then(|| Rect::new(left, top, right - left + 1, bottom - top + 1))
-}
-
 /// Grow `rect` from `scale` of its size about its centre.
 pub fn scaled(rect: Rect, scale: f64) -> Rect {
     let scale = scale.clamp(0.0, 1.2);
@@ -219,13 +200,12 @@ mod tests {
     }
 
     #[test]
-    fn changed_bounds_and_clipped_reveal() {
+    fn clipped_reveal_restores_the_backdrop_outside_the_visible_box() {
         let mut buf = Buffer::empty(Rect::new(0, 0, 10, 5));
         let before = snapshot(&buf, buf.area);
         buf.set_string(2, 1, "xxxxx", ratatui::style::Style::default());
         buf.set_string(2, 3, "yyyyy", ratatui::style::Style::default());
-        let dialog = changed(&buf, buf.area, &before).unwrap();
-        assert_eq!(dialog, Rect::new(2, 1, 5, 3));
+        let dialog = Rect::new(2, 1, 5, 3);
         let visible = scaled(dialog, 0.5);
         assert!(dialog.contains(visible.as_position()));
         let area = buf.area;
