@@ -83,6 +83,10 @@ openrouter, groq, together, deepseek, mistral, gemini, cerebras, lmstudio, vllm,
 llamacpp, ollama, custom. Explicit `--endpoint`, `--provider` and `--api-key-env`
 win over the preset. `alt models --filter glm` searches the server's catalog.
 
+Model probe: `alt probe` sends one bounded request and prints server facts, the
+observed reply and labelled suggestions; `alt probe --apply thinking-off` applies
+one. Nothing changes without `--apply`.
+
 Open parameters: `alt params show` lists every request and owned-runtime
 parameter, the exact request fields and the llama-server argv. `alt params set
 repeat_penalty 1.1`, `alt params set extra_body '{"top_a":0.1}'`, `alt params set

@@ -2,6 +2,18 @@
 
 ## Unreleased — 0.7 (work orders in docs/WORK_ORDERS_0.7.md)
 
+### A05 model capability probe
+
+- *Probe this model* (Settings → Models, Ctrl+P, `alt probe`) reads native context
+  and template facts (`/props` on llama.cpp, `/api/show` on Ollama), then sends one
+  bounded request (at most 512 output tokens) with a trivial tool and the model's
+  default thinking. It records whether the model called the tool, reasoned, or hit
+  the limit.
+- Suggestions are labelled choices: thinking off or low, a larger output allowance,
+  compact tools, or matching the server's native context. Nothing is applied until
+  you pick one (`alt probe --apply ID` headless). Reports are stored per model
+  identity under `probes/`. Owned runtimes are started and stopped for the probe.
+
 ### A04 hosted-provider resilience
 
 - Retries for HTTP 429, 5xx and dropped connections with capped exponential

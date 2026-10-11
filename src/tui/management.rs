@@ -64,6 +64,9 @@ impl App {
         if action.starts_with("params-") {
             return self.manage_params(action, state);
         }
+        if action.starts_with("probe-") {
+            return self.manage_probe(action, state);
+        }
         if action.starts_with("inference-") {
             return self.manage_inference(action, state);
         }
@@ -914,6 +917,106 @@ impl App {
                 self.notify("Model allocation saved. For this saved task, open Allowance → Apply saved allocation and reconnect.");
             }
             _ => anyhow::bail!("Unknown inference action"),
+        }
+        Ok(())
+    }
+    /// A05: run the bounded probe in the background, then offer its
+    /// suggestions as labelled choices.
+    fn manage_probe(&mut self, action: &str, state: Value) -> Result<()> {
+        match action {
+            "probe-run" => {
+                ensure!(
+                    !self.busy && !self.connecting,
+                    "Stop the current task before probing"
+                );
+                let (_, profile) = self.current_profile().context("Choose a model first")?;
+                let profile = profile.clone();
+                let root = self.root.clone();
+                let preferences = self.preferences.clone();
+                // An owned runtime must not run twice on a small GPU.
+                if profile.local_model.is_some() {
+                    self.workspace = None;
+                    self.connected = false;
+                }
+                self.launch_job(
+                    "Probing the model (one short request)",
+                    move |cancel, _| async move {
+                        let report =
+                            crate::probe::run(&root, &preferences, &profile, cancel).await?;
+                        Ok(JobResult::Manager("probe-result".into(), report))
+                    },
+                )?;
+            }
+            "probe-result" => {
+                let observed = &state["observed"];
+                let mut items: Vec<(String, String, String, Value)> = state["suggestions"]
+                    .as_array()
+                    .into_iter()
+                    .flatten()
+                    .map(|s| {
+                        (
+                            s["label"].as_str().unwrap_or("").to_string(),
+                            s["why"].as_str().unwrap_or("").to_string(),
+                            "probe-apply".into(),
+                            json!({"id":s["id"],"label":s["label"]}),
+                        )
+                    })
+                    .collect();
+                items.push((
+                    "Inspect the probe report".into(),
+                    "Server facts, observed reply and every suggestion".into(),
+                    "probe-inspect".into(),
+                    state.clone(),
+                ));
+                items.push((
+                    "Keep current settings".into(),
+                    "Nothing changes".into(),
+                    "close".into(),
+                    json!({}),
+                ));
+                let context = state["server"]["native_context"]
+                    .as_u64()
+                    .map(|n| format!("native context {n}"))
+                    .unwrap_or_else(|| "native context not reported".into());
+                self.manager_menu(
+                    "Probe results",
+                    &format!(
+                        "Tool call: {} · thinking seen: {} · finish: {} · {context}. Choose a suggestion to apply it; nothing changes otherwise.",
+                        if observed["tool_call"] == true { "yes" } else { "no" },
+                        if observed["reasoning_seen"] == true { "yes" } else { "no" },
+                        observed["finish_reason"].as_str().unwrap_or("unknown"),
+                    ),
+                    items,
+                );
+            }
+            "probe-inspect" => {
+                self.dialog = Some(Dialog::Notice {
+                    title: "Model probe report".into(),
+                    body: serde_json::to_string_pretty(&state)?,
+                    scroll: 0,
+                })
+            }
+            "probe-apply" => {
+                ensure!(
+                    !self.busy && !self.connecting,
+                    "Stop the current task before changing settings"
+                );
+                let profile = self.current_profile().map(|(n, _)| n.to_owned());
+                crate::probe::apply(
+                    &self.root,
+                    profile.as_deref(),
+                    state["id"].as_str().context("Suggestion")?,
+                )?;
+                self.config = crate::config::Config::load(&self.root)?;
+                self.preferences = crate::config::Preferences::load(&self.root)?;
+                self.workspace = None;
+                self.connected = false;
+                self.notify(format!(
+                    "{} applied to this connection. The model and provider are unchanged; it takes effect on the next connection.",
+                    state["label"].as_str().unwrap_or("Suggestion")
+                ));
+            }
+            _ => anyhow::bail!("Unknown probe action"),
         }
         Ok(())
     }
