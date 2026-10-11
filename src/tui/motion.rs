@@ -3,9 +3,6 @@
 //! frame drawn twice at the same instant is identical and tests can pin the
 //! clock. Motion never delays input or hides state: transitions are short,
 //! text is never withheld, and `Off` renders every frame in its final state.
-// Staged across M01–M04: transitions, toasts and pointer feedback land in the
-// following orders; this allowance is removed once all of them are wired.
-#![allow(dead_code)]
 use ratatui::layout::Rect;
 use ratatui::style::Color;
 use std::cell::Cell;
@@ -241,9 +238,10 @@ impl Motion {
         }
     }
     /// Pin the clock (milliseconds since start); `None` returns to real time.
+    #[cfg(test)]
     pub fn pin(&mut self, ms: Option<f64>) {
         self.pinned = ms;
-        self.tick();
+        self.tick(false);
     }
     pub fn set_level(&mut self, level: Level) {
         self.level = level;
@@ -260,16 +258,23 @@ impl Motion {
             self.hover_rect = None;
         }
     }
-    /// Advance the clock; called once at the start of every frame.
-    pub fn tick(&mut self) -> f64 {
+    /// Advance the clock; called once at the start of every frame. `busy`
+    /// lets focus rings breathe while a task runs (and stay still otherwise).
+    pub fn tick(&mut self, busy: bool) -> f64 {
         self.now = self
             .pinned
             .unwrap_or_else(|| self.epoch.elapsed().as_secs_f64() * 1000.0);
         self.toasts.retain(|t| self.now - t.born < TOAST_MS);
+        // When the splash ends the interface cascades in like a page change.
+        if self.splash_until.is_some_and(|until| self.now >= until) {
+            self.splash_until = None;
+            self.page_since = Some(self.now);
+        }
         FRAME.with(|f| {
             f.set(Shared {
                 now: self.now,
                 level: self.level,
+                busy,
             })
         });
         self.now
@@ -445,8 +450,11 @@ impl Motion {
         let until = self.splash_until?;
         (self.now < until).then(|| self.now / until)
     }
+    /// Any key or click ends the splash at once; it never holds input.
     pub fn dismiss_splash(&mut self) {
-        self.splash_until = None;
+        if self.splash_until.take().is_some() && self.level.moves() {
+            self.page_since = Some(self.now);
+        }
     }
     /// True while something moves fast enough to need the 16 ms frame.
     pub fn active(&self) -> bool {
@@ -484,26 +492,33 @@ impl Motion {
 struct Shared {
     now: f64,
     level: Level,
+    busy: bool,
 }
 
 thread_local! {
-    static FRAME: Cell<Shared> = const { Cell::new(Shared { now: 0.0, level: Level::Off }) };
+    static FRAME: Cell<Shared> = const {
+        Cell::new(Shared {
+            now: 0.0,
+            level: Level::Off,
+            busy: false,
+        })
+    };
 }
 
 /// Milliseconds on the motion clock for the frame being drawn.
 pub fn now() -> f64 {
     FRAME.with(|f| f.get().now)
 }
-pub fn level() -> Level {
-    FRAME.with(|f| f.get().level)
-}
-/// Slow 0..1 "breath" for focus rings; flat when motion is reduced or off.
+/// Slow 0..1 "breath" for focus rings while a task runs; flat when idle or
+/// when motion is reduced or off, so an idle Alt writes nothing to the
+/// terminal. Eight levels keep the ring to a few small repaints a second.
 pub fn breath() -> f64 {
-    if !level().moves() {
+    let shared = FRAME.with(|f| f.get());
+    if !shared.level.moves() || !shared.busy {
         return 0.0;
     }
-    let phase = now() / 2600.0 * std::f64::consts::TAU;
-    (1.0 - phase.cos()) / 2.0
+    let phase = shared.now / 2600.0 * std::f64::consts::TAU;
+    stepped((1.0 - phase.cos()) / 2.0, 8)
 }
 /// Spinner frame from the clock, so speed does not depend on frame rate.
 pub fn spin(frames: usize) -> usize {
