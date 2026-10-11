@@ -1,4 +1,5 @@
 mod app;
+mod fx;
 mod input;
 mod keys;
 pub(crate) mod motion;

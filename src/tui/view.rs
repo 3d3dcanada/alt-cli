@@ -2,7 +2,7 @@
 // the per-frame theme instead of hard-coded values.
 #![allow(non_snake_case)]
 
-use super::{app::*, input::Editor, motion, theme};
+use super::{app::*, fx, input::Editor, motion, theme};
 use crate::{display_text, models::human_bytes};
 use ratatui::{
     Frame,
@@ -283,11 +283,105 @@ pub fn draw(frame: &mut Frame, app: &mut App) {
         Page::Jobs => jobs(frame, app, content),
         Page::Context => context(frame, app, content),
     }
+    page_transition(frame, app, content);
     footer(frame, app, root[2]);
-    if app.dialog.is_some() || !app.permissions.is_empty() {
-        app.hits.clear();
-        modal(frame, app, area);
+    dialog_layer(frame, app, area);
+}
+
+/// M02: a new page cascades in: rows settle top to bottom, each sliding a few
+/// columns from the right and fading up from the background (a staggered
+/// entrance). Each row passes through two stages, so the whole transition
+/// costs about three repaints of the page. Reduced keeps the fade; Off draws
+/// in place.
+fn page_transition(frame: &mut Frame, app: &mut App, content: Rect) {
+    let index = Page::ALL.iter().position(|p| *p == app.page).unwrap_or(0) as u8;
+    app.motion.page(index);
+    let Some(t) = app.motion.progress(app.motion.page_since, motion::PAGE_MS) else {
+        return;
+    };
+    let moves = app.motion.level.moves();
+    let height = content.height.max(1) as f64;
+    let buf = frame.buffer_mut();
+    for y in content.top()..content.bottom() {
+        // Rows start 0–45% into the transition and take 55% of it to settle.
+        let delay = (y - content.y) as f64 / height * 0.45;
+        let local = ((t - delay) / 0.55).clamp(0.0, 1.0);
+        let (fade, dx) = match motion::stepped(motion::ease_out_cubic(local), 3) {
+            s if s < 0.33 => (0.8, 4),
+            s if s < 0.66 => (0.35, 1),
+            _ => continue,
+        };
+        let row = Rect::new(content.x, y, content.width, 1);
+        if moves {
+            fx::slide_right(buf, row, dx.min(content.width / 10), BG());
+        }
+        fx::fade(buf, row, BG(), fade, TEXT());
     }
+}
+
+/// Identity of the dialog on screen; a new identity replays the entrance.
+fn dialog_key(app: &App) -> Option<String> {
+    if let Some((id, _)) = app.permissions.front() {
+        return Some(format!("permission:{id}"));
+    }
+    app.dialog.as_ref().map(|dialog| match dialog {
+        Dialog::Menu { title, .. } => format!("menu:{title}"),
+        other => format!("{:?}", std::mem::discriminant(other)),
+    })
+}
+
+/// M02: dialogs dim the page behind them, cast a shadow and pop in (scale
+/// 86% → 100% with a slight overshoot); closing fades them back out.
+fn dialog_layer(frame: &mut Frame, app: &mut App, area: Rect) {
+    let key = dialog_key(app);
+    let entrance = app.motion.modal(key.clone());
+    if key.is_none() {
+        if let Some((t, retained)) = app.motion.closing() {
+            fx::fade_out(
+                frame.buffer_mut(),
+                retained.rect,
+                &retained.cells,
+                motion::stepped(motion::ease_out_cubic(t), 2),
+                TEXT(),
+                BG(),
+            );
+        }
+        return;
+    }
+    app.hits.clear();
+    let shade = motion::blend(BG(), Color::Rgb(0, 0, 0), 0.55);
+    // The backdrop dims in one step; only the dialog itself animates.
+    fx::fade(frame.buffer_mut(), area, shade, 0.5, TEXT());
+    let entrance = entrance.map(|t| motion::stepped(t, 3));
+    let before = fx::snapshot(frame.buffer_mut(), area);
+    modal(frame, app, area);
+    let buf = frame.buffer_mut();
+    let Some(rect) = fx::changed(buf, area, &before) else {
+        return;
+    };
+    let visible = match entrance {
+        Some(t) if app.motion.level.moves() => {
+            let visible = fx::scaled(rect, 0.86 + 0.14 * motion::ease_out_back(t));
+            fx::clip_to(buf, area, &before, rect, visible);
+            visible
+        }
+        _ => rect,
+    };
+    if let Some(t) = entrance {
+        fx::fade(
+            buf,
+            visible,
+            BG(),
+            (1.0 - motion::ease_out_cubic(t)) * 0.7,
+            TEXT(),
+        );
+    } else {
+        app.motion.modal_retained = Some(motion::Retained {
+            rect,
+            cells: fx::snapshot(buf, rect),
+        });
+    }
+    fx::shadow(buf, visible, shade, 0.7);
 }
 
 /// Live activity/context column; rendered beside Chat and in Split layout.
@@ -2639,6 +2733,61 @@ mod tests {
         let text = render(&mut app, 100, 30);
         assert!(text.contains("6K/8K"), "{text}");
         assert_eq!(app.motion.frame_period(), motion::IDLE_FRAME);
+    }
+    fn animated(app: &mut App) {
+        app.motion = motion::Motion::new(motion::Level::Full);
+        app.motion.dismiss_splash();
+        app.motion.pin(Some(0.0));
+    }
+    #[tokio::test]
+    async fn pages_slide_in_and_settle_on_the_exact_final_frame() {
+        let (_dir, mut app) = setup();
+        app.set_page(Page::Help);
+        let still = render(&mut app, 100, 30);
+        animated(&mut app);
+        render(&mut app, 100, 30);
+        app.set_page(Page::Sessions);
+        app.motion.pin(Some(1000.0));
+        let first = render(&mut app, 100, 30);
+        app.motion.pin(Some(1000.0 + motion::PAGE_MS + 1.0));
+        let settled = render(&mut app, 100, 30);
+        assert_ne!(first, settled, "the first frame is mid-slide");
+        assert!(!app.motion.active());
+        app.motion.set_level(motion::Level::Off);
+        assert_eq!(settled, render(&mut app, 100, 30));
+        app.set_page(Page::Help);
+        assert_eq!(still, render(&mut app, 100, 30), "Off draws in place");
+        // Reduced fades without moving: text is in place on the first frame.
+        app.motion.set_level(motion::Level::Reduced);
+        app.set_page(Page::Sessions);
+        assert_eq!(settled, render(&mut app, 100, 30));
+        assert!(app.motion.active());
+    }
+    #[tokio::test]
+    async fn dialogs_pop_in_cast_a_shadow_and_fade_out() {
+        let (_dir, mut app) = setup();
+        animated(&mut app);
+        render(&mut app, 100, 30);
+        app.connection_wizard();
+        let opening = render(&mut app, 100, 30);
+        app.motion.pin(Some(motion::MODAL_IN_MS + 1.0));
+        let open = render(&mut app, 100, 30);
+        assert_ne!(opening, open, "the first frame is a smaller reveal");
+        assert!(open.contains("Where will your model run?"));
+        let hits = app.hits.len();
+        assert!(hits > 0, "dialog targets are live from the first frame");
+        app.dialog = None;
+        app.motion.pin(Some(motion::MODAL_IN_MS + 2.0));
+        let closing = render(&mut app, 100, 30);
+        assert!(
+            closing.contains("Where will your model run?"),
+            "closing fades out"
+        );
+        app.motion
+            .pin(Some(motion::MODAL_IN_MS + motion::MODAL_OUT_MS + 3.0));
+        let closed = render(&mut app, 100, 30);
+        assert!(!closed.contains("Where will your model run?"));
+        assert!(!app.motion.active());
     }
     #[tokio::test]
     async fn every_page_and_dialog_renders_at_supported_sizes() {

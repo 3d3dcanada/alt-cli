@@ -107,6 +107,15 @@ pub fn ease_out_back(t: f64) -> f64 {
     1.0 + c3 * (t - 1.0).powi(3) + c1 * (t - 1.0).powi(2)
 }
 
+/// Quantise progress into `steps` equal stages. Whole-area effects repaint
+/// every cell they touch, so a transition drawn in a few distinct stages costs
+/// a few repaints (identical frames diff to nothing) instead of one per 16 ms
+/// frame — kind to slow SSH links and terminals that read output lazily.
+pub fn stepped(t: f64, steps: u32) -> f64 {
+    let steps = steps.max(1) as f64;
+    ((t.clamp(0.0, 1.0) * steps).floor() / steps).min(1.0)
+}
+
 /// Linear blend of two colours; `t = 0` is `a`, `t = 1` is `b`. Named and
 /// indexed colours cannot be mixed, so they switch at the midpoint.
 pub fn blend(a: Color, b: Color, t: f64) -> Color {
@@ -513,6 +522,16 @@ mod tests {
         }
         assert!(ease_out_back(0.7) > 1.0, "the pop overshoots");
         assert!(ease_out_cubic(0.5) > 0.5, "ease-out leads");
+    }
+
+    #[test]
+    fn stepping_limits_distinct_frames() {
+        let stages: std::collections::BTreeSet<u64> = (0..=100)
+            .map(|i| (stepped(ease_out_cubic(i as f64 / 100.0), 5) * 1000.0) as u64)
+            .collect();
+        assert_eq!(stages.len(), 6);
+        assert_eq!(stepped(0.0, 5), 0.0);
+        assert_eq!(stepped(1.0, 5), 1.0);
     }
 
     #[test]
