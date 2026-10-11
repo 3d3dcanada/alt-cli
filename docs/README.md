@@ -16,6 +16,7 @@
 
 ## Developing and evaluating
 
+- [0.7 owner-PC handoff](PC_HANDOFF_0.7.md): A08 CUDA 12 runtime and the A10 matched re-run.
 - [0.7 work orders and board](WORK_ORDERS_0.7.md): A01–A10, open audit items
   B01–B21 and harvested H01–H02, from the
   [2026-10-08 PC model trial](research/2026-10-08-pc-model-trial/README.md).

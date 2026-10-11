@@ -72,6 +72,19 @@
   and a raw JSON view of the exact request fields and runtime argv. CLI:
   `alt params set|unset|show`.
 
+### A10 harness labels and matched re-run script (prepared; owner PC runs it)
+
+- `scripts/live_acceptance.py`: required `--artifact-label uncensored|standard|hosted`
+  recorded truthfully (`--uncensored` stays an alias); hosted runs need no local
+  file hash; `--api-key-env`, `--thinking-level`, `--dialect`, and `--check-args`
+  validation without requests.
+- `scripts/pc_matrix_0_7.sh`: the trial matrix (8 cases, 16K, compact, 4,096
+  output, 3 repeats) for Spark 4B (Ollama), MiMo 9B abliterated and standard
+  (llama.cpp CUDA) and two NVIDIA models, in a trial arm and a thinking-off arm, with
+  a VRAM headroom check before each GPU cell, recorded skips and stopping every
+  server it starts. `--dry-run` prints and validates all cells in the cloud.
+- `docs/PC_HANDOFF_0.7.md` gives the owner the A08 and A10 steps.
+
 ### A08 managed CUDA 12 runtime (prepared for the owner PC; not run)
 
 - GPU detection from `nvidia-smi` (name, VRAM, compute capability, driver) and a

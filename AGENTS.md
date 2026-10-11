@@ -7,8 +7,10 @@ shell commands or TOML edits. Never lose an unsent message after a connection er
 
 The reference target is Linux, GTX 1070 8 GB VRAM, and 16 GB RAM. Cloud CPU results
 do not establish that machine's performance. Retain CPU operation. Every live
-model evaluation must explicitly use an uncensored/abliterated checkpoint, as
-requested by the owner. Deterministic protocol fixtures have no model weights.
+model evaluation must label its checkpoint truthfully with
+`--artifact-label uncensored|standard|hosted` (owner direction 2026-10-08: uncensored,
+abliterated, standard and hosted models are all first-class); uncensored/abliterated
+checkpoints remain the default evaluation target. Deterministic protocol fixtures have no model weights.
 
 Use the existing checkout; do not create a worktree unless requested. In the cloud:
 
