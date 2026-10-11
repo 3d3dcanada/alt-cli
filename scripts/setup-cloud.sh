@@ -61,6 +61,7 @@ python3 scripts/smoke_task_tui.py
 python3 scripts/smoke_workbench_tui.py
 python3 scripts/smoke_verification_tui.py
 python3 scripts/smoke_practice_tui.py
+python3 scripts/capture_motion.py --check
 python3 scripts/smoke_harness_tui.py
 python3 scripts/smoke_allowance_tui.py --engine /workspace/.alt-tools/goose
 python3 scripts/smoke_pc_recorder.py --engine /workspace/.alt-tools/goose

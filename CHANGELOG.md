@@ -1,5 +1,25 @@
 # Changelog
 
+## Unreleased — 0.8 motion (work orders in docs/WORK_ORDERS_0.8_MOTION.md)
+
+- **Motion** (Settings → Appearance → Motion, Ctrl+P `motion`, `ALT_MOTION`):
+  Full, Reduced (fades only) or Off. The Linux console, `TERM=dumb` and
+  `NO_MOTION` are always Off. See docs/MOTION.md.
+- Pages cascade in. Dialogs dim the page, pop in with a slight overshoot, cast a
+  shadow and fade out. Notices float in as toasts that always match the status
+  line. Replies stream in with a soft cursor. Tool status changes flash, running
+  tools spin, and meters glide. Focus rings breathe while a task runs; buttons
+  glow on hover and flash on click. The launch splash yields to any key.
+- Adaptive frame pacing: 16 ms only while something animates, 60 ms otherwise,
+  and input is drawn within one fast frame. Transitions are drawn in a few
+  distinct stages to keep terminal output low, and an idle Alt writes the same
+  with motion on as off.
+- Proof: a frame-time budget test (release 1.44 ms median at 160×48, Off 1.39 ms),
+  `scripts/capture_motion.py` clips and stills, and `--check`, a bandwidth and
+  idle regression check.
+- `smoke_tui` drains its PTY between processes; before, it could judge a
+  resumed session by the previous process's last frame.
+
 ## Unreleased — 0.7 (work orders in docs/WORK_ORDERS_0.7.md)
 
 ### A06 small-model edit robustness

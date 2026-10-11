@@ -197,6 +197,8 @@ pub struct Motion {
     pub modal_key: Option<String>,
     pub modal_closing: Option<(f64, Retained)>,
     pub modal_retained: Option<Retained>,
+    /// Where the dialog drawn this frame sits; set by the dialog renderer.
+    pub dialog_rect: Option<Rect>,
     pub toasts: Vec<Toast>,
     /// Characters shown of a streaming reply: (message index, shown, last frame ms).
     reveal: Option<(usize, f64, f64)>,
@@ -228,6 +230,7 @@ impl Motion {
             modal_key: None,
             modal_closing: None,
             modal_retained: None,
+            dialog_rect: None,
             toasts: Vec::new(),
             reveal: None,
             flashes: HashMap::new(),
