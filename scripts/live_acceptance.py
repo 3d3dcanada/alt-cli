@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-"""Opt-in repeatable project evaluations; requires an exact uncensored artifact.
+"""Opt-in repeatable project evaluations of an exact, truthfully labelled model.
+--artifact-label is uncensored, standard or hosted; local artifacts are pinned by SHA256.
 Every attempt, timeout, independent oracle and source diff is retained.
 """
 import argparse,hashlib,json,os,signal,sqlite3,subprocess,time,urllib.request,shutil,sys
@@ -16,12 +17,19 @@ p.add_argument("--workflow",choices=["model-plan","host"],default="model-plan")
 p.add_argument("--skill")
 p.add_argument('--thinking',choices=['default','on','off'],default='default');p.add_argument('--stop-after',type=int,help='Retain a bounded pilot and leave remaining matrix cells explicitly unmeasured');p.add_argument('--resume',action='store_true');p.add_argument('--tool-profile',choices=['all','inspect','coding','terminal','compact','compact-lines'],default='all');p.add_argument('--partition',choices=['development','held-out','all'],default='development');p.add_argument('--threads',type=int,default=2);p.add_argument('--batch',type=int,default=128)
 p.add_argument('--verification-plan',action='store_true');p.add_argument('--history-notes',type=int,default=0)
-p.add_argument('--binary',type=Path,default=Path('target/debug/alt'));p.add_argument('--engine',type=Path,required=True);p.add_argument('--model',type=Path,required=True);p.add_argument('--sha256',required=True);p.add_argument('--uncensored',action='store_true',required=True);p.add_argument('--runtime',type=Path);p.add_argument('--provider',choices=['openai','ollama'],default='openai');p.add_argument('--endpoint');p.add_argument('--model-id');p.add_argument('--contexts',default='8192');p.add_argument('--repeats',type=int,default=5);p.add_argument('--cases');p.add_argument('--timeout',type=int,default=240);p.add_argument('--output',type=Path,required=True)
-p.add_argument('--generated-tokens',type=int);p.add_argument('--requests',type=int)
+p.add_argument('--binary',type=Path,default=Path('target/debug/alt'));p.add_argument('--engine',type=Path,required=True);p.add_argument('--model',type=Path,help='Local model file (required for a managed runtime and for local labels)');p.add_argument('--sha256',help='SHA256 of --model');p.add_argument('--artifact-label',choices=['uncensored','standard','hosted'],help='Recorded truthfully: publisher-labelled uncensored/abliterated, standard, or a hosted API model');p.add_argument('--uncensored',action='store_true',help='Deprecated alias for --artifact-label uncensored');p.add_argument('--thinking-level',choices=['default','off','low','medium','high'],help='A01 reasoning choice for any server (alt inference --thinking)');p.add_argument('--dialect',choices=['auto','llama-cpp','ollama','chat-template','openai-effort']);p.add_argument('--runtime',type=Path);p.add_argument('--provider',choices=['openai','ollama'],default='openai');p.add_argument('--endpoint');p.add_argument('--model-id');p.add_argument('--contexts',default='8192');p.add_argument('--repeats',type=int,default=5);p.add_argument('--cases');p.add_argument('--timeout',type=int,default=240);p.add_argument('--output',type=Path,required=True)
+p.add_argument('--check-args',action='store_true',help='Validate arguments and exit before hashing files or issuing any model request');p.add_argument('--api-key-env',help='Environment variable holding the endpoint key (hosted comparison runs)');p.add_argument('--generated-tokens',type=int);p.add_argument('--requests',type=int)
 p.add_argument('--instruction-draft',type=Path,help='Trial this bounded offline supplement for this campaign only')
 p.add_argument('--interface',choices=['cli','tui'],default='cli');p.add_argument('--width',type=int,default=80);p.add_argument('--height',type=int,default=24)
 p.add_argument('--followup-prompt',action='append',default=[],help='Send a follow-up in the same actual TUI conversation after a normal turn; the total deadline/allowance remains shared')
 a=p.parse_args()
+if a.uncensored:
+ assert a.artifact_label in (None,'uncensored'),'--uncensored conflicts with --artifact-label'
+ a.artifact_label='uncensored'
+assert a.artifact_label,'Choose --artifact-label uncensored, standard or hosted; it is recorded as given'
+assert a.artifact_label!='hosted' or (not a.runtime and a.endpoint and a.model_id),'Hosted runs use --endpoint and --model-id without a managed runtime'
+assert a.artifact_label=='hosted' or not a.runtime or (a.model and a.sha256),'A managed runtime needs --model and --sha256'
+assert (a.model is None)==(a.sha256 is None),'Pass --model and --sha256 together'
 if a.suite=='v5':
  from acceptance_v5 import CASES,setup,check,ORACLE_VERSION,DEVELOPMENT,HELD_OUT,oracle_inputs,assertion_script
 assert a.timeout>0 and a.threads>0 and 16<=a.batch<=8192
@@ -32,10 +40,15 @@ assert len(a.followup_prompt)<=3 and all(0<len(p.encode())<=64000 for p in a.fol
 assert a.cases is None or all(n in CASES for n in a.cases.split(',')), 'Unknown fixture'
 a.cases=a.cases or ','.join(DEVELOPMENT if a.partition=='development' else HELD_OUT if a.partition=='held-out' else CASES);assert a.runtime or (a.endpoint and a.model_id),'Choose managed runtime or explicit endpoint/model';assert a.repeats>=1
 assert a.runtime or a.thinking=='default','Configure reasoning on the external server; this switch controls only an owned runtime'
-binary=a.binary.resolve();artifact=a.model.resolve();h=hashlib.sha256()
-with artifact.open('rb') as f:
- for b in iter(lambda:f.read(8*1024*1024),b''):h.update(b)
-assert h.hexdigest()==a.sha256,'Wrong model artifact'
+if a.check_args:
+ print(json.dumps({'arguments':'valid','artifact_label':a.artifact_label,'cases':a.cases.split(','),'contexts':a.contexts,'repeats':a.repeats,'tool_profile':a.tool_profile,'output_tokens':a.output_tokens,'thinking_level':a.thinking_level,'runtime':bool(a.runtime),'endpoint':a.endpoint,'model_id':a.model_id}))
+ raise SystemExit(0)
+binary=a.binary.resolve();artifact=a.model.resolve() if a.model else None
+if artifact:
+ h=hashlib.sha256()
+ with artifact.open('rb') as f:
+  for b in iter(lambda:f.read(8*1024*1024),b''):h.update(b)
+ assert h.hexdigest()==a.sha256,'Wrong model artifact'
 root=a.output.resolve();root.mkdir(parents=True,exist_ok=a.resume)
 from evaluation_preflight import inspect
 preflight=inspect([CASES[name] for name in a.cases.split(',')])
@@ -49,7 +62,7 @@ for source in ['live_acceptance.py','live_tui_turn.py','acceptance_projects.py',
  if not target.exists():shutil.copy2(Path(__file__).parent/source,target)
  else:assert hashlib.sha256(target.read_bytes()).hexdigest()==hashlib.sha256((Path(__file__).parent/source).read_bytes()).hexdigest(), "Resume evaluator source changed"
 binary=frozen
-config={'oracle_version':ORACLE_VERSION,'context_scope':'Managed runtime native window and engine budget' if a.runtime else 'Engine budget; external native window is configured on server/tag and inspected separately','model_file':artifact.name,'sha256':a.sha256,'bytes':artifact.stat().st_size,'uncensored':'Explicit user-selected publisher-labelled uncensored/abliterated artifact; no fallback','provider':a.provider,'endpoint':a.endpoint,'model_id':a.model_id,'runtime':str(a.runtime) if a.runtime else 'external','contexts':[int(x)for x in a.contexts.split(',')],'repeats':a.repeats,'timeout_seconds':a.timeout,'binary_sha256':hashlib.sha256(binary.read_bytes()).hexdigest(),'physical_gpu_tested':False,'verification_plan':a.verification_plan,'history_notes':a.history_notes}
+config={'oracle_version':ORACLE_VERSION,'context_scope':'Managed runtime native window and engine budget' if a.runtime else 'Engine budget; external native window is configured on server/tag and inspected separately','model_file':artifact.name if artifact else None,'sha256':a.sha256,'bytes':artifact.stat().st_size if artifact else None,'artifact_label':a.artifact_label,'artifact_scope':{'uncensored':'Explicit user-selected publisher-labelled uncensored/abliterated artifact; no fallback','standard':'Explicit user-selected standard (not uncensored) artifact; no fallback','hosted':'Hosted API model identified by --model-id; provider weights are not hashable locally'}[a.artifact_label],'api_key_env':a.api_key_env,'thinking_level':a.thinking_level,'dialect':a.dialect,'provider':a.provider,'endpoint':a.endpoint,'model_id':a.model_id,'runtime':str(a.runtime) if a.runtime else 'external','contexts':[int(x)for x in a.contexts.split(',')],'repeats':a.repeats,'timeout_seconds':a.timeout,'binary_sha256':hashlib.sha256(binary.read_bytes()).hexdigest(),'physical_gpu_tested':False,'verification_plan':a.verification_plan,'history_notes':a.history_notes}
 config.update({'cases':a.cases.split(','),'partition':a.partition,'tool_profile':a.tool_profile,'threads':a.threads,'batch':a.batch,'engine_sha256':hashlib.sha256(a.engine.read_bytes()).hexdigest(),'runtime_sha256':hashlib.sha256(a.runtime.read_bytes()).hexdigest() if a.runtime else None,'fixture_sha256':hashlib.sha256(json.dumps({name:CASES[name] for name in a.cases.split(',')},sort_keys=True).encode()).hexdigest()})
 config['suite']=a.suite
 config['interface']=a.interface
@@ -94,11 +107,14 @@ for context in config['contexts']:
    if a.thinking!='default':
     with (state/'preferences.toml').open('a') as settings:settings.write('thinking='+('true' if a.thinking=='on' else 'false')+'\n')
    base=[str(binary),'--data-dir',str(state),'--engine',str(a.engine.resolve()),'--access','trusted']
-   arguments=['models','import',str(artifact),'--uncensored','--use']if a.runtime else ['init','--model',a.model_id,'--provider',a.provider,'--endpoint',a.endpoint,'--context',str(context),'--max-turns','12','--uncensored']
+   claim=['--uncensored'] if a.artifact_label=='uncensored' else []
+   arguments=['models','import',str(artifact),*claim,'--use']if a.runtime else ['init','--model',a.model_id,'--provider',a.provider,'--endpoint',a.endpoint,'--context',str(context),'--max-turns','12',*claim]+(['--api-key-env',a.api_key_env] if a.api_key_env else [])
    init=subprocess.run(base+arguments,cwd=project,capture_output=True,text=True,timeout=180);(run_dir/'setup.stdout').write_text(init.stdout);(run_dir/'setup.stderr').write_text(init.stderr);assert init.returncode==0,init.stderr
    allocation=[]
    for field in ['output_tokens','reasoning_tokens','temperature','top_p','generated_tokens','requests']:
     if getattr(a,field) is not None:allocation+=['--'+field.replace('_','-'),str(getattr(a,field))]
+   if a.thinking_level:allocation+=['--thinking',a.thinking_level]
+   if a.dialect:allocation+=['--dialect',a.dialect]
    if allocation:subprocess.run(base+['inference',*allocation],cwd=project,check=True,capture_output=True)
    subprocess.run(base+['workflow',a.workflow],cwd=project,check=True,capture_output=True)
    if a.skill:subprocess.run(base+['skills','use',a.skill],cwd=project,check=True,capture_output=True)
