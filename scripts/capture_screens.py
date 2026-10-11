@@ -53,6 +53,8 @@ PLANS = {
     "a04": [("wait", "Alt"), *palette("hosted output guard"), ("wait", "Always stream live"), ("shot", "output-guard")],
     "a06": [("wait", "Alt"), *palette("setting: tool focus"), ("wait", "Compact: smaller context"), ("shot", "tool-focus")],
     "a08": [("wait", "Alt"), *palette("gpu runtime"), ("wait", "CPU remains the default"), ("shot", "gpu-runtime")],
+    "b07": [("wait", "Alt"), *palette("connect a model"), ("wait", "Where will your model run?"), ("send", b"\x1b[B\r"),
+            ("wait", "Type model ID"), ("shot", "connection-form"), ("send", b"\x1bm"), ("wait", "Enter a model identifier"), ("shot", "manual-model")],
     "board": [("wait", "Alt"), ("send", b"\x10"), ("wait", "Command palette"), ("send", b"setting:"), ("wait", "Setting: Context"),
               ("shot", "palette-settings"), ("send", b"\x1b"), *palette("setting: tool focus"), ("wait", "Which tools fit"),
               ("shot", "palette-setting-opened"), ("send", b"\x1b")],

@@ -3486,4 +3486,30 @@ mod recovery_tests {
         app.workspace_update(workspace::Update::Closed).unwrap();
         assert_eq!(app.composer.text, "Run the tests");
     }
+
+    #[test]
+    fn manual_model_entry_has_a_key_terminals_can_send() {
+        use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
+        let data = tempfile::tempdir().unwrap();
+        let mut app = App::load(data.path().into(), "goose".into(), None).unwrap();
+        app.menu_action(MenuAction::Preset(1)).unwrap();
+        assert!(matches!(app.dialog, Some(Dialog::Connection(_))));
+        app.key(KeyEvent::new(KeyCode::Char('m'), KeyModifiers::ALT))
+            .unwrap();
+        match &app.dialog {
+            Some(Dialog::Input { title, action, .. }) => {
+                assert_eq!(title, "Enter a model identifier");
+                assert!(matches!(action, InputAction::ManualModel(_)));
+            }
+            _ => panic!("manual model entry expected"),
+        }
+        let mut editor = Editor::default();
+        editor.insert("my-exact-model:7b", false);
+        if let Some(Dialog::Input { editor: e, .. }) = &mut app.dialog {
+            *e = editor;
+        }
+        app.key(KeyEvent::new(KeyCode::Enter, KeyModifiers::NONE))
+            .unwrap();
+        assert_eq!(app.current_profile().unwrap().1.model, "my-exact-model:7b");
+    }
 }

@@ -1719,7 +1719,7 @@ fn modal(frame: &mut Frame, app: &mut App, area: Rect) {
                 frame,
                 Rect::new(inner.x, inner.y + 12, inner.width, 2),
                 line(
-                    "Tab changes fields · Enter checks the connection · Ctrl+M enters a model ID manually",
+                    "Tab changes fields · Enter checks the connection · Alt+M types a model ID",
                     MUTED(),
                 ),
             );
@@ -1729,6 +1729,7 @@ fn modal(frame: &mut Frame, app: &mut App, area: Rect) {
                 Rect::new(inner.x, inner.bottom().saturating_sub(1), inner.width, 1),
                 &[
                     ("Check connection", "test-form"),
+                    ("Type model ID", "manual-model"),
                     ("Cancel", "modal-cancel"),
                 ],
             );
