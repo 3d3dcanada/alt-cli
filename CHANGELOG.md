@@ -72,6 +72,15 @@
   and a raw JSON view of the exact request fields and runtime argv. CLI:
   `alt params set|unset|show`.
 
+### A09 repository weight and README (+ B11 package size)
+
+- README opens with what a new user needs: install, connect a model (local or a
+  hosted preset), first task. Results and evidence moved to *Status and evidence*.
+- Packages ship guides, summaries and screenshots but not `docs/evidence` or raw
+  research data; `docs/EVIDENCE.md` in the package points to the exact source commit.
+- `scripts/check_repo_weight.py` (in CI with a full secret scan) refuses tracked
+  files over 1 MiB and model weights or archives. History is not rewritten.
+
 ### A01 reasoning control and thinking-cutoff recovery
 
 - One **Thinking** setting (`default | off | low | medium | high | budget:N`),
