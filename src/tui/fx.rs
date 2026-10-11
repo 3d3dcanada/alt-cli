@@ -1,8 +1,6 @@
 //! Buffer effects applied after widgets render: fades, slides, dims, shadows and
 //! clipped reveals. They only recolour or move cells that were already drawn,
 //! so layout, hit targets and text content are exactly what the widgets made.
-// Staged: gradients and tints are drawn from M03/M04; removed once wired.
-#![allow(dead_code)]
 use super::motion::blend;
 use ratatui::buffer::{Buffer, Cell};
 use ratatui::layout::Rect;

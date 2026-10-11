@@ -10,7 +10,8 @@ use ratatui::{
     style::{Color, Modifier, Style},
     text::{Line, Span, Text},
     widgets::{
-        Block, BorderType, Borders, Clear, Gauge, List, ListItem, ListState, Paragraph, Wrap,
+        Block, BorderType, Borders, Clear, Gauge, List, ListItem, ListState, Paragraph, Widget,
+        Wrap,
     },
 };
 
@@ -62,7 +63,12 @@ fn block(title: impl Into<Line<'static>>, focused: bool) -> Block<'static> {
         .border_type(BorderType::Rounded)
         .title(title)
         .title_style(style(ACCENT()))
-        .border_style(style(if focused { BORDER_FOCUSED() } else { BORDER() }))
+        .border_style(style(if focused {
+            // The focus ring breathes toward the second accent while a task runs.
+            motion::blend(BORDER_FOCUSED(), ACCENT2(), motion::breath() * 0.6)
+        } else {
+            BORDER()
+        }))
         .style(Style::default().bg(PANEL()).fg(TEXT()))
 }
 fn line(text: impl Into<String>, color: Color) -> Line<'static> {
@@ -132,7 +138,7 @@ pub fn draw(frame: &mut Frame, app: &mut App) {
     let area = frame.area();
     theme::set(*app.theme);
     app.frame = app.frame.wrapping_add(1);
-    app.motion.tick();
+    app.motion.tick(app.busy);
     app.hits.clear();
     frame.render_widget(
         Block::default().style(Style::default().bg(BG()).fg(TEXT())),
@@ -171,6 +177,13 @@ pub fn draw(frame: &mut Frame, app: &mut App) {
             line(app.page.name(), TEXT()),
             line(crate::BUILD_LABEL, MUTED()),
         ],
+    );
+    // M04: the wordmark is a two-accent gradient.
+    fx::gradient(
+        frame.buffer_mut(),
+        Rect::new(header[0].x, header[0].y, 7.min(header[0].width), 1),
+        ACCENT(),
+        ACCENT2(),
     );
     let model = app
         .session
@@ -287,6 +300,87 @@ pub fn draw(frame: &mut Frame, app: &mut App) {
     toasts(frame, app, content);
     footer(frame, app, root[2]);
     dialog_layer(frame, app, area);
+    pointer_feedback(frame, app);
+    splash(frame, app, area);
+}
+
+/// M04: the target under the mouse glows softly; a click flashes it.
+fn pointer_feedback(frame: &mut Frame, app: &mut App) {
+    let target = app.motion.hover.and_then(|(x, y)| {
+        app.hits
+            .iter()
+            .rev()
+            .find(|(rect, hit)| rect.contains((x, y).into()) && !matches!(hit, Hit::Composer))
+            .map(|(rect, _)| *rect)
+    });
+    let buf = frame.buffer_mut();
+    if let Some((rect, strength)) = app.motion.hover(target) {
+        fx::tint(
+            buf,
+            rect,
+            ACCENT(),
+            0.16 * motion::stepped(strength, 3),
+            PANEL(),
+        );
+    }
+    if let Some((rect, t)) = app.motion.press() {
+        fx::tint(
+            buf,
+            rect,
+            ACCENT(),
+            0.45 * (1.0 - motion::stepped(t, 3)),
+            PANEL(),
+        );
+    }
+}
+
+/// M04: a short wordmark splash on launch (Full motion only, 720 ms). Any key
+/// passes straight through and ends it; the interface then cascades in.
+fn splash(frame: &mut Frame, app: &mut App, area: Rect) {
+    let Some(t) = app.motion.splash() else {
+        return;
+    };
+    let buf = frame.buffer_mut();
+    for y in area.top()..area.bottom() {
+        for x in area.left()..area.right() {
+            let cell = &mut buf[(x, y)];
+            cell.reset();
+            cell.bg = BG();
+        }
+    }
+    const LOGO: [&str; 2] = ["▄▀█ █   ▀█▀", "█▀█ █▄▄  █ "];
+    const TAGLINE: &str = "L O C A L   W O R K S P A C E";
+    let reveal = motion::stepped(motion::ease_out_cubic(t / 0.45), 4);
+    let top = area.y + area.height.saturating_sub(6) / 2;
+    let logo_x = area.x + area.width.saturating_sub(11) / 2;
+    for (row, text) in LOGO.iter().enumerate() {
+        for (i, ch) in text.chars().enumerate() {
+            let color = motion::blend(ACCENT(), ACCENT2(), i as f64 / 10.0);
+            buf[(logo_x + i as u16, top + row as u16)]
+                .set_char(ch)
+                .set_fg(motion::blend(BG(), color, reveal))
+                .set_bg(BG());
+        }
+    }
+    let tag_x = area.x + area.width.saturating_sub(TAGLINE.len() as u16) / 2;
+    buf.set_string(
+        tag_x,
+        top + 3,
+        TAGLINE,
+        Style::default()
+            .fg(motion::blend(BG(), MUTED(), reveal))
+            .bg(BG()),
+    );
+    let bar = meter_bar(motion::stepped(motion::ease_in_out_cubic(t), 12), 24);
+    let bar_x = area.x + area.width.saturating_sub(24) / 2;
+    buf.set_string(
+        bar_x,
+        top + 5,
+        bar,
+        Style::default()
+            .fg(motion::blend(BG(), ACCENT(), reveal))
+            .bg(BG()),
+    );
 }
 
 /// M02: a new page cascades in: rows settle top to bottom, each sliding a few
@@ -341,7 +435,12 @@ fn toasts(frame: &mut Frame, app: &mut App, content: Rect) {
     let moves = app.motion.level.moves();
     let mut y = content.y;
     for toast in app.motion.toasts.clone().iter().rev() {
-        let mut text = toast.text.clone();
+        let glyph = match toast.tone {
+            motion::Tone::Good => "✓ ",
+            motion::Tone::Bad => "✕ ",
+            motion::Tone::Info => "• ",
+        };
+        let mut text = format!("{glyph}{}", toast.text);
         if toast.count > 1 {
             text.push_str(&format!("  ×{}", toast.count));
         }
@@ -371,7 +470,14 @@ fn toasts(frame: &mut Frame, app: &mut App, content: Rect) {
             Paragraph::new(
                 lines
                     .into_iter()
-                    .map(|l| line(l, TEXT()))
+                    .enumerate()
+                    .map(|(i, l)| match l.strip_prefix(glyph).filter(|_| i == 0) {
+                        Some(rest) => Line::from(vec![
+                            Span::styled(glyph, style(tone).add_modifier(Modifier::BOLD)),
+                            Span::styled(rest.to_owned(), style(TEXT())),
+                        ]),
+                        None => line(l, TEXT()),
+                    })
                     .collect::<Vec<_>>(),
             )
             .block(
@@ -471,6 +577,14 @@ fn dialog_layer(frame: &mut Frame, app: &mut App, area: Rect) {
         Some(t) if app.motion.level.moves() => {
             let visible = fx::scaled(rect, 0.86 + 0.14 * motion::ease_out_back(t));
             fx::clip_to(buf, area, &before, rect, visible);
+            // A ring on the growing edge keeps the reveal a clean box.
+            if visible != rect {
+                Block::default()
+                    .borders(Borders::ALL)
+                    .border_type(BorderType::Rounded)
+                    .border_style(style(BORDER_FOCUSED()))
+                    .render(visible, buf);
+            }
             visible
         }
         _ => rect,
@@ -2886,7 +3000,7 @@ mod tests {
     async fn adaptive_pacing_runs_fast_only_while_animating() {
         let (_dir, mut app) = setup();
         app.motion = motion::Motion::new(motion::Level::Full);
-        app.motion.dismiss_splash();
+        app.motion.splash_until = None;
         app.motion.pin(Some(0.0));
         assert_eq!(app.motion.frame_period(), motion::IDLE_FRAME);
         app.context_used = Some(1024);
@@ -2902,7 +3016,7 @@ mod tests {
     }
     fn animated(app: &mut App) {
         app.motion = motion::Motion::new(motion::Level::Full);
-        app.motion.dismiss_splash();
+        app.motion.splash_until = None;
         app.motion.pin(Some(0.0));
     }
     #[tokio::test]
@@ -3035,6 +3149,93 @@ mod tests {
         app.motion.pin(Some(10.0 + motion::FLASH_MS + 1.0));
         render(&mut app, 140, 40);
         assert!(!app.motion.active());
+    }
+    fn render_buffer(app: &mut App, width: u16, height: u16) -> ratatui::buffer::Buffer {
+        let mut terminal = Terminal::new(TestBackend::new(width, height)).unwrap();
+        terminal.draw(|f| draw(f, app)).unwrap();
+        terminal.backend().buffer().clone()
+    }
+    #[tokio::test]
+    async fn splash_shows_the_wordmark_briefly_and_keys_pass_straight_through() {
+        let (_dir, mut app) = setup();
+        app.motion = motion::Motion::new(motion::Level::Full);
+        app.motion.pin(Some(100.0));
+        let text = render(&mut app, 80, 24);
+        assert!(text.contains("▄▀█ █   ▀█▀"), "{text}");
+        assert!(!text.contains("Start here"), "the splash covers the screen");
+        app.key(KeyEvent::new(KeyCode::Char('2'), KeyModifiers::ALT))
+            .unwrap();
+        assert_eq!(app.page, Page::Chat, "the key still acted");
+        let text = render(&mut app, 80, 24);
+        assert!(!text.contains("▄▀█ █   ▀█▀"));
+        assert!(app.motion.active(), "the interface cascades in");
+        // Left alone, it ends by itself within its budget.
+        let (_dir, mut app) = setup();
+        app.motion = motion::Motion::new(motion::Level::Full);
+        app.motion.pin(Some(motion::SPLASH_MS + 1.0));
+        assert!(!render(&mut app, 80, 24).contains("▄▀█"));
+        let (_dir, mut app) = setup();
+        app.motion = motion::Motion::new(motion::Level::Reduced);
+        assert!(
+            !render(&mut app, 80, 24).contains("▄▀█"),
+            "Reduced has no splash"
+        );
+    }
+    #[tokio::test]
+    async fn hover_glows_and_clicks_flash_the_target() {
+        use crossterm::event::{MouseButton, MouseEventKind};
+        let (_dir, mut app) = setup();
+        animated(&mut app);
+        app.set_page(Page::Help);
+        render_buffer(&mut app, 100, 30);
+        let (rect, _) = app
+            .hits
+            .iter()
+            .find(|(_, hit)| matches!(hit, Hit::Nav(Page::Models)))
+            .cloned()
+            .unwrap();
+        let plain = render_buffer(&mut app, 100, 30)[(rect.x + 2, rect.y)].bg;
+        app.mouse(MouseEventKind::Moved, rect.x + 2, rect.y)
+            .unwrap();
+        app.motion.pin(Some(motion::HOVER_MS + 1.0));
+        render_buffer(&mut app, 100, 30);
+        app.motion.pin(Some(2.0 * motion::HOVER_MS + 2.0));
+        let hovered = render_buffer(&mut app, 100, 30)[(rect.x + 2, rect.y)].bg;
+        assert_ne!(plain, hovered, "hover tints the target");
+        app.mouse(MouseEventKind::Down(MouseButton::Left), rect.x + 2, rect.y)
+            .unwrap();
+        assert_eq!(app.page, Page::Models);
+        assert!(app.motion.press().is_some(), "the click flashes");
+    }
+    #[tokio::test]
+    async fn focus_rings_breathe_only_while_a_task_runs_and_the_wordmark_is_a_gradient() {
+        let (_dir, mut app) = setup();
+        animated(&mut app);
+        app.set_page(Page::Settings);
+        let colors = |app: &mut App| {
+            let buffer = render_buffer(app, 100, 30);
+            (0..30)
+                .flat_map(|y| (0..100).map(move |x| (x, y)))
+                .map(|(x, y)| buffer[(x, y)].fg)
+                .collect::<Vec<_>>()
+        };
+        app.motion.pin(Some(1000.0));
+        let idle_a = colors(&mut app);
+        app.motion.pin(Some(2300.0));
+        let idle_b = colors(&mut app);
+        assert_eq!(idle_a, idle_b, "an idle screen does not change");
+        app.busy = true;
+        app.motion.pin(Some(1300.0));
+        let busy_a = colors(&mut app);
+        app.motion.pin(Some(2600.0));
+        let busy_b = colors(&mut app);
+        assert_ne!(busy_a, busy_b, "the focus ring breathes while working");
+        let buffer = render_buffer(&mut app, 100, 30);
+        assert_ne!(
+            buffer[(2, 0)].fg,
+            buffer[(4, 0)].fg,
+            "A and T differ in hue"
+        );
     }
     #[tokio::test]
     async fn every_page_and_dialog_renders_at_supported_sizes() {
