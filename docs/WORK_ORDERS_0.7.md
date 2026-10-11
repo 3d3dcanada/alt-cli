@@ -194,3 +194,34 @@ Three unmerged branches were reviewed and harvested by hand, never merged:
 
 Order of work: board (this section) → A07 (+B04, B05) → A01 → A02 → A03 (+B03) → A04 →
 A05 → A06 → A09 (+B11) → A08 and A10 prepared for the owner PC → B01, B02, B06–B10, H01.
+
+## Status (cloud, 2026-10-11)
+
+Branch `cloud/0.7-2026-10-11`; fixtures only (no keys, no GPU, no weights). Every
+commit ran fmt, strict Clippy, `cargo test`, the TUI smoke scripts relevant to it and
+a secret scan; the final head passed the complete `scripts/setup-cloud.sh` (173 Rust
+tests, 72 Python unit tests, all TUI/Goose/compact/stream-recovery smokes).
+Screenshots per order are in `docs/screenshots/0.7/<order>/` at 80×24 and 120×40.
+
+| Order | Commit | Result | Deferred |
+| --- | --- | --- | --- |
+| Board | a9318a4 | Work orders, trial, audit and harvest plan on main; every setting in the palette | — |
+| A07 | 7bed166 | Scoped trust and `--allow-terminal`; data folder protected; case-insensitive secret names; loopback-only plain HTTP auth; runtime API key file; headless extension check needs Full (B04, B05); hashed dev requirements | `persist-credentials: false` on the three evidence jobs that `git push` |
+| A01 | 3508ee8 | Thinking control per dialect; cutoff detection, labelled recovery, typed headless event | — |
+| A02 | 190a4c1 | Penalties, seed, stop, typical-p, extra JSON; Ollama `num_ctx` + `/api/ps` read-back; named llama-server options; `alt params` | Whether a given Ollama version honours `num_ctx` on `/v1` is measured on the PC (Alt reports what loaded) |
+| A03 | f801b52 | 13 presets, `alt init --preset`, catalog search; key never stored (smoke-proven); B03 Ollama auth | — |
+| A04 | 9ba7be1 | Retries with Retry-After; output guard discards degenerate output once | — |
+| A05 | 86c1ab8 | Bounded probe with labelled, opt-in suggestions | — |
+| A06 | 76529ee | `replace_file`; whitespace-tolerant `old_text` with closest-span handle | Effect measured by A10 |
+| A09 | f322b8f | New-user README; package docs 96% smaller (B11); weight rule in CI | — |
+| A08 | 93b788c | GPU detection, pinned installer, explicit selection, pin and PC check scripts | Pin slot empty until a build is verified on the owner PC |
+| A10 | eb02759 | Truthful labels; `pc_matrix_0_7.sh` validated by `--dry-run` | The run itself (owner PC) |
+| B01 | 518518c | Connection edits keep custom settings | — |
+| B02 | ccf9807 | Text typed while connecting is kept | Durable drafts across New/quit (B14) |
+| B06 | 258374f | Selected runtime/engine never falls back | — |
+| B07 | 73812c4 | Manual model ID on Alt+M and a button | — |
+| B08 | 999b3f2 | Cancelled connection check opens nothing | — |
+| B09 | 6acd751 | GGUF fixed-header validation | Import shard-set discovery (with B12) |
+| B10 | 05ea611 | Oversized paste explained | 60×18 connection form |
+| H01 | 6042ae4 | Home dashboard on wide terminals | H02 custom accent colour |
+| B12–B21 | — | Not started this cycle | F01, F02, F03 rest, F04, F05, F07 rest, F11, F13, F14; reference implementation in `build/final-pass-2026-10-08` (`bb34872`) |
