@@ -175,7 +175,7 @@ pub struct Toast {
     pub text: String,
     pub tone: Tone,
     pub born: f64,
-    /// Identical notices collapse into one card with a count.
+    /// Identical consecutive notices collapse into one card with a count.
     pub count: u32,
 }
 
@@ -371,15 +371,15 @@ impl Motion {
             last.born = self.now;
             return;
         }
+        // One notice at a time, like the status line it echoes: a new notice
+        // replaces the old one at once, so nothing stale lingers on screen.
+        self.toasts.clear();
         self.toasts.push(Toast {
             text: text.to_owned(),
             tone,
             born: self.now,
             count: 1,
         });
-        if self.toasts.len() > 3 {
-            self.toasts.remove(0);
-        }
     }
     /// How many characters of message `index` (of `len`) to show. Only replies
     /// that grow while visible are revealed; history appears at once.
@@ -613,7 +613,7 @@ mod tests {
     }
 
     #[test]
-    fn toasts_collapse_cap_and_expire() {
+    fn toasts_collapse_replace_and_expire() {
         let mut m = Motion::new(Level::Reduced);
         m.pin(Some(0.0));
         m.toast("Saved", Tone::Good);
@@ -623,8 +623,8 @@ mod tests {
         for text in ["a", "b", "c", "d"] {
             m.toast(text, Tone::Info);
         }
-        assert_eq!(m.toasts.len(), 3);
-        assert_eq!(m.toasts[0].text, "b");
+        assert_eq!(m.toasts.len(), 1, "a new notice replaces the old one");
+        assert_eq!(m.toasts[0].text, "d");
         m.pin(Some(TOAST_MS + 1.0));
         assert!(m.toasts.is_empty());
         let mut off = Motion::new(Level::Off);

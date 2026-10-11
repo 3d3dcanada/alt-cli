@@ -284,6 +284,7 @@ pub fn draw(frame: &mut Frame, app: &mut App) {
         Page::Context => context(frame, app, content),
     }
     page_transition(frame, app, content);
+    toasts(frame, app, content);
     footer(frame, app, root[2]);
     dialog_layer(frame, app, area);
 }
@@ -317,6 +318,113 @@ fn page_transition(frame: &mut Frame, app: &mut App, content: Rect) {
         }
         fx::fade(buf, row, BG(), fade, TEXT());
     }
+}
+
+/// M03: notices float in at the top right of the page and fade away. They
+/// echo the status line (which stays put) and never take clicks.
+fn toasts(frame: &mut Frame, app: &mut App, content: Rect) {
+    // A toast only ever shows the current status; any later status (an
+    // error, progress, a direct update) retires it at once.
+    if app
+        .motion
+        .toasts
+        .last()
+        .is_some_and(|t| t.text != app.status.trim() || app.status_error)
+    {
+        app.motion.toasts.clear();
+    }
+    if app.motion.toasts.is_empty() || content.width < 30 || content.height < 8 {
+        return;
+    }
+    let width = content.width.saturating_sub(2).min(46);
+    let now = app.motion.now();
+    let moves = app.motion.level.moves();
+    let mut y = content.y;
+    for toast in app.motion.toasts.clone().iter().rev() {
+        let mut text = toast.text.clone();
+        if toast.count > 1 {
+            text.push_str(&format!("  ×{}", toast.count));
+        }
+        let lines = textwrap_lines(&text, width.saturating_sub(4) as usize, 2);
+        let height = lines.len() as u16 + 2;
+        if y + height > content.bottom() {
+            break;
+        }
+        let age = now - toast.born;
+        // Four stages in and out keep a toast to a few small repaints.
+        let enter = motion::stepped(motion::ease_out_cubic(age / motion::TOAST_EDGE_MS), 4);
+        let leave = motion::stepped((motion::TOAST_MS - age) / motion::TOAST_EDGE_MS, 4);
+        let shift = if moves {
+            ((1.0 - enter) * (width as f64 * 0.5)).round() as u16
+        } else {
+            0
+        };
+        let x = content.right().saturating_sub(width + 1) + shift;
+        let rect = Rect::new(x, y, width.min(content.right().saturating_sub(x)), height);
+        let tone = match toast.tone {
+            motion::Tone::Good => GOOD(),
+            motion::Tone::Bad => BAD(),
+            motion::Tone::Info => ACCENT(),
+        };
+        frame.render_widget(Clear, rect);
+        frame.render_widget(
+            Paragraph::new(
+                lines
+                    .into_iter()
+                    .map(|l| line(l, TEXT()))
+                    .collect::<Vec<_>>(),
+            )
+            .block(
+                Block::default()
+                    .borders(Borders::LEFT | Borders::TOP | Borders::BOTTOM | Borders::RIGHT)
+                    .border_type(BorderType::Rounded)
+                    .border_style(style(tone))
+                    .style(Style::default().bg(PANEL()).fg(TEXT())),
+            ),
+            rect,
+        );
+        let buf = frame.buffer_mut();
+        let fade = 1.0 - enter.min(leave);
+        if fade > 0.0 {
+            fx::fade(buf, rect, BG(), fade, TEXT());
+        }
+        fx::shadow(
+            buf,
+            rect,
+            motion::blend(BG(), Color::Rgb(0, 0, 0), 0.55),
+            0.5 * (1.0 - fade),
+        );
+        y += height + 1;
+    }
+}
+
+/// Greedy word wrap into at most `max` lines; the last line ends in "…" when cut.
+fn textwrap_lines(text: &str, width: usize, max: usize) -> Vec<String> {
+    let width = width.max(8);
+    let mut lines: Vec<String> = Vec::new();
+    let mut current = String::new();
+    for word in display_text(text).split_whitespace() {
+        let fits =
+            current.chars().count() + word.chars().count() + usize::from(!current.is_empty())
+                <= width;
+        if !fits && !current.is_empty() {
+            lines.push(std::mem::take(&mut current));
+        }
+        if !current.is_empty() {
+            current.push(' ');
+        }
+        current.push_str(&word.chars().take(width).collect::<String>());
+    }
+    if !current.is_empty() {
+        lines.push(current);
+    }
+    if lines.len() > max {
+        lines.truncate(max);
+        let last = &mut lines[max - 1];
+        let keep: String = last.chars().take(width.saturating_sub(1)).collect();
+        *last = format!("{keep}…");
+    }
+    lines
 }
 
 /// Identity of the dialog on screen; a new identity replays the entrance.
@@ -433,14 +541,21 @@ fn activity_column(frame: &mut Frame, app: &mut App, area: Rect) {
             ),
         ],
     );
+    let flashes: Vec<Option<f64>> = app
+        .tools
+        .iter()
+        .map(|tool| app.motion.flash(&tool.id, &tool.status))
+        .collect();
+    let spinner = th.spinner[motion::spin(th.spinner.len())];
     let items = app
         .tools
         .iter()
         .map(|tool| {
             let (led, status_color) = match tool.status.as_str() {
-                "completed" => (th.led_on, GOOD()),
-                "failed" => (th.led_on, BAD()),
-                _ => (th.led_off, WARN()),
+                "completed" => (th.led_on.to_string(), GOOD()),
+                "failed" => (th.led_on.to_string(), BAD()),
+                _ if app.busy && app.motion.level.fades() => (spinner.to_string(), WARN()),
+                _ => (th.led_off.to_string(), WARN()),
             };
             ListItem::new(vec![
                 Line::from(vec![
@@ -476,10 +591,17 @@ fn activity_column(frame: &mut Frame, app: &mut App, area: Rect) {
             if y >= inner.bottom() {
                 break;
             }
-            app.hits.push((
-                Rect::new(inner.x, y, inner.width, 2.min(inner.bottom() - y)),
-                Hit::Row(i),
-            ));
+            let row = Rect::new(inner.x, y, inner.width, 2.min(inner.bottom() - y));
+            if let Some(t) = flashes.get(i).copied().flatten() {
+                let color = match app.tools[i].status.as_str() {
+                    "completed" => GOOD(),
+                    "failed" => BAD(),
+                    _ => WARN(),
+                };
+                let fade = 1.0 - motion::stepped(motion::ease_out_cubic(t), 4);
+                fx::tint(frame.buffer_mut(), row, color, 0.42 * fade, PANEL());
+            }
+            app.hits.push((row, Hit::Row(i)));
         }
     }
     buttons(
@@ -658,6 +780,9 @@ fn footer(frame: &mut Frame, app: &mut App, area: Rect) {
                 .gauge_style(Style::default().fg(ACCENT()).bg(SELECT())),
             progress,
         );
+        if job.progress.total == 0 && app.motion.level.moves() {
+            shimmer(frame.buffer_mut(), progress, app.motion.now());
+        }
         let stage = job.progress.stage.clone();
         button(
             frame,
@@ -720,6 +845,25 @@ fn footer(frame: &mut Frame, app: &mut App, area: Rect) {
         Rect::new(inner.x, status_y + 1, inner.width, 1),
         line(hint, MUTED()),
     );
+}
+
+/// A soft band of light sweeping across a bar whose length is unknown.
+fn shimmer(buf: &mut ratatui::buffer::Buffer, area: Rect, now: f64) {
+    let span = area.width as f64 + 16.0;
+    let centre = (now / 1500.0).fract() * span - 8.0;
+    for x in area.left()..area.right() {
+        let distance = ((x - area.x) as f64 - centre).abs();
+        if distance < 8.0 {
+            let strength = 0.55 * (1.0 - distance / 8.0).powi(2);
+            fx::tint(
+                buf,
+                Rect::new(x, area.y, 1, 1),
+                ACCENT(),
+                strength,
+                SELECT(),
+            );
+        }
+    }
 }
 
 /// Status cards plus a two-column grid of action cards (H01, harvested from the
@@ -1095,7 +1239,20 @@ fn chat(frame: &mut Frame, app: &mut App, area: Rect) {
                 line("No model selected? Open Connections first.", MUTED()),
             ]);
         }
-        for message in &app.messages {
+        let newest = app.messages.len().saturating_sub(1);
+        let reveal = app
+            .messages
+            .back()
+            .filter(|m| m.role != "You" && m.role != "Notice")
+            .map(|m| {
+                let len = m.text.chars().count();
+                (len, app.motion.reveal(newest, len, app.busy))
+            });
+        for (index, message) in app.messages.iter().enumerate() {
+            let partial = reveal
+                .filter(|(len, shown)| index == newest && shown < len)
+                .map(|(_, shown)| message.text.chars().take(shown).collect::<String>());
+            let body = partial.as_deref().unwrap_or(&message.text);
             lines.push(line("", TEXT()));
             let (badge_color, led) = if message.role == "You" {
                 (ACCENT2(), th.led_on)
@@ -1112,7 +1269,7 @@ fn chat(frame: &mut Frame, app: &mut App, area: Rect) {
                 ),
             ]));
             let mut code = false;
-            for text in message.text.lines() {
+            for text in body.lines() {
                 if text.starts_with("```") {
                     code = !code;
                     lines.push(line(text, MUTED()));
@@ -1128,6 +1285,15 @@ fn chat(frame: &mut Frame, app: &mut App, area: Rect) {
                         style(TEXT())
                     },
                 ));
+            }
+            if partial.is_some() {
+                // A soft cursor rides the end of a reply that is still arriving.
+                match lines.last_mut() {
+                    Some(last) if !body.ends_with('\n') => {
+                        last.spans.push(Span::styled("▍", style(ACCENT())))
+                    }
+                    _ => lines.push(line("▍", ACCENT())),
+                }
             }
         }
         if app.busy {
@@ -2787,6 +2953,87 @@ mod tests {
             .pin(Some(motion::MODAL_IN_MS + motion::MODAL_OUT_MS + 3.0));
         let closed = render(&mut app, 100, 30);
         assert!(!closed.contains("Where will your model run?"));
+        assert!(!app.motion.active());
+    }
+    #[tokio::test]
+    async fn notices_float_in_as_toasts_and_progress_stays_in_the_status_line() {
+        let (_dir, mut app) = setup();
+        animated(&mut app);
+        app.set_page(Page::Help);
+        render(&mut app, 100, 30);
+        app.notify("Theme changed to IRIS. Everything else is unchanged.");
+        app.notify("Theme changed to IRIS. Everything else is unchanged.");
+        app.motion.pin(Some(motion::TOAST_EDGE_MS + 1.0));
+        let text = render(&mut app, 100, 30);
+        assert!(text.contains("×2"), "identical notices collapse\n{text}");
+        assert_eq!(app.motion.toasts[0].tone, motion::Tone::Good);
+        app.progress_status("Reading project files");
+        assert_eq!(app.motion.toasts.len(), 1, "progress never toasts");
+        assert_eq!(app.status, "Reading project files");
+        let text = render(&mut app, 100, 30);
+        assert!(
+            app.motion.toasts.is_empty(),
+            "a newer status retires the toast"
+        );
+        assert!(!text.contains("×2"));
+        app.notify("Theme changed to IRIS. Everything else is unchanged.");
+        app.motion
+            .pin(Some(motion::TOAST_MS + motion::TOAST_EDGE_MS + 1.0));
+        let text = render(&mut app, 100, 30);
+        assert!(!text.contains("×2"), "toasts expire");
+        assert!(app.motion.toasts.is_empty());
+    }
+    #[tokio::test]
+    async fn streaming_replies_reveal_with_a_cursor_and_history_is_whole() {
+        let (_dir, mut app) = setup();
+        animated(&mut app);
+        app.set_page(Page::Chat);
+        let reply = "Here is the plan. ".repeat(12);
+        app.messages.push_back(Message {
+            role: "Alt",
+            text: reply.clone(),
+        });
+        let history = render(&mut app, 120, 40);
+        assert!(
+            !history.contains('▍'),
+            "a reply that is not streaming shows at once"
+        );
+        app.busy = true;
+        app.messages.push_back(Message {
+            role: "Alt",
+            text: reply.clone(),
+        });
+        app.motion.pin(Some(1000.0));
+        render(&mut app, 120, 40);
+        app.motion.pin(Some(1100.0));
+        let partial = render(&mut app, 120, 40);
+        assert!(partial.contains('▍'), "{partial}");
+        app.motion.pin(Some(2000.0));
+        app.busy = false;
+        let done = render(&mut app, 120, 40);
+        assert!(!done.contains('▍'), "{done}");
+    }
+    #[tokio::test]
+    async fn tool_status_changes_flash_and_running_tools_spin() {
+        let (_dir, mut app) = setup();
+        animated(&mut app);
+        app.layout = LayoutMode::Split;
+        app.set_page(Page::Help);
+        app.busy = true;
+        app.tools.push(Tool {
+            id: "t1".into(),
+            title: "Read README.md".into(),
+            status: "pending".into(),
+            input: serde_json::Value::Null,
+            content: String::new(),
+        });
+        render(&mut app, 140, 40);
+        app.tools[0].status = "completed".into();
+        app.motion.pin(Some(10.0));
+        render(&mut app, 140, 40);
+        assert!(app.motion.active(), "the change flashes");
+        app.motion.pin(Some(10.0 + motion::FLASH_MS + 1.0));
+        render(&mut app, 140, 40);
         assert!(!app.motion.active());
     }
     #[tokio::test]

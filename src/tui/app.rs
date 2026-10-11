@@ -975,6 +975,35 @@ impl App {
     pub fn notify(&mut self, text: impl Into<String>) {
         self.status = text.into();
         self.status_error = false;
+        let lowered = self.status.to_lowercase();
+        let tone = if ["fail", "could not", "cannot", "error", "denied"]
+            .iter()
+            .any(|word| lowered.contains(word))
+        {
+            super::motion::Tone::Bad
+        } else if [
+            "saved",
+            "connected",
+            "changed",
+            "applied",
+            "completed",
+            "passed",
+            "ready",
+        ]
+        .iter()
+        .any(|word| lowered.contains(word))
+        {
+            super::motion::Tone::Good
+        } else {
+            super::motion::Tone::Info
+        };
+        let text = self.status.clone();
+        self.motion.toast(&text, tone);
+    }
+    /// Status-line progress without a floating notice (frequent stage updates).
+    pub fn progress_status(&mut self, text: impl Into<String>) {
+        self.status = text.into();
+        self.status_error = false;
     }
     /// N08: Ctrl+L cycles Sidebar → Top tabs → Bottom tabs → Split and back.
     pub fn cycle_layout(&mut self) -> Result<()> {
@@ -1423,7 +1452,7 @@ impl App {
                 self.add_message("Notice", &error);
                 self.error(error);
             }
-            workspace::Update::Progress(progress) => self.notify(progress.stage),
+            workspace::Update::Progress(progress) => self.progress_status(progress.stage),
             workspace::Update::Inference(status) => {
                 let seen = self
                     .inference_status
