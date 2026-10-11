@@ -70,7 +70,12 @@ impl ToolProfile {
         match self {
             Self::All => !matches!(
                 name,
-                "edit_text" | "edit_lines" | "create_file" | "create_lines" | "delete_file"
+                "edit_text"
+                    | "edit_lines"
+                    | "create_file"
+                    | "create_lines"
+                    | "delete_file"
+                    | "replace_file"
             ),
             Self::Inspect => matches!(name, "list" | "read" | "search" | "remember" | "evidence"),
             Self::Coding => !matches!(
@@ -81,6 +86,7 @@ impl ToolProfile {
                     | "create_file"
                     | "create_lines"
                     | "delete_file"
+                    | "replace_file"
             ),
             Self::Terminal => matches!(name, "list" | "read" | "remember" | "terminal"),
             Self::Compact => !matches!(name, "edit" | "edit_lines" | "create_lines"),
@@ -338,11 +344,13 @@ async fn serve_connection(stream: UnixStream, s: &Service) -> Result<()> {
                     v["data_directory"].as_str().unwrap_or("")
                 ),
                 "read" if s.tool_profile.is_compact() => crate::compact_context::read_packet(&v),
-                "edit_text" | "edit_lines" | "create_file" | "create_lines" | "delete_file" => {
+                "edit_text" | "edit_lines" | "create_file" | "create_lines" | "delete_file"
+                | "replace_file" => {
                     format!(
-                        "Applied checkpoint {} to {}. Syntax parser: {} · parse errors: {} (parser only).\n{}{}\nrun_check names: {}. Run a fresh check; earlier results are stale.\n",
+                        "Applied checkpoint {} to {}. {}Syntax parser: {} · parse errors: {} (parser only).\n{}{}\nrun_check names: {}. Run a fresh check; earlier results are stale.\n",
                         v["checkpoint"].as_str().unwrap_or(""),
                         v["path"].as_str().unwrap_or(""),
+                        v["matched"].as_str().map(|m| format!("Note: {m}. ")).unwrap_or_default(),
                         v["syntax"]["parser"].as_str().unwrap_or("unavailable"),
                         v["syntax"]["contains_parse_errors"].as_bool().map(|b| if b { "yes" } else { "no" }).unwrap_or("unknown"),
                         if v["syntax"]["missing_previous_definitions"].as_array().is_some_and(|a| !a.is_empty()) {
@@ -781,7 +789,8 @@ async fn execute(
             )?;
             Ok(json!({"saved":true,"verified":false}))
         }
-        "edit" | "edit_text" | "edit_lines" | "create_file" | "create_lines" | "delete_file" => {
+        "edit" | "edit_text" | "edit_lines" | "create_file" | "create_lines" | "delete_file"
+        | "replace_file" => {
             ensure!(
                 s.policy != Policy::ReviewOnly,
                 "Review only is selected; propose changes in your response or ask the user to choose Guided changes"
@@ -796,6 +805,15 @@ async fn execute(
                     &a.reason,
                 )?;
                 (change, a.path, "handle".into(), a.reason)
+            } else if r.name == "replace_file" {
+                let a: TextCreateArgs = serde_json::from_value(r.arguments.clone())?;
+                let change = Project::open(&s.data, &s.cwd)?.prepare_replace_file(
+                    &c.task,
+                    &a.path,
+                    &a.new_text,
+                    &a.reason,
+                )?;
+                (change, a.path, "replace whole file".into(), a.reason)
             } else if r.name == "create_file" {
                 let a: TextCreateArgs = serde_json::from_value(r.arguments.clone())?;
                 let change = Project::open(&s.data, &s.cwd)?.prepare_edit(
@@ -911,7 +929,7 @@ async fn execute(
                 None
             };
             Ok(
-                json!({"checkpoint":applied.id,"path":applied.path,"sha256":applied.after_hash,"syntax":syntax,"current_read":current_read,"configured_checks":p.checks()?.iter().map(|c|&c.name).collect::<Vec<_>>(),"next":"Inspect any syntax errors, then run a fresh configured check. File changed; previous results are stale. Do not invent a check name."}),
+                json!({"checkpoint":applied.id,"path":applied.path,"sha256":applied.after_hash,"matched":applied.matched,"syntax":syntax,"current_read":current_read,"configured_checks":p.checks()?.iter().map(|c|&c.name).collect::<Vec<_>>(),"next":"Inspect any syntax errors, then run a fresh configured check. File changed; previous results are stale. Do not invent a check name."}),
             )
         }
         "run_check" => {
@@ -1023,6 +1041,7 @@ pub fn tool_list() -> Value {
         tool("edit_lines","Replace exactly the current read span. Copy its handle; preserve indentation. Checkpoint/undo and selected access approval apply.",json!({"path":{"type":"string"},"handle":{"type":"string","description":"Copy the handle from the current read of this path."},"lines":{"type":"array","items":{"type":"string"},"description":"One literal source line per item, without newline characters. [] removes the span."},"reason":{"type":"string"}}),vec!["path","handle","lines"]),
         tool("create_lines","Create a missing file with a checkpoint. Use edit_lines for an existing file.",json!({"path":{"type":"string"},"lines":{"type":"array","items":{"type":"string"},"description":"One literal source line per item."},"reason":{"type":"string"}}),vec!["path","lines"]),
         tool("edit_text","Replace exactly the current read span with source text. Copy its handle; no old_text needed. Checkpoint/undo and access approval apply. Original newline style and span-ending newline are preserved.",json!({"path":{"type":"string"},"handle":{"type":"string","description":"Copy the handle from the current read of this path."},"new_text":{"type":"string","description":"Actual replacement source with real line breaks and indentation."},"reason":{"type":"string"}}),vec!["path","handle","new_text"]),
+        tool("replace_file","Rewrite a whole file of up to 300 lines that you read in full (read start_line=1 with enough lines). Send the complete new source; checkpoint/undo apply. Most reliable for small files.",json!({"path":{"type":"string"},"new_text":{"type":"string","description":"The complete new file contents."},"reason":{"type":"string"}}),vec!["path","new_text"]),
         tool("create_file","Create a missing file with source text and a checkpoint. Use edit_text for an existing file.",json!({"path":{"type":"string"},"new_text":{"type":"string"},"reason":{"type":"string"}}),vec!["path","new_text"]),
         tool("delete_file","Delete an existing file using a complete current read handle. Checkpoint/undo and selected access approval apply.",json!({"path":{"type":"string"},"handle":{"type":"string"},"reason":{"type":"string"}}),vec!["path","handle"]),
         tool("run_check","Run a user-configured named check after approval. list shows names; argv cannot be set by this tool.",json!({"name":{"type":"string"}}),vec!["name"]),

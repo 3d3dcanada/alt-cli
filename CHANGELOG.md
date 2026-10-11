@@ -2,6 +2,19 @@
 
 ## Unreleased — 0.7 (work orders in docs/WORK_ORDERS_0.7.md)
 
+### A06 small-model edit robustness
+
+- `replace_file(path, new_text)` in the compact tool profiles: a checkpointed
+  whole-file rewrite of a file of at most 300 lines that the model read in full at
+  its current revision (bound to the full-file read handle). Whole-file edits are
+  the most reliable format for models under about 14B.
+- `old_text` replace now tries an exact match, then a whitespace-normalised line
+  match (re-indenting `new_text` to the file when only indentation differed, and
+  saying so in the tool result). On a miss it returns the closest current span
+  with a fresh handle; ambiguous matches are refused, never guessed.
+- Settings → Tools & access → *Tool focus* describes the compact profiles' new
+  capability; the compact prompts mention `replace_file`.
+
 ### A05 model capability probe
 
 - *Probe this model* (Settings → Models, Ctrl+P, `alt probe`) reads native context

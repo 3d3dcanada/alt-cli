@@ -14,6 +14,10 @@ def main():
         def choose(index):term.send(b'\x1b[B'*index+b'\r')
         def settings():term.send(b'\x10');term.wait('Command palette');term.send(b'setting: model and runtime');term.wait('▸ Setting: Model and runtime');term.send(b'\r');term.wait('Model and runtime settings')
         def preferences():return tomllib.loads((state/'preferences.toml').read_text())
+        def allocated(test):
+            end=time.monotonic()+10
+            while time.monotonic()<end and not test(allocation()):time.sleep(0.1)
+            return test(allocation())
         def saved(key,value):
             # The status line can still show the previous identical notice; poll the file.
             end=time.monotonic()+10
@@ -21,9 +25,9 @@ def main():
             return preferences().get(key)==value
         def allocation():return next(iter(tomllib.loads((state/'config.toml').read_text())['profiles'].values()))['inference']
         try:
-            term.wait('Alt');settings();choose(5);term.wait('Model output and sampling');choose(0);term.wait('Set Total output tokens');term.send(b'\x15');term.paste('600');term.send(b'\r');term.wait('Model allocation saved');assert allocation()['output_tokens']==600
-            settings();choose(5);term.wait('Model output and sampling');choose(3);term.wait('Set Temperature');term.send(b'\x15');term.paste('0.25');term.send(b'\r');term.wait('Model allocation saved');assert allocation()['temperature']==0.25
-            settings();choose(5);term.wait('Model output and sampling');choose(3);term.wait('Set Temperature');term.send(b'\x15\r');term.wait('Model allocation saved');assert 'temperature' not in allocation()
+            term.wait('Alt');settings();choose(5);term.wait('Model output and sampling');choose(0);term.wait('Set Total output tokens');term.send(b'\x15');term.paste('600');term.send(b'\r');term.wait('Model allocation saved');assert allocated(lambda a:a['output_tokens']==600)
+            settings();choose(5);term.wait('Model output and sampling');choose(3);term.wait('Set Temperature');term.send(b'\x15');term.paste('0.25');term.send(b'\r');term.wait('Model allocation saved');assert allocated(lambda a:a.get('temperature')==0.25)
+            settings();choose(5);term.wait('Model output and sampling');choose(3);term.wait('Set Temperature');term.send(b'\x15\r');term.wait('Model allocation saved');assert allocated(lambda a:'temperature' not in a)
             settings();choose(4);term.wait('Task workflow');choose(1);term.wait('Task workflow saved');assert preferences()['workflow']=='host'
             settings();choose(3);term.wait('Choose a task skill');choose(1);term.wait('Skill choice saved');assert preferences()['active_skill']=='python-repair'
             term.send(b'\x10');term.wait('Command palette');term.send(b'setting: tool focus');term.wait('▸ Setting: Tool focus');term.send(b'\r');term.wait('Which tools fit this task?');choose(5);term.wait('Tool focus saved');assert saved('tool_profile','compact-lines')
