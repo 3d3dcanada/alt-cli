@@ -192,6 +192,41 @@ fn cgroup_available(host_available: u64, limit: u64, used: u64, statistics: &str
 }
 
 #[cfg(test)]
+mod selection_tests {
+    use super::*;
+    #[test]
+    fn a_selected_but_missing_executable_never_falls_back() {
+        use std::os::unix::fs::PermissionsExt;
+        let root = tempfile::tempdir().unwrap();
+        let managed = root.path().join("tools/llama-b11429/llama-server");
+        std::fs::create_dir_all(managed.parent().unwrap()).unwrap();
+        std::fs::write(&managed, "#!/bin/sh\n").unwrap();
+        std::fs::set_permissions(&managed, std::fs::Permissions::from_mode(0o755)).unwrap();
+        let engine = root.path().join("tools/goose");
+        std::fs::write(&engine, "#!/bin/sh\n").unwrap();
+        std::fs::set_permissions(&engine, std::fs::Permissions::from_mode(0o755)).unwrap();
+        let mut preferences = Preferences::default();
+        assert_eq!(
+            find_runtime(root.path(), &preferences),
+            Some(managed.clone())
+        );
+        assert_eq!(
+            find_engine(root.path(), Path::new("goose"), &preferences),
+            Some(engine.clone())
+        );
+        preferences.runtime_path = Some(root.path().join("deleted/llama-server"));
+        preferences.engine_path = Some(root.path().join("deleted/goose"));
+        assert_eq!(find_runtime(root.path(), &preferences), None);
+        assert_eq!(
+            find_engine(root.path(), Path::new("goose"), &preferences),
+            None
+        );
+        preferences.runtime_path = Some(managed.clone());
+        assert_eq!(find_runtime(root.path(), &preferences), Some(managed));
+    }
+}
+
+#[cfg(test)]
 mod gpu_tests {
     use super::*;
     #[test]
@@ -281,21 +316,21 @@ pub fn find_engine(root: &Path, requested: &Path, preferences: &Preferences) -> 
     if requested != Path::new("goose") {
         return find_executable(requested);
     }
-    preferences
-        .engine_path
-        .as_deref()
-        .and_then(find_executable)
-        .or_else(|| find_executable(&root.join("tools/goose")))
+    // B06: an explicitly selected executable is authoritative; no fallback.
+    if let Some(selected) = preferences.engine_path.as_deref() {
+        return find_executable(selected);
+    }
+    find_executable(&root.join("tools/goose"))
         .or_else(|| find_executable(Path::new("goose")))
         .or_else(|| find_executable(Path::new("/workspace/.alt-tools/goose")))
 }
 
 pub fn find_runtime(root: &Path, preferences: &Preferences) -> Option<PathBuf> {
-    preferences
-        .runtime_path
-        .as_deref()
-        .and_then(find_executable)
-        .or_else(|| find_executable(&root.join("tools/llama-b11429/llama-server")))
+    // B06: an explicitly selected executable is authoritative; no fallback.
+    if let Some(selected) = preferences.runtime_path.as_deref() {
+        return find_executable(selected);
+    }
+    find_executable(&root.join("tools/llama-b11429/llama-server"))
         .or_else(|| find_executable(Path::new("llama-server")))
         .or_else(|| {
             find_executable(Path::new(
@@ -756,8 +791,13 @@ impl LocalRuntime {
             "Available RAM is below this file size plus minimal runtime headroom. Select a smaller model, close other applications, or connect to an external runtime. Actual context memory needs may be higher."
         );
         models::verify_artifact(&artifact, &cancel, &mut progress).await?;
-        let binary = find_runtime(root, preferences)
-            .context("Install the local runtime from Models, or set llama-server in Settings")?;
+        let binary = find_runtime(root, preferences).with_context(|| match &preferences.runtime_path {
+            Some(selected) => format!(
+                "The selected llama-server {} is missing or not executable. Alt does not substitute another runtime: choose it again or clear it in Settings → Runtime",
+                selected.display()
+            ),
+            None => "Install the local runtime from Models, or set llama-server in Settings".into(),
+        })?;
         if preferences.runtime.gpu_layers != 0 {
             let devices = tokio::time::timeout(
                 Duration::from_secs(10),
