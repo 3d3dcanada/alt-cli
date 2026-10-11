@@ -56,7 +56,11 @@ async fn requested_gpu_and_allocation_failure_explain_recovery_without_substitut
     use std::os::unix::fs::PermissionsExt;
     let root = tempfile::tempdir().unwrap();
     let original = root.path().join("fixture.gguf");
-    std::fs::write(&original, b"GGUFfixture-not-real-weights").unwrap();
+    std::fs::write(
+        &original,
+        b"GGUF\x03\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0fixture-not-real-weights",
+    )
+    .unwrap();
     let model = models::import(
         root.path(),
         &original,
