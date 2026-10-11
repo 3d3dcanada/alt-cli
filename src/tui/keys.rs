@@ -713,23 +713,45 @@ impl App {
     pub(super) fn draft(&self, form: &ConnectionForm) -> Result<ConnectionDraft> {
         let key = form.fields[2].text.trim();
         let original = form.original.clone();
-        let mut inference = None;
-        if form.dialect != crate::inference::Dialect::Auto {
-            let mut settings = crate::inference::Settings::legacy(self.preferences.context_tokens);
-            settings.dialect = form.dialect;
-            inference = Some(settings);
-        }
-        let profile = Profile {
-            provider: form.provider,
-            endpoint: form.fields[1].text.trim().trim_end_matches('/').into(),
-            model: "choose-next".into(),
-            context_tokens: self.preferences.context_tokens,
-            max_turns: self.preferences.max_turns,
-            uncensored: false,
-            api_key_env: (!key.is_empty()).then(|| key.into()),
-            local_model: None,
-            inference,
-            runtime_key: None,
+        let endpoint = form.fields[1].text.trim().trim_end_matches('/').to_owned();
+        let api_key_env = (!key.is_empty()).then(|| key.to_owned());
+        // B01: editing patches only the fields this form shows. Context, steps,
+        // inference settings, the model and the uncensored claim are kept.
+        let existing = original
+            .as_ref()
+            .and_then(|name| self.config.profiles.get(name))
+            .filter(|p| p.local_model.is_none());
+        let profile = if let Some(existing) = existing {
+            let mut patched = existing.clone();
+            patched.provider = form.provider;
+            patched.endpoint = endpoint;
+            patched.api_key_env = api_key_env;
+            if form.dialect != patched.effective_inference().dialect {
+                let mut settings = patched.effective_inference();
+                settings.dialect = form.dialect;
+                patched.inference = Some(settings);
+            }
+            patched
+        } else {
+            let mut inference = None;
+            if form.dialect != crate::inference::Dialect::Auto {
+                let mut settings =
+                    crate::inference::Settings::legacy(self.preferences.context_tokens);
+                settings.dialect = form.dialect;
+                inference = Some(settings);
+            }
+            Profile {
+                provider: form.provider,
+                endpoint,
+                model: "choose-next".into(),
+                context_tokens: self.preferences.context_tokens,
+                max_turns: self.preferences.max_turns,
+                uncensored: false,
+                api_key_env,
+                local_model: None,
+                inference,
+                runtime_key: None,
+            }
         };
         profile.validate()?;
         ensure!(

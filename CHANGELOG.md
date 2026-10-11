@@ -72,6 +72,12 @@
   and a raw JSON view of the exact request fields and runtime argv. CLI:
   `alt params set|unset|show`.
 
+### Audit items (B) and harvest (H)
+
+- B01 (audit A03): editing a connection patches only the name, provider, address,
+  key variable and dialect; context, steps, inference settings, the selected model
+  and the uncensored claim are kept, and the model list opens on the current model.
+
 ### A10 harness labels and matched re-run script (prepared; owner PC runs it)
 
 - `scripts/live_acceptance.py`: required `--artifact-label uncensored|standard|hosted`

@@ -1753,10 +1753,15 @@ impl App {
                         if models.is_empty() {
                             self.error("The server is reachable but has no models. Load one in your model application, then test again.");
                         } else {
+                            // An edited connection starts on its current model.
+                            let selected = models
+                                .iter()
+                                .position(|m| m.id == draft.profile.model)
+                                .unwrap_or(0);
                             self.dialog = Some(Dialog::PickModel {
                                 draft: Box::new(draft),
                                 models,
-                                selected: 0,
+                                selected,
                                 query: Editor::default(),
                             });
                         }
@@ -3391,5 +3396,51 @@ mod recovery_tests {
         );
         let text = std::fs::read_to_string(data.path().join("config.toml")).unwrap();
         assert!(text.contains("NVIDIA_API_KEY") && text.contains("chat-template"));
+    }
+
+    #[test]
+    fn editing_a_connection_keeps_its_custom_settings() {
+        // Audit A03: a customised 4K profile must survive a name/endpoint edit.
+        let data = tempfile::tempdir().unwrap();
+        let mut settings = crate::inference::Settings::legacy(4096);
+        settings.output_tokens = 1024;
+        settings.max_requests = Some(9);
+        settings.total_generated_tokens = Some(5000);
+        settings.temperature = Some(0.3);
+        settings.thinking = crate::inference::Thinking::Off;
+        let profile = Profile {
+            provider: Provider::Openai,
+            endpoint: "http://127.0.0.1:8080/v1".into(),
+            model: "mimo-9b".into(),
+            context_tokens: 4096,
+            max_turns: 7,
+            uncensored: true,
+            api_key_env: None,
+            local_model: None,
+            inference: Some(settings.clone()),
+            runtime_key: None,
+        };
+        Config::create(data.path(), profile).unwrap();
+        let mut app = App::load(data.path().into(), "goose".into(), None).unwrap();
+        app.edit_connection().unwrap();
+        let mut form = match app.dialog.clone() {
+            Some(Dialog::Connection(form)) => form,
+            _ => panic!("connection form expected"),
+        };
+        form.fields[0] = Editor::new("renamed");
+        form.fields[1] = Editor::new("http://127.0.0.1:8081/v1");
+        let draft = app.draft(&form).unwrap();
+        assert_eq!(draft.profile.model, "mimo-9b");
+        app.save_connection(draft).unwrap();
+        let saved = &app.config.profiles["renamed"];
+        assert!(!app.config.profiles.contains_key("local"));
+        assert_eq!(saved.endpoint, "http://127.0.0.1:8081/v1");
+        assert_eq!(saved.context_tokens, 4096);
+        assert_eq!(saved.max_turns, 7);
+        assert!(saved.uncensored);
+        assert_eq!(
+            serde_json::to_value(saved.effective_inference()).unwrap(),
+            serde_json::to_value(settings).unwrap()
+        );
     }
 }
