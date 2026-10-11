@@ -73,7 +73,8 @@ For the compact small-model interface, choose `alt tools compact` (scalar text)
 or `alt tools compact-lines` (one source line per array item). `alt tools all`
 restores the original tool/context interface. These choices are independent of
 Full/Guided access. Set workflow with `alt workflow host` and output allocation
-with `alt inference --output-tokens 1024`; use the
+with `alt inference --output-tokens 1024`, thinking with `alt inference --thinking off`
+(or `low`, `medium`, `high`, `default`, `budget:N`; `--dialect` names the server family); use the
 [usage guide](SMALL_MODEL_USAGE.md) for model-specific reasoning and context settings.
 
 Headless requests deny tool permission unless `--allow-tools` is supplied.

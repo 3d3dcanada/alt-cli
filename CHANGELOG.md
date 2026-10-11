@@ -2,6 +2,18 @@
 
 ## Unreleased — 0.7 (work orders in docs/WORK_ORDERS_0.7.md)
 
+### A01 reasoning control and thinking-cutoff recovery
+
+- One **Thinking** setting (`default | off | low | medium | high | budget:N`),
+  translated per server dialect: llama.cpp `chat_template_kwargs.enable_thinking` +
+  `reasoning_budget_tokens`; Ollama `think` + `reasoning_effort`; vLLM / SGLang /
+  NIM `chat_template_kwargs`; OpenAI-style `reasoning_effort`. Receipts record the
+  fields sent. Settings → Models, Ctrl+P, and `alt inference --thinking/--dialect`.
+- A response that ends at the output limit with reasoning only is a *thinking
+  cutoff*: charged, never resent silently. The TUI offers labelled recovery
+  (thinking off or low for this connection, or a larger allowance); headless
+  `--json` emits a typed `reasoning_cutoff` event.
+
 ### A07 security (audit 2026-10-08)
 
 - "Allow this session" and `--allow-tools` now cover project actions only

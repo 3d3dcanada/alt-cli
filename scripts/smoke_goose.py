@@ -59,7 +59,11 @@ class Provider(BaseHTTPRequestHandler):
             STALL_RELEASE.wait(timeout=15)
             return
         tool_results = [m for m in messages if m["role"] == "tool"]
-        if any(m["role"] == "user" and "Report the previous evidence" in str(m.get("content")) for m in messages):
+        if any(m["role"] == "user" and "CUTOFF_FIXTURE" in str(m.get("content")) for m in messages) and not tool_results:
+            # A01: every output token went to reasoning; no answer, no tool call.
+            message = {"role": "assistant", "content": "", "reasoning_content": "Thinking about the files in detail before acting"}
+            finish = "length"
+        elif any(m["role"] == "user" and "Report the previous evidence" in str(m.get("content")) for m in messages):
             memory = json.dumps(messages)
             message = {"role": "assistant", "content": "Restored memory contains ALT_TOOL_OK" if "ALT_TOOL_OK" in memory else "Memory missing"}
             finish = "stop"
@@ -155,6 +159,19 @@ def main():
             assert plain.returncode==0,(plain.stdout,plain.stderr)
             assert 'Allow once? [y/N]' in plain.stdout and 'ALT_TOOL_OK' in plain.stdout,(plain.stdout,plain.stderr)
             assert (workspace/'fixture-evidence.txt').read_text()=='ALT_TOOL_OK'
+            mark = len(REQUESTS)
+            cut = [json.loads(line) for line in run('run', 'CUTOFF_FIXTURE explain the project', '--json').splitlines()]
+            assert any(e['type'] == 'reasoning_cutoff' and e['resent'] is False and e['charged'] for e in cut), cut
+            cut_requests = [r for p, r in REQUESTS[mark:] if p == '/v1/chat/completions']
+            assert len(cut_requests) == 1, f"Alt must not resend after a cutoff: {len(cut_requests)}"
+            run('inference', '--thinking', 'off')
+            mark = len(REQUESTS)
+            run('run', 'Report the previous evidence', '--json')
+            body = [r for p, r in REQUESTS[mark:] if p == '/v1/chat/completions'][-1]
+            if args.provider == 'ollama':
+                assert body.get('think') is False and body.get('reasoning_effort') == 'none', body
+            else:
+                assert body.get('reasoning_effort') == 'none' and 'think' not in body, body
             cancellation = subprocess.Popen([alt, "--data-dir", str(root / "state"), "--engine", goose,
                                               "run", "STALL_FIXTURE", "--json"], cwd=workspace,
                                              stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
