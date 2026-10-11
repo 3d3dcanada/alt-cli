@@ -77,6 +77,12 @@ with `alt inference --output-tokens 1024`, thinking with `alt inference --thinki
 (or `low`, `medium`, `high`, `default`, `budget:N`; `--dialect` names the server family); use the
 [usage guide](SMALL_MODEL_USAGE.md) for model-specific reasoning and context settings.
 
+Hosted providers: `alt init --preset nvidia --model z-ai/glm-5.3` fills the
+endpoint, key variable (`NVIDIA_API_KEY`) and thinking dialect. Presets: nvidia,
+openrouter, groq, together, deepseek, mistral, gemini, cerebras, lmstudio, vllm,
+llamacpp, ollama, custom. Explicit `--endpoint`, `--provider` and `--api-key-env`
+win over the preset. `alt models --filter glm` searches the server's catalog.
+
 Open parameters: `alt params show` lists every request and owned-runtime
 parameter, the exact request fields and the llama-server argv. `alt params set
 repeat_penalty 1.1`, `alt params set extra_body '{"top_a":0.1}'`, `alt params set

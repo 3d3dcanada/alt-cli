@@ -235,8 +235,14 @@ enum Action {
     Init {
         #[arg(long)]
         model: String,
-        #[arg(long, value_enum, default_value = "openai")]
-        provider: Provider,
+        /// Fill endpoint, key variable and thinking dialect from a preset:
+        /// nvidia, openrouter, groq, together, deepseek, mistral, gemini,
+        /// cerebras, lmstudio, vllm, llamacpp, ollama or custom.
+        #[arg(long)]
+        preset: Option<String>,
+        /// openai (default) or ollama; overrides the preset.
+        #[arg(long, value_enum)]
+        provider: Option<Provider>,
         /// OpenAI API root (including /v1) or Ollama server root.
         #[arg(long)]
         endpoint: Option<String>,
@@ -254,6 +260,9 @@ enum Action {
     Doctor,
     /// Browse, import, or download models; no subcommand lists server models.
     Models {
+        /// Only list server models whose id contains every word (hosted catalogs are long).
+        #[arg(long)]
+        filter: Option<String>,
         #[command(subcommand)]
         command: Option<ModelAction>,
     },
@@ -1179,6 +1188,7 @@ async fn run() -> Result<()> {
         }
         Action::Init {
             model,
+            preset,
             provider,
             endpoint,
             context,
@@ -1186,9 +1196,22 @@ async fn run() -> Result<()> {
             uncensored,
             api_key_env,
         } => {
-            let endpoint = endpoint.unwrap_or_else(|| match provider {
-                Provider::Openai => "http://127.0.0.1:8080/v1".into(),
-                Provider::Ollama => "http://127.0.0.1:11434".into(),
+            // Explicit flags win over the preset; the preset only fills fields.
+            let preset = preset.as_deref().map(alt_cli::presets::find).transpose()?;
+            let provider = provider
+                .or(preset.map(|p| p.provider))
+                .unwrap_or(Provider::Openai);
+            let endpoint = endpoint
+                .or(preset.map(|p| p.endpoint.to_owned()))
+                .unwrap_or_else(|| match provider {
+                    Provider::Openai => "http://127.0.0.1:8080/v1".into(),
+                    Provider::Ollama => "http://127.0.0.1:11434".into(),
+                });
+            let api_key_env = api_key_env.or(preset.and_then(|p| p.key_env.map(String::from)));
+            let inference = preset.map(|p| {
+                let mut settings = alt_cli::inference::Settings::legacy(context);
+                settings.dialect = p.dialect;
+                settings
             });
             Config::create(
                 &root,
@@ -1199,13 +1222,18 @@ async fn run() -> Result<()> {
                     context_tokens: context,
                     max_turns,
                     uncensored,
-                    api_key_env,
+                    api_key_env: api_key_env.clone(),
                     local_model: None,
-                    inference: None,
+                    inference,
                     runtime_key: None,
                 },
             )?;
             println!("Created {}", root.join("config.toml").display());
+            if let Some(name) = api_key_env.filter(|name| std::env::var_os(name).is_none()) {
+                eprintln!(
+                    "Set {name} in Alt's environment before connecting; Alt stores only the variable name."
+                );
+            }
             return Ok(());
         }
         Action::Sessions => {
@@ -1230,6 +1258,7 @@ async fn run() -> Result<()> {
         }
         Action::Models {
             command: Some(command),
+            ..
         } => return model_action(&root, command).await,
         Action::Install { component } => {
             let component = match component {
@@ -1255,15 +1284,16 @@ async fn run() -> Result<()> {
     }
     let config = Config::read(&root)?;
     let (name, profile) = config.profile(args.profile.as_deref())?;
-    if matches!(command, Action::Models { .. }) {
+    if let Action::Models { filter, .. } = &command {
         if profile.local_model.is_some() {
             for model in models::library(&root)? {
                 println!("{}  {}", model.id, display_text(&model.name));
             }
             return Ok(());
         }
-        for id in model_ids(profile).await? {
-            println!("{}", display_text(&id));
+        let listed = models::inventory(profile).await?;
+        for model in alt_cli::presets::filter_models(&listed, filter.as_deref().unwrap_or("")) {
+            println!("{}", display_text(&model.id));
         }
         return Ok(());
     }
