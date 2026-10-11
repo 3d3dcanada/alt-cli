@@ -33,7 +33,12 @@ def palette(query):
     return [("send", b"\x10"), ("wait", "Command palette"), ("send", query.encode()), ("wait", "result(s)"), ("send", b"\r")]
 
 
+# Orders whose screens need a reachable fixture server (no weights).
+NEEDS_SERVER = {"a05"}
+
 PLANS = {
+    "a05": [("wait", "Alt"), *palette("probe this model"), ("wait", "Probe results"), ("shot", "probe-results"),
+            ("send", b"\x1b[B\r"), ("wait", "applied to this connection"), ("shot", "probe-applied")],
     "a07": [("wait", "Alt"), ("send", b"\x1b2"), ("wait", "Workspace"), ("send", b"tools"), ("send", b"\r"),
             ("wait", "Review this action"), ("shot", "terminal-approval"), ("send", b"\x0e")],
     "a01": [("wait", "Alt"), *palette("model thinking"), ("wait", "Model thinking"), ("shot", "thinking-menu"), ("send", b"\x1b"),
@@ -61,7 +66,22 @@ def run(order, out, columns, lines):
         (project / "README.md").write_text("Fixture project for screenshots.\n")
         state = root / "state"
         state.mkdir(mode=0o700)
-        (state / "config.toml").write_text(FIXTURE_CONFIG)
+        config = FIXTURE_CONFIG
+        server = None
+        if order in NEEDS_SERVER:
+            import socket
+            with socket.socket() as probe_port:
+                probe_port.bind(("127.0.0.1", 0))
+                port = probe_port.getsockname()[1]
+            server = subprocess.Popen([sys.executable, str(repo / "tests/fixtures/fake_llama_server.py"), "--port", str(port), "--alias", "fixture-no-weights"])
+            config = config.replace("http://127.0.0.1:9/v1", f"http://127.0.0.1:{port}/v1")
+            for _ in range(50):
+                try:
+                    with socket.create_connection(("127.0.0.1", port), timeout=0.2):
+                        break
+                except OSError:
+                    time.sleep(0.1)
+        (state / "config.toml").write_text(config)
         (state / "preferences.toml").write_text(f'project = "{project}"\nmouse = false\n')
         master, slave = pty.openpty()
         fcntl.ioctl(slave, termios.TIOCSWINSZ, struct.pack("HHHH", lines, columns, 0, 0))
@@ -108,6 +128,9 @@ def run(order, out, columns, lines):
                         print(f"text only for {destination.name}: {error}")
                     saved.append(destination.name)
         finally:
+            if server is not None:
+                server.terminate()
+                server.wait()
             process.terminate()
             try:
                 process.wait(timeout=8)

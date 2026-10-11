@@ -667,6 +667,7 @@ impl App {
             18 => return self.manager_action("qualify-preview", serde_json::json!({})),
             19 => return self.manager_action("inference-thinking", serde_json::json!({})),
             20 => return self.manager_action("params-menu", serde_json::json!({})),
+            21 => return self.manager_action("probe-run", serde_json::json!({})),
             12 => return self.manager_action("manage-tools", serde_json::json!({})),
             13 => return self.manager_action("manage-storage", serde_json::json!({})),
             14 => return self.manager_action("manage-models", serde_json::json!({})),

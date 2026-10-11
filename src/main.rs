@@ -182,6 +182,13 @@ enum Action {
         #[arg(long, conflicts_with = "thinking")]
         thinking_default: bool,
     },
+    /// Probe the selected model with one bounded request and suggest settings
+    /// (thinking, output allowance, compact tools, native context). Nothing is
+    /// applied unless you pass --apply with a suggestion id.
+    Probe {
+        #[arg(long)]
+        apply: Option<String>,
+    },
     /// Open request and owned-runtime parameters (penalties, seed, stop,
     /// extra JSON, Ollama context, llama-server options).
     Params {
@@ -787,6 +794,23 @@ async fn run() -> Result<()> {
             if changed {
                 config.save(&root)?;
             }
+            println!("{}", serde_json::to_string_pretty(&report)?);
+            return Ok(());
+        }
+        Action::Probe { apply } => {
+            let report = if let Some(id) = apply {
+                alt_cli::probe::apply(&root, args.profile.as_deref(), &id)?
+            } else {
+                let config = Config::read(&root)?;
+                let profile = config.profile(args.profile.as_deref())?.1.clone();
+                alt_cli::probe::run(
+                    &root,
+                    &Preferences::load(&root)?,
+                    &profile,
+                    std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false)),
+                )
+                .await?
+            };
             println!("{}", serde_json::to_string_pretty(&report)?);
             return Ok(());
         }

@@ -576,7 +576,7 @@ impl App {
     pub fn settings_tab_indexes(tab: usize) -> &'static [usize] {
         const TABS: [&[usize]; 5] = [
             &[2, 3, 4],
-            &[0, 19, 20, 10, 11, 16],
+            &[0, 19, 21, 20, 10, 11, 16],
             &[8, 17, 12],
             &[1, 5, 6, 9, 15, 18],
             &[7, 13, 14],
@@ -719,6 +719,11 @@ impl App {
                 "Penalties, seed, stop, extra request JSON, Ollama context and llama-server options."
                     .into(),
             ),
+            (
+                "Probe this model".into(),
+                "One short request; suggests thinking, output allowance, compact tools and context."
+                    .into(),
+            ),
         ]
     }
 
@@ -825,6 +830,14 @@ impl App {
                 "Reasoning control translated for this server".into(),
                 MenuAction::Manager {
                     action: "inference-thinking".into(),
+                    state: serde_json::json!({}),
+                },
+            ),
+            (
+                "Probe this model".into(),
+                "One short request; suggests thinking, output, tools and context".into(),
+                MenuAction::Manager {
+                    action: "probe-run".into(),
                     state: serde_json::json!({}),
                 },
             ),
@@ -2615,7 +2628,7 @@ impl App {
         self.config.save(&self.root)?;
         self.dialog = None;
         self.set_page(Page::Home);
-        self.notify("Connection saved. Choose a project and start a conversation.");
+        self.notify("Connection saved. Choose a project and start a conversation. Ctrl+P → Probe this model suggests settings for it.");
         Ok(())
     }
 }
