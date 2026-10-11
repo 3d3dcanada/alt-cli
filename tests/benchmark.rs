@@ -18,6 +18,7 @@ fn profile(endpoint: String) -> Profile {
         api_key_env: None,
         local_model: None,
         inference: None,
+        runtime_key: None,
     }
 }
 #[tokio::test]

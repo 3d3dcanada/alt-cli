@@ -46,23 +46,38 @@ fn path(root: &Path, name: &str) -> Result<PathBuf> {
     );
     Ok(root.join("extensions").join(format!("{name}.json")))
 }
+/// A bearer token sent over plain HTTP is readable on the network, so plain
+/// HTTP with authentication is accepted only for loopback servers.
+pub fn check_http(url: &str, authenticated: bool) -> Result<()> {
+    let u = reqwest::Url::parse(url)?;
+    ensure!(
+        matches!(u.scheme(), "http" | "https")
+            && u.host_str().is_some()
+            && u.username().is_empty()
+            && u.password().is_none()
+            && u.fragment().is_none()
+            && u.query().is_none(),
+        "Use an HTTP(S) MCP URL without embedded credentials, query or fragment"
+    );
+    let host = u.host_str().unwrap_or("");
+    let loopback = host.eq_ignore_ascii_case("localhost")
+        || host
+            .trim_start_matches('[')
+            .trim_end_matches(']')
+            .parse::<std::net::IpAddr>()
+            .is_ok_and(|ip| ip.is_loopback());
+    ensure!(
+        !authenticated || u.scheme() == "https" || loopback,
+        "An authentication variable needs an HTTPS URL; plain HTTP with a token is allowed only for localhost/127.0.0.1"
+    );
+    Ok(())
+}
 pub fn save(root: &Path, c: &Connection) -> Result<()> {
     match &c.transport {
         Transport::Stdio { command, .. } => {
             ensure!(!command.as_os_str().is_empty(), "Provide a server command")
         }
-        Transport::Http { url, .. } => {
-            let u = reqwest::Url::parse(url)?;
-            ensure!(
-                matches!(u.scheme(), "http" | "https")
-                    && u.host_str().is_some()
-                    && u.username().is_empty()
-                    && u.password().is_none()
-                    && u.fragment().is_none()
-                    && u.query().is_none(),
-                "Use an HTTP(S) MCP URL without embedded credentials, query or fragment"
-            );
-        }
+        Transport::Http { url, auth_env } => check_http(url, auth_env.is_some())?,
     }
     ensure!(
         c.selected_tools.len() <= 16,
@@ -176,6 +191,10 @@ impl SseDecoder {
 }
 impl Client {
     async fn connect(c: &Connection) -> Result<Self> {
+        // Recheck saved files written by an older Alt or by hand.
+        if let Transport::Http { url, auth_env } = &c.transport {
+            check_http(url, auth_env.is_some())?;
+        }
         let mut client = match &c.transport {
             Transport::Stdio {
                 command,
@@ -376,6 +395,17 @@ impl Client {
 mod sse_tests {
     use super::*;
     #[test]
+    fn plain_http_tokens_only_reach_loopback() {
+        assert!(check_http("http://127.0.0.1:9000/mcp", true).is_ok());
+        assert!(check_http("http://localhost:9000/mcp", true).is_ok());
+        assert!(check_http("http://[::1]:9000/mcp", true).is_ok());
+        assert!(check_http("https://tools.example.com/mcp", true).is_ok());
+        assert!(check_http("http://tools.example.com/mcp", false).is_ok());
+        assert!(check_http("http://tools.example.com/mcp", true).is_err());
+        assert!(check_http("http://10.0.0.5/mcp", true).is_err());
+        assert!(check_http("http://localhost.example.com/mcp", true).is_err());
+    }
+    #[test]
     fn bounded_seeded_mutation_corpus_never_panics_or_grows_without_limit() {
         let seed = b"data:{\"id\":7,\"result\":{\"text\":\"hello\"}}\n\n";
         let mut random = 0x52414e444f4du64;
@@ -430,6 +460,14 @@ mod sse_tests {
         );
         assert!(decoder.feed(b"\n", 7).unwrap().is_some());
     }
+}
+/// One rule for every entry point that starts or contacts an external tool server.
+pub fn require_full_access(policy: crate::project::Policy) -> Result<()> {
+    ensure!(
+        policy == crate::project::Policy::Trusted,
+        "Checking an external tool server starts its program or contacts its server; choose Full access (--access trusted) first"
+    );
+    Ok(())
 }
 pub async fn probe(root: &Path, name: &str) -> Result<Value> {
     let c = load(root, name)?;

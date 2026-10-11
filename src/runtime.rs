@@ -294,6 +294,9 @@ pub async fn install(
 pub struct LocalRuntime {
     child: Child,
     pub endpoint: String,
+    /// Random per-launch credential. Other local accounts can reach the loopback
+    /// port but cannot use it without this key; it is never written to profiles.
+    pub api_key: String,
     log: PathBuf,
 }
 
@@ -364,6 +367,18 @@ impl LocalRuntime {
         private_dir(&logs)?;
         let log = logs.join(format!("runtime-{}.log", uuid::Uuid::new_v4()));
         let output = std::fs::File::create(&log)?;
+        // The key goes through a private file, not argv, so `ps` cannot reveal it.
+        let api_key = format!(
+            "{}{}",
+            uuid::Uuid::new_v4().simple(),
+            uuid::Uuid::new_v4().simple()
+        );
+        let secrets = root.join("run");
+        private_dir(&secrets)?;
+        let key_file = tempfile::Builder::new()
+            .prefix("runtime-key-")
+            .tempfile_in(&secrets)?;
+        std::fs::write(key_file.path(), &api_key)?;
         let threads = if preferences.runtime.threads > 0 {
             preferences.runtime.threads
         } else {
@@ -407,6 +422,8 @@ impl LocalRuntime {
                 "--alias",
                 &profile.model,
             ])
+            .arg("--api-key-file")
+            .arg(key_file.path())
             .stdin(Stdio::null())
             .stdout(output.try_clone()?)
             .stderr(output)
@@ -444,6 +461,7 @@ impl LocalRuntime {
         let mut runtime = Self {
             child,
             endpoint: format!("http://127.0.0.1:{port}/v1"),
+            api_key,
             log,
         };
         let client = reqwest::Client::builder()
@@ -463,12 +481,16 @@ impl LocalRuntime {
                     "Local runtime stopped ({status}). If GPU initialization failed, choose a compatible runtime in Settings or select CPU (0 GPU layers); for allocation failures reduce context, batch or layers. The selected model was not changed. Details: {details}"
                 );
             }
+            // Readiness needs an authenticated model listing that names the
+            // selected alias, not only an open health route on a reused port.
             if let Ok(response) = client
                 .get(format!("http://127.0.0.1:{port}/health"))
                 .send()
                 .await
                 && response.status().is_success()
+                && runtime.owns_endpoint(&client).await
             {
+                drop(key_file);
                 progress(Progress {
                     received: 1,
                     total: 1,
@@ -493,6 +515,28 @@ impl LocalRuntime {
     }
     pub fn pid(&self) -> Option<u32> {
         self.child.id()
+    }
+    /// Point a profile at this runtime, including its per-launch key.
+    pub fn attach(&self, profile: &mut Profile) {
+        profile.endpoint = self.endpoint.clone();
+        profile.runtime_key = Some(self.api_key.clone());
+    }
+    async fn owns_endpoint(&self, client: &reqwest::Client) -> bool {
+        let Ok(response) = client
+            .get(format!("{}/models", self.endpoint))
+            .bearer_auth(&self.api_key)
+            .send()
+            .await
+        else {
+            return false;
+        };
+        if !response.status().is_success() {
+            return false;
+        }
+        response
+            .json::<serde_json::Value>()
+            .await
+            .is_ok_and(|v| v["data"].as_array().is_some_and(|rows| !rows.is_empty()))
     }
     pub fn log_path(&self) -> &Path {
         &self.log

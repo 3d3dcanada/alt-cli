@@ -128,7 +128,7 @@ for context in config['contexts']:
     peak=tui['sampled_alt_tree_peak_rss_bytes'];timed_out=tui['timed_out'];exit_code=tui['process_exit']
    else:
     with (run_dir/'turn.jsonl').open('w')as out,(run_dir/'turn.stderr').open('w')as err:
-     proc=subprocess.Popen(base+['run',prompt,'--allow-tools','--json','--timeout',str(a.timeout)]+(['--instruction-draft',str(a.instruction_draft.resolve())] if a.instruction_draft else []),cwd=project,stdout=out,stderr=err,start_new_session=True)
+     proc=subprocess.Popen(base+['run',prompt,'--allow-tools','--allow-terminal','--json','--timeout',str(a.timeout)]+(['--instruction-draft',str(a.instruction_draft.resolve())] if a.instruction_draft else []),cwd=project,stdout=out,stderr=err,start_new_session=True)
      try:
       while proc.poll()is None:
        peak=max(peak,memory_tree(proc.pid))

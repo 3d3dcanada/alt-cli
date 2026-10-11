@@ -137,7 +137,7 @@ pub async fn evaluate(
         let runtime =
             runtime::LocalRuntime::start(root, preferences, profile, cancel.clone(), |_| {})
                 .await?;
-        effective.endpoint = runtime.endpoint.clone();
+        runtime.attach(&mut effective);
         local = Some(runtime);
     }
     let id = uuid::Uuid::new_v4().to_string();

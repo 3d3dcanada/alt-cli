@@ -195,7 +195,7 @@ pub enum InputAction {
     RuntimePath,
     ProjectPath,
     NewProjectPath,
-    ManualModel(ConnectionDraft),
+    ManualModel(Box<ConnectionDraft>),
 }
 #[derive(Debug, Clone)]
 pub enum ConfirmAction {
@@ -396,6 +396,8 @@ pub struct App {
     pub permission_selected: usize,
     pub permission_scroll: u16,
     pub trust_session: bool,
+    /// Separate explicit opt-in for terminal/external (host-scope) actions.
+    pub trust_host: bool,
     pub context_used: Option<u64>,
     pub context_size: Option<u64>,
     pub inference_status: Option<crate::inference::Status>,
@@ -519,6 +521,7 @@ impl App {
             permission_selected: 0,
             permission_scroll: 0,
             trust_session: false,
+            trust_host: false,
             context_used: None,
             context_size: None,
             inference_status: None,
@@ -547,6 +550,8 @@ impl App {
         if !app.preferences.project.is_dir() {
             app.project_missing = true;
             app.open_project_chooser();
+        } else if let Some(warning) = crate::project::broad_root_warning(&app.preferences.project) {
+            app.error(warning);
         }
         Ok(app)
     }
@@ -1123,6 +1128,7 @@ impl App {
         self.tools.clear();
         self.permissions.clear();
         self.trust_session = false;
+        self.trust_host = false;
         self.context_used = None;
         self.context_size = None;
         self.inference_status = None;
@@ -1237,7 +1243,11 @@ impl App {
             }
             workspace::Update::Event(Event::Update(params)) => self.apply_update(&params),
             workspace::Update::Event(Event::Permission { id, params }) => {
-                if self.trust_session && !self.cancelling {
+                let trusted = match crate::toolbox::ApprovalScope::of(&params) {
+                    crate::toolbox::ApprovalScope::Project => self.trust_session,
+                    crate::toolbox::ApprovalScope::Host => self.trust_host,
+                };
+                if trusted && !self.cancelling {
                     self.workspace.as_ref().context("Workspace closed")?.send(
                         workspace::Command::Permission {
                             id,
@@ -1310,7 +1320,11 @@ impl App {
         if let Some((id, params)) = self.permissions.pop_front() {
             let allow = choice > 0;
             if choice == 2 {
-                self.trust_session = true;
+                // A blanket choice covers only the scope the user is looking at.
+                match crate::toolbox::ApprovalScope::of(&params) {
+                    crate::toolbox::ApprovalScope::Project => self.trust_session = true,
+                    crate::toolbox::ApprovalScope::Host => self.trust_host = true,
+                }
             }
             self.workspace
                 .as_ref()
@@ -1835,6 +1849,7 @@ impl App {
         self.tools.clear();
         self.composer.clear();
         self.trust_session = false;
+        self.trust_host = false;
         self.set_page(Page::Chat);
         self.notify(
             "New conversation. Describe what you want to do, or choose a starting task from Home.",
@@ -1922,6 +1937,15 @@ impl App {
         self.messages.clear();
         self.tools.clear();
         self.dialog = None;
+        if let Some(warning) = crate::project::broad_root_warning(&self.preferences.project) {
+            self.dialog = Some(Dialog::Notice {
+                title: "This project folder is very broad".into(),
+                body: warning.into(),
+                scroll: 0,
+            });
+            self.error(warning);
+            return Ok(());
+        }
         self.notify("Project folder selected. Home → Prepare project checks helps set up how changes will be tested.");
         Ok(())
     }
@@ -2008,6 +2032,7 @@ impl App {
                     api_key_env: None,
                     local_model: Some(model.id),
                     inference: None,
+                    runtime_key: None,
                 };
                 self.config.upsert(name.clone(), profile)?;
                 self.config.default_profile = name;
@@ -2436,7 +2461,7 @@ impl App {
             }
             InputAction::ManualModel(mut draft) => {
                 draft.profile.model = text.trim().into();
-                self.save_connection(draft)?;
+                self.save_connection(*draft)?;
             }
         }
         Ok(())
@@ -2827,6 +2852,7 @@ mod recovery_tests {
                 api_key_env: None,
                 local_model: None,
                 inference: None,
+                runtime_key: None,
             },
         };
         app.launch_job("Loading", move |_, _| async move {
@@ -3073,5 +3099,31 @@ mod recovery_tests {
             })
             .collect();
         assert_eq!(reachable, (0..rows).collect());
+    }
+
+    #[test]
+    fn session_trust_never_covers_terminal_requests() {
+        let data = tempfile::tempdir().unwrap();
+        let mut app = App::load(data.path().into(), "goose".into(), None).unwrap();
+        let host =
+            serde_json::json!({"toolCall":{"title":"Terminal"},"_meta":{"alt":{"scope":"host"}}});
+        let project =
+            serde_json::json!({"toolCall":{"title":"Edit"},"_meta":{"alt":{"scope":"project"}}});
+        app.trust_session = true;
+        app.workspace_update(workspace::Update::Event(Event::Permission {
+            id: serde_json::json!(1),
+            params: host.clone(),
+        }))
+        .unwrap();
+        assert_eq!(app.permissions.len(), 1, "terminal must still ask");
+        // Choosing the blanket option on a project request trusts project scope only.
+        app.trust_session = false;
+        app.permissions.clear();
+        app.permissions.push_back((serde_json::json!(2), project));
+        let _ = app.permission(2);
+        assert!(app.trust_session && !app.trust_host);
+        app.permissions.push_back((serde_json::json!(3), host));
+        let _ = app.permission(2);
+        assert!(app.trust_host);
     }
 }

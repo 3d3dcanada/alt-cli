@@ -61,6 +61,7 @@ review a suggestion before saving or running it.
 ```bash
 alt run 'Inspect this project and explain its test commands'
 alt --access trusted run 'Run the documented checks and explain failures' --allow-tools --json
+alt --access trusted run 'Install the dependencies and run the tests' --allow-terminal --json
 alt plain
 alt sessions
 alt tui --resume SESSION_ID
@@ -75,7 +76,10 @@ Full/Guided access. Set workflow with `alt workflow host` and output allocation
 with `alt inference --output-tokens 1024`; use the
 [usage guide](SMALL_MODEL_USAGE.md) for model-specific reasoning and context settings.
 
-Headless requests deny tool permission unless `--allow-tools` is supplied. Access
+Headless requests deny tool permission unless `--allow-tools` is supplied.
+`--allow-tools` approves project actions only: checkpointed edits, configured
+checks and skill helpers. Terminal commands, external MCP tools and any request
+Alt did not tag need `--allow-terminal` (which implies `--allow-tools`). Access
 policy is separate: `--access trusted` selects Full access; other values are
 `guided` and `review-only`. The TUI uses its saved Settings choice. Full access
 can run arbitrary commands with normal host permissions. `--json` writes events

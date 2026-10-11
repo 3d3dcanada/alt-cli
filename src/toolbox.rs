@@ -441,6 +441,20 @@ fn tool_failed(v: &Value) -> bool {
 mod evidence_tests {
     use super::*;
     #[test]
+    fn only_tagged_project_requests_are_project_scope() {
+        assert_eq!(
+            ApprovalScope::of(&json!({"_meta":{"alt":{"scope":"project"}}})),
+            ApprovalScope::Project
+        );
+        for params in [
+            json!({"_meta":{"alt":{"scope":"host"}}}),
+            json!({"toolCall":{"title":"engine native"}}),
+            json!({"_meta":{"alt":{"scope":"PROJECT"}}}),
+        ] {
+            assert_eq!(ApprovalScope::of(&params), ApprovalScope::Host);
+        }
+    }
+    #[test]
     fn invalid_evidence_is_a_tool_failure_even_when_command_exits_zero() {
         assert!(tool_failed(
             &json!({"exit_code":0,"error":"Missing structured report"})
@@ -452,6 +466,33 @@ mod evidence_tests {
         assert!(!tool_failed(&json!({"checkpoint":"applied"})));
     }
 }
+/// Who an approval request can reach. Project-scope requests act through Alt's
+/// checkpointed edits, configured checks or reviewed skill helpers. Host-scope
+/// requests (terminal, external MCP tools, and any request Alt did not tag)
+/// act with the user's own permissions and are never covered by a blanket
+/// "trust this session" or `--allow-tools`; they need a separate explicit opt-in.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ApprovalScope {
+    Project,
+    Host,
+}
+impl ApprovalScope {
+    fn tag(self) -> &'static str {
+        match self {
+            Self::Project => "project",
+            Self::Host => "host",
+        }
+    }
+    /// Unknown or missing tags are treated as host scope.
+    pub fn of(params: &Value) -> Self {
+        if params["_meta"]["alt"]["scope"] == "project" {
+            Self::Project
+        } else {
+            Self::Host
+        }
+    }
+}
+
 async fn approve(
     s: &Service,
     c: &ContextState,
@@ -460,13 +501,25 @@ async fn approve(
     input: &Value,
     detail: &str,
 ) -> Result<()> {
+    approve_scoped(s, c, id, title, input, detail, ApprovalScope::Project).await
+}
+
+async fn approve_scoped(
+    s: &Service,
+    c: &ContextState,
+    id: &str,
+    title: &str,
+    input: &Value,
+    detail: &str,
+    scope: ApprovalScope,
+) -> Result<()> {
     ensure!(!s.cancel.load(Ordering::Relaxed), "Task was stopped");
     let (tx, rx) = oneshot::channel();
     s.decisions
         .lock()
         .expect("tool decisions")
         .insert(id.into(), tx);
-    let params = json!({"sessionId":c.session,"toolCall":{"toolCallId":id,"title":title,"kind":"other","rawInput":input,"content":[{"type":"content","content":{"type":"text","text":detail}}]},"options":[{"optionId":"reject","name":"Reject","kind":"reject_once"},{"optionId":"allow","name":"Allow once","kind":"allow_once"}]});
+    let params = json!({"sessionId":c.session,"toolCall":{"toolCallId":id,"title":title,"kind":"other","rawInput":input,"content":[{"type":"content","content":{"type":"text","text":detail}}]},"options":[{"optionId":"reject","name":"Reject","kind":"reject_once"},{"optionId":"allow","name":"Allow once","kind":"allow_once"}],"_meta":{"alt":{"scope":scope.tag()}}});
     s.events
         .send(Event::Permission {
             id: json!(id),
@@ -614,7 +667,7 @@ async fn execute(
                 .as_str()
                 .context("Missing connection")?;
             let tool = r.arguments["tool"].as_str().context("Missing tool name")?;
-            approve(s,c,id,&format!("External tool · {name}/{tool}"),&r.arguments,"Runs the selected external server tool with its configured host/network access. External side effects cannot be undone.").await?;
+            approve_scoped(s,c,id,&format!("External tool · {name}/{tool}"),&r.arguments,"Runs the selected external server tool with its configured host/network access. External side effects cannot be undone.",ApprovalScope::Host).await?;
             s.extensions
                 .call(&s.data, name, tool, r.arguments["arguments"].clone())
                 .await
@@ -942,7 +995,7 @@ async fn execute(
                     && (1..=600).contains(&a.timeout_secs),
                 "Use a command up to 16 KB and a 1–600 second timeout"
             );
-            approve(s,c,id,"Terminal · FULL HOST ACCESS",&r.arguments,"Runs in the real project with your OS permissions, environment, network and external tools. External side effects cannot be undone. Stop terminates owned processes; it does not reverse completed actions.").await?;
+            approve_scoped(s,c,id,"Terminal · FULL HOST ACCESS",&r.arguments,"Runs in the real project with your OS permissions, environment, network and external tools. External side effects cannot be undone. Stop terminates owned processes; it does not reverse completed actions.",ApprovalScope::Host).await?;
             let result = sandbox::terminal(
                 &s.data,
                 &s.cwd,

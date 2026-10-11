@@ -112,6 +112,7 @@ fn session_metadata_and_events_commit_together_and_inline_preferences_ignore_leg
             api_key_env: None,
             local_model: None,
             inference: None,
+            runtime_key: None,
         },
     };
     store.create(&session).unwrap();

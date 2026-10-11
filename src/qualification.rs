@@ -33,7 +33,7 @@ async fn lifecycle(
         .timeout(Duration::from_secs(90))
         .build()?;
     let request = async {
-        let mut response=client.post(url).json(&json!({"model":profile.model,"messages":[{"role":"user","content":"Write a long numbered list of practical software tests."}],"stream":true,"max_tokens":2048})).send().await?.error_for_status()?;
+        let mut response=client.post(url).json(&json!({"model":profile.model,"messages":[{"role":"user","content":"Write a long numbered list of practical software tests."}],"stream":true,"max_tokens":2048})).bearer_auth(&runtime.api_key).send().await?.error_for_status()?;
         let mut pending = Vec::new();
         let mut received = 0usize;
         while let Some(chunk) = response.chunk().await? {

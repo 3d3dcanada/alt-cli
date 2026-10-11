@@ -1,5 +1,29 @@
 # Changelog
 
+## Unreleased — 0.7 (work orders in docs/WORK_ORDERS_0.7.md)
+
+### A07 security (audit 2026-10-08)
+
+- "Allow this session" and `--allow-tools` now cover project actions only
+  (checkpointed edits, configured checks, skill helpers). Terminal commands,
+  external MCP tools and untagged engine requests need a separate opt-in:
+  **Allow terminal this session** in the TUI or `--allow-terminal` headless.
+  Candidate exploration keeps `--allow-tools` only, so its terminal requests are denied.
+- Project tools never list, read or edit Alt's own data folder when a project
+  contains it; choosing `$HOME` or `/` as the project shows a warning.
+- More credential names are excluded and compared case-insensitively: `.envrc`,
+  `.netrc`, `.npmrc`, `.pypirc`, `.git-credentials`, `id_rsa*`, `id_ed25519*`,
+  `id_ecdsa*`, `credentials*.json`, `.docker/`, `.kube/`, `.gnupg/`, `*.p12`, `*.pfx`.
+- Remote MCP connections with an authentication variable require HTTPS unless
+  the server is on loopback.
+- The owned llama-server starts with a random per-launch key passed through a
+  private `--api-key-file`, and readiness requires an authenticated model listing.
+- Headless `extensions check` refuses to start the server unless access is Full
+  (same rule as the TUI).
+- `requirements-dev.txt` is hash-pinned and installed with `--require-hashes`; the
+  release job checks out without persisted credentials; SECURITY.md names the
+  current line and the owner's private-reporting switch.
+
 ## Unreleased — Neon interface (work orders N01–N09)
 
 - Model lists now show distinct descriptions per row: parameters, quantization,

@@ -147,6 +147,9 @@ pub struct Project {
     pub(crate) db: Connection,
     _lock: std::fs::File,
     pub(crate) cancellation: Option<crate::models::Cancel>,
+    /// Alt's own data folder relative to the project root, when the project
+    /// contains it (for example a project at `$HOME`). Never readable or editable.
+    protected: Option<PathBuf>,
 }
 impl Drop for Project {
     fn drop(&mut self) {
@@ -212,6 +215,11 @@ impl Project {
             DELETE FROM index_meta;
         "))?;
         let dir = Dir::open_ambient_dir(&root, ambient_authority())?;
+        let protected = data
+            .canonicalize()
+            .ok()
+            .and_then(|data| data.strip_prefix(&root).ok().map(Path::to_path_buf))
+            .filter(|relative| !relative.as_os_str().is_empty());
         let mut p = Self {
             root,
             state,
@@ -219,6 +227,7 @@ impl Project {
             db,
             _lock: lock,
             cancellation: None,
+            protected,
         };
         p.recover()?;
         Ok(p)
@@ -369,8 +378,17 @@ impl Project {
         }
         Ok(())
     }
+    pub(crate) fn is_protected(&self, path: &str) -> bool {
+        self.protected
+            .as_ref()
+            .is_some_and(|data| Path::new(path).starts_with(data))
+    }
     pub(crate) fn check_path(&self, path: &str) -> Result<()> {
         Self::validate_path(path)?;
+        ensure!(
+            !self.is_protected(path),
+            "This path is inside Alt's own data folder and is never read or changed by project tools"
+        );
         let mut prefix = PathBuf::new();
         for c in Path::new(path).components() {
             prefix.push(c);
@@ -685,6 +703,9 @@ impl Project {
             } else {
                 format!("{base}/{name}")
             };
+            if self.is_protected(&path) {
+                continue;
+            }
             let metadata = entry.metadata()?;
             if entry.file_type()?.is_symlink() {
                 continue;
@@ -1384,15 +1405,11 @@ impl Project {
     }
 }
 pub(crate) fn excluded(name: &str) -> bool {
-    matches!(
+    // Generated folders keep their exact names; credential names are compared
+    // case-insensitively so `.ENV`, `ID_RSA` or `Credentials.json` stay hidden.
+    if matches!(
         name,
-        ".git"
-            | ".alt"
-            | ".ssh"
-            | ".aws"
-            | ".codex"
-            | ".agents"
-            | "node_modules"
+        "node_modules"
             | "target"
             | "dist"
             | "build"
@@ -1401,9 +1418,119 @@ pub(crate) fn excluded(name: &str) -> bool {
             | "__pycache__"
             | ".pytest_cache"
             | ".mypy_cache"
-    ) || name == ".env"
-        || name.starts_with(".env.")
-        || name.ends_with(".pem")
-        || name.ends_with(".key")
-        || name.starts_with(".alt-write-")
+    ) || name.starts_with(".alt-write-")
+    {
+        return true;
+    }
+    let lower = name.to_lowercase();
+    matches!(
+        lower.as_str(),
+        ".git"
+            | ".alt"
+            | ".ssh"
+            | ".aws"
+            | ".gnupg"
+            | ".docker"
+            | ".kube"
+            | ".codex"
+            | ".agents"
+            | ".env"
+            | ".envrc"
+            | ".netrc"
+            | "_netrc"
+            | ".npmrc"
+            | ".pypirc"
+            | ".git-credentials"
+    ) || lower.starts_with(".env.")
+        || lower.ends_with(".pem")
+        || lower.ends_with(".key")
+        || lower.ends_with(".p12")
+        || lower.ends_with(".pfx")
+        || ["id_rsa", "id_dsa", "id_ecdsa", "id_ed25519"]
+            .iter()
+            .any(|key| lower.starts_with(key))
+        || (lower.starts_with("credentials") && lower.ends_with(".json"))
+}
+
+/// A project root that exposes a whole account or system is allowed (Full access
+/// must stay capable) but deserves a visible warning before the model sees it.
+pub fn broad_root_warning(path: &Path) -> Option<&'static str> {
+    let path = path.canonicalize().unwrap_or_else(|_| path.to_path_buf());
+    if path == Path::new("/") {
+        return Some(
+            "This project is the whole filesystem (/). The model can list and read any file your account can. Choose a project folder instead.",
+        );
+    }
+    let home = std::env::var_os("HOME").map(PathBuf::from)?;
+    let home = home.canonicalize().unwrap_or(home);
+    (path == home).then_some(
+        "This project is your home folder. The model can list and read files across your account (credential files stay excluded). Choose a project folder instead.",
+    )
+}
+
+#[cfg(test)]
+mod access_tests {
+    use super::*;
+
+    #[test]
+    fn credential_names_are_excluded_in_any_case() {
+        for name in [
+            ".env",
+            ".ENV",
+            ".env.local",
+            ".envrc",
+            ".netrc",
+            ".npmrc",
+            ".pypirc",
+            "id_rsa",
+            "ID_RSA.pub",
+            "id_ed25519",
+            "id_ecdsa_sk",
+            "credentials.json",
+            "Credentials-prod.json",
+            ".docker",
+            ".Docker",
+            ".SSH",
+            "server.PEM",
+            "tls.key",
+            ".git-credentials",
+        ] {
+            assert!(excluded(name), "{name} must be excluded");
+        }
+        for name in [
+            "src",
+            "README.md",
+            "Build",
+            "credentials.py",
+            "keys.rs",
+            "env.rs",
+        ] {
+            assert!(!excluded(name), "{name} must stay visible");
+        }
+    }
+
+    #[test]
+    fn alt_data_inside_the_project_is_neither_listed_nor_editable() {
+        let project = tempfile::tempdir().unwrap();
+        let data = project.path().join("state/alt");
+        std::fs::create_dir_all(&data).unwrap();
+        std::fs::write(project.path().join("main.py"), "print(1)\n").unwrap();
+        let p = Project::open(&data, project.path()).unwrap();
+        assert!(p.check_path("state/alt/config.toml").is_err());
+        assert!(p.check_path("state/alt").is_err());
+        assert!(p.check_path("state/other.txt").is_ok());
+        let files = p.browse().unwrap();
+        assert!(
+            files.iter().all(|f| !f.starts_with("state/alt")),
+            "{files:?}"
+        );
+        assert!(files.iter().any(|f| f == "main.py"));
+    }
+
+    #[test]
+    fn whole_filesystem_root_is_flagged() {
+        assert!(broad_root_warning(Path::new("/")).is_some());
+        let folder = tempfile::tempdir().unwrap();
+        assert!(broad_root_warning(folder.path()).is_none());
+    }
 }
