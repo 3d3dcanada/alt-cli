@@ -202,6 +202,7 @@ impl App {
         self.workspace = None;
         self.connected = false;
         self.trust_session = false;
+        self.trust_host = false;
         self.notify(format!(
             "Access saved: {}. Your next message reconnects with this mode.",
             policy.label()

@@ -34,6 +34,8 @@ pub enum Command {
         requests: u32,
         tokens: u32,
     },
+    /// Explicit thinking choice for the rest of this connection (A01 recovery).
+    SetThinking(crate::inference::Thinking),
     Shutdown,
 }
 
@@ -133,8 +135,10 @@ async fn worker(
         cwd.is_dir(),
         "The project folder no longer exists. Choose another folder from Home"
     );
-    let binary=runtime::find_engine(&root,&requested_engine,&preferences)
-        .context("The agent engine is not installed. Choose Install agent engine on Home, or set its path in Settings")?;
+    let binary=runtime::find_engine(&root,&requested_engine,&preferences).with_context(|| match &preferences.engine_path {
+            Some(selected)=>format!("The selected agent engine {} is missing or not executable. Alt does not substitute another engine: choose it again or clear it in Settings",selected.display()),
+            None=>"The agent engine is not installed. Choose Install agent engine on Home, or set its path in Settings".into(),
+        })?;
     let mut local_runtime = None;
     if profile.local_model.is_some() {
         let tx = updates.clone();
@@ -143,7 +147,7 @@ async fn worker(
                 let _ = tx.try_send(Update::Progress(p));
             })
             .await?;
-        profile.endpoint = runtime.endpoint.clone();
+        runtime.attach(&mut profile);
         local_runtime = Some(runtime);
     }
     let _ = updates
@@ -304,6 +308,17 @@ async fn worker(
                             updates.send(Update::Inference(status.clone())).await?;
                             last_inference=Some(status);
                             updates.send(Update::Progress(Progress{stage:"Allowance added. Send a message to continue the saved task.".into(),..Progress::default()})).await?;
+                        },
+                        Err(error)=>{updates.send(Update::Error(error.to_string())).await?;},
+                    }
+                },
+                Some(Command::SetThinking(choice)) if response.is_none()=>{
+                    match engine.set_thinking(choice) {
+                        Ok(status)=>{
+                            store.append(&session.id,&json!({"type":"thinking_changed","thinking":String::from(choice),"data":status}))?;
+                            updates.send(Update::Inference(status.clone())).await?;
+                            last_inference=Some(status);
+                            updates.send(Update::Progress(Progress{stage:format!("Thinking set to {} for this connection. Your last message is back in the composer; press Enter to resend it.",choice.label()),..Progress::default()})).await?;
                         },
                         Err(error)=>{updates.send(Update::Error(error.to_string())).await?;},
                     }

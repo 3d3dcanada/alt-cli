@@ -15,8 +15,13 @@ import threading
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 REQUESTS = []
+AUTH = []
+# A03/B03: a fixture key that must reach the provider and never Alt's state.
+SECRET = "alt-fixture-key-" + os.urandom(12).hex()
+os.environ["ALT_SMOKE_KEY"] = SECRET
 MODEL = "alt-protocol-fixture"
 STALL_STARTED = threading.Event()
+GARBAGE_SENT = []
 STALL_RELEASE = threading.Event()
 
 
@@ -50,6 +55,7 @@ class Provider(BaseHTTPRequestHandler):
             self.send_json({"capabilities": ["completion", "tools"], "model_info": {"general.architecture": "llama", "llama.context_length": 8192}})
             return
         REQUESTS.append((self.path, request))
+        AUTH.append(self.headers.get("Authorization"))
         if self.path != "/v1/chat/completions":
             self.send_error(404)
             return
@@ -59,7 +65,17 @@ class Provider(BaseHTTPRequestHandler):
             STALL_RELEASE.wait(timeout=15)
             return
         tool_results = [m for m in messages if m["role"] == "tool"]
-        if any(m["role"] == "user" and "Report the previous evidence" in str(m.get("content")) for m in messages):
+        if any(m["role"] == "user" and "GARBAGE_FIXTURE" in str(m.get("content")) for m in messages):
+            # A04: the first reply is provider garbage with leaked template tokens.
+            text = "Clean answer after resend" if GARBAGE_SENT else "<|open|>垃圾 мусор 函数<|close|> λ"
+            GARBAGE_SENT.append(True)
+            message = {"role": "assistant", "content": text}
+            finish = "stop"
+        elif any(m["role"] == "user" and "CUTOFF_FIXTURE" in str(m.get("content")) for m in messages) and not tool_results:
+            # A01: every output token went to reasoning; no answer, no tool call.
+            message = {"role": "assistant", "content": "", "reasoning_content": "Thinking about the files in detail before acting"}
+            finish = "length"
+        elif any(m["role"] == "user" and "Report the previous evidence" in str(m.get("content")) for m in messages):
             memory = json.dumps(messages)
             message = {"role": "assistant", "content": "Restored memory contains ALT_TOOL_OK" if "ALT_TOOL_OK" in memory else "Memory missing"}
             finish = "stop"
@@ -126,12 +142,15 @@ def main():
                     raise AssertionError(f"alt {arguments} failed\n{result.stderr}\n{result.stdout[-10000:]}")
                 return result.stdout
 
-            run("init", "--model", MODEL, "--endpoint", endpoint, "--provider", args.provider, "--context", "8192")
+            run("init", "--model", MODEL, "--endpoint", endpoint, "--provider", args.provider, "--context", "8192", "--api-key-env", "ALT_SMOKE_KEY")
             print(run("doctor").strip())
             denied = [json.loads(line) for line in run("run", "Run fixture check", "--json").splitlines()]
             assert not (workspace / "fixture-evidence.txt").exists(), "Unapproved shell tool executed"
             assert any(e["type"] == "permission_decision" and not e["allow"] for e in denied), json.dumps(denied)[-10000:]
-            allowed = [json.loads(line) for line in run("run", "Run fixture check", "--allow-tools", "--json").splitlines()]
+            project_only = [json.loads(line) for line in run("run", "Run fixture check", "--allow-tools", "--json").splitlines()]
+            assert not (workspace / "fixture-evidence.txt").exists(), "--allow-tools approved a terminal command"
+            assert any(e["type"] == "permission_decision" and not e["allow"] for e in project_only), json.dumps(project_only)[-10000:]
+            allowed = [json.loads(line) for line in run("run", "Run fixture check", "--allow-tools", "--allow-terminal", "--json").splitlines()]
             assert (workspace / "fixture-evidence.txt").read_text() == "ALT_TOOL_OK"
             assert any(e["type"] == "permission_decision" and e["allow"] for e in allowed)
             assert any(e["type"] == "update" and "ALT_TOOL_OK" in json.dumps(e) for e in allowed)
@@ -143,7 +162,7 @@ def main():
             connection=root/'mcp.json'
             connection.write_text(json.dumps({"name":"fixture_ext","transport":{"type":"stdio","command":"python3","args":[str(Path(__file__).resolve().parents[1]/'tests/fixtures/mcp_server.py')]},"enabled":False,"selected_tools":[]}))
             run('extensions','add',str(connection));run('extensions','check','fixture_ext');run('extensions','select','fixture_ext','counter')
-            external=[json.loads(line) for line in run('run','EXTERNAL_FIXTURE call the counter tool','--allow-tools','--json').splitlines()]
+            external=[json.loads(line) for line in run('run','EXTERNAL_FIXTURE call the counter tool','--allow-terminal','--json').splitlines()]
             assert any(e['type']=='permission_decision' and e['allow'] for e in external),external
             assert any(e['type']=='update' and 'Observed tool result:' in json.dumps(e) and '1' in json.dumps(e) for e in external),external
             run('extensions','disable','fixture_ext')
@@ -152,6 +171,26 @@ def main():
             assert plain.returncode==0,(plain.stdout,plain.stderr)
             assert 'Allow once? [y/N]' in plain.stdout and 'ALT_TOOL_OK' in plain.stdout,(plain.stdout,plain.stderr)
             assert (workspace/'fixture-evidence.txt').read_text()=='ALT_TOOL_OK'
+            mark = len(REQUESTS)
+            cut = [json.loads(line) for line in run('run', 'CUTOFF_FIXTURE explain the project', '--json').splitlines()]
+            assert any(e['type'] == 'reasoning_cutoff' and e['resent'] is False and e['charged'] for e in cut), cut
+            cut_requests = [r for p, r in REQUESTS[mark:] if p == '/v1/chat/completions']
+            assert len(cut_requests) == 1, f"Alt must not resend after a cutoff: {len(cut_requests)}"
+            run('inference', '--thinking', 'off')
+            mark = len(REQUESTS)
+            run('run', 'Report the previous evidence', '--json')
+            body = [r for p, r in REQUESTS[mark:] if p == '/v1/chat/completions'][-1]
+            if args.provider == 'ollama':
+                assert body.get('think') is False and body.get('reasoning_effort') == 'none', body
+            else:
+                assert body.get('reasoning_effort') == 'none' and 'think' not in body, body
+            run('inference', '--output-guard', 'on')
+            guarded = run('run', 'GARBAGE_FIXTURE say hello', '--json')
+            assert 'Clean answer after resend' in guarded and '<|open|>' not in guarded, guarded[-4000:]
+            session = [json.loads(line) for line in guarded.splitlines()][0]['session']['id']
+            assert '<|open|>' not in run('export', session), "Discarded provider output reached the conversation"
+            assert len(GARBAGE_SENT) == 2, GARBAGE_SENT
+            run('inference', '--output-guard', 'auto')
             cancellation = subprocess.Popen([alt, "--data-dir", str(root / "state"), "--engine", goose,
                                               "run", "STALL_FIXTURE", "--json"], cwd=workspace,
                                              stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
@@ -178,9 +217,17 @@ def main():
                         cancellation.kill()
                         cancellation.wait()
             assert all(path == "/v1/chat/completions" for path, _ in REQUESTS)
+            assert AUTH and all(a == f"Bearer {SECRET}" for a in AUTH), "Provider key missing from model requests"
+            for path in (root / "state").rglob("*"):
+                if path.is_file():
+                    assert SECRET.encode() not in path.read_bytes(), f"API key value written to {path}"
             assert all(body["model"] == MODEL for _, body in REQUESTS)
             assert all(body.get("max_tokens") == 2048 for _, body in REQUESTS), "Actual server output limit missing"
-            assert all("options" not in body for _, body in REQUESTS), "Native-only fields leaked into compatible chat requests"
+            if args.provider == "ollama":
+                # A02: only Alt's explicit context reaches Ollama; engine options never leak.
+                assert all(body.get("options") == {"num_ctx": 8192} for _, body in REQUESTS), "Ollama options must be exactly the selected num_ctx"
+            else:
+                assert all("options" not in body for _, body in REQUESTS), "Native-only fields leaked into compatible chat requests"
             assert any("native tool calls" in json.dumps(body["messages"]) for _, body in REQUESTS), "Operator instructions missing"
             tools = sorted({tool["function"]["name"] for _, body in REQUESTS for tool in body.get("tools", [])})
             assert sorted(name.split("__")[-1] for name in tools) == ["counter", "edit", "evidence", "list", "read", "remember", "run_check", "search", "skill", "terminal"], tools

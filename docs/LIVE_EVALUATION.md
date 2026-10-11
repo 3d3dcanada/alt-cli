@@ -169,6 +169,13 @@ in `scripts/acceptance_projects.py`. These are tiny controlled projects, not a
 representative coding benchmark or proof of general pentesting capability.
 
 ```bash
+0.7 labels: `--artifact-label uncensored|standard|hosted` is required and recorded
+as given (`--uncensored` remains an alias). Hosted runs pass `--endpoint`,
+`--model-id` and `--api-key-env NAME` and need no local file hash. `--thinking-level`
+and `--dialect` apply the A01 reasoning choice; `--check-args` validates a command
+without hashing files or issuing requests. The matched 0.7 PC matrix is
+`scripts/pc_matrix_0_7.sh` (see [PC handoff](PC_HANDOFF_0.7.md)).
+
 python3 scripts/live_acceptance.py \
   --binary target/portable-glibc231/release/alt \
   --engine /path/to/goose --runtime /path/to/llama-server \

@@ -131,7 +131,7 @@ pub async fn run(
             let runtime =
                 crate::runtime::LocalRuntime::start(root, prefs, profile, cancel.clone(), |_| {})
                     .await?;
-            effective.endpoint = runtime.endpoint.clone();
+            runtime.attach(&mut effective);
             local = Some(runtime);
         }
         let relay = crate::inference::Relay::start(root, &effective).await?;

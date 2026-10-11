@@ -130,7 +130,9 @@ impl App {
                 KeyCode::Esc => {
                     self.stop_turn()?;
                 }
-                KeyCode::Enter if alt => self.composer.insert("\n", true),
+                KeyCode::Enter if alt => {
+                    self.composer.insert("\n", true);
+                }
                 KeyCode::Enter if self.tools_focus => {
                     self.action("tool-details")?;
                 }
@@ -614,6 +616,11 @@ impl App {
                 return self.dialog_key(KeyEvent::new(KeyCode::Char('s'), KeyModifiers::CONTROL));
             }
             "test-form" => return self.test_form(),
+            "manual-model" => {
+                if let Some(Dialog::Connection(form)) = self.dialog.clone() {
+                    return self.manual_model(&form);
+                }
+            }
             _ => {}
         }
         Ok(())
@@ -665,6 +672,10 @@ impl App {
             16 => return self.manager_action("benchmark-preview", serde_json::json!({})),
             17 => return self.manager_action("tools-focus", serde_json::json!({})),
             18 => return self.manager_action("qualify-preview", serde_json::json!({})),
+            19 => return self.manager_action("inference-thinking", serde_json::json!({})),
+            20 => return self.manager_action("params-menu", serde_json::json!({})),
+            21 => return self.manager_action("probe-run", serde_json::json!({})),
+            22 => return self.manager_action("cuda-runtime", serde_json::json!({})),
             12 => return self.manager_action("manage-tools", serde_json::json!({})),
             13 => return self.manager_action("manage-storage", serde_json::json!({})),
             14 => return self.manager_action("manage-models", serde_json::json!({})),
@@ -696,29 +707,78 @@ impl App {
         Ok(())
     }
 
-    fn test_form(&mut self) -> Result<()> {
+    pub(super) fn test_form(&mut self) -> Result<()> {
         let Some(Dialog::Connection(form)) = &self.dialog else {
             return Ok(());
         };
         let draft = self.draft(form)?;
-        self.launch_job("Checking the connection", move |_, _| async move {
-            let models = models::inventory(&draft.profile).await?;
+        self.launch_job("Checking the connection", move |cancel, _| async move {
+            let models = tokio::select! {
+                result = models::inventory(&draft.profile) => result?,
+                _ = models::cancelled(&cancel) => anyhow::bail!("Connection check cancelled"),
+            };
             Ok(JobResult::Tested(draft, models))
         })
     }
-    fn draft(&self, form: &ConnectionForm) -> Result<ConnectionDraft> {
+    fn manual_model(&mut self, form: &ConnectionForm) -> Result<()> {
+        let draft = self.draft(form)?;
+        let current = if form.original.is_some() {
+            draft.profile.model.clone()
+        } else {
+            String::new()
+        };
+        self.dialog = Some(Dialog::Input {
+            title: "Enter a model identifier".into(),
+            hint: "Use the exact name from your server. This saves without checking its inventory."
+                .into(),
+            editor: Editor::new(current),
+            action: InputAction::ManualModel(Box::new(draft)),
+            multiline: false,
+        });
+        Ok(())
+    }
+    pub(super) fn draft(&self, form: &ConnectionForm) -> Result<ConnectionDraft> {
         let key = form.fields[2].text.trim();
         let original = form.original.clone();
-        let profile = Profile {
-            provider: form.provider,
-            endpoint: form.fields[1].text.trim().trim_end_matches('/').into(),
-            model: "choose-next".into(),
-            context_tokens: self.preferences.context_tokens,
-            max_turns: self.preferences.max_turns,
-            uncensored: false,
-            api_key_env: (!key.is_empty()).then(|| key.into()),
-            local_model: None,
-            inference: None,
+        let endpoint = form.fields[1].text.trim().trim_end_matches('/').to_owned();
+        let api_key_env = (!key.is_empty()).then(|| key.to_owned());
+        // B01: editing patches only the fields this form shows. Context, steps,
+        // inference settings, the model and the uncensored claim are kept.
+        let existing = original
+            .as_ref()
+            .and_then(|name| self.config.profiles.get(name))
+            .filter(|p| p.local_model.is_none());
+        let profile = if let Some(existing) = existing {
+            let mut patched = existing.clone();
+            patched.provider = form.provider;
+            patched.endpoint = endpoint;
+            patched.api_key_env = api_key_env;
+            if form.dialect != patched.effective_inference().dialect {
+                let mut settings = patched.effective_inference();
+                settings.dialect = form.dialect;
+                patched.inference = Some(settings);
+            }
+            patched
+        } else {
+            let mut inference = None;
+            if form.dialect != crate::inference::Dialect::Auto {
+                let mut settings =
+                    crate::inference::Settings::legacy(self.preferences.context_tokens);
+                settings.dialect = form.dialect;
+                inference = Some(settings);
+            }
+            Profile {
+                provider: form.provider,
+                endpoint,
+                model: "choose-next".into(),
+                context_tokens: self.preferences.context_tokens,
+                max_turns: self.preferences.max_turns,
+                uncensored: false,
+                api_key_env,
+                local_model: None,
+                inference,
+                runtime_key: None,
+            }
         };
         profile.validate()?;
         ensure!(
@@ -799,10 +859,11 @@ impl App {
                 KeyCode::Tab | KeyCode::Down => form.focus = (form.focus + 1) % 3,
                 KeyCode::BackTab | KeyCode::Up => form.focus = (form.focus + 2) % 3,
                 KeyCode::Enter => return self.test_form(),
-                KeyCode::Char('m') if ctrl => {
-                    let draft = self.draft(form)?;
-                    self.dialog=Some(Dialog::Input{title:"Enter a model identifier".into(),hint:"Use the exact name from your server. This saves without checking its inventory.".into(),editor:Editor::default(),action:InputAction::ManualModel(draft),multiline:false});
-                    return Ok(());
+                // B07: Ctrl+M arrives as Enter in ordinary terminals; Alt+M is distinct.
+                KeyCode::Char('m') | KeyCode::Char('M')
+                    if ctrl || key.modifiers.contains(KeyModifiers::ALT) =>
+                {
+                    return self.manual_model(form);
                 }
                 _ => form.fields[form.focus].key(key, false),
             },
@@ -810,17 +871,27 @@ impl App {
                 draft,
                 models,
                 selected,
-            } => match key.code {
-                KeyCode::Up => *selected = selected.saturating_sub(1),
-                KeyCode::Down => *selected = (*selected + 1).min(models.len().saturating_sub(1)),
-                KeyCode::Enter => {
-                    let mut draft = draft.clone();
-                    draft.profile.model =
-                        models.get(*selected).context("Select a model")?.id.clone();
-                    return self.save_connection(draft);
+                query,
+            } => {
+                let shown = crate::presets::filter_models(models, &query.text).len();
+                match key.code {
+                    KeyCode::Up => *selected = selected.saturating_sub(1),
+                    KeyCode::Down => *selected = (*selected + 1).min(shown.saturating_sub(1)),
+                    KeyCode::Enter => {
+                        let mut draft = (**draft).clone();
+                        draft.profile.model = crate::presets::filter_models(models, &query.text)
+                            .get(*selected)
+                            .context("No model matches the search; edit it or press Esc")?
+                            .id
+                            .clone();
+                        return self.save_connection(draft);
+                    }
+                    _ => {
+                        query.key(key, false);
+                        *selected = 0;
+                    }
                 }
-                _ => {}
-            },
+            }
             Dialog::Input {
                 editor,
                 action,
@@ -912,14 +983,23 @@ impl App {
         if !self.permissions.is_empty() {
             return;
         }
-        match &mut self.dialog {
+        let accepted = match &mut self.dialog {
             Some(Dialog::Connection(form)) => form.fields[form.focus].insert(text, false),
             Some(Dialog::Input {
                 editor, multiline, ..
             }) => editor.insert(text, *multiline),
+            Some(Dialog::Palette { query, .. }) => query.insert(text, false),
             None if self.page == Page::Chat => self.composer.insert(text, true),
             None if self.search_focus => self.session_search.insert(text, false),
-            _ => {}
+            _ => true,
+        };
+        // B10: never drop a paste silently.
+        if !accepted {
+            self.error(format!(
+                "That paste is {} KiB; a text field holds at most {} KiB, so nothing was inserted. Save the text in a project file and refer to it by its path instead.",
+                text.len().div_ceil(1024),
+                super::input::Editor::LIMIT / 1024
+            ));
         }
     }
 

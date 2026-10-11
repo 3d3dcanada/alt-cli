@@ -463,11 +463,43 @@ pub async fn verify_gguf(path: &Path) -> Result<()> {
     let mut file = tokio::fs::File::open(path)
         .await
         .context("The model file is missing or cannot be read")?;
-    let mut magic = [0u8; 4];
-    file.read_exact(&mut magic)
-        .await
-        .context("The model file is incomplete")?;
-    ensure!(&magic == b"GGUF", "This is not a GGUF model file");
+    // B09: the full fixed header, not only the magic: version and counts.
+    let mut header = [0u8; 24];
+    let mut filled = 0;
+    while filled < header.len() {
+        let n = file.read(&mut header[filled..]).await?;
+        if n == 0 {
+            break;
+        }
+        filled += n;
+    }
+    ensure!(
+        filled >= 4 && &header[..4] == b"GGUF",
+        "This is not a GGUF model file"
+    );
+    gguf_header(&header[..filled])
+}
+
+/// Check a GGUF fixed header: magic, a supported version (2 or 3) and
+/// plausible tensor/metadata counts. Truncated files fail before loading.
+pub fn gguf_header(header: &[u8]) -> Result<()> {
+    ensure!(
+        header.len() >= 24,
+        "The GGUF header is truncated ({} of 24 bytes); the file is incomplete or not a model",
+        header.len()
+    );
+    ensure!(&header[..4] == b"GGUF", "This is not a GGUF model file");
+    let version = u32::from_le_bytes(header[4..8].try_into()?);
+    ensure!(
+        (2..=3).contains(&version),
+        "Unsupported GGUF version {version}; use a GGUF v2 or v3 file"
+    );
+    let tensors = u64::from_le_bytes(header[8..16].try_into()?);
+    let metadata = u64::from_le_bytes(header[16..24].try_into()?);
+    ensure!(
+        tensors <= 1 << 24 && metadata <= 1 << 20,
+        "The GGUF header reports implausible counts ({tensors} tensors, {metadata} metadata entries); the file is damaged"
+    );
     Ok(())
 }
 

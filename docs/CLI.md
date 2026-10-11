@@ -61,6 +61,7 @@ review a suggestion before saving or running it.
 ```bash
 alt run 'Inspect this project and explain its test commands'
 alt --access trusted run 'Run the documented checks and explain failures' --allow-tools --json
+alt --access trusted run 'Install the dependencies and run the tests' --allow-terminal --json
 alt plain
 alt sessions
 alt tui --resume SESSION_ID
@@ -72,10 +73,30 @@ For the compact small-model interface, choose `alt tools compact` (scalar text)
 or `alt tools compact-lines` (one source line per array item). `alt tools all`
 restores the original tool/context interface. These choices are independent of
 Full/Guided access. Set workflow with `alt workflow host` and output allocation
-with `alt inference --output-tokens 1024`; use the
+with `alt inference --output-tokens 1024`, thinking with `alt inference --thinking off`
+(or `low`, `medium`, `high`, `default`, `budget:N`; `--dialect` names the server family); use the
 [usage guide](SMALL_MODEL_USAGE.md) for model-specific reasoning and context settings.
 
-Headless requests deny tool permission unless `--allow-tools` is supplied. Access
+Hosted providers: `alt init --preset nvidia --model z-ai/glm-5.3` fills the
+endpoint, key variable (`NVIDIA_API_KEY`) and thinking dialect. Presets: nvidia,
+openrouter, groq, together, deepseek, mistral, gemini, cerebras, lmstudio, vllm,
+llamacpp, ollama, custom. Explicit `--endpoint`, `--provider` and `--api-key-env`
+win over the preset. `alt models --filter glm` searches the server's catalog.
+
+Model probe: `alt probe` sends one bounded request and prints server facts, the
+observed reply and labelled suggestions; `alt probe --apply thinking-off` applies
+one. Nothing changes without `--apply`.
+
+Open parameters: `alt params show` lists every request and owned-runtime
+parameter, the exact request fields and the llama-server argv. `alt params set
+repeat_penalty 1.1`, `alt params set extra_body '{"top_a":0.1}'`, `alt params set
+ollama_context server-default` or `alt params set n_cpu_moe 12` change one value;
+`alt params unset KEY` restores its default.
+
+Headless requests deny tool permission unless `--allow-tools` is supplied.
+`--allow-tools` approves project actions only: checkpointed edits, configured
+checks and skill helpers. Terminal commands, external MCP tools and any request
+Alt did not tag need `--allow-terminal` (which implies `--allow-tools`). Access
 policy is separate: `--access trusted` selects Full access; other values are
 `guided` and `review-only`. The TUI uses its saved Settings choice. Full access
 can run arbitrary commands with normal host permissions. `--json` writes events

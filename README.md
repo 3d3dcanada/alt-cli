@@ -3,83 +3,81 @@
 [![Verify Alt](https://github.com/3d3dcanada/alt-cli/actions/workflows/verify.yml/badge.svg?branch=main)](https://github.com/3d3dcanada/alt-cli/actions/workflows/verify.yml)
 [![License: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-blue)](LICENSE)
 
-**A Rust terminal workspace for building, inspecting and testing software with your own models.**
+**A coding agent in your terminal for the model you choose: local, uncensored or hosted.**
 
-Alt combines a terminal UI, project files, real shell sessions, model management,
-persistent project memory and checkable task results. Choose your model and access
-mode, describe what you want, and inspect what actually changed. It is designed
-for local models and people who prefer labelled choices to configuration files.
-
-Alt supports compatible uncensored, abliterated and Heretic models through GGUF
-or server connections. It does not modify model weights or silently replace your
-selected model. Full access supports arbitrary commands, networking, package
-installation and external tools with your normal account permissions.
+Alt runs a full coding workspace (files, real terminal, checks, undo) around any
+model you bring: a GGUF file, Ollama, LM Studio, llama.cpp, vLLM, or a hosted API
+such as NVIDIA NIM or OpenRouter. Uncensored, abliterated and standard checkpoints
+are all first-class. Alt never swaps your model behind your back, and it shows
+what actually changed instead of trusting the model's word.
 
 ![Alt's actual 80×24 TUI after a MiMo 9B Q4 model repair and independent checks](docs/screenshots/v6/native-model-repair-80x24.png)
 
-**Status: 0.6.0 beta 3 · Linux x86_64 · Apache-2.0.** The screenshot shows an actual
-CPU MiMo 9B Q4 repair through the TUI, after the unchanged independent checks passed.
-Model reliability and hardware support are measured separately from
-application tests. [Read the results and remaining gaps](docs/IMPLEMENTATION.md).
+## 1. Install
 
-**Included in beta 3:** explicit inference allocation, host task workflows, bounded
-skills, source handles, serial checked candidates, reviewed instruction trials
-and offline training tools. Compact text/line-array tool choices reduce repeated
-context and provide updated source handles after edits. The current beta includes these additions. See [the usage guide](docs/SMALL_MODEL_USAGE.md)
-and [work-order delivery and evidence](docs/SMALL_MODEL_DELIVERY.md). No weights
-have been trained or new quality presets promoted.
-
-The [repair follow-up](docs/research/2026-10-07-repair-results/README.md) now has
-independently verified MiMo 9B Q4 repairs. A matched CPU pilot passed **3/4** with
-each interface; compact used about 38% less initial input and its passing repairs
-were faster in this small sample. The subsequent portable build passed **6/9**
-MiMo attempts: both Python feature repeats, JavaScript, two of four held-out tasks
-and the two-file repair through the actual TUI. Rust and two held-out tasks failed.
-The longer CPU allowance differs from the earlier 22 failures.
-The current continuation fix also passed a separate real two-turn MiMo TUI trial;
-the earlier failed continuation attempt is retained in that evidence.
-
-The [PC completion work orders](docs/PC_READY_WORK_ORDERS.md) add observed
-request stages, remaining connection allowances, explicit finite additions and
-reviewed allocation recovery without changing the model. Failed checks return
-actual failed cases and fresh source handles; repeated failures/source cycles
-produce advisory recovery feedback. The PC recorder now verifies a real repair,
-continuation, cancellation/reconnect and undo in disposable state. See the
-[current compatibility evidence](docs/COMPATIBILITY.md) for separate application
-and model-quality outcomes.
-
-## Try it on your computer
-
-Download [Alt v0.6.0-beta.3](https://github.com/3d3dcanada/alt-cli/releases/tag/v0.6.0-beta.3)
-for Linux x86_64. See [Installation](docs/INSTALLATION.md) for archive and GitHub
-provenance verification, then follow [PC testing](docs/PC_TESTING.md). You can also
-build from source below.
-
-Install [Rust with rustup](https://rustup.rs/), Git and a C compiler first. On
-Debian/Ubuntu, the usual prerequisites are `git build-essential pkg-config curl
-ca-certificates python3 libgomp1`. The repository selects Rust 1.99.0 automatically.
+Download the latest Linux x86_64 build from
+[Releases](https://github.com/3d3dcanada/alt-cli/releases) (see
+[Installation](docs/INSTALLATION.md) for checksum and provenance checks), or build it:
 
 ```bash
+# Debian/Ubuntu prerequisites: git build-essential pkg-config curl ca-certificates python3 libgomp1
 git clone https://github.com/3d3dcanada/alt-cli.git
 cd alt-cli
-cargo build --locked --release
+cargo build --locked --release      # Rust 1.99.0 is selected automatically
 ./target/release/alt
 ```
 
-Home opens without a model. Building the application does not download weights.
-For step-by-step prerequisites, installing an `alt` command, CI packages and
-updates, see **[Installation](docs/INSTALLATION.md)**. Use a real terminal; on a
-small computer, `CARGO_BUILD_JOBS=2 cargo build --locked --release` reduces build
-parallelism.
+Alt opens on Home without any configuration. When Home offers **Install agent
+engine**, accept it (a pinned, checksummed Goose build). Building Alt downloads no
+model weights.
 
-1. **Try a practice project** from Home to learn checks, edits and undo, or choose your own project folder.
-2. **Connect a model** you already run in Ollama, LM Studio or another compatible
-   server, or import/download a GGUF from Models.
-3. **Install the agent engine** when Home offers it. A managed GGUF also needs
-   the optional local runtime. Existing executables can be selected in Settings.
-4. **Choose access in Settings**, then describe the change or investigation.
-5. **Prepare project checks** on Home, then open Task to inspect edits and actual evidence.
-   A model saying “done” does not mark the behavior verified.
+## 2. Connect a model
+
+Choose **Connect a model** on Home (or press **Ctrl+P** and type *connect*):
+
+| You have | Pick | Address it fills |
+|---|---|---|
+| Ollama | Ollama | `http://127.0.0.1:11434` |
+| LM Studio | LM Studio | `http://127.0.0.1:1234/v1` |
+| llama.cpp, vLLM, SGLang | *A hosted API or another server preset* → llama.cpp / vLLM | `http://127.0.0.1:8080/v1` / `:8000/v1` |
+| A hosted API | *A hosted API or another server preset* → NVIDIA NIM, OpenRouter, Groq, Together, DeepSeek, Mistral, Gemini, Cerebras | the provider's endpoint and key variable |
+| A `.gguf` file | *A GGUF file on this computer* | Alt runs it with its own CPU runtime |
+
+Keys stay in your environment: export the variable the preset names (for
+example `NVIDIA_API_KEY`) before starting Alt; Alt saves only the variable name.
+Pick the model from the server's list (type to search long hosted catalogs).
+
+Headless, the same in one line:
+
+```bash
+alt init --preset nvidia --model z-ai/glm-5.3     # or: --preset ollama --model qwen3:8b
+alt probe                                          # one short request; suggests settings
+```
+
+**Probe this model** (Ctrl+P) sends one bounded request and suggests settings
+(thinking off, a larger output allowance, compact tools, native context) that
+you can apply with one choice. Thinking models that spend their whole allowance
+reasoning are detected and offered a labelled recovery; see
+[Small-model usage](docs/SMALL_MODEL_USAGE.md).
+
+## 3. Your first task
+
+1. **Try a practice project** on Home (a small broken example with real checks
+   and undo), or **choose a project folder**.
+2. **Choose access** in Settings → Tools & access: *Review only*, *Guided changes*
+   (reviewed edits, checks isolated with Bubblewrap) or *Full access* (any command
+   and network, with your own permissions).
+3. Type what you want in the Workspace, for example *"The tests in test_cart.py
+   fail; find out why and fix it."* Review each proposed edit or command.
+4. Open **Task progress** to see the diff, run the checks and undo if needed. A
+   model saying "done" does not mark the work verified; the checks do.
+
+Everything is reachable with the keyboard or mouse: **Ctrl+P** lists every page,
+setting and action; **F1** opens help; the TUI stays usable at 80×24.
+
+**Status: 0.7 in development on `main` (latest release 0.6.0 beta 3) · Linux
+x86_64 · Apache-2.0.** Model reliability and hardware support are measured
+separately from application tests; see [Status and evidence](#status-and-evidence).
 
 ## What you can do
 
@@ -91,7 +89,8 @@ parallelism.
 | Tools | Native project tools; optional build, Git, HTTP, browser and security workflows; selected external MCP tools |
 | Project memory | Saved goals and decisions, pinned notes, incremental source indexing, retrieved context and a visible Context page |
 | Verification | Tests/build/lint/health/custom contracts, structured reports, independently pinned assertions and stale-result detection |
-| Runtime controls | Context, CPU threads, GPU layers, batch/cache settings, optional reasoning control, generation and restart qualification |
+| Runtime controls | Context, CPU threads, GPU layers, batch/cache, MoE/tensor offload, RoPE/YaRN, draft models, extra llama-server arguments, generation and restart qualification |
+| Any server | Thinking off/low/medium/high per server dialect, penalties, seed, stop, extra request JSON, Ollama context, model probe |
 | Small-model effort | Explicit output/sampling, actual request receipts, host workflow, one active skill, source/import outlines and serial independently checked candidates |
 | Offline improvement | Development-only instruction proposals with review/rollback; pending trajectory capture, SFT resume/export tooling and verified rewards |
 | Recovery | State backup/restore, history retention, preserved imported weights, diagnostics and package rollback |
@@ -106,10 +105,11 @@ Tool focus is a separate explicit choice; **All** is the default.
 
 | Connection | Address or input | Notes |
 |---|---|---|
-| Ollama | `http://127.0.0.1:11434` | Use the server root; configure its native context separately |
+| Ollama | `http://127.0.0.1:11434` | Use the server root; Alt sends the connection context as `num_ctx` and reads back what Ollama loaded |
 | LM Studio | Usually `http://127.0.0.1:1234/v1` | Load a model and start its compatible server first |
 | llama.cpp / ORA / other compatible servers | The server's OpenAI-compatible `/v1` address | Tool behavior depends on the model and chat template |
 | Managed local inference | A compatible GGUF file or complete split set | The pinned download is CPU first; GPU runtime selection is explicit |
+| Hosted APIs | NVIDIA NIM, OpenRouter, Groq, Together, DeepSeek, Mistral, Gemini, Cerebras presets | Key from an environment variable; retries and an output guard for flaky providers |
 
 The reference target is **Linux, 16 GB RAM and a GTX 1070 with 8 GB VRAM**. Physical
 GTX 1070 performance has not been measured. Your selected 7B/9B Q4 model is a
@@ -149,6 +149,8 @@ alt models search 'Qwen3 4B heretic'
 alt models import /path/to/model.gguf --uncensored --use
 alt run 'Inspect this project and explain its test commands'
 alt --access trusted run 'Run this project’s checks' --allow-tools --json
+# terminal commands and external tools need their own flag:
+alt --access trusted run 'Install and test' --allow-terminal --json
 alt state backup /path/outside-alt-state/backup.tar.gz
 ```
 
@@ -165,10 +167,10 @@ Keys are referenced by environment-variable name, not saved in model profiles.
 - [Workspace guide](docs/WORKSPACE_GUIDE.md) · [CLI reference](docs/CLI.md)
 - [Verification contracts](docs/VERIFICATION_CONTRACTS.md) · [Runtime qualification](docs/QUALIFICATION.md)
 - [Architecture](docs/ARCHITECTURE.md) · [Contributing](CONTRIBUTING.md) · [Changelog](CHANGELOG.md)
-- [Implementation and evidence](docs/IMPLEMENTATION.md) · [Current work orders](docs/WORK_ORDERS_0.6.md) · [PC test guide](docs/PC_TESTING.md)
+- [Implementation and evidence](docs/IMPLEMENTATION.md) · [0.7 work orders](docs/WORK_ORDERS_0.7.md) · [PC test guide](docs/PC_TESTING.md)
 - [Research and project history](docs/research/README.md) · [Documentation index](docs/README.md)
 
-Current source validation includes **123 Rust tests**, strict Clippy, both adapter
+Current source validation includes **162 Rust tests**, strict Clippy, both adapter
 fixtures for both compact edit formats, and actual small-terminal permission,
 edit/check/undo and conversation-continuation journeys. Compact follow-ups retain
 the complete original request as context, with the latest user message taking
@@ -178,6 +180,26 @@ install/update/rollback checks on Debian 11 and Ubuntu 24.04. The local PC recor
 also passed a live uncensored-model CPU trial. These measurements do not guarantee
 that a model can solve an arbitrary task. The [current evidence](docs/evidence/v6/README.md)
 separates application results, model outcomes and remaining human/hardware checks.
+
+## Status and evidence
+
+The 2026-10-08 PC trial (GTX 1070, 8 GB) measured why small models fail: reasoning
+cut-offs and edit format. Spark-X2.5 4B passed 0/8 tasks at 1,024 output tokens
+(every token spent thinking) and 3/8 at 4,096; MiMo 9B abliterated 3/8; hosted Kimi
+K3 4/8 and GLM 5.3 3/8. The 0.7 work orders ([board](docs/WORK_ORDERS_0.7.md))
+attack exactly that: provider-aware thinking control and cut-off recovery, open
+parameters, hosted presets and retries, a model probe and whole-file edits. The
+matched re-run on the owner's PC (A10) has not been run yet; no improvement is
+claimed until it is.
+
+Earlier results: the [repair follow-up](docs/research/2026-10-07-repair-results/README.md)
+has independently verified MiMo 9B Q4 repairs (matched CPU pilot 3/4 per interface;
+portable build 6/9). The complete 0.6 CPU matrices passed 7/120 pinned behavioural
+checks for Spark and 16/120 for Qwen; no model preset is promoted. Physical GTX 1070
+qualification, real LM Studio and novice sessions remain open gates. See
+[compatibility](docs/COMPATIBILITY.md), [qualification](docs/QUALIFICATION.md) and
+[live evaluations](docs/LIVE_EVALUATION.md). Raw evidence stays in `docs/evidence`;
+new raw evidence over 1 MiB goes to release assets (`scripts/check_repo_weight.py`).
 
 ## Development and license
 

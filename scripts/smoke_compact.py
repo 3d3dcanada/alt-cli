@@ -24,6 +24,7 @@ FOLLOWUP_GOAL = None
 FOLLOWUP_TEXT = 'CONTINUE_SAVED_TASK_FIXTURE: Continue the task.'
 EDITOR = 'edit_text'
 CREATE_BODY = "VALUE = '☃\\n'\n"
+REPLACE_BODY = 'def scaled(x):\n    return x * 3\n'
 
 
 class Provider(BaseProvider):
@@ -57,6 +58,11 @@ class Provider(BaseProvider):
                 assert 'Original task request (context; the latest user message takes precedence)' in content
             else:
                 assert 'Original task request (context;' not in content, 'First request was needlessly duplicated'
+        elif any(m['role'] == 'user' and 'REPLACE_FILE_FIXTURE' in str(m.get('content')) for m in body['messages']):
+            # A06: whole-file rewrite of a small file already read in full.
+            assert 'replace_file' in tools, 'compact profiles offer replace_file'
+            if not results:
+                tool, arguments = 'replace_file', {'path': 'repair.py', 'new_text': REPLACE_BODY, 'reason': 'Rewrite the small file'}
         elif any(m['role'] == 'user' and 'CREATE_DELETE_FIXTURE' in str(m.get('content')) for m in body['messages']):
             if not results:
                 tool = 'create_file' if EDITOR == 'edit_text' else 'create_lines'
@@ -213,6 +219,14 @@ def main():
             run('task', 'undo', created['id'])
             assert not (project / 'addon.py').exists()
             rows.append({'scenario':'create-delete-and-undo','events':events,'changes':[created,deleted],'requests':REQUESTS[request_offset:]})
+            request_offset = len(REQUESTS)
+            original = SOURCE.read_text()
+            events = [json.loads(line) for line in run('run', 'REPLACE_FILE_FIXTURE: rewrite repair.py in full.', '--json', '--allow-tools').splitlines()]
+            assert SOURCE.read_text() == REPLACE_BODY, json.dumps(events)[-3000:]
+            rewrite = next(c for c in json.loads(run('task', 'changes')) if c['path'] == 'repair.py' and c['after'] == REPLACE_BODY)
+            run('task', 'undo', rewrite['id'])
+            assert SOURCE.read_text() == original
+            rows.append({'scenario':'replace-file-and-undo','events':events,'requests':REQUESTS[request_offset:]})
             request_offset = len(REQUESTS)
             original_source = SOURCE.read_text()
             FOLLOWUP_GOAL = 'Repair scaled(x) in repair.py. ' + 'Preserve its original public interface. ' * 10 + 'FINAL_SCOPE_MARKER ☃.'

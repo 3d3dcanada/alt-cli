@@ -47,7 +47,7 @@ pub async fn run(
                 },
             )
             .await?;
-            effective.endpoint = server.endpoint.clone();
+            server.attach(&mut effective);
             report["load_and_integrity_seconds"] = json!(started.elapsed().as_secs_f64());
             report["runtime_log"] = json!(server.log_path());
             local = Some(server);

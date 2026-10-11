@@ -1,0 +1,62 @@
+{
+  "original_source_after": "def answer(): return 0\n",
+  "results": [
+    {
+      "args": [
+        "configure-check",
+        "independent",
+        "--",
+        "python3",
+        "/tmp/alt-final-audit-correctness/replay-validation/independent-assertion.py"
+      ],
+      "exit": 0,
+      "stdout": "{\n  \"argv\": [\n    \"python3\",\n    \"/tmp/alt-final-audit-correctness/replay-validation/independent-assertion.py\"\n  ],\n  \"contract\": {\n    \"assertion\": null,\n    \"kind\": \"custom\",\n    \"report\": null\n  },\n  \"name\": \"independent\",\n  \"timeout_secs\": 120\n}\n",
+      "stderr": ""
+    },
+    {
+      "args": [
+        "contract",
+        "independent",
+        "--kind",
+        "tests",
+        "--format",
+        "json",
+        "--report",
+        "report.json",
+        "--assertion",
+        "/tmp/alt-final-audit-correctness/replay-validation/independent-assertion.py"
+      ],
+      "exit": 0,
+      "stdout": "{\n  \"argv\": [\n    \"python3\",\n    \"{assertion}\"\n  ],\n  \"contract\": {\n    \"assertion\": {\n      \"path\": \"/tmp/alt-final-audit-correctness/replay-validation/independent-assertion.py\",\n      \"sha256\": \"d1cb17beb4ac422ff9bc717aa27fae56f8eae13b49d2c715ea9751250b8742ae\"\n    },\n    \"kind\": \"tests\",\n    \"report\": {\n      \"format\": \"json\",\n      \"path\": \"report.json\"\n    }\n  },\n  \"name\": \"independent\",\n  \"timeout_secs\": 120\n}\n",
+      "stderr": ""
+    },
+    {
+      "args": [
+        "require",
+        "returns-42",
+        "--check",
+        "independent"
+      ],
+      "exit": 0,
+      "stdout": "{\n  \"behavioral_acceptance\": false,\n  \"complete\": false,\n  \"requirements\": [\n    {\n      \"check_kind\": \"tests\",\n      \"coverage\": \"runner test report; no independent assertion\",\n      \"evidence\": null,\n      \"requirement\": {\n        \"check_name\": \"independent\",\n        \"description\": \"\",\n        \"name\": \"returns-42\"\n      },\n      \"status\": \"not run\"\n    }\n  ],\n  \"scope\": \"Required checks are incomplete\",\n  \"source_snapshot\": \"0d6e0e6ccf98510babebec92db761e273ed908db5c54e7ef2507bb2beaf01d33\"\n}\n",
+      "stderr": ""
+    },
+    {
+      "args": [
+        "check",
+        "independent"
+      ],
+      "exit": 0,
+      "stdout": "{\n  \"id\": \"d1bd3c86-20e5-4693-ac63-0be298167458\",\n  \"task\": \"manual-0d82a17b-1def-4fae-b88e-016583ddbb60\",\n  \"name\": \"independent\",\n  \"argv\": [\n    \"python3\",\n    \"{assertion}\"\n  ],\n  \"exit_code\": 0,\n  \"timed_out\": false,\n  \"cancelled\": false,\n  \"output\": \"stdout:\\n\\nstderr:\\n\",\n  \"output_truncated\": false,\n  \"snapshot\": \"0d6e0e6ccf98510babebec92db761e273ed908db5c54e7ef2507bb2beaf01d33\",\n  \"isolation\": \"Unisolated: trusted command in disposable source copy\",\n  \"elapsed_ms\": 59,\n  \"error\": null,\n  \"environment\": {\n    \"argv_sha256\": \"fd191caee3474762a5cba4ad402cdab68fb54cce92d46320cbee96924d1502bc\",\n    \"environment_PATH_sha256\": \"89f45694eeac679d66982fb225aab97d2049249d842ac30dd09e31f18cdd97c7\",\n    \"executable\": \"/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python3.12\",\n    \"executable_metadata\": \"30894944:Ok(SystemTime { tv_sec: 1788486252, tv_nsec: 0 })\",\n    \"installed_dependencies\": \"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\",\n    \"observed_version_python3\": \"Python 3.12.14\",\n    \"verification_contract\": \"3\"\n  },\n  \"tests_run\": 1,\n  \"contract\": {\n    \"kind\": \"tests\",\n    \"report\": {\n      \"format\": \"json\",\n      \"path\": \"report.json\"\n    },\n    \"assertion\": {\n      \"path\": \"/tmp/alt-final-audit-correctness/replay-validation/independent-assertion.py\",\n      \"sha256\": \"d1cb17beb4ac422ff9bc717aa27fae56f8eae13b49d2c715ea9751250b8742ae\"\n    }\n  },\n  \"structured\": {\n    \"format\": \"json\",\n    \"passed\": 1,\n    \"failed\": 0,\n    \"skipped\": 0,\n    \"executed\": 1,\n    \"complete\": true,\n    \"report_sha256\": \"cead75deb3386a1663fb1f280319ca79c4800aee95adf960643b4150aeeaffa2\",\n    \"assertion_verified\": true\n  }\n}\n",
+      "stderr": ""
+    },
+    {
+      "args": [
+        "verify"
+      ],
+      "exit": 0,
+      "stdout": "{\n  \"complete\": true,\n  \"behavioral_acceptance\": true,\n  \"scope\": \"Pinned independent assertions passed on current files; review their behavioral coverage\",\n  \"requirements\": [\n    {\n      \"requirement\": {\n        \"name\": \"returns-42\",\n        \"description\": \"\",\n        \"check_name\": \"independent\"\n      },\n      \"status\": \"passed on current files\",\n      \"evidence\": \"d1bd3c86-20e5-4693-ac63-0be298167458\",\n      \"check_kind\": \"tests\",\n      \"coverage\": \"independent behavioral assertion\"\n    }\n  ],\n  \"source_snapshot\": \"0d6e0e6ccf98510babebec92db761e273ed908db5c54e7ef2507bb2beaf01d33\"\n}\n",
+      "stderr": ""
+    }
+  ]
+}

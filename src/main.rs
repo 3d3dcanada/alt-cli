@@ -112,6 +112,18 @@ enum Action {
         /// Shared inference request limit per connection; reset clears it.
         #[arg(long)]
         requests: Option<u32>,
+        /// Reasoning: default, off, low, medium, high or budget:N (llama.cpp).
+        #[arg(long)]
+        thinking: Option<alt_cli::inference::Thinking>,
+        /// Server family for reasoning fields.
+        #[arg(long, value_enum)]
+        dialect: Option<alt_cli::inference::Dialect>,
+        /// Provider retries for 429, 5xx and dropped connections (0–8).
+        #[arg(long)]
+        retries: Option<u32>,
+        /// Hold and check responses for degenerate provider output.
+        #[arg(long, value_enum)]
+        output_guard: Option<alt_cli::inference::OutputGuard>,
     },
     /// Select whether a model must write a plan or the host supplies the workflow.
     Workflow {
@@ -170,6 +182,19 @@ enum Action {
         #[arg(long, conflicts_with = "thinking")]
         thinking_default: bool,
     },
+    /// Probe the selected model with one bounded request and suggest settings
+    /// (thinking, output allowance, compact tools, native context). Nothing is
+    /// applied unless you pass --apply with a suggestion id.
+    Probe {
+        #[arg(long)]
+        apply: Option<String>,
+    },
+    /// Open request and owned-runtime parameters (penalties, seed, stop,
+    /// extra JSON, Ollama context, llama-server options).
+    Params {
+        #[command(subcommand)]
+        command: ParamsAction,
+    },
     /// Versioned build, Git, HTTP, browser and security workflows.
     Packs {
         #[command(subcommand)]
@@ -223,8 +248,14 @@ enum Action {
     Init {
         #[arg(long)]
         model: String,
-        #[arg(long, value_enum, default_value = "openai")]
-        provider: Provider,
+        /// Fill endpoint, key variable and thinking dialect from a preset:
+        /// nvidia, openrouter, groq, together, deepseek, mistral, gemini,
+        /// cerebras, lmstudio, vllm, llamacpp, ollama or custom.
+        #[arg(long)]
+        preset: Option<String>,
+        /// openai (default) or ollama; overrides the preset.
+        #[arg(long, value_enum)]
+        provider: Option<Provider>,
         /// OpenAI API root (including /v1) or Ollama server root.
         #[arg(long)]
         endpoint: Option<String>,
@@ -242,6 +273,9 @@ enum Action {
     Doctor,
     /// Browse, import, or download models; no subcommand lists server models.
     Models {
+        /// Only list server models whose id contains every word (hosted catalogs are long).
+        #[arg(long)]
+        filter: Option<String>,
         #[command(subcommand)]
         command: Option<ModelAction>,
     },
@@ -249,6 +283,9 @@ enum Action {
     Install {
         #[arg(value_enum)]
         component: InstallComponent,
+        /// Select the installed CUDA runtime now (it is never selected automatically).
+        #[arg(long = "use")]
+        select: bool,
     },
     /// List saved sessions.
     Sessions,
@@ -264,9 +301,15 @@ enum Action {
         prompt: String,
         #[arg(long)]
         resume: Option<String>,
-        /// Approve requested actions within the selected access profile for this invocation.
+        /// Approve project actions (checkpointed edits, configured checks, skill helpers)
+        /// within the selected access profile for this invocation. Terminal and
+        /// external tools still need --allow-terminal.
         #[arg(long)]
         allow_tools: bool,
+        /// Also approve terminal commands and external MCP tools (host permissions;
+        /// they still require Full access). Implies --allow-tools; never implied by it.
+        #[arg(long)]
+        allow_terminal: bool,
         /// Emit structured events instead of readable text.
         #[arg(long)]
         json: bool,
@@ -276,6 +319,16 @@ enum Action {
         #[arg(long)]
         instruction_draft: Option<PathBuf>,
     },
+}
+
+#[derive(Subcommand)]
+enum ParamsAction {
+    /// Set one parameter, for example `alt params set repeat_penalty 1.1`.
+    Set { key: String, value: String },
+    /// Return one parameter to its default.
+    Unset { key: String },
+    /// Show every parameter, the effective request fields and the runtime argv.
+    Show,
 }
 
 #[derive(Subcommand)]
@@ -539,6 +592,8 @@ enum ModelAction {
 enum InstallComponent {
     Engine,
     Runtime,
+    /// llama.cpp CUDA 12 build for NVIDIA GPUs (A08); needs a pinned build.
+    CudaRuntime,
 }
 
 #[tokio::main]
@@ -658,6 +713,10 @@ async fn run() -> Result<()> {
             output_parameter,
             generated_tokens,
             requests,
+            thinking,
+            dialect,
+            retries,
+            output_guard,
         } => {
             let mut config = Config::read(&root)?;
             let name = config.profile(args.profile.as_deref())?.0.to_owned();
@@ -681,7 +740,11 @@ async fn run() -> Result<()> {
                 || top_p.is_some()
                 || top_k.is_some()
                 || min_p.is_some()
-                || llama_extensions.is_some();
+                || llama_extensions.is_some()
+                || thinking.is_some()
+                || dialect.is_some()
+                || retries.is_some()
+                || output_guard.is_some();
             if let Some(v) = output_tokens {
                 settings.output_tokens = v;
             }
@@ -715,12 +778,56 @@ async fn run() -> Result<()> {
             if let Some(v) = requests {
                 settings.max_requests = Some(v);
             }
+            if let Some(v) = thinking {
+                settings.thinking = v;
+                if v != alt_cli::inference::Thinking::Default {
+                    settings.reasoning_tokens = None;
+                }
+            }
+            if let Some(v) = dialect {
+                settings.dialect = v;
+            }
+            if let Some(v) = retries {
+                settings.retries = v;
+            }
+            if let Some(v) = output_guard {
+                settings.output_guard = v;
+            }
             settings.validate(profile)?;
             profile.inference = Some(settings);
             let report = profile.effective_inference().accounting(profile);
             if changed {
                 config.save(&root)?;
             }
+            println!("{}", serde_json::to_string_pretty(&report)?);
+            return Ok(());
+        }
+        Action::Probe { apply } => {
+            let report = if let Some(id) = apply {
+                alt_cli::probe::apply(&root, args.profile.as_deref(), &id)?
+            } else {
+                let config = Config::read(&root)?;
+                let profile = config.profile(args.profile.as_deref())?.1.clone();
+                alt_cli::probe::run(
+                    &root,
+                    &Preferences::load(&root)?,
+                    &profile,
+                    std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false)),
+                )
+                .await?
+            };
+            println!("{}", serde_json::to_string_pretty(&report)?);
+            return Ok(());
+        }
+        Action::Params { command } => {
+            let profile = args.profile.as_deref();
+            let report = match command {
+                ParamsAction::Set { key, value } => {
+                    alt_cli::params::change(&root, profile, &key, Some(&value))?
+                }
+                ParamsAction::Unset { key } => alt_cli::params::change(&root, profile, &key, None)?,
+                ParamsAction::Show => alt_cli::params::show(&root, profile)?,
+            };
             println!("{}", serde_json::to_string_pretty(&report)?);
             return Ok(());
         }
@@ -1049,7 +1156,15 @@ async fn run() -> Result<()> {
                     alt_cli::extensions::save(&root, &c)?;
                     json!({"saved":true,"enabled":false})
                 }
-                ExtensionAction::Check { name } => alt_cli::extensions::probe(&root, &name).await?,
+                ExtensionAction::Check { name } => {
+                    // Same rule as the TUI: discovery starts a host program or contacts
+                    // a remote server, so it needs the effective access to be Full.
+                    alt_cli::extensions::require_full_access(
+                        args.access
+                            .unwrap_or(Preferences::load(&root)?.access_policy),
+                    )?;
+                    alt_cli::extensions::probe(&root, &name).await?
+                }
                 ExtensionAction::Select { name, tools } => {
                     alt_cli::extensions::select(&root, &name, tools)?;
                     json!({"saved":true,"scope":"Selected tools are available in Full access after reconnect"})
@@ -1118,6 +1233,7 @@ async fn run() -> Result<()> {
         }
         Action::Init {
             model,
+            preset,
             provider,
             endpoint,
             context,
@@ -1125,9 +1241,22 @@ async fn run() -> Result<()> {
             uncensored,
             api_key_env,
         } => {
-            let endpoint = endpoint.unwrap_or_else(|| match provider {
-                Provider::Openai => "http://127.0.0.1:8080/v1".into(),
-                Provider::Ollama => "http://127.0.0.1:11434".into(),
+            // Explicit flags win over the preset; the preset only fills fields.
+            let preset = preset.as_deref().map(alt_cli::presets::find).transpose()?;
+            let provider = provider
+                .or(preset.map(|p| p.provider))
+                .unwrap_or(Provider::Openai);
+            let endpoint = endpoint
+                .or(preset.map(|p| p.endpoint.to_owned()))
+                .unwrap_or_else(|| match provider {
+                    Provider::Openai => "http://127.0.0.1:8080/v1".into(),
+                    Provider::Ollama => "http://127.0.0.1:11434".into(),
+                });
+            let api_key_env = api_key_env.or(preset.and_then(|p| p.key_env.map(String::from)));
+            let inference = preset.map(|p| {
+                let mut settings = alt_cli::inference::Settings::legacy(context);
+                settings.dialect = p.dialect;
+                settings
             });
             Config::create(
                 &root,
@@ -1138,12 +1267,18 @@ async fn run() -> Result<()> {
                     context_tokens: context,
                     max_turns,
                     uncensored,
-                    api_key_env,
+                    api_key_env: api_key_env.clone(),
                     local_model: None,
-                    inference: None,
+                    inference,
+                    runtime_key: None,
                 },
             )?;
             println!("Created {}", root.join("config.toml").display());
+            if let Some(name) = api_key_env.filter(|name| std::env::var_os(name).is_none()) {
+                eprintln!(
+                    "Set {name} in Alt's environment before connecting; Alt stores only the variable name."
+                );
+            }
             return Ok(());
         }
         Action::Sessions => {
@@ -1168,11 +1303,13 @@ async fn run() -> Result<()> {
         }
         Action::Models {
             command: Some(command),
+            ..
         } => return model_action(&root, command).await,
-        Action::Install { component } => {
+        Action::Install { component, select } => {
             let component = match component {
                 InstallComponent::Engine => runtime::Component::Engine,
                 InstallComponent::Runtime => runtime::Component::Inference,
+                InstallComponent::CudaRuntime => runtime::Component::CudaInference,
             };
             let (cancel, mut progress) = transfer_status();
             let path = runtime::install(&root, component, cancel, &mut progress).await?;
@@ -1180,6 +1317,14 @@ async fn run() -> Result<()> {
             match component {
                 runtime::Component::Engine => preferences.engine_path = Some(path.clone()),
                 runtime::Component::Inference => preferences.runtime_path = Some(path.clone()),
+                // Never auto-switched: the CUDA runtime is selected only on request.
+                runtime::Component::CudaInference if select => {
+                    preferences.runtime_path = Some(path.clone())
+                }
+                runtime::Component::CudaInference => eprintln!(
+                    "Installed but not selected. Run again with --use, or choose it in Settings; GPU layers stay at {}.",
+                    preferences.runtime.gpu_layers
+                ),
             }
             preferences.save(&root)?;
             println!(
@@ -1193,15 +1338,16 @@ async fn run() -> Result<()> {
     }
     let config = Config::read(&root)?;
     let (name, profile) = config.profile(args.profile.as_deref())?;
-    if matches!(command, Action::Models { .. }) {
+    if let Action::Models { filter, .. } = &command {
         if profile.local_model.is_some() {
             for model in models::library(&root)? {
                 println!("{}  {}", model.id, display_text(&model.name));
             }
             return Ok(());
         }
-        for id in model_ids(profile).await? {
-            println!("{}", display_text(&id));
+        let listed = models::inventory(profile).await?;
+        for model in alt_cli::presets::filter_models(&listed, filter.as_deref().unwrap_or("")) {
+            println!("{}", display_text(&model.id));
         }
         return Ok(());
     }
@@ -1212,6 +1358,9 @@ async fn run() -> Result<()> {
         "Agent engine missing. Open Alt and install it from Home, or pass --engine PATH",
     )?;
     let cwd = std::env::current_dir()?.canonicalize()?;
+    if let Some(warning) = alt_cli::project::broad_root_warning(&cwd) {
+        eprintln!("Warning: {warning}");
+    }
     if matches!(command, Action::Doctor) {
         let mut profile = profile.clone();
         let _local = if profile.local_model.is_some() {
@@ -1223,7 +1372,7 @@ async fn run() -> Result<()> {
                 |_| {},
             )
             .await?;
-            profile.endpoint = local.endpoint.clone();
+            local.attach(&mut profile);
             Some(local)
         } else {
             None
@@ -1315,7 +1464,7 @@ async fn run() -> Result<()> {
             |_| {},
         )
         .await?;
-        effective.endpoint = local.endpoint.clone();
+        local.attach(&mut effective);
         Some(local)
     } else {
         None
@@ -1395,6 +1544,7 @@ async fn run() -> Result<()> {
         Action::Run {
             prompt,
             allow_tools,
+            allow_terminal,
             json,
             timeout,
             ..
@@ -1404,10 +1554,10 @@ async fn run() -> Result<()> {
                 &store,
                 &session,
                 &prompt,
-                if allow_tools {
-                    Approval::Allow
-                } else {
-                    Approval::Deny
+                match (allow_tools, allow_terminal) {
+                    (_, true) => Approval::AllowWithTerminal,
+                    (true, false) => Approval::Allow,
+                    (false, false) => Approval::Deny,
                 },
                 json,
                 timeout,
@@ -1542,6 +1692,7 @@ async fn model_action(root: &std::path::Path, command: ModelAction) -> Result<()
                 api_key_env: None,
                 local_model: Some(artifact.id.clone()),
                 inference: None,
+                runtime_key: None,
             },
         )?;
         config.default_profile = name;
@@ -1554,7 +1705,10 @@ async fn model_action(root: &std::path::Path, command: ModelAction) -> Result<()
 #[derive(Clone, Copy)]
 enum Approval {
     Deny,
+    /// Project-scope actions only (checkpointed edits, configured checks, skill helpers).
     Allow,
+    /// Project and host scope (terminal and external tools), each explicitly opted in.
+    AllowWithTerminal,
     Ask,
 }
 
@@ -1576,6 +1730,7 @@ async fn headless(
         println!("{user}");
     }
     let brief = store.brief(std::path::Path::new(&session.cwd))?;
+    let cutoffs_before = engine.inference_status().map_or(0, |s| s.reasoning_cutoffs);
     let mut response = engine
         .prompt_with_brief(&session.engine_id, prompt, &brief)
         .await?;
@@ -1599,6 +1754,12 @@ async fn headless(
                     let evidence = json!({"type":"verification","data":verification,"note":note});
                     store.append(&session.id, &evidence)?;
                     if json_output { println!("{evidence}"); } else { println!("\n\nAlt verification: {note}"); }
+                }
+                if let Some(status) = engine.inference_status().filter(|s| s.reasoning_cutoffs > cutoffs_before) {
+                    // Typed recovery choices; Alt never resends on its own.
+                    let cutoff = json!({"type":"reasoning_cutoff","count":status.reasoning_cutoffs-cutoffs_before,"output_allowance":status.output_allowance,"charged":true,"resent":false,"recovery":[{"choice":"thinking_off","command":"alt inference --thinking off"},{"choice":"larger_output","command":"alt inference --output-tokens N"}]});
+                    store.append(&session.id, &cutoff)?;
+                    if json_output { println!("{cutoff}"); } else { eprintln!("\nThe model spent its whole output allowance thinking and gave no answer or tool call (tokens stay charged). Resend after `alt inference --thinking off` or a larger `--output-tokens`."); }
                 }
                 let event = json!({"type":"turn_end","data":result});
                 store.append(&session.id, &event)?;
@@ -1651,7 +1812,11 @@ async fn handle_event(
             } else {
                 match allow {
                     Approval::Deny => false,
-                    Approval::Allow => true,
+                    Approval::Allow => {
+                        alt_cli::toolbox::ApprovalScope::of(&params)
+                            == alt_cli::toolbox::ApprovalScope::Project
+                    }
+                    Approval::AllowWithTerminal => true,
                     Approval::Ask => {
                         println!(
                             "\nTool request: {}\n{}\nAllow once? [y/N]",
@@ -1683,7 +1848,7 @@ async fn handle_event(
                     if allow {
                         "allowed once"
                     } else {
-                        "denied; use TUI or --allow-tools"
+                        "denied; use the TUI, --allow-tools (project actions) or --allow-terminal (terminal/external tools)"
                     }
                 );
             }

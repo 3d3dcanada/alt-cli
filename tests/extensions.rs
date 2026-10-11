@@ -127,6 +127,8 @@ async fn http_session_fixture(variants: bool) {
         .args([
             "--data-dir",
             root.path().to_str().unwrap(),
+            "--access",
+            "trusted",
             "extensions",
             "check",
             "fixture",
@@ -196,5 +198,40 @@ async fn external_calls_require_actual_alt_approval_and_respect_access() {
             .unwrap()
             .unwrap();
         assert_eq!(out["isError"].as_bool().unwrap_or(false), !allow, "{out}");
+    }
+}
+
+#[tokio::test]
+async fn headless_extension_check_starts_nothing_without_full_access() {
+    let root = tempfile::tempdir().unwrap();
+    let marker = root.path().join("started");
+    let c = Connection {
+        name: "marker".into(),
+        transport: Transport::Stdio {
+            command: "/bin/sh".into(),
+            args: vec!["-c".into(), format!("touch {}", marker.display())],
+            env_names: vec![],
+        },
+        enabled: false,
+        selected_tools: vec![],
+    };
+    extensions::save(root.path(), &c).unwrap();
+    for access in ["review-only", "guided"] {
+        let output = tokio::process::Command::new(env!("CARGO_BIN_EXE_alt"))
+            .args([
+                "--data-dir",
+                root.path().to_str().unwrap(),
+                "--access",
+                access,
+                "extensions",
+                "check",
+                "marker",
+            ])
+            .output()
+            .await
+            .unwrap();
+        assert!(!output.status.success(), "{access} must refuse");
+        assert!(String::from_utf8_lossy(&output.stderr).contains("Full access"));
+        assert!(!marker.exists(), "{access} started the server program");
     }
 }

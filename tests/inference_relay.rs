@@ -60,6 +60,7 @@ async fn incomplete_stream_keeps_its_reserved_cost_and_cannot_buy_another_call()
         api_key_env: None,
         local_model: None,
         inference: Some(settings),
+        runtime_key: None,
     };
     let root = tempfile::tempdir().unwrap();
     let relay = Relay::start(root.path(), &profile).await.unwrap();
@@ -158,6 +159,7 @@ async fn full_chat_and_tools_are_measured_before_spending_or_forwarding() {
         api_key_env: None,
         local_model: Some("deterministic-protocol-fixture".into()),
         inference: Some(settings),
+        runtime_key: None,
     };
     let root = tempfile::tempdir().unwrap();
     let relay = Relay::start(root.path(), &profile).await.unwrap();
@@ -252,6 +254,7 @@ async fn live_allowance_stages_and_explicit_addition_preserve_actual_costs() {
         api_key_env: None,
         local_model: None,
         inference: Some(settings),
+        runtime_key: None,
     };
     let root = tempfile::tempdir().unwrap();
     let relay = Relay::start(root.path(), &profile).await.unwrap();

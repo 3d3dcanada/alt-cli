@@ -1,6 +1,6 @@
 //! Labelled settings workflows; commands remain available for advanced users.
 use super::{app::*, input::Editor};
-use crate::{extensions, models, packs, project::Policy, storage};
+use crate::{extensions, models, packs, storage};
 use anyhow::{Context, Result, ensure};
 use serde_json::{Value, json};
 impl App {
@@ -57,6 +57,19 @@ impl App {
         });
     }
     pub fn manager_action(&mut self, action: &str, state: Value) -> Result<()> {
+        if action == "close" {
+            self.dialog = None;
+            return Ok(());
+        }
+        if action.starts_with("params-") {
+            return self.manage_params(action, state);
+        }
+        if action.starts_with("probe-") {
+            return self.manage_probe(action, state);
+        }
+        if action.starts_with("cuda-") {
+            return self.manage_cuda(action, state);
+        }
         if action.starts_with("inference-") {
             return self.manage_inference(action, state);
         }
@@ -150,7 +163,7 @@ impl App {
         }
         if action == "tools-focus" {
             self.manager_menu("Which tools fit this task?","This changes the schemas shown on the next connection. Full access remains an independent setting. Select All whenever the task needs a wider tool set.",
-                [("All native tools","all"),("Inspect and explain","inspect"),("Read, edit and run named checks","coding"),("Terminal and file reading","terminal"),("Compact: smaller context and simple text edits","compact"),("Compact with line-array edits","compact-lines")].into_iter().map(|(label,profile)|(label.into(),String::new(),"tools-focus-save".into(),json!({"profile":profile}))).collect());
+                [("All native tools","all"),("Inspect and explain","inspect"),("Read, edit and run named checks","coding"),("Terminal and file reading","terminal"),("Compact: smaller context, simple text edits, whole small-file rewrites","compact"),("Compact with line-array edits","compact-lines")].into_iter().map(|(label,profile)|(label.into(),String::new(),"tools-focus-save".into(),json!({"profile":profile}))).collect());
             return Ok(());
         }
         if action == "tools-focus-save" {
@@ -559,6 +572,14 @@ impl App {
         if action.starts_with("inference-live") {
             return self.manage_live_allowance(action, state);
         }
+        if action == "inference-cutoff" {
+            return self.cutoff_recovery();
+        }
+        if action == "inference-cutoff-apply" {
+            let choice: crate::inference::Thinking =
+                state["thinking"].as_str().unwrap_or("off").parse()?;
+            return self.apply_cutoff_thinking(choice);
+        }
         let (name, profile) = self
             .current_profile()
             .context("Choose a connection first")?;
@@ -647,6 +668,45 @@ impl App {
                         )
                     })
                     .collect();
+                items.push(
+                    (
+                        "Thinking".into(),
+                        format!(
+                            "{} · sent as {} ({})",
+                            settings.effective_thinking().label(),
+                            settings.resolved_dialect(&profile).label(),
+                            settings.resolved_dialect(&profile).fields()
+                        ),
+                        "inference-thinking".into(),
+                        json!({"profile":name}),
+                    ),
+                );
+                items.push(
+                    (
+                        "Server dialect for thinking".into(),
+                        format!(
+                            "{} · which request fields this server understands",
+                            settings.dialect.label()
+                        ),
+                        "inference-dialect".into(),
+                        json!({"profile":name}),
+                    ),
+                );
+                items.push((
+                    format!("Provider retries: {}", settings.retries),
+                    "429, 5xx and dropped connections; each retry counts as a model call. 0 disables".into(),
+                    "inference-field".into(),
+                    json!({"profile":name,"field":"retries","label":"Provider retries","current":settings.retries.to_string(),"hint":"0–8 retries with capped backoff that honours Retry-After"}),
+                ));
+                items.push((
+                    format!("Output guard: {}", settings.output_guard.label()),
+                    format!(
+                        "{} for this connection · discards leaked template tokens or mixed-script noise once and resends",
+                        if settings.guard_active(&profile) { "active" } else { "inactive" }
+                    ),
+                    "inference-guard".into(),
+                    json!({"profile":name}),
+                ));
                 items.push((
                     "Output parameter compatibility".into(),
                     format!("Current: {:?}; select the field required by this endpoint",settings.output_parameter),
@@ -688,6 +748,82 @@ impl App {
                 state.clone(),
                 state["current"].as_str().unwrap_or(""),
             ),
+            "inference-thinking" => {
+                let dialect = settings.resolved_dialect(&profile);
+                let mut choices: Vec<_> = crate::inference::Thinking::CHOICES
+                    .into_iter()
+                    .map(|choice| {
+                        (
+                            choice.label(),
+                            match choice {
+                                crate::inference::Thinking::Default => "Send no reasoning field; the server decides".to_string(),
+                                crate::inference::Thinking::Off => "Fastest; use when the model spends its allowance thinking".into(),
+                                crate::inference::Thinking::Low => "Short reasoning before acting".into(),
+                                crate::inference::Thinking::Medium => "Balanced reasoning".into(),
+                                _ => "Most reasoning; keeps the action headroom".into(),
+                            },
+                            "inference-save".into(),
+                            json!({"profile":name,"field":"thinking","value":String::from(choice)}),
+                        )
+                    })
+                    .collect();
+                if dialect == crate::inference::Dialect::LlamaCpp {
+                    choices.push((
+                        "Token budget…".into(),
+                        "Exact thinking tokens (llama.cpp only)".into(),
+                        "inference-field".into(),
+                        json!({"profile":name,"field":"thinking_budget","label":"Thinking token budget","current":"","hint":"Whole tokens; must leave the action headroom inside total output"}),
+                    ));
+                }
+                self.manager_menu(
+                    "Model thinking",
+                    &format!(
+                        "Sent to {} as {}. The model and provider stay the same. Applies to the next connection; Allowance → Apply saved allocation reconnects this task.",
+                        dialect.label(),
+                        dialect.fields()
+                    ),
+                    choices,
+                );
+            }
+            "inference-guard" => self.manager_menu(
+                "Hosted output guard",
+                "Some hosted models sometimes stream garbage with leaked template tokens. The guard holds each response until it is complete, checks it, and discards a degenerate one once, recording a provider fault (tokens stay charged). Holding responses delays streaming text.",
+                [
+                    crate::inference::OutputGuard::Auto,
+                    crate::inference::OutputGuard::On,
+                    crate::inference::OutputGuard::Off,
+                ]
+                .into_iter()
+                .map(|g| {
+                    (
+                        g.label().to_string(),
+                        match g {
+                            crate::inference::OutputGuard::Auto => "Remote servers are checked; this computer streams live",
+                            crate::inference::OutputGuard::On => "Always hold and check responses",
+                            crate::inference::OutputGuard::Off => "Always stream live; no check",
+                        }
+                        .to_string(),
+                        "inference-save".into(),
+                        json!({"profile":name,"field":"output_guard","value":format!("{g:?}").to_lowercase()}),
+                    )
+                })
+                .collect(),
+            ),
+            "inference-dialect" => self.manager_menu(
+                "Server dialect for thinking",
+                "Pick the server family so the thinking choice uses fields it understands. Automatic uses llama.cpp for owned models, Ollama for Ollama connections and reasoning_effort otherwise.",
+                crate::inference::Dialect::ALL
+                    .into_iter()
+                    .map(|d| {
+                        (
+                            d.label().to_string(),
+                            d.fields().to_string(),
+                            "inference-save".into(),
+                            json!({"profile":name,"field":"dialect","value":d.saved_name()}),
+                        )
+                    })
+                    .collect(),
+            ),
             "inference-parameter"=>self.manager_menu("Output parameter compatibility","Choose the documented field for the selected endpoint. This does not change the model.",vec![("max_tokens".into(),"llama.cpp and most compatible servers".into(),"inference-save".into(),json!({"profile":name,"field":"output_parameter","value":"max_tokens"})),("max_completion_tokens".into(),"Endpoints requiring the newer OpenAI output field".into(),"inference-save".into(),json!({"profile":name,"field":"output_parameter","value":"max_completion_tokens"}))]),
             "inference-extensions"=>self.manager_menu("External llama.cpp controls","Owned llama.cpp supports these controls. For external endpoints, only declare support after checking that server's actual API.",vec![("Standard compatible API".into(),"Leave llama.cpp-only overrides unsupported".into(),"inference-save".into(),json!({"profile":name,"field":"llama_extensions","value":"false"})),("Server supports llama.cpp extensions".into(),"Allow explicit reasoning budget, top-k and min-p fields".into(),"inference-save".into(),json!({"profile":name,"field":"llama_extensions","value":"true"}))]),
             "inference-save" => {
@@ -704,6 +840,31 @@ impl App {
                 match state["field"].as_str().unwrap_or("") {
                     "output_parameter"=>next.output_parameter=match value {"max_tokens"=>crate::inference::OutputParameter::MaxTokens,"max_completion_tokens"=>crate::inference::OutputParameter::MaxCompletionTokens,_=>anyhow::bail!("Choose a supported output parameter")},
                     "llama_extensions"=>next.llama_extensions=value.parse()?,
+                    "thinking" => {
+                        next.thinking = value.parse()?;
+                        if next.thinking != crate::inference::Thinking::Default {
+                            next.reasoning_tokens = None;
+                        }
+                    }
+                    "retries" => next.retries = value.parse()?,
+                    "output_guard" => {
+                        next.output_guard = match value {
+                            "auto" => crate::inference::OutputGuard::Auto,
+                            "on" => crate::inference::OutputGuard::On,
+                            "off" => crate::inference::OutputGuard::Off,
+                            _ => anyhow::bail!("Choose auto, on or off"),
+                        }
+                    }
+                    "thinking_budget" => {
+                        next.thinking = crate::inference::Thinking::Budget(value.parse()?);
+                        next.reasoning_tokens = None;
+                    }
+                    "dialect" => {
+                        next.dialect = crate::inference::Dialect::ALL
+                            .into_iter()
+                            .find(|d| d.saved_name() == value)
+                            .context("Choose a listed dialect")?
+                    }
                     "output_tokens" => next.output_tokens = value.parse()?,
                     "action_headroom" => next.action_headroom = value.parse()?,
                     "total_generated_tokens" => next.total_generated_tokens=if value.is_empty(){None}else{Some(value.parse()?)},
@@ -762,6 +923,376 @@ impl App {
         }
         Ok(())
     }
+    /// A08: detect the GPU, explain whether a CUDA 12 runtime fits, and only
+    /// install or select it on an explicit choice. CPU stays the default.
+    fn manage_cuda(&mut self, action: &str, state: Value) -> Result<()> {
+        match action {
+            "cuda-runtime" => {
+                self.launch_job("Checking for an NVIDIA GPU", move |_, _| async move {
+                    let gpus = crate::runtime::detect_gpus().await;
+                    let fit = crate::runtime::cuda12_fit(&gpus);
+                    Ok(JobResult::Manager(
+                        "cuda-runtime-report".into(),
+                        json!({"gpus":gpus,"fit":fit.as_ref().ok(),"problem":fit.as_ref().err()}),
+                    ))
+                })?;
+            }
+            "cuda-runtime-report" => {
+                let pinned = crate::runtime::CUDA12;
+                let mut items = Vec::new();
+                match (pinned, state["fit"].is_string()) {
+                    (Some(pin), true) => items.push((
+                        "Install the CUDA 12 runtime".into(),
+                        format!(
+                            "{} · {} · pinned SHA256; installs beside the CPU runtime",
+                            pin.label,
+                            models::human_bytes(pin.size)
+                        ),
+                        "cuda-install".into(),
+                        json!({}),
+                    )),
+                    (None, _) => items.push((
+                        "No CUDA 12 build is pinned in this version".into(),
+                        "Build one from source below, or select an existing GPU llama-server"
+                            .into(),
+                        "cuda-build-help".into(),
+                        json!({}),
+                    )),
+                    _ => {}
+                }
+                items.push((
+                    "Build a Pascal-compatible runtime from source".into(),
+                    "scripts/build-pascal-runtime.sh (CUDA 12 toolkit, sm_61)".into(),
+                    "cuda-build-help".into(),
+                    json!({}),
+                ));
+                items.push((
+                    "Select an existing llama-server".into(),
+                    "Choose a GPU build you already have".into(),
+                    "cuda-select".into(),
+                    json!({}),
+                ));
+                items.push((
+                    "Keep CPU mode".into(),
+                    "Nothing changes".into(),
+                    "close".into(),
+                    json!({}),
+                ));
+                let summary = state["fit"]
+                    .as_str()
+                    .or(state["problem"].as_str())
+                    .unwrap_or("GPU status unknown")
+                    .to_owned();
+                self.manager_menu(
+                    "GPU runtime (CUDA 12)",
+                    &format!(
+                        "{summary}\n\nCPU remains the default. Alt never switches runtimes or GPU layers by itself (GPU layers: {}).",
+                        self.preferences.runtime.gpu_layers
+                    ),
+                    items,
+                );
+            }
+            "cuda-install" => {
+                self.install_dialog(crate::runtime::Component::CudaInference);
+            }
+            "cuda-select" => {
+                self.open_browser(
+                    super::app::BrowserKind::Runtime,
+                    self.preferences.project.clone(),
+                )?;
+            }
+            "cuda-build-help" => {
+                self.dialog = Some(Dialog::Notice {
+                    title: "Build a CUDA 12 runtime".into(),
+                    body: "Pascal GPUs such as the GTX 1070 need a CUDA 12 build (CUDA 13 drops sm_61).\n\n1. Install the NVIDIA driver (525.60 or newer) and a CUDA 12.x toolkit.\n2. Run: scripts/build-pascal-runtime.sh ~/llama-cuda12\n3. In Alt: Settings → Runtime → Local model runtime executable → ~/llama-cuda12/build/bin/llama-server\n4. Set GPU layers (start with a partial offload), then Benchmark selected model.\n\nMaintainers can pin a verified build for automatic installation with scripts/pin_cuda_runtime.py.".into(),
+                    scroll: 0,
+                });
+            }
+            "cuda-use-offer" => {
+                let path = state["path"].as_str().unwrap_or("").to_owned();
+                self.manager_menu(
+                    "CUDA 12 runtime installed",
+                    &format!("Installed at {path}. It is not selected yet; the CPU runtime stays in use until you choose."),
+                    vec![
+                        ("Use the CUDA runtime".into(), "Applies to the next local model start; GPU layers are unchanged".into(), "cuda-use".into(), json!({"path":path})),
+                        ("Keep the current runtime".into(), "You can select it later in Settings".into(), "close".into(), json!({})),
+                    ],
+                );
+            }
+            "cuda-use" => {
+                ensure!(
+                    !self.busy && !self.connecting,
+                    "Stop the current task first"
+                );
+                let path =
+                    std::path::PathBuf::from(state["path"].as_str().context("Runtime path")?);
+                ensure!(
+                    path.is_file(),
+                    "The CUDA runtime is no longer at {}",
+                    path.display()
+                );
+                self.preferences.runtime_path = Some(path);
+                self.preferences.save(&self.root)?;
+                self.workspace = None;
+                self.connected = false;
+                self.notify(format!(
+                    "CUDA runtime selected. GPU layers stay at {}; raise them in Settings → Runtime → Model and runtime settings.",
+                    self.preferences.runtime.gpu_layers
+                ));
+            }
+            _ => anyhow::bail!("Unknown GPU runtime action"),
+        }
+        Ok(())
+    }
+    /// A05: run the bounded probe in the background, then offer its
+    /// suggestions as labelled choices.
+    fn manage_probe(&mut self, action: &str, state: Value) -> Result<()> {
+        match action {
+            "probe-run" => {
+                ensure!(
+                    !self.busy && !self.connecting,
+                    "Stop the current task before probing"
+                );
+                let (_, profile) = self.current_profile().context("Choose a model first")?;
+                let profile = profile.clone();
+                let root = self.root.clone();
+                let preferences = self.preferences.clone();
+                // An owned runtime must not run twice on a small GPU.
+                if profile.local_model.is_some() {
+                    self.workspace = None;
+                    self.connected = false;
+                }
+                self.launch_job(
+                    "Probing the model (one short request)",
+                    move |cancel, _| async move {
+                        let report =
+                            crate::probe::run(&root, &preferences, &profile, cancel).await?;
+                        Ok(JobResult::Manager("probe-result".into(), report))
+                    },
+                )?;
+            }
+            "probe-result" => {
+                let observed = &state["observed"];
+                let mut items: Vec<(String, String, String, Value)> = state["suggestions"]
+                    .as_array()
+                    .into_iter()
+                    .flatten()
+                    .map(|s| {
+                        (
+                            s["label"].as_str().unwrap_or("").to_string(),
+                            s["why"].as_str().unwrap_or("").to_string(),
+                            "probe-apply".into(),
+                            json!({"id":s["id"],"label":s["label"]}),
+                        )
+                    })
+                    .collect();
+                items.push((
+                    "Inspect the probe report".into(),
+                    "Server facts, observed reply and every suggestion".into(),
+                    "probe-inspect".into(),
+                    state.clone(),
+                ));
+                items.push((
+                    "Keep current settings".into(),
+                    "Nothing changes".into(),
+                    "close".into(),
+                    json!({}),
+                ));
+                let context = state["server"]["native_context"]
+                    .as_u64()
+                    .map(|n| format!("native context {n}"))
+                    .unwrap_or_else(|| "native context not reported".into());
+                self.manager_menu(
+                    "Probe results",
+                    &format!(
+                        "Tool call: {} · thinking seen: {} · finish: {} · {context}. Choose a suggestion to apply it; nothing changes otherwise.",
+                        if observed["tool_call"] == true { "yes" } else { "no" },
+                        if observed["reasoning_seen"] == true { "yes" } else { "no" },
+                        observed["finish_reason"].as_str().unwrap_or("unknown"),
+                    ),
+                    items,
+                );
+            }
+            "probe-inspect" => {
+                self.dialog = Some(Dialog::Notice {
+                    title: "Model probe report".into(),
+                    body: serde_json::to_string_pretty(&state)?,
+                    scroll: 0,
+                })
+            }
+            "probe-apply" => {
+                ensure!(
+                    !self.busy && !self.connecting,
+                    "Stop the current task before changing settings"
+                );
+                let profile = self.current_profile().map(|(n, _)| n.to_owned());
+                crate::probe::apply(
+                    &self.root,
+                    profile.as_deref(),
+                    state["id"].as_str().context("Suggestion")?,
+                )?;
+                self.config = crate::config::Config::load(&self.root)?;
+                self.preferences = crate::config::Preferences::load(&self.root)?;
+                self.workspace = None;
+                self.connected = false;
+                self.notify(format!(
+                    "{} applied to this connection. The model and provider are unchanged; it takes effect on the next connection.",
+                    state["label"].as_str().unwrap_or("Suggestion")
+                ));
+            }
+            _ => anyhow::bail!("Unknown probe action"),
+        }
+        Ok(())
+    }
+    /// A02: labelled request and runtime parameters with a raw JSON view.
+    fn manage_params(&mut self, action: &str, state: Value) -> Result<()> {
+        let profile = self.current_profile().map(|(name, _)| name.to_owned());
+        match action {
+            "params-menu" => {
+                let report = crate::params::show(&self.root, profile.as_deref())?;
+                let mut items = vec![(
+                    "Show raw JSON".into(),
+                    "Every value, the exact request fields and the llama-server argv".into(),
+                    "params-raw".into(),
+                    json!({}),
+                )];
+                for row in report["parameters"].as_array().into_iter().flatten() {
+                    let scope = if row["scope"] == "request" {
+                        "request"
+                    } else {
+                        "own runtime"
+                    };
+                    items.push((
+                        format!(
+                            "{}: {}",
+                            row["label"].as_str().unwrap_or(""),
+                            crate::params::display(&row["value"])
+                        ),
+                        format!("{scope} · {}", row["hint"].as_str().unwrap_or("")),
+                        "params-field".into(),
+                        json!({"key":row["key"],"label":row["label"],"hint":row["hint"],"current":crate::params::display(&row["value"])}),
+                    ));
+                }
+                self.manager_menu(
+                    "Advanced parameters",
+                    &format!(
+                        "Request parameters belong to {}; runtime parameters apply when Alt starts its own llama-server. Unset values send nothing. Changes apply on the next connection.",
+                        profile.as_deref().unwrap_or("the selected connection")
+                    ),
+                    items,
+                );
+            }
+            "params-raw" => {
+                let report = crate::params::show(&self.root, profile.as_deref())?;
+                self.dialog = Some(Dialog::Notice {
+                    title: "Advanced parameters (raw JSON)".into(),
+                    body: serde_json::to_string_pretty(&report)?,
+                    scroll: 0,
+                });
+            }
+            "params-field" => {
+                let current = state["current"].as_str().unwrap_or("default");
+                self.manager_input(
+                    &format!("Set {}", state["label"].as_str().unwrap_or("parameter")),
+                    &format!(
+                        "{} Leave blank to return to the default.",
+                        state["hint"].as_str().unwrap_or("")
+                    ),
+                    "params-save",
+                    state.clone(),
+                    if current == "default" { "" } else { current },
+                );
+            }
+            "params-save" => {
+                ensure!(
+                    !self.busy && !self.connecting,
+                    "Stop the current task before changing parameters"
+                );
+                let key = state["key"].as_str().context("Parameter")?;
+                let value = state["value"].as_str().unwrap_or("").trim();
+                crate::params::change(
+                    &self.root,
+                    profile.as_deref(),
+                    key,
+                    (!value.is_empty()).then_some(value),
+                )?;
+                self.config = crate::config::Config::load(&self.root)?;
+                self.preferences = crate::config::Preferences::load(&self.root)?;
+                self.workspace = None;
+                self.connected = false;
+                self.notify(format!(
+                    "{} saved. It applies to the next connection; the model and provider are unchanged.",
+                    state["label"].as_str().unwrap_or("Parameter")
+                ));
+                self.manager_action("params-menu", json!({}))?;
+            }
+            _ => anyhow::bail!("Unknown parameter action"),
+        }
+        Ok(())
+    }
+    /// Labelled recovery after a reasoning-only cutoff. Nothing is resent
+    /// automatically and spent tokens stay charged.
+    pub(super) fn cutoff_recovery(&mut self) -> Result<()> {
+        let status = self.inference_status.clone();
+        let allowance = status
+            .as_ref()
+            .map(|s| s.output_allowance.to_string())
+            .unwrap_or_else(|| "the selected".into());
+        self.manager_menu(
+            "The model spent its whole answer allowance thinking",
+            &format!(
+                "The last response used all {allowance} output tokens on reasoning and returned no answer or tool call. Those tokens stay charged. Nothing is resent automatically: choose a recovery, then press Enter to resend your message."
+            ),
+            vec![
+                (
+                    "Resend with thinking off".into(),
+                    "This connection only; your last message goes back in the composer".into(),
+                    "inference-cutoff-apply".into(),
+                    json!({"thinking":"off"}),
+                ),
+                (
+                    "Resend with low thinking".into(),
+                    "Keeps short reasoning; this connection only".into(),
+                    "inference-cutoff-apply".into(),
+                    json!({"thinking":"low"}),
+                ),
+                (
+                    "Raise the output allowance…".into(),
+                    "Saved setting; reconnect with Allowance → Apply saved allocation".into(),
+                    "inference-settings".into(),
+                    json!({}),
+                ),
+                (
+                    "Keep current settings".into(),
+                    "Close; you can open this again from the palette".into(),
+                    "close".into(),
+                    json!({}),
+                ),
+            ],
+        );
+        Ok(())
+    }
+    fn apply_cutoff_thinking(&mut self, choice: crate::inference::Thinking) -> Result<()> {
+        ensure!(
+            self.connected && !self.busy && !self.connecting,
+            "Reconnect and wait for the task to stop before changing thinking for this connection"
+        );
+        self.workspace
+            .as_ref()
+            .context("Connection closed")?
+            .send(crate::workspace::Command::SetThinking(choice))?;
+        if self.composer.text.trim().is_empty()
+            && let Some(last) = self.messages.iter().rev().find(|m| m.role == "You")
+        {
+            self.composer.replace(&last.text);
+        }
+        self.set_page(super::app::Page::Chat);
+        self.notify(format!(
+            "Thinking {} for this connection. Review your message and press Enter to resend it.",
+            choice.label().to_lowercase()
+        ));
+        Ok(())
+    }
     fn manage_live_allowance(&mut self, action: &str, mut state: Value) -> Result<()> {
         ensure!(
             self.session.is_some() && !self.busy && !self.connecting,
@@ -789,6 +1320,13 @@ impl App {
                 let prompt = status.input_tokens.map(|v| format!("{v} tokens")).unwrap_or_else(|| "Unknown; the selected server has not supplied a count".into());
                 let thinking = status.reasoning_allowance.map(|v| format!("{v} tokens inside the output allowance")).unwrap_or_else(|| "Selected server default".into());
                 let body = format!("Stage: {}\nModel calls issued: {}\nModel calls remaining: {}\nGenerated tokens remaining: {}\n\nMeasured prompt: {}\nInput reserve: {} tokens\nOutput allowance for the last call: {} tokens\nThinking allowance: {}\nConfigured action headroom: {} tokens\n\nRemaining tokens exclude in-flight reservations. External input counts stay unknown unless measured. Waiting for output includes the server queue and prompt processing; it does not measure reasoning.\n\nFor an input-reserve error, reduce Total output tokens or choose a larger measured native context in Connections. Save settings, then use Allowance → Apply saved allocation and reconnect. The original request remains saved.", status.stage.label(), status.requests_issued, limit(status.remaining_requests), limit(status.remaining_generated_tokens), prompt, status.input_allowance, status.output_allowance, thinking, status.action_headroom);
+                let body = format!("{body}\n\nProvider retries on this connection: {} · provider faults discarded: {}", status.provider_retries, status.provider_faults);
+                let requested = self.session.as_ref().map(|s| s.profile.context_tokens);
+                let body = match (status.ollama_context, requested) {
+                    (Some(loaded), Some(requested)) if loaded != requested as u64 => format!("{body}\n\nOllama loaded this model with {loaded} context tokens (read from /api/ps), not the {requested} requested. This Ollama version ignores options.num_ctx on its OpenAI-compatible API: create a tag with PARAMETER num_ctx {requested}, or set OLLAMA_CONTEXT_LENGTH on the server."),
+                    (Some(loaded), _) => format!("{body}\n\nOllama loaded context (from /api/ps): {loaded} tokens."),
+                    _ => body,
+                };
                 self.dialog = Some(Dialog::Notice { title: "Observed inference allowance".into(), body, scroll: 0 });
             },
             "inference-live-requests" => {
@@ -962,7 +1500,7 @@ impl App {
 "extension-auth"=>{state["url"]=json!(value);self.manager_input("Authentication variable (optional)","Enter a variable name, such as MY_MCP_TOKEN, not the token. Leave blank for no authentication.","extension-save-http",state,"");},
 "extension-save-http"|"extension-save-stdio"=>{let name=state["name"].as_str().context("Name")?.to_owned();let transport=if action=="extension-save-http"{extensions::Transport::Http{url:state["url"].as_str().context("URL")?.into(),auth_env:(!value.trim().is_empty()).then(||value.trim().into())}}else{ensure!(!value.trim().is_empty(),"Enter a server command");extensions::Transport::Stdio{command:"/bin/bash".into(),args:vec!["-c".into(),value],env_names:vec![]}};extensions::save(&self.root,&extensions::Connection{name:name.clone(),transport,enabled:false,selected_tools:vec![]})?;self.manager_action("extension-menu",json!({"name":name}))?;},
 "extension-menu"=>{let name=state["name"].as_str().context("Connection")?.to_owned();self.manager_menu(&name,"Check the server, then choose a small set of tools.",vec![("Check connection and choose tools".into(),"Starts the server; discovers its capabilities".into(),"extension-probe".into(),state.clone()),("Disable tools".into(),"Preserve configuration for later".into(),"extension-disable".into(),state.clone()),("Remove connection".into(),"Remove saved configuration".into(),"extension-remove".into(),state)]);},
-"extension-probe"=>{ensure!(self.preferences.access_policy==Policy::Trusted,"Choose Full access to start external tools");let root=self.root.clone();let name=state["name"].as_str().context("Connection")?.to_owned();self.launch_job("Checking external server",move|cancel,_|async move{tokio::select!{r=extensions::probe(&root,&name)=>{r?;},_=models::cancelled(&cancel)=>anyhow::bail!("Connection check cancelled")};Ok(JobResult::Manager("extension-tools".into(),json!({"name":name})))})?;},
+"extension-probe"=>{extensions::require_full_access(self.preferences.access_policy)?;let root=self.root.clone();let name=state["name"].as_str().context("Connection")?.to_owned();self.launch_job("Checking external server",move|cancel,_|async move{tokio::select!{r=extensions::probe(&root,&name)=>{r?;},_=models::cancelled(&cancel)=>anyhow::bail!("Connection check cancelled")};Ok(JobResult::Manager("extension-tools".into(),json!({"name":name})))})?;},
 "extension-tools"=>{let name=state["name"].as_str().context("Connection")?;let c=extensions::load(&self.root,name)?;let inventory:Value=serde_json::from_slice(&std::fs::read(self.root.join("extensions/cache").join(format!("{name}.json")))?)?;let items=inventory["tools"].as_array().context("Tool inventory")?.iter().map(|t|{let tool=t["name"].as_str().unwrap_or("");(format!("{} {tool}",if c.selected_tools.iter().any(|s|s==tool){"[selected]"}else{"[ ]"}),t["description"].as_str().unwrap_or("").into(),"extension-toggle".into(),json!({"name":name,"tool":tool}))}).collect();self.manager_menu("Choose tools to expose","Select to toggle. Esc finishes. Changes apply to the next conversation connection.",items);},
 "extension-toggle"=>{ensure!(!self.busy&&!self.connecting,"Stop the active model before changing external tools");let name=state["name"].as_str().context("Name")?;let tool=state["tool"].as_str().context("Tool")?;let mut c=extensions::load(&self.root,name)?;if c.selected_tools.iter().any(|s|s==tool){c.selected_tools.retain(|s|s!=tool);}else{c.selected_tools.push(tool.into());}extensions::select(&self.root,name,c.selected_tools)?;self.workspace=None;self.connected=false;self.manager_action("extension-tools",state)?;},
 "extension-disable"|"extension-remove"=>{ensure!(!self.busy&&!self.connecting,"Stop the active model before changing external tools");let name=state["name"].as_str().context("Name")?;if action=="extension-remove"{extensions::remove(&self.root,name)?;}else{let mut c=extensions::load(&self.root,name)?;c.enabled=false;extensions::save(&self.root,&c)?;}self.workspace=None;self.connected=false;self.manager_action("extensions",json!({}))?;},

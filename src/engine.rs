@@ -175,14 +175,13 @@ impl Engine {
                 // but Ollama 0.35's OpenAI handler only accepts top-level max_tokens.
                 // Use the standard compatible client for chat, retaining native
                 // Ollama inventory/evaluation elsewhere and the exact selected tag.
-                // Native context remains a server/tag setting, unlike Alt's budget.
+                // The relay replaces engine options with only the selected
+                // options.num_ctx (A02) and reads the loaded context from /api/ps.
                 command
                     .env("GOOSE_PROVIDER", "openai")
                     .env("OPENAI_BASE_URL", &relay.endpoint);
-                ensure!(
-                    profile.api_key_env.is_none(),
-                    "Ollama authentication is not implemented in this slice"
-                );
+                // B03: authenticated Ollama (for example behind a proxy) uses
+                // the same bearer key the relay already attaches to every call.
             }
         }
         let mut engine = Self::spawn(command).await?;
@@ -422,6 +421,15 @@ impl Engine {
             .as_ref()
             .context("No active inference relay")?
             .add_allowance(requests, tokens)
+    }
+    pub fn set_thinking(
+        &self,
+        choice: crate::inference::Thinking,
+    ) -> Result<crate::inference::Status> {
+        self.relay
+            .as_ref()
+            .context("No active inference relay")?
+            .set_thinking(choice)
     }
     pub fn verification(&self) -> Result<Option<crate::project_services::Verification>> {
         self.bridge

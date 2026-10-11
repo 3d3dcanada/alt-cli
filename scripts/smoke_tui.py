@@ -40,7 +40,7 @@ with tempfile.TemporaryDirectory(prefix="alt-tui-smoke-") as directory:
     state = root / "state"
     project = root / "my project"
     project.mkdir()
-    (project / "sample.gguf").write_bytes(b"GGUFfixture-file-not-a-real-model")
+    (project / "sample.gguf").write_bytes(b"GGUF" + (3).to_bytes(4, "little") + bytes(16) + b"fixture-file-not-a-real-model")
     trace = root / "acp.jsonl"
     base = [str(binary), "--data-dir", str(state), "--engine", str(fixture)]
     master, slave = pty.openpty()

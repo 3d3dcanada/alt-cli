@@ -19,11 +19,13 @@ Open **Settings → Access**:
 
 Full access is the broad-capability mode requested for this product. It does not
 filter task topics or model families. An approval can authorize one action, and
-**Trust session** authorizes subsequent requested actions in the selected mode.
+**Allow this session** authorizes subsequent project actions (edits, checks, skill
+helpers) in the selected mode. Terminal and external tools keep asking until you
+choose **Allow terminal this session** on one of them.
 Changing access reconnects the engine and resets session trust. CLI equivalent:
 
 ```sh
-alt --access trusted run 'Work on this project' --allow-tools
+alt --access trusted run 'Work on this project' --allow-tools --allow-terminal
 ```
 
 `trusted` is the CLI spelling for Full access. A bare `alt run` denies requested

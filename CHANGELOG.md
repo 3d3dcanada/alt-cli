@@ -1,5 +1,175 @@
 # Changelog
 
+## Unreleased — 0.7 (work orders in docs/WORK_ORDERS_0.7.md)
+
+### A06 small-model edit robustness
+
+- `replace_file(path, new_text)` in the compact tool profiles: a checkpointed
+  whole-file rewrite of a file of at most 300 lines that the model read in full at
+  its current revision (bound to the full-file read handle). Whole-file edits are
+  the most reliable format for models under about 14B.
+- `old_text` replace now tries an exact match, then a whitespace-normalised line
+  match (re-indenting `new_text` to the file when only indentation differed, and
+  saying so in the tool result). On a miss it returns the closest current span
+  with a fresh handle; ambiguous matches are refused, never guessed.
+- Settings → Tools & access → *Tool focus* describes the compact profiles' new
+  capability; the compact prompts mention `replace_file`.
+
+### A05 model capability probe
+
+- *Probe this model* (Settings → Models, Ctrl+P, `alt probe`) reads native context
+  and template facts (`/props` on llama.cpp, `/api/show` on Ollama), then sends one
+  bounded request (at most 512 output tokens) with a trivial tool and the model's
+  default thinking. It records whether the model called the tool, reasoned, or hit
+  the limit.
+- Suggestions are labelled choices: thinking off or low, a larger output allowance,
+  compact tools, or matching the server's native context. Nothing is applied until
+  you pick one (`alt probe --apply ID` headless). Reports are stored per model
+  identity under `probes/`. Owned runtimes are started and stopped for the probe.
+
+### A04 hosted-provider resilience
+
+- Retries for HTTP 429, 5xx and dropped connections with capped exponential
+  backoff that honours `Retry-After` (default 2, 0–8). Each retry counts as a model
+  call against the shared allowance and is logged in the receipt.
+- Output guard (automatic for remote servers, on or off): the relay holds each
+  response, detects leaked chat-template tokens (`<|…|>`) or mixed-script noise in
+  scripts the conversation never used, discards it once and resends. The discarded
+  bytes are kept as evidence and recorded as a provider fault, never as model
+  output; a second fault returns a clear error. Tokens stay charged.
+- Model output and sampling → *Provider retries* and *Output guard*, Ctrl+P →
+  *Hosted output guard*, and `alt inference --retries N --output-guard auto|on|off`.
+
+### A03 provider presets and hosted discovery (+ B03 authenticated Ollama)
+
+- Presets fill the endpoint, key-variable name and thinking dialect: NVIDIA NIM,
+  OpenRouter, Groq, Together, DeepSeek, Mistral, Gemini (OpenAI-compatible),
+  Cerebras, LM Studio, vLLM/SGLang, llama.cpp, Ollama and Custom. TUI: Connect →
+  *A hosted API or another server preset*, or Ctrl+P → *Connect a hosted API*.
+  Headless: `alt init --preset nvidia --model z-ai/glm-5.3`.
+- The model picker searches long hosted catalogs as you type; `alt models
+  --filter WORDS` does the same headless.
+- Keys remain environment-variable references; a missing variable is reported
+  before connecting. `smoke_goose` proves the key reaches the provider on every
+  model call and never appears in Alt's state, logs or evidence.
+- B03: Ollama connections with a key variable work end to end (the engine no
+  longer refuses them; the relay already sends the bearer key).
+
+### A02 open parameter surface
+
+- Request parameters per connection: repeat penalty (spelled per server),
+  presence/frequency penalty, seed, stop sequences, typical-p, and an extra
+  request JSON object merged last. Alt-owned keys (`model`, `messages`, `tools`,
+  `tool_choice`, `stream`, `stream_options`, output-token fields, `n`) are refused.
+- Ollama receives `options.num_ctx` from the connection context and an optional
+  `keep_alive` unless *server default* is chosen; Alt reads the loaded context back
+  from `/api/ps` and says when the server ignored it.
+- Owned llama-server: mmproj, MoE-on-CPU layers, tensor override and split, main
+  GPU, RoPE/YaRN scaling, mlock, no-mmap, chat-template file, draft model for
+  speculative decoding, and `extra_args` (binding, key, model, alias and context
+  flags refused). The argv comes from one pure function (`runtime::server_args`).
+- TUI: Settings → Models → *Advanced parameters* and Ctrl+P, with labelled fields
+  and a raw JSON view of the exact request fields and runtime argv. CLI:
+  `alt params set|unset|show`.
+
+### Audit items (B) and harvest (H)
+
+- B01 (audit A03): editing a connection patches only the name, provider, address,
+  key variable and dialect; context, steps, inference settings, the selected model
+  and the uncensored claim are kept, and the model list opens on the current model.
+- B02 (audit A04, part): a message sent before the model is ready is held apart from
+  the composer. Text typed while connecting stays for the next message; on failure,
+  cancel or a closed connection the held message comes back exactly once, ahead of it.
+- B06 (audit A10): an explicitly selected llama-server or agent engine is
+  authoritative. If it is missing, Alt says so and names the path instead of
+  silently using the managed or PATH copy.
+- B07 (audit A18): manual model-ID entry moved from Ctrl+M (sent as Enter by most
+  terminals) to Alt+M and a *Type model ID* button; allowance recovery was already in
+  the palette (N06).
+- B08 (audit A19): cancelling a connection check stops the inventory request at once
+  and a late result is discarded; the form stays and no model dialog reopens.
+- B09 (audit A12): GGUF files must carry the full 24-byte header (supported version 2
+  or 3, plausible tensor and metadata counts) on import and after downloads; a
+  magic-only or truncated file is refused before anything loads.
+- B10 (audit A21, part): a paste larger than a text field's 64 KiB limit is refused
+  with a message giving its size and the file-path alternative, instead of
+  vanishing. The 60×18 connection-form layout remains deferred.
+- H01 (harvested from `build/final-pass-2026-10-08`): on terminals of at least about
+  96×30, Home is a dashboard with model, project and tools status cards and a
+  two-column grid of action cards, drawn through the theme engine; 80×24 keeps the
+  Start-here list. Same indexes, keys and mouse targets.
+
+### A10 harness labels and matched re-run script (prepared; owner PC runs it)
+
+- `scripts/live_acceptance.py`: required `--artifact-label uncensored|standard|hosted`
+  recorded truthfully (`--uncensored` stays an alias); hosted runs need no local
+  file hash; `--api-key-env`, `--thinking-level`, `--dialect`, and `--check-args`
+  validation without requests.
+- `scripts/pc_matrix_0_7.sh`: the trial matrix (8 cases, 16K, compact, 4,096
+  output, 3 repeats) for Spark 4B (Ollama), MiMo 9B abliterated and standard
+  (llama.cpp CUDA) and two NVIDIA models, in a trial arm and a thinking-off arm, with
+  a VRAM headroom check before each GPU cell, recorded skips and stopping every
+  server it starts. `--dry-run` prints and validates all cells in the cloud.
+- `docs/PC_HANDOFF_0.7.md` gives the owner the A08 and A10 steps.
+
+### A08 managed CUDA 12 runtime (prepared for the owner PC; not run)
+
+- GPU detection from `nvidia-smi` (name, VRAM, compute capability, driver) and a
+  labelled CUDA 12 fit check (compute 6.1+, driver 525.60+).
+- A pinned-archive installer (`runtime::install_pin`: resumable download, SHA256,
+  unpack, previous copy kept until the new one is in place) and a `CUDA12` pin slot.
+  The slot is empty in this commit: no CUDA build has been verified yet, so
+  automatic installation refuses with guidance. `scripts/pin_cuda_runtime.py` builds a
+  deterministic archive from a verified PC build and prints the exact pin;
+  `scripts/pc_cuda_check.sh` checks the runtime on the PC first.
+- Managed runtimes get their own folder on `LD_LIBRARY_PATH`. CPU stays the default:
+  installing never selects the CUDA runtime or changes GPU layers (`alt install
+  cuda-runtime --use` or the TUI's explicit *Use the CUDA runtime*).
+- Settings → Runtime → *GPU runtime (CUDA 12)* and Ctrl+P.
+
+### A09 repository weight and README (+ B11 package size)
+
+- README opens with what a new user needs: install, connect a model (local or a
+  hosted preset), first task. Results and evidence moved to *Status and evidence*.
+- Packages ship guides, summaries and screenshots but not `docs/evidence` or raw
+  research data; `docs/EVIDENCE.md` in the package points to the exact source commit.
+- `scripts/check_repo_weight.py` (in CI with a full secret scan) refuses tracked
+  files over 1 MiB and model weights or archives. History is not rewritten.
+
+### A01 reasoning control and thinking-cutoff recovery
+
+- One **Thinking** setting (`default | off | low | medium | high | budget:N`),
+  translated per server dialect: llama.cpp `chat_template_kwargs.enable_thinking` +
+  `reasoning_budget_tokens`; Ollama `think` + `reasoning_effort`; vLLM / SGLang /
+  NIM `chat_template_kwargs`; OpenAI-style `reasoning_effort`. Receipts record the
+  fields sent. Settings → Models, Ctrl+P, and `alt inference --thinking/--dialect`.
+- A response that ends at the output limit with reasoning only is a *thinking
+  cutoff*: charged, never resent silently. The TUI offers labelled recovery
+  (thinking off or low for this connection, or a larger allowance); headless
+  `--json` emits a typed `reasoning_cutoff` event.
+
+### A07 security (audit 2026-10-08)
+
+- "Allow this session" and `--allow-tools` now cover project actions only
+  (checkpointed edits, configured checks, skill helpers). Terminal commands,
+  external MCP tools and untagged engine requests need a separate opt-in:
+  **Allow terminal this session** in the TUI or `--allow-terminal` headless.
+  Candidate exploration keeps `--allow-tools` only, so its terminal requests are denied.
+- Project tools never list, read or edit Alt's own data folder when a project
+  contains it; choosing `$HOME` or `/` as the project shows a warning.
+- More credential names are excluded and compared case-insensitively: `.envrc`,
+  `.netrc`, `.npmrc`, `.pypirc`, `.git-credentials`, `id_rsa*`, `id_ed25519*`,
+  `id_ecdsa*`, `credentials*.json`, `.docker/`, `.kube/`, `.gnupg/`, `*.p12`, `*.pfx`.
+- Remote MCP connections with an authentication variable require HTTPS unless
+  the server is on loopback.
+- The owned llama-server starts with a random per-launch key passed through a
+  private `--api-key-file`, and readiness requires an authenticated model listing.
+- Headless `extensions check` refuses to start the server unless access is Full
+  (same rule as the TUI).
+- `requirements-dev.txt` is hash-pinned and installed with `--require-hashes`; the
+  release job checks out without persisted credentials; SECURITY.md names the
+  current line and the owner's private-reporting switch.
+
 ## Unreleased — Neon interface (work orders N01–N09)
 
 - Model lists now show distinct descriptions per row: parameters, quantization,
