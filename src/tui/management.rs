@@ -57,6 +57,10 @@ impl App {
         });
     }
     pub fn manager_action(&mut self, action: &str, state: Value) -> Result<()> {
+        if action == "close" {
+            self.dialog = None;
+            return Ok(());
+        }
         if action.starts_with("inference-") {
             return self.manage_inference(action, state);
         }
@@ -559,6 +563,14 @@ impl App {
         if action.starts_with("inference-live") {
             return self.manage_live_allowance(action, state);
         }
+        if action == "inference-cutoff" {
+            return self.cutoff_recovery();
+        }
+        if action == "inference-cutoff-apply" {
+            let choice: crate::inference::Thinking =
+                state["thinking"].as_str().unwrap_or("off").parse()?;
+            return self.apply_cutoff_thinking(choice);
+        }
         let (name, profile) = self
             .current_profile()
             .context("Choose a connection first")?;
@@ -647,6 +659,30 @@ impl App {
                         )
                     })
                     .collect();
+                items.push(
+                    (
+                        "Thinking".into(),
+                        format!(
+                            "{} · sent as {} ({})",
+                            settings.effective_thinking().label(),
+                            settings.resolved_dialect(&profile).label(),
+                            settings.resolved_dialect(&profile).fields()
+                        ),
+                        "inference-thinking".into(),
+                        json!({"profile":name}),
+                    ),
+                );
+                items.push(
+                    (
+                        "Server dialect for thinking".into(),
+                        format!(
+                            "{} · which request fields this server understands",
+                            settings.dialect.label()
+                        ),
+                        "inference-dialect".into(),
+                        json!({"profile":name}),
+                    ),
+                );
                 items.push((
                     "Output parameter compatibility".into(),
                     format!("Current: {:?}; select the field required by this endpoint",settings.output_parameter),
@@ -688,6 +724,58 @@ impl App {
                 state.clone(),
                 state["current"].as_str().unwrap_or(""),
             ),
+            "inference-thinking" => {
+                let dialect = settings.resolved_dialect(&profile);
+                let mut choices: Vec<_> = crate::inference::Thinking::CHOICES
+                    .into_iter()
+                    .map(|choice| {
+                        (
+                            choice.label(),
+                            match choice {
+                                crate::inference::Thinking::Default => "Send no reasoning field; the server decides".to_string(),
+                                crate::inference::Thinking::Off => "Fastest; use when the model spends its allowance thinking".into(),
+                                crate::inference::Thinking::Low => "Short reasoning before acting".into(),
+                                crate::inference::Thinking::Medium => "Balanced reasoning".into(),
+                                _ => "Most reasoning; keeps the action headroom".into(),
+                            },
+                            "inference-save".into(),
+                            json!({"profile":name,"field":"thinking","value":String::from(choice)}),
+                        )
+                    })
+                    .collect();
+                if dialect == crate::inference::Dialect::LlamaCpp {
+                    choices.push((
+                        "Token budget…".into(),
+                        "Exact thinking tokens (llama.cpp only)".into(),
+                        "inference-field".into(),
+                        json!({"profile":name,"field":"thinking_budget","label":"Thinking token budget","current":"","hint":"Whole tokens; must leave the action headroom inside total output"}),
+                    ));
+                }
+                self.manager_menu(
+                    "Model thinking",
+                    &format!(
+                        "Sent to {} as {}. The model and provider stay the same. Applies to the next connection; Allowance → Apply saved allocation reconnects this task.",
+                        dialect.label(),
+                        dialect.fields()
+                    ),
+                    choices,
+                );
+            }
+            "inference-dialect" => self.manager_menu(
+                "Server dialect for thinking",
+                "Pick the server family so the thinking choice uses fields it understands. Automatic uses llama.cpp for owned models, Ollama for Ollama connections and reasoning_effort otherwise.",
+                crate::inference::Dialect::ALL
+                    .into_iter()
+                    .map(|d| {
+                        (
+                            d.label().to_string(),
+                            d.fields().to_string(),
+                            "inference-save".into(),
+                            json!({"profile":name,"field":"dialect","value":d.saved_name()}),
+                        )
+                    })
+                    .collect(),
+            ),
             "inference-parameter"=>self.manager_menu("Output parameter compatibility","Choose the documented field for the selected endpoint. This does not change the model.",vec![("max_tokens".into(),"llama.cpp and most compatible servers".into(),"inference-save".into(),json!({"profile":name,"field":"output_parameter","value":"max_tokens"})),("max_completion_tokens".into(),"Endpoints requiring the newer OpenAI output field".into(),"inference-save".into(),json!({"profile":name,"field":"output_parameter","value":"max_completion_tokens"}))]),
             "inference-extensions"=>self.manager_menu("External llama.cpp controls","Owned llama.cpp supports these controls. For external endpoints, only declare support after checking that server's actual API.",vec![("Standard compatible API".into(),"Leave llama.cpp-only overrides unsupported".into(),"inference-save".into(),json!({"profile":name,"field":"llama_extensions","value":"false"})),("Server supports llama.cpp extensions".into(),"Allow explicit reasoning budget, top-k and min-p fields".into(),"inference-save".into(),json!({"profile":name,"field":"llama_extensions","value":"true"}))]),
             "inference-save" => {
@@ -704,6 +792,22 @@ impl App {
                 match state["field"].as_str().unwrap_or("") {
                     "output_parameter"=>next.output_parameter=match value {"max_tokens"=>crate::inference::OutputParameter::MaxTokens,"max_completion_tokens"=>crate::inference::OutputParameter::MaxCompletionTokens,_=>anyhow::bail!("Choose a supported output parameter")},
                     "llama_extensions"=>next.llama_extensions=value.parse()?,
+                    "thinking" => {
+                        next.thinking = value.parse()?;
+                        if next.thinking != crate::inference::Thinking::Default {
+                            next.reasoning_tokens = None;
+                        }
+                    }
+                    "thinking_budget" => {
+                        next.thinking = crate::inference::Thinking::Budget(value.parse()?);
+                        next.reasoning_tokens = None;
+                    }
+                    "dialect" => {
+                        next.dialect = crate::inference::Dialect::ALL
+                            .into_iter()
+                            .find(|d| d.saved_name() == value)
+                            .context("Choose a listed dialect")?
+                    }
                     "output_tokens" => next.output_tokens = value.parse()?,
                     "action_headroom" => next.action_headroom = value.parse()?,
                     "total_generated_tokens" => next.total_generated_tokens=if value.is_empty(){None}else{Some(value.parse()?)},
@@ -760,6 +864,69 @@ impl App {
             }
             _ => anyhow::bail!("Unknown inference action"),
         }
+        Ok(())
+    }
+    /// Labelled recovery after a reasoning-only cutoff. Nothing is resent
+    /// automatically and spent tokens stay charged.
+    pub(super) fn cutoff_recovery(&mut self) -> Result<()> {
+        let status = self.inference_status.clone();
+        let allowance = status
+            .as_ref()
+            .map(|s| s.output_allowance.to_string())
+            .unwrap_or_else(|| "the selected".into());
+        self.manager_menu(
+            "The model spent its whole answer allowance thinking",
+            &format!(
+                "The last response used all {allowance} output tokens on reasoning and returned no answer or tool call. Those tokens stay charged. Nothing is resent automatically: choose a recovery, then press Enter to resend your message."
+            ),
+            vec![
+                (
+                    "Resend with thinking off".into(),
+                    "This connection only; your last message goes back in the composer".into(),
+                    "inference-cutoff-apply".into(),
+                    json!({"thinking":"off"}),
+                ),
+                (
+                    "Resend with low thinking".into(),
+                    "Keeps short reasoning; this connection only".into(),
+                    "inference-cutoff-apply".into(),
+                    json!({"thinking":"low"}),
+                ),
+                (
+                    "Raise the output allowance…".into(),
+                    "Saved setting; reconnect with Allowance → Apply saved allocation".into(),
+                    "inference-settings".into(),
+                    json!({}),
+                ),
+                (
+                    "Keep current settings".into(),
+                    "Close; you can open this again from the palette".into(),
+                    "close".into(),
+                    json!({}),
+                ),
+            ],
+        );
+        Ok(())
+    }
+    fn apply_cutoff_thinking(&mut self, choice: crate::inference::Thinking) -> Result<()> {
+        ensure!(
+            self.connected && !self.busy && !self.connecting,
+            "Reconnect and wait for the task to stop before changing thinking for this connection"
+        );
+        self.workspace
+            .as_ref()
+            .context("Connection closed")?
+            .send(crate::workspace::Command::SetThinking(choice))?;
+        if self.composer.text.trim().is_empty()
+            && let Some(last) = self.messages.iter().rev().find(|m| m.role == "You")
+        {
+            self.composer.replace(&last.text);
+        }
+        self.set_page(super::app::Page::Chat);
+        self.notify(format!(
+            "Thinking {} for this connection. Review your message and press Enter to resend it.",
+            choice.label().to_lowercase()
+        ));
         Ok(())
     }
     fn manage_live_allowance(&mut self, action: &str, mut state: Value) -> Result<()> {

@@ -112,6 +112,12 @@ enum Action {
         /// Shared inference request limit per connection; reset clears it.
         #[arg(long)]
         requests: Option<u32>,
+        /// Reasoning: default, off, low, medium, high or budget:N (llama.cpp).
+        #[arg(long)]
+        thinking: Option<alt_cli::inference::Thinking>,
+        /// Server family for reasoning fields.
+        #[arg(long, value_enum)]
+        dialect: Option<alt_cli::inference::Dialect>,
     },
     /// Select whether a model must write a plan or the host supplies the workflow.
     Workflow {
@@ -664,6 +670,8 @@ async fn run() -> Result<()> {
             output_parameter,
             generated_tokens,
             requests,
+            thinking,
+            dialect,
         } => {
             let mut config = Config::read(&root)?;
             let name = config.profile(args.profile.as_deref())?.0.to_owned();
@@ -687,7 +695,9 @@ async fn run() -> Result<()> {
                 || top_p.is_some()
                 || top_k.is_some()
                 || min_p.is_some()
-                || llama_extensions.is_some();
+                || llama_extensions.is_some()
+                || thinking.is_some()
+                || dialect.is_some();
             if let Some(v) = output_tokens {
                 settings.output_tokens = v;
             }
@@ -720,6 +730,15 @@ async fn run() -> Result<()> {
             }
             if let Some(v) = requests {
                 settings.max_requests = Some(v);
+            }
+            if let Some(v) = thinking {
+                settings.thinking = v;
+                if v != alt_cli::inference::Thinking::Default {
+                    settings.reasoning_tokens = None;
+                }
+            }
+            if let Some(v) = dialect {
+                settings.dialect = v;
             }
             settings.validate(profile)?;
             profile.inference = Some(settings);
@@ -1599,6 +1618,7 @@ async fn headless(
         println!("{user}");
     }
     let brief = store.brief(std::path::Path::new(&session.cwd))?;
+    let cutoffs_before = engine.inference_status().map_or(0, |s| s.reasoning_cutoffs);
     let mut response = engine
         .prompt_with_brief(&session.engine_id, prompt, &brief)
         .await?;
@@ -1622,6 +1642,12 @@ async fn headless(
                     let evidence = json!({"type":"verification","data":verification,"note":note});
                     store.append(&session.id, &evidence)?;
                     if json_output { println!("{evidence}"); } else { println!("\n\nAlt verification: {note}"); }
+                }
+                if let Some(status) = engine.inference_status().filter(|s| s.reasoning_cutoffs > cutoffs_before) {
+                    // Typed recovery choices; Alt never resends on its own.
+                    let cutoff = json!({"type":"reasoning_cutoff","count":status.reasoning_cutoffs-cutoffs_before,"output_allowance":status.output_allowance,"charged":true,"resent":false,"recovery":[{"choice":"thinking_off","command":"alt inference --thinking off"},{"choice":"larger_output","command":"alt inference --output-tokens N"}]});
+                    store.append(&session.id, &cutoff)?;
+                    if json_output { println!("{cutoff}"); } else { eprintln!("\nThe model spent its whole output allowance thinking and gave no answer or tool call (tokens stay charged). Resend after `alt inference --thinking off` or a larger `--output-tokens`."); }
                 }
                 let event = json!({"type":"turn_end","data":result});
                 store.append(&session.id, &event)?;

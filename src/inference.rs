@@ -35,6 +35,144 @@ pub struct Settings {
     pub max_requests: Option<u32>,
     #[serde(default)]
     pub output_parameter: OutputParameter,
+    /// One reasoning choice, translated per server dialect (A01).
+    #[serde(default)]
+    pub thinking: Thinking,
+    /// Which request fields this server understands for reasoning control.
+    #[serde(default)]
+    pub dialect: Dialect,
+}
+
+/// `default | off | low | medium | high | budget:N`. Default sends nothing.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
+#[serde(try_from = "String", into = "String")]
+pub enum Thinking {
+    #[default]
+    Default,
+    Off,
+    Low,
+    Medium,
+    High,
+    Budget(u32),
+}
+impl Thinking {
+    pub const CHOICES: [Self; 5] = [
+        Self::Default,
+        Self::Off,
+        Self::Low,
+        Self::Medium,
+        Self::High,
+    ];
+    pub fn label(self) -> String {
+        match self {
+            Self::Default => "Server default".into(),
+            Self::Off => "Off".into(),
+            Self::Low => "Low".into(),
+            Self::Medium => "Medium".into(),
+            Self::High => "High".into(),
+            Self::Budget(n) => format!("Budget of {n} tokens"),
+        }
+    }
+    fn effort(self) -> Option<&'static str> {
+        match self {
+            Self::Low => Some("low"),
+            Self::Medium => Some("medium"),
+            Self::High => Some("high"),
+            _ => None,
+        }
+    }
+}
+impl std::str::FromStr for Thinking {
+    type Err = anyhow::Error;
+    fn from_str(text: &str) -> Result<Self> {
+        let text = text.trim().to_ascii_lowercase();
+        Ok(match text.as_str() {
+            "" | "default" => Self::Default,
+            "off" | "none" | "false" => Self::Off,
+            "low" => Self::Low,
+            "medium" => Self::Medium,
+            "high" | "on" | "true" => Self::High,
+            other => Self::Budget(
+                other
+                    .strip_prefix("budget:")
+                    .or_else(|| other.strip_prefix("budget("))
+                    .map(|n| n.trim_end_matches(')'))
+                    .unwrap_or(other)
+                    .parse()
+                    .map_err(|_| {
+                        anyhow::anyhow!(
+                            "Thinking must be default, off, low, medium, high or budget:N"
+                        )
+                    })?,
+            ),
+        })
+    }
+}
+impl TryFrom<String> for Thinking {
+    type Error = anyhow::Error;
+    fn try_from(text: String) -> Result<Self> {
+        text.parse()
+    }
+}
+impl From<Thinking> for String {
+    fn from(value: Thinking) -> Self {
+        match value {
+            Thinking::Budget(n) => format!("budget:{n}"),
+            other => other.label().to_ascii_lowercase().replace("server ", ""),
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize, clap::ValueEnum)]
+#[serde(rename_all = "kebab-case")]
+pub enum Dialect {
+    /// Owned/declared llama.cpp, Ollama by provider, otherwise OpenAI-style.
+    #[default]
+    Auto,
+    LlamaCpp,
+    Ollama,
+    /// vLLM, SGLang and NVIDIA NIM: `chat_template_kwargs`.
+    ChatTemplate,
+    /// OpenAI-style `reasoning_effort` only.
+    OpenaiEffort,
+}
+impl Dialect {
+    pub const ALL: [Self; 5] = [
+        Self::Auto,
+        Self::LlamaCpp,
+        Self::Ollama,
+        Self::ChatTemplate,
+        Self::OpenaiEffort,
+    ];
+    pub fn label(self) -> &'static str {
+        match self {
+            Self::Auto => "Automatic",
+            Self::LlamaCpp => "llama.cpp",
+            Self::Ollama => "Ollama",
+            Self::ChatTemplate => "vLLM / SGLang / NVIDIA NIM",
+            Self::OpenaiEffort => "OpenAI-style reasoning_effort",
+        }
+    }
+    pub fn fields(self) -> &'static str {
+        match self {
+            Self::Auto => "chosen from the connection",
+            Self::LlamaCpp => "chat_template_kwargs.enable_thinking + reasoning_budget_tokens",
+            Self::Ollama => "think + reasoning_effort",
+            Self::ChatTemplate => {
+                "chat_template_kwargs.enable_thinking/thinking + reasoning_effort"
+            }
+            Self::OpenaiEffort => "reasoning_effort",
+        }
+    }
+    pub fn saved_name(self) -> &'static str {
+        match self {
+            Self::Auto => "auto",
+            Self::LlamaCpp => "llama-cpp",
+            Self::Ollama => "ollama",
+            Self::ChatTemplate => "chat-template",
+            Self::OpenaiEffort => "openai-effort",
+        }
+    }
 }
 #[derive(Debug, Clone, Copy, Default, Serialize, Deserialize, clap::ValueEnum)]
 #[serde(rename_all = "snake_case")]
@@ -58,7 +196,93 @@ impl Settings {
             total_generated_tokens: None,
             max_requests: None,
             output_parameter: OutputParameter::MaxTokens,
+            thinking: Thinking::Default,
+            dialect: Dialect::Auto,
         }
+    }
+    pub fn resolved_dialect(&self, p: &Profile) -> Dialect {
+        match self.dialect {
+            Dialect::Auto if p.local_model.is_some() || self.llama_extensions => Dialect::LlamaCpp,
+            Dialect::Auto if p.provider == Provider::Ollama => Dialect::Ollama,
+            Dialect::Auto => Dialect::OpenaiEffort,
+            chosen => chosen,
+        }
+    }
+    /// The legacy thinking budget remains a budget choice on llama.cpp.
+    pub fn effective_thinking(&self) -> Thinking {
+        match (self.thinking, self.reasoning_tokens) {
+            (Thinking::Default, Some(n)) => Thinking::Budget(n),
+            (choice, _) => choice,
+        }
+    }
+    /// Write the reasoning fields for this dialect into a request and return a
+    /// record of exactly what was sent, for the receipt.
+    pub fn apply_thinking(
+        &self,
+        p: &Profile,
+        obj: &mut serde_json::Map<String, Value>,
+        allowance: u32,
+    ) -> Value {
+        for key in [
+            "reasoning_budget_tokens",
+            "reasoning_effort",
+            "think",
+            "chat_template_kwargs",
+        ] {
+            obj.remove(key);
+        }
+        let dialect = self.resolved_dialect(p);
+        let thinking = self.effective_thinking();
+        let room = allowance.saturating_sub(self.action_headroom);
+        let mut sent = serde_json::Map::new();
+        match (dialect, thinking) {
+            (_, Thinking::Default) => {}
+            // Older saved budgets keep their exact request shape.
+            (Dialect::LlamaCpp, Thinking::Budget(n)) if self.thinking == Thinking::Default => {
+                sent.insert("reasoning_budget_tokens".into(), json!(n.min(room)));
+            }
+            (Dialect::LlamaCpp, choice) => {
+                let budget = match choice {
+                    Thinking::Off => 0,
+                    Thinking::Low => room / 4,
+                    Thinking::Medium => room / 2,
+                    Thinking::Budget(n) => n.min(room),
+                    _ => room,
+                };
+                sent.insert(
+                    "chat_template_kwargs".into(),
+                    json!({"enable_thinking": choice != Thinking::Off}),
+                );
+                sent.insert("reasoning_budget_tokens".into(), json!(budget));
+            }
+            (Dialect::Ollama, choice) => {
+                sent.insert("think".into(), json!(choice != Thinking::Off));
+                sent.insert(
+                    "reasoning_effort".into(),
+                    json!(choice.effort().unwrap_or("none")),
+                );
+            }
+            (Dialect::ChatTemplate, choice) => {
+                let on = choice != Thinking::Off;
+                sent.insert(
+                    "chat_template_kwargs".into(),
+                    json!({"enable_thinking": on, "thinking": on}),
+                );
+                if let Some(effort) = choice.effort() {
+                    sent.insert("reasoning_effort".into(), json!(effort));
+                }
+            }
+            (_, choice) => {
+                sent.insert(
+                    "reasoning_effort".into(),
+                    json!(choice.effort().unwrap_or("none")),
+                );
+            }
+        }
+        for (key, value) in &sent {
+            obj.insert(key.clone(), value.clone());
+        }
+        json!({"dialect":dialect.saved_name(),"thinking":String::from(thinking),"fields":sent})
     }
     pub fn validate(&self, p: &Profile) -> Result<()> {
         ensure!(self.version == 1, "Unsupported inference settings version");
@@ -99,9 +323,21 @@ impl Settings {
                 && self.max_requests.is_none_or(|n| n > 0),
             "Shared generation/request allowances must be positive"
         );
+        let dialect = self.resolved_dialect(p);
+        ensure!(
+            !matches!(self.effective_thinking(), Thinking::Budget(_))
+                || dialect == Dialect::LlamaCpp,
+            "A thinking token budget needs a llama.cpp server; {} accepts off, low, medium or high",
+            dialect.label()
+        );
+        ensure!(
+            !matches!(self.thinking, Thinking::Budget(n) if n > self.output_tokens - self.action_headroom),
+            "Thinking budget must leave the selected action headroom inside total output"
+        );
         ensure!(
             p.local_model.is_some()
                 || self.llama_extensions
+                || dialect == Dialect::LlamaCpp
                 || (self.top_k.is_none()
                     && self.min_p.is_none()
                     && self.reasoning_tokens.is_none()),
@@ -141,22 +377,20 @@ impl Settings {
                 obj.insert(name.into(), value);
             }
         }
-        obj.remove("reasoning_budget_tokens");
-        if let Some(n) = self.reasoning_tokens {
-            obj.insert("reasoning_budget_tokens".into(), json!(n));
-        }
+        self.apply_thinking(p, obj, self.output_tokens);
         if obj.get("stream") == Some(&json!(true)) {
             obj.insert("stream_options".into(), json!({"include_usage":true}));
         }
         Ok(())
     }
     pub fn accounting(&self, p: &Profile) -> Value {
-        json!({"settings":self,"input_allowance":p.context_tokens-self.output_tokens,"total_output_allowance":self.output_tokens,"reasoning_allowance":self.reasoning_tokens,"action_headroom":self.action_headroom,"accounting":"Owned runtime measures the full rendered chat/tools before forwarding when its template/tokenizer endpoints are available. Each receipt records measurement or unknown; server usage is authoritative. External native context is unqualified.","native_context":"Owned runtime configured; external server must be inspected separately","thinking_support":"Budget only affects a supported thinking parser; non-thinking checkpoints do not gain a thinking mode."})
+        json!({"settings":self,"input_allowance":p.context_tokens-self.output_tokens,"total_output_allowance":self.output_tokens,"reasoning_allowance":self.reasoning_tokens,"action_headroom":self.action_headroom,"accounting":"Owned runtime measures the full rendered chat/tools before forwarding when its template/tokenizer endpoints are available. Each receipt records measurement or unknown; server usage is authoritative. External native context is unqualified.","native_context":"Owned runtime configured; external server must be inspected separately","thinking_support":"Budget only affects a supported thinking parser; non-thinking checkpoints do not gain a thinking mode.","thinking_control":{"choice":String::from(self.effective_thinking()),"dialect":self.resolved_dialect(p).label(),"fields":self.resolved_dialect(p).fields()}})
     }
 }
 
 pub struct Relay {
     pub endpoint: String,
+    profile: Profile,
     listener: JoinHandle<()>,
     pub evidence: PathBuf,
     live: Live,
@@ -165,6 +399,20 @@ pub struct Relay {
 struct Live {
     budget: std::sync::Arc<tokio::sync::Mutex<(u32, u32)>>,
     status: tokio::sync::watch::Sender<Status>,
+    /// Explicit per-connection thinking choice made after a cutoff.
+    thinking: std::sync::Arc<std::sync::Mutex<Option<Thinking>>>,
+}
+impl Live {
+    fn settings(&self, p: &Profile) -> Settings {
+        let mut settings = p.effective_inference();
+        if let Some(choice) = *self.thinking.lock().expect("thinking override") {
+            settings.thinking = choice;
+            if choice != Thinking::Default {
+                settings.reasoning_tokens = None;
+            }
+        }
+        settings
+    }
 }
 
 /// Observed relay activity. Waiting includes server queueing and prompt processing;
@@ -179,6 +427,8 @@ pub enum Stage {
     AllowanceExhausted,
     InputTooLarge,
     Interrupted,
+    /// The response hit the output limit with reasoning only: no answer, no tool call.
+    ReasoningCutoff,
 }
 impl Stage {
     pub fn label(self) -> &'static str {
@@ -190,6 +440,7 @@ impl Stage {
             Self::AllowanceExhausted => "Model allowance exhausted",
             Self::InputTooLarge => "Prompt exceeds the input reserve",
             Self::Interrupted => "Model request interrupted",
+            Self::ReasoningCutoff => "Output allowance spent on thinking; no answer or tool call",
         }
     }
 }
@@ -205,6 +456,9 @@ pub struct Status {
     pub output_allowance: u32,
     pub action_headroom: u32,
     pub reasoning_allowance: Option<u32>,
+    /// Responses on this connection that ended in a reasoning-only cutoff.
+    #[serde(default)]
+    pub reasoning_cutoffs: u32,
 }
 impl Status {
     fn new(p: &Profile) -> Self {
@@ -220,6 +474,7 @@ impl Status {
             output_allowance: s.output_tokens,
             action_headroom: s.action_headroom,
             reasoning_allowance: s.reasoning_tokens,
+            reasoning_cutoffs: 0,
         }
     }
 }
@@ -246,7 +501,11 @@ impl Relay {
             settings.max_requests.unwrap_or(u32::MAX),
         )));
         let (status, _) = tokio::sync::watch::channel(Status::new(p));
-        let live = Live { budget, status };
+        let live = Live {
+            budget,
+            status,
+            thinking: Default::default(),
+        };
         let service = live.clone();
         let client = reqwest::Client::builder()
             .redirect(reqwest::redirect::Policy::none())
@@ -270,6 +529,7 @@ impl Relay {
         });
         Ok(Self {
             endpoint,
+            profile: p.clone(),
             listener,
             evidence,
             live,
@@ -277,6 +537,33 @@ impl Relay {
     }
     pub fn status(&self) -> Status {
         self.live.status.borrow().clone()
+    }
+    /// Change the thinking choice for the rest of this connection, after the
+    /// user picked it (for example "thinking off" after a cutoff). Recorded as
+    /// evidence; spent tokens stay charged and no request is sent.
+    pub fn set_thinking(&self, choice: Thinking) -> Result<Status> {
+        let profile = &self.profile;
+        let mut next = profile.effective_inference();
+        next.thinking = choice;
+        if choice != Thinking::Default {
+            next.reasoning_tokens = None;
+        }
+        next.validate(profile)?;
+        crate::config::atomic_write(
+            &self
+                .evidence
+                .join(format!("thinking-{}.json", uuid::Uuid::new_v4())),
+            &serde_json::to_vec_pretty(
+                &json!({"schema":1,"thinking":String::from(choice),"dialect":next.resolved_dialect(profile).saved_name(),"scope":"Explicit user choice for this connection; model, provider and spent costs unchanged; no request issued"}),
+            )?,
+        )?;
+        *self.live.thinking.lock().expect("thinking override") = Some(choice);
+        self.live.status.send_modify(|s| {
+            if s.stage == Stage::ReasoningCutoff {
+                s.stage = Stage::Ready;
+            }
+        });
+        Ok(self.status())
     }
     /// Adds only a finite, explicitly requested allowance. Existing costs remain
     /// charged; configuration and model identity are unchanged.
@@ -413,6 +700,39 @@ pub fn response_complete(raw: &[u8], streaming: bool) -> bool {
     }
     done && finish
 }
+/// A response that stopped at the output limit after producing reasoning but
+/// neither content nor a tool call. Spent tokens stay charged; recovery is the
+/// user's choice (thinking off, or a larger allowance), never a silent retry.
+pub fn reasoning_cutoff(raw: &[u8], streaming: bool) -> bool {
+    let mut reasoning = false;
+    let mut answer = false;
+    let mut length = false;
+    let mut observe = |part: &Value, finish: &Value| {
+        for key in ["reasoning_content", "reasoning", "thinking"] {
+            reasoning |= part[key].as_str().is_some_and(|t| !t.trim().is_empty());
+        }
+        answer |= part["content"]
+            .as_str()
+            .is_some_and(|t| !t.trim().is_empty())
+            || part["tool_calls"].as_array().is_some_and(|c| !c.is_empty());
+        length |= finish.as_str() == Some("length");
+    };
+    if streaming {
+        let text = String::from_utf8_lossy(raw);
+        for data in text.lines().filter_map(|l| l.strip_prefix("data:")) {
+            if let Ok(v) = serde_json::from_str::<Value>(data.trim()) {
+                for choice in v["choices"].as_array().into_iter().flatten() {
+                    observe(&choice["delta"], &choice["finish_reason"]);
+                }
+            }
+        }
+    } else if let Ok(v) = serde_json::from_slice::<Value>(raw) {
+        for choice in v["choices"].as_array().into_iter().flatten() {
+            observe(&choice["message"], &choice["finish_reason"]);
+        }
+    }
+    length && reasoning && !answer
+}
 pub fn cost(evidence: &Path) -> Result<Value> {
     let mut requests = 0u32;
     let mut charged = 0u64;
@@ -447,6 +767,7 @@ async fn serve(
     live: &Live,
 ) -> Result<()> {
     let (budget, live_status) = (&live.budget, &live.status);
+    let settings = live.settings(p);
     let (reader, mut writer) = stream.into_split();
     let mut reader = BufReader::new(reader);
     let request = tokio::time::timeout(Duration::from_secs(20), async {
@@ -491,7 +812,7 @@ async fn serve(
         let mut bytes = vec![0; length];
         reader.read_exact(&mut bytes).await?;
         let mut body: Value = serde_json::from_slice(&bytes)?;
-        p.effective_inference().apply(p, &mut body)?;
+        settings.apply(p, &mut body)?;
         Ok::<Value, anyhow::Error>(body)
     })
     .await;
@@ -515,16 +836,18 @@ async fn serve(
         writer.write_all(&bytes).await?;
         return Ok(());
     }
-    let allowance = p.effective_inference().output_tokens.min(budget.0);
-    let token_field = match p.effective_inference().output_parameter {
+    let allowance = settings.output_tokens.min(budget.0);
+    let token_field = match settings.output_parameter {
         OutputParameter::MaxTokens => "max_tokens",
         OutputParameter::MaxCompletionTokens => "max_completion_tokens",
     };
     body[token_field] = json!(allowance);
-    if let Some(reasoning) = p.effective_inference().reasoning_tokens {
-        body["reasoning_budget_tokens"] =
-            json!(reasoning.min(allowance.saturating_sub(p.effective_inference().action_headroom)));
-    }
+    let thinking_sent = settings.apply_thinking(
+        p,
+        body.as_object_mut()
+            .context("Chat request must be an object")?,
+        allowance,
+    );
     // Measure the actual allocated body, including any reduced thinking budget.
     // Input rejection leaves the shared reservation untouched.
     live_status.send_modify(|s| s.stage = Stage::MeasuringInput);
@@ -538,7 +861,7 @@ async fn serve(
     });
     if input["tokens"]
         .as_u64()
-        .is_some_and(|n| n > (p.context_tokens - p.effective_inference().output_tokens) as u64)
+        .is_some_and(|n| n > (p.context_tokens - settings.output_tokens) as u64)
     {
         live_status.send_modify(|s| s.stage = Stage::InputTooLarge);
         crate::config::atomic_write(
@@ -642,6 +965,7 @@ async fn serve(
     };
     let complete =
         status.is_success() && !truncated && response_complete(&captured, body["stream"] == true);
+    let cutoff = complete && reasoning_cutoff(&captured, body["stream"] == true);
     let generated = usage
         .as_ref()
         .and_then(|u| u["completion_tokens"].as_u64())
@@ -654,7 +978,7 @@ async fn serve(
     crate::config::atomic_write(
         &evidence.join(format!("{id}-receipt.json")),
         &serde_json::to_vec(
-            &json!({"complete":complete,"status":status.as_u16(),"input_accounting":input,"response_sha256":crate::project::digest(&captured),"response_truncated":truncated,"request_sha256":crate::project::digest(&serde_json::to_vec(&body)?),"usage":usage,"generated_tokens":generated,"charged_generated_tokens":charged,"allowance":allowance,"provider_budget_violation":charged>allowance as u64}),
+            &json!({"complete":complete,"status":status.as_u16(),"input_accounting":input,"response_sha256":crate::project::digest(&captured),"response_truncated":truncated,"request_sha256":crate::project::digest(&serde_json::to_vec(&body)?),"usage":usage,"generated_tokens":generated,"charged_generated_tokens":charged,"allowance":allowance,"provider_budget_violation":charged>allowance as u64,"thinking":thinking_sent,"reasoning_cutoff":cutoff}),
         )?,
     )?;
     live_status.send_modify(|s| {
@@ -664,10 +988,15 @@ async fn serve(
         if s.remaining_generated_tokens.is_some() {
             s.remaining_generated_tokens = Some(budget.0);
         }
+        if cutoff {
+            s.reasoning_cutoffs += 1;
+        }
         s.stage = if !complete {
             Stage::Interrupted
         } else if budget.0 == 0 || budget.1 == 0 {
             Stage::AllowanceExhausted
+        } else if cutoff {
+            Stage::ReasoningCutoff
         } else {
             Stage::Ready
         };

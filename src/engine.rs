@@ -423,6 +423,15 @@ impl Engine {
             .context("No active inference relay")?
             .add_allowance(requests, tokens)
     }
+    pub fn set_thinking(
+        &self,
+        choice: crate::inference::Thinking,
+    ) -> Result<crate::inference::Status> {
+        self.relay
+            .as_ref()
+            .context("No active inference relay")?
+            .set_thinking(choice)
+    }
     pub fn verification(&self) -> Result<Option<crate::project_services::Verification>> {
         self.bridge
             .as_ref()

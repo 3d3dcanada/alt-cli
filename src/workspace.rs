@@ -34,6 +34,8 @@ pub enum Command {
         requests: u32,
         tokens: u32,
     },
+    /// Explicit thinking choice for the rest of this connection (A01 recovery).
+    SetThinking(crate::inference::Thinking),
     Shutdown,
 }
 
@@ -304,6 +306,17 @@ async fn worker(
                             updates.send(Update::Inference(status.clone())).await?;
                             last_inference=Some(status);
                             updates.send(Update::Progress(Progress{stage:"Allowance added. Send a message to continue the saved task.".into(),..Progress::default()})).await?;
+                        },
+                        Err(error)=>{updates.send(Update::Error(error.to_string())).await?;},
+                    }
+                },
+                Some(Command::SetThinking(choice)) if response.is_none()=>{
+                    match engine.set_thinking(choice) {
+                        Ok(status)=>{
+                            store.append(&session.id,&json!({"type":"thinking_changed","thinking":String::from(choice),"data":status}))?;
+                            updates.send(Update::Inference(status.clone())).await?;
+                            last_inference=Some(status);
+                            updates.send(Update::Progress(Progress{stage:format!("Thinking set to {} for this connection. Your last message is back in the composer; press Enter to resend it.",choice.label()),..Progress::default()})).await?;
                         },
                         Err(error)=>{updates.send(Update::Error(error.to_string())).await?;},
                     }

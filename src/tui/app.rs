@@ -401,6 +401,8 @@ pub struct App {
     pub context_used: Option<u64>,
     pub context_size: Option<u64>,
     pub inference_status: Option<crate::inference::Status>,
+    /// A reasoning-only cutoff arrived; offer recovery when the turn ends.
+    pub cutoff_pending: bool,
     pub brief: String,
     pub job: Option<Job>,
     pub job_tx: mpsc::Sender<ScopedJobEvent>,
@@ -525,6 +527,7 @@ impl App {
             context_used: None,
             context_size: None,
             inference_status: None,
+            cutoff_pending: false,
             brief,
             job: None,
             job_tx: tx,
@@ -567,7 +570,7 @@ impl App {
     pub fn settings_tab_indexes(tab: usize) -> &'static [usize] {
         const TABS: [&[usize]; 5] = [
             &[2, 3, 4],
-            &[0, 10, 11, 16],
+            &[0, 19, 10, 11, 16],
             &[8, 17, 12],
             &[1, 5, 6, 9, 15, 18],
             &[7, 13, 14],
@@ -695,6 +698,16 @@ impl App {
                 "Measure generation, memory, cancellation cleanup and restart for 2K, 4K and 8K."
                     .into(),
             ),
+            (
+                format!(
+                    "Thinking: {}",
+                    self.current_profile()
+                        .map(|(_, p)| p.effective_inference().effective_thinking().label())
+                        .unwrap_or_else(|| "choose a model first".into())
+                ),
+                "Off, low, medium, high or server default; sent in fields this server understands."
+                    .into(),
+            ),
         ]
     }
 
@@ -787,6 +800,22 @@ impl App {
                 "Allocation, skills, workflow, CPU/GPU".into(),
                 MenuAction::Manager {
                     action: "runtime-settings".into(),
+                    state: serde_json::json!({}),
+                },
+            ),
+            (
+                "Model thinking: off, low, medium, high".into(),
+                "Reasoning control translated for this server".into(),
+                MenuAction::Manager {
+                    action: "inference-thinking".into(),
+                    state: serde_json::json!({}),
+                },
+            ),
+            (
+                "Recover from a thinking cutoff".into(),
+                "Resend with thinking off or a larger allowance".into(),
+                MenuAction::Manager {
+                    action: "inference-cutoff".into(),
                     state: serde_json::json!({}),
                 },
             ),
@@ -1292,6 +1321,11 @@ impl App {
                     self.pending_task_notice = Some(self.turn_tools > 0 && reason != "cancelled");
                 }
                 self.refresh_sessions()?;
+                if self.cutoff_pending && reason != "cancelled" {
+                    self.cutoff_pending = false;
+                    self.add_message("Notice", "The model used its whole output allowance on thinking and gave no answer or tool call. Those tokens stay charged. Choose a recovery; nothing is resent automatically.");
+                    self.cutoff_recovery()?;
+                }
             }
             workspace::Update::Error(error) => {
                 self.busy = false;
@@ -1304,7 +1338,21 @@ impl App {
                 self.error(error);
             }
             workspace::Update::Progress(progress) => self.notify(progress.stage),
-            workspace::Update::Inference(status) => self.inference_status = Some(status),
+            workspace::Update::Inference(status) => {
+                let seen = self
+                    .inference_status
+                    .as_ref()
+                    .filter(|s| s.connection_id == status.connection_id)
+                    .map_or(0, |s| s.reasoning_cutoffs);
+                if status.reasoning_cutoffs > seen {
+                    self.cutoff_pending = true;
+                }
+                self.inference_status = Some(status);
+                if self.cutoff_pending && !self.busy && self.dialog.is_none() {
+                    self.cutoff_pending = false;
+                    self.cutoff_recovery()?;
+                }
+            }
             workspace::Update::Closed => {
                 self.connected = false;
                 self.connecting = false;
@@ -3125,5 +3173,53 @@ mod recovery_tests {
         app.permissions.push_back((serde_json::json!(3), host));
         let _ = app.permission(2);
         assert!(app.trust_host);
+    }
+
+    #[tokio::test]
+    async fn a_reasoning_cutoff_offers_recovery_without_resending() {
+        let data = tempfile::tempdir().unwrap();
+        let mut app = App::load(data.path().into(), "goose".into(), None).unwrap();
+        let mut status = crate::inference::Status {
+            connection_id: "c1".into(),
+            stage: crate::inference::Stage::Ready,
+            requests_issued: 1,
+            remaining_requests: None,
+            remaining_generated_tokens: None,
+            input_tokens: None,
+            input_allowance: 6144,
+            output_allowance: 2048,
+            action_headroom: 256,
+            reasoning_allowance: None,
+            reasoning_cutoffs: 0,
+        };
+        app.workspace_update(workspace::Update::Inference(status.clone()))
+            .unwrap();
+        assert!(app.dialog.is_none());
+        status.reasoning_cutoffs = 1;
+        status.stage = crate::inference::Stage::ReasoningCutoff;
+        app.busy = true;
+        app.workspace_update(workspace::Update::Inference(status.clone()))
+            .unwrap();
+        assert!(app.dialog.is_none(), "wait for the turn to end");
+        app.workspace_update(workspace::Update::Done(
+            serde_json::json!({"stopReason":"end_turn"}),
+        ))
+        .unwrap();
+        match &app.dialog {
+            Some(Dialog::Menu { title, items, .. }) => {
+                assert!(title.contains("thinking"));
+                assert!(
+                    items
+                        .iter()
+                        .any(|(label, _, _)| label == "Resend with thinking off")
+                );
+            }
+            _ => panic!("cutoff recovery menu expected"),
+        }
+        // The same count on the same connection does not reopen it.
+        app.dialog = None;
+        app.workspace_update(workspace::Update::Inference(status))
+            .unwrap();
+        assert!(app.dialog.is_none());
     }
 }
