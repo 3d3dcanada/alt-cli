@@ -16,6 +16,12 @@
 
 ## Developing and evaluating
 
+- [0.7 work orders and board](WORK_ORDERS_0.7.md): A01–A10, open audit items
+  B01–B21 and harvested H01–H02, from the
+  [2026-10-08 PC model trial](research/2026-10-08-pc-model-trial/README.md).
+- [Final beta 3 audit](FINAL_AUDIT_2026-10-08.md) and
+  [F01–F14 work orders](FINAL_PASS_WORK_ORDERS.md): findings, bounded reproductions
+  and acceptance criteria.
 - [Small-model implementation plan](SMALL_MODEL_IMPLEMENTATION_PLAN.md): combined
   harness/reasoning work orders and 7B/9B Q4 qualification.
 - [Small-model delivery](SMALL_MODEL_DELIVERY.md): implemented work orders,
