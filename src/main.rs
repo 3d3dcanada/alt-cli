@@ -118,6 +118,12 @@ enum Action {
         /// Server family for reasoning fields.
         #[arg(long, value_enum)]
         dialect: Option<alt_cli::inference::Dialect>,
+        /// Provider retries for 429, 5xx and dropped connections (0–8).
+        #[arg(long)]
+        retries: Option<u32>,
+        /// Hold and check responses for degenerate provider output.
+        #[arg(long, value_enum)]
+        output_guard: Option<alt_cli::inference::OutputGuard>,
     },
     /// Select whether a model must write a plan or the host supplies the workflow.
     Workflow {
@@ -697,6 +703,8 @@ async fn run() -> Result<()> {
             requests,
             thinking,
             dialect,
+            retries,
+            output_guard,
         } => {
             let mut config = Config::read(&root)?;
             let name = config.profile(args.profile.as_deref())?.0.to_owned();
@@ -722,7 +730,9 @@ async fn run() -> Result<()> {
                 || min_p.is_some()
                 || llama_extensions.is_some()
                 || thinking.is_some()
-                || dialect.is_some();
+                || dialect.is_some()
+                || retries.is_some()
+                || output_guard.is_some();
             if let Some(v) = output_tokens {
                 settings.output_tokens = v;
             }
@@ -764,6 +774,12 @@ async fn run() -> Result<()> {
             }
             if let Some(v) = dialect {
                 settings.dialect = v;
+            }
+            if let Some(v) = retries {
+                settings.retries = v;
+            }
+            if let Some(v) = output_guard {
+                settings.output_guard = v;
             }
             settings.validate(profile)?;
             profile.inference = Some(settings);

@@ -39,6 +39,15 @@ impl Reply {
             body: body.into(),
         }
     }
+    /// Accept the request, then close the connection without replying.
+    pub fn hang_up() -> Self {
+        Self {
+            status: 0,
+            headers: vec![],
+            content_type: "application/json",
+            body: String::new(),
+        }
+    }
     pub fn header(mut self, name: &str, value: &str) -> Self {
         self.headers.push((name.into(), value.into()));
         self
@@ -110,6 +119,10 @@ pub async fn start(replies: Vec<Reply>) -> Upstream {
             let body = serde_json::from_slice(&data[end + 4..end + 4 + length])
                 .unwrap_or(serde_json::Value::Null);
             seen.lock().unwrap().push((head, body));
+            if reply.status == 0 {
+                drop(connection);
+                continue;
+            }
             let extra: String = reply
                 .headers
                 .iter()

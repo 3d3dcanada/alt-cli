@@ -837,6 +837,14 @@ impl App {
                 },
             ),
             (
+                "Hosted output guard".into(),
+                "Discard leaked-token garbage once and resend; retries for 429/5xx".into(),
+                MenuAction::Manager {
+                    action: "inference-guard".into(),
+                    state: serde_json::json!({}),
+                },
+            ),
+            (
                 "Recover from a thinking cutoff".into(),
                 "Resend with thinking off or a larger allowance".into(),
                 MenuAction::Manager {
@@ -3267,6 +3275,8 @@ mod recovery_tests {
             reasoning_allowance: None,
             reasoning_cutoffs: 0,
             ollama_context: None,
+            provider_retries: 0,
+            provider_faults: 0,
         };
         app.workspace_update(workspace::Update::Inference(status.clone()))
             .unwrap();

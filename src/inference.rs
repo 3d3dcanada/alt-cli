@@ -63,6 +63,35 @@ pub struct Settings {
     /// Ollama only: how long the server keeps the model loaded (`5m`, `-1`, `0`).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub keep_alive: Option<String>,
+    /// A04: retries for 429, 5xx and dropped connections (0 disables).
+    #[serde(default = "default_retries")]
+    pub retries: u32,
+    /// A04: hold each response and discard degenerate provider output once.
+    #[serde(default)]
+    pub output_guard: OutputGuard,
+}
+
+fn default_retries() -> u32 {
+    2
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize, clap::ValueEnum)]
+#[serde(rename_all = "kebab-case")]
+pub enum OutputGuard {
+    /// On for remote servers, off for this computer (keeps local streaming live).
+    #[default]
+    Auto,
+    On,
+    Off,
+}
+impl OutputGuard {
+    pub fn label(self) -> &'static str {
+        match self {
+            Self::Auto => "Automatic (on for remote servers)",
+            Self::On => "On",
+            Self::Off => "Off",
+        }
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize, clap::ValueEnum)]
@@ -252,6 +281,28 @@ impl Settings {
             extra_body: None,
             ollama_context: OllamaContext::Profile,
             keep_alive: None,
+            retries: default_retries(),
+            output_guard: OutputGuard::Auto,
+        }
+    }
+    /// Whether responses are held and checked before reaching the engine.
+    pub fn guard_active(&self, p: &Profile) -> bool {
+        match self.output_guard {
+            OutputGuard::On => true,
+            OutputGuard::Off => false,
+            OutputGuard::Auto => reqwest::Url::parse(&p.endpoint)
+                .ok()
+                .and_then(|u| u.host_str().map(str::to_owned))
+                .is_some_and(|host| {
+                    let host = host
+                        .trim_start_matches('[')
+                        .trim_end_matches(']')
+                        .to_owned();
+                    host != "localhost"
+                        && !host
+                            .parse::<std::net::IpAddr>()
+                            .is_ok_and(|ip| ip.is_loopback())
+                }),
         }
     }
     /// Parse and check `extra_body`: a JSON object without Alt-owned keys.
@@ -501,6 +552,7 @@ impl Settings {
         );
         self.extra_object()?;
         self.parameter_fields(p)?;
+        ensure!(self.retries <= 8, "Use 0–8 provider retries");
         ensure!(
             self.total_generated_tokens.is_none_or(|n| n > 0)
                 && self.max_requests.is_none_or(|n| n > 0),
@@ -647,6 +699,12 @@ pub struct Status {
     /// `/api/ps` after a response. `None` until measured or when not reported.
     #[serde(default)]
     pub ollama_context: Option<u64>,
+    /// Provider retries (429, 5xx, dropped connections) on this connection.
+    #[serde(default)]
+    pub provider_retries: u32,
+    /// Degenerate responses discarded as provider faults on this connection.
+    #[serde(default)]
+    pub provider_faults: u32,
 }
 impl Status {
     fn new(p: &Profile) -> Self {
@@ -664,6 +722,8 @@ impl Status {
             reasoning_allowance: s.reasoning_tokens,
             reasoning_cutoffs: 0,
             ollama_context: None,
+            provider_retries: 0,
+            provider_faults: 0,
         }
     }
 }
@@ -1117,67 +1177,155 @@ async fn serve(
         Provider::Openai => format!("{}/chat/completions", p.endpoint.trim_end_matches('/')),
         Provider::Ollama => format!("{}/v1/chat/completions", p.endpoint.trim_end_matches('/')),
     };
-    let mut req = client.post(url).json(&body);
-    if let Some(key) = key {
-        req = req.bearer_auth(key);
-    }
-    let response = match req.send().await {
-        Ok(v) => v,
-        Err(_) => {
-            writer
-                .write_all(
-                    b"HTTP/1.1 502 Bad Gateway\r\nContent-Length: 0\r\nConnection: close\r\n\r\n",
-                )
-                .await?;
-            anyhow::bail!("Selected provider connection failed; inspect the selected endpoint");
+    let streaming = body["stream"] == true;
+    let guarded = settings.guard_active(p);
+    let mut retry_log: Vec<Value> = Vec::new();
+    let mut faults: Vec<Value> = Vec::new();
+    let mut extra_charged: u64 = 0;
+    // One resend after a discarded degenerate response; retries are separate.
+    let (status, captured, truncated) = loop {
+        let response = match send_with_retries(
+            client,
+            &url,
+            &body,
+            key,
+            settings.retries,
+            &mut budget.1,
+            &mut retry_log,
+        )
+        .await
+        {
+            Ok(response) => response,
+            Err(error) => {
+                writer
+                    .write_all(
+                        b"HTTP/1.1 502 Bad Gateway\r\nContent-Length: 0\r\nConnection: close\r\n\r\n",
+                    )
+                    .await?;
+                crate::config::atomic_write(
+                    &receipt,
+                    &serde_json::to_vec(
+                        &json!({"complete":false,"status":"connection_failed","charged_generated_tokens":allowance,"generated_tokens":null,"allowance":allowance,"input_accounting":input,"retries":retry_log.len(),"retry_log":retry_log,"error":error.to_string()}),
+                    )?,
+                )?;
+                anyhow::bail!(
+                    "Selected provider connection failed after {} retr{}; inspect the selected endpoint",
+                    retry_log.len(),
+                    if retry_log.len() == 1 { "y" } else { "ies" }
+                );
+            }
+        };
+        let status = response.status();
+        let mut stream = response.bytes_stream();
+        let mut captured = Vec::new();
+        let mut truncated = false;
+        if !guarded {
+            let content = if streaming {
+                "text/event-stream"
+            } else {
+                "application/json"
+            };
+            writer.write_all(format!("HTTP/1.1 {} Provider\r\nContent-Type: {content}\r\nTransfer-Encoding: chunked\r\nConnection: close\r\n\r\n",status.as_u16()).as_bytes()).await?;
+            let mut raw_file =
+                tokio::fs::File::create(evidence.join(format!("{id}-response.raw"))).await?;
+            while let Some(chunk) = stream.next().await {
+                let chunk = chunk?;
+                let observed_stage = live_status.borrow().stage;
+                if !chunk.is_empty() && observed_stage != Stage::ReceivingOutput {
+                    live_status.send_modify(|s| s.stage = Stage::ReceivingOutput);
+                }
+                if !truncated && captured.len() + chunk.len() <= 8 * 1024 * 1024 {
+                    captured.extend_from_slice(&chunk);
+                    raw_file.write_all(&chunk).await?;
+                } else {
+                    truncated = true;
+                }
+                writer
+                    .write_all(format!("{:x}\r\n", chunk.len()).as_bytes())
+                    .await?;
+                writer.write_all(&chunk).await?;
+                writer.write_all(b"\r\n").await?;
+                writer.flush().await?;
+            }
+            raw_file.sync_all().await?;
+            break (status, captured, truncated);
         }
-    };
-    let status = response.status();
-    let content = if body["stream"] == true {
-        "text/event-stream"
-    } else {
-        "application/json"
-    };
-    writer.write_all(format!("HTTP/1.1 {} Provider\r\nContent-Type: {content}\r\nTransfer-Encoding: chunked\r\nConnection: close\r\n\r\n",status.as_u16()).as_bytes()).await?;
-    let mut stream = response.bytes_stream();
-    let mut raw_file = tokio::fs::File::create(evidence.join(format!("{id}-response.raw"))).await?;
-    let mut captured = Vec::new();
-    let mut truncated = false;
-    while let Some(chunk) = stream.next().await {
-        let chunk = chunk?;
-        let observed_stage = live_status.borrow().stage;
-        if !chunk.is_empty() && observed_stage != Stage::ReceivingOutput {
-            live_status.send_modify(|s| s.stage = Stage::ReceivingOutput);
+        // Guarded: hold the whole response, check it, then forward or discard.
+        while let Some(chunk) = stream.next().await {
+            let chunk = chunk?;
+            if live_status.borrow().stage != Stage::ReceivingOutput {
+                live_status.send_modify(|s| s.stage = Stage::ReceivingOutput);
+            }
+            if captured.len() + chunk.len() <= 8 * 1024 * 1024 {
+                captured.extend_from_slice(&chunk);
+            } else {
+                truncated = true;
+                break;
+            }
         }
-        if !truncated && captured.len() + chunk.len() <= 8 * 1024 * 1024 {
-            captured.extend_from_slice(&chunk);
-            raw_file.write_all(&chunk).await?;
+        let complete = status.is_success() && !truncated && response_complete(&captured, streaming);
+        let reason = if complete {
+            degenerate_output(&captured, streaming, &body)
         } else {
-            truncated = true;
+            None
+        };
+        let Some(reason) = reason else {
+            tokio::fs::write(evidence.join(format!("{id}-response.raw")), &captured).await?;
+            let content = if streaming {
+                "text/event-stream"
+            } else {
+                "application/json"
+            };
+            writer.write_all(format!("HTTP/1.1 {} Provider\r\nContent-Type: {content}\r\nContent-Length: {}\r\nConnection: close\r\n\r\n",status.as_u16(),captured.len()).as_bytes()).await?;
+            writer.write_all(&captured).await?;
+            writer.flush().await?;
+            break (status, captured, truncated);
+        };
+        // Provider fault, never model output: keep the raw bytes as evidence.
+        let n = faults.len() + 1;
+        tokio::fs::write(evidence.join(format!("{id}-discarded-{n}.raw")), &captured).await?;
+        let spent = response_usage(&captured, streaming)
+            .and_then(|u| u["completion_tokens"].as_u64())
+            .unwrap_or(allowance as u64);
+        extra_charged = extra_charged.saturating_add(spent);
+        faults.push(json!({"reason":reason,"response_sha256":crate::project::digest(&captured),"charged_generated_tokens":spent}));
+        live_status.send_modify(|s| s.provider_faults += 1);
+        if faults.len() >= 2 || budget.1 == 0 {
+            let message = format!(
+                "The provider returned malformed output ({reason}){}. Recorded as a provider fault, not model output. Resend your message, lower the temperature, or choose another model or provider.",
+                if faults.len() >= 2 { " twice" } else { "" }
+            );
+            let bytes = serde_json::to_vec(&json!({"error":{"message":message}}))?;
+            writer.write_all(format!("HTTP/1.1 502 Bad Gateway\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n",bytes.len()).as_bytes()).await?;
+            writer.write_all(&bytes).await?;
+            let charged = (allowance as u64).max(extra_charged);
+            budget.0 = budget
+                .0
+                .saturating_add(allowance)
+                .saturating_sub(charged.min(u32::MAX as u64) as u32);
+            crate::config::atomic_write(
+                &receipt,
+                &serde_json::to_vec(
+                    &json!({"complete":false,"status":"provider_fault","charged_generated_tokens":charged,"generated_tokens":null,"allowance":allowance,"input_accounting":input,"retries":retry_log.len(),"retry_log":retry_log,"provider_faults":faults,"thinking":thinking_sent}),
+                )?,
+            )?;
+            live_status.send_modify(|s| {
+                if s.remaining_requests.is_some() {
+                    s.remaining_requests = Some(budget.1);
+                }
+                if s.remaining_generated_tokens.is_some() {
+                    s.remaining_generated_tokens = Some(budget.0);
+                }
+                s.stage = Stage::Interrupted;
+            });
+            return Ok(());
         }
-        writer
-            .write_all(format!("{:x}\r\n", chunk.len()).as_bytes())
-            .await?;
-        writer.write_all(&chunk).await?;
-        writer.write_all(b"\r\n").await?;
-        writer.flush().await?;
-    }
-    raw_file.sync_all().await?;
-    let usage = if body["stream"] == true {
-        String::from_utf8_lossy(&captured)
-            .lines()
-            .filter_map(|l| l.strip_prefix("data:"))
-            .filter_map(|s| serde_json::from_str::<Value>(s.trim()).ok())
-            .filter_map(|v| v.get("usage").filter(|u| u.is_object()).cloned())
-            .next_back()
-    } else {
-        serde_json::from_slice::<Value>(&captured)
-            .ok()
-            .and_then(|v| v.get("usage").cloned())
+        // The resend is another model call against the shared allowance.
+        budget.1 = budget.1.saturating_sub(1);
     };
-    let complete =
-        status.is_success() && !truncated && response_complete(&captured, body["stream"] == true);
-    let cutoff = complete && reasoning_cutoff(&captured, body["stream"] == true);
+    let usage = response_usage(&captured, streaming);
+    let complete = status.is_success() && !truncated && response_complete(&captured, streaming);
+    let cutoff = complete && reasoning_cutoff(&captured, streaming);
     let ollama_context = if complete && p.provider == Provider::Ollama {
         ollama_loaded_context(client, p, key).await
     } else {
@@ -1187,7 +1335,9 @@ async fn serve(
         .as_ref()
         .and_then(|u| u["completion_tokens"].as_u64())
         .filter(|_| complete);
-    let charged = generated.unwrap_or(allowance as u64);
+    let charged = generated
+        .unwrap_or(allowance as u64)
+        .saturating_add(extra_charged);
     budget.0 = budget
         .0
         .saturating_add(allowance)
@@ -1195,7 +1345,7 @@ async fn serve(
     crate::config::atomic_write(
         &evidence.join(format!("{id}-receipt.json")),
         &serde_json::to_vec(
-            &json!({"complete":complete,"status":status.as_u16(),"input_accounting":input,"response_sha256":crate::project::digest(&captured),"response_truncated":truncated,"request_sha256":crate::project::digest(&serde_json::to_vec(&body)?),"usage":usage,"generated_tokens":generated,"charged_generated_tokens":charged,"allowance":allowance,"provider_budget_violation":charged>allowance as u64,"thinking":thinking_sent,"reasoning_cutoff":cutoff,"ollama_loaded_context":ollama_context}),
+            &json!({"complete":complete,"status":status.as_u16(),"input_accounting":input,"response_sha256":crate::project::digest(&captured),"response_truncated":truncated,"request_sha256":crate::project::digest(&serde_json::to_vec(&body)?),"usage":usage,"generated_tokens":generated,"charged_generated_tokens":charged,"allowance":allowance,"provider_budget_violation":generated.unwrap_or(0)>allowance as u64,"thinking":thinking_sent,"reasoning_cutoff":cutoff,"ollama_loaded_context":ollama_context,"retries":retry_log.len(),"retry_log":retry_log,"provider_faults":faults,"output_guard":guarded}),
         )?,
     )?;
     live_status.send_modify(|s| {
@@ -1211,6 +1361,7 @@ async fn serve(
         if ollama_context.is_some() {
             s.ollama_context = ollama_context;
         }
+        s.provider_retries += retry_log.len() as u32;
         s.stage = if !complete {
             Stage::Interrupted
         } else if budget.0 == 0 || budget.1 == 0 {
@@ -1221,6 +1372,169 @@ async fn serve(
             Stage::Ready
         };
     });
-    writer.write_all(b"0\r\n\r\n").await?;
+    if !guarded {
+        writer.write_all(b"0\r\n\r\n").await?;
+    }
     Ok(())
+}
+
+fn response_usage(captured: &[u8], streaming: bool) -> Option<Value> {
+    if streaming {
+        String::from_utf8_lossy(captured)
+            .lines()
+            .filter_map(|l| l.strip_prefix("data:"))
+            .filter_map(|s| serde_json::from_str::<Value>(s.trim()).ok())
+            .filter_map(|v| v.get("usage").filter(|u| u.is_object()).cloned())
+            .next_back()
+    } else {
+        serde_json::from_slice::<Value>(captured)
+            .ok()
+            .and_then(|v| v.get("usage").cloned())
+    }
+}
+
+/// Send one request, retrying 429, 5xx and connection failures with capped
+/// exponential backoff that honours `Retry-After`. Each retry is another
+/// model call against the shared request allowance; retries are logged.
+async fn send_with_retries(
+    client: &reqwest::Client,
+    url: &str,
+    body: &Value,
+    key: Option<&str>,
+    retries: u32,
+    remaining_requests: &mut u32,
+    log: &mut Vec<Value>,
+) -> Result<reqwest::Response> {
+    let mut attempt = 0u32;
+    loop {
+        let mut request = client.post(url).json(body);
+        if let Some(key) = key {
+            request = request.bearer_auth(key);
+        }
+        let outcome = request.send().await;
+        let retryable = match &outcome {
+            Ok(response) => {
+                let code = response.status().as_u16();
+                code == 429 || (500..600).contains(&code)
+            }
+            Err(_) => true,
+        };
+        if !retryable || attempt >= retries || *remaining_requests == 0 {
+            return Ok(outcome?);
+        }
+        let wait = match &outcome {
+            Ok(response) => retry_after(response.headers()),
+            Err(_) => None,
+        }
+        .unwrap_or_else(|| Duration::from_millis(500u64 << attempt.min(6)))
+        .min(Duration::from_secs(30));
+        log.push(json!({"attempt":attempt+1,"status":outcome.as_ref().map(|r| r.status().as_u16()).ok(),"error":outcome.as_ref().err().map(|e| e.to_string()),"wait_ms":wait.as_millis() as u64}));
+        drop(outcome);
+        tokio::time::sleep(wait).await;
+        attempt += 1;
+        *remaining_requests = remaining_requests.saturating_sub(1);
+    }
+}
+
+fn retry_after(headers: &reqwest::header::HeaderMap) -> Option<Duration> {
+    headers
+        .get(reqwest::header::RETRY_AFTER)?
+        .to_str()
+        .ok()?
+        .trim()
+        .parse::<u64>()
+        .ok()
+        .map(Duration::from_secs)
+}
+
+/// Text the assistant produced in a complete response (content only).
+fn response_text(captured: &[u8], streaming: bool) -> String {
+    let mut text = String::new();
+    if streaming {
+        for data in String::from_utf8_lossy(captured)
+            .lines()
+            .filter_map(|l| l.strip_prefix("data:"))
+        {
+            if let Ok(v) = serde_json::from_str::<Value>(data.trim()) {
+                for choice in v["choices"].as_array().into_iter().flatten() {
+                    if let Some(part) = choice["delta"]["content"].as_str() {
+                        text.push_str(part);
+                    }
+                }
+            }
+        }
+    } else if let Ok(v) = serde_json::from_slice::<Value>(captured) {
+        for choice in v["choices"].as_array().into_iter().flatten() {
+            if let Some(part) = choice["message"]["content"].as_str() {
+                text.push_str(part);
+            }
+        }
+    }
+    text
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+enum Script {
+    Latin,
+    Cyrillic,
+    Greek,
+    Cjk,
+    Hangul,
+    Arabic,
+    Hebrew,
+    Indic,
+    Thai,
+    Other,
+}
+fn script(c: char) -> Option<Script> {
+    if !c.is_alphabetic() {
+        return None;
+    }
+    Some(match c as u32 {
+        0x0041..=0x024F | 0x1E00..=0x1EFF => Script::Latin,
+        0x0370..=0x03FF => Script::Greek,
+        0x0400..=0x052F => Script::Cyrillic,
+        0x0590..=0x05FF => Script::Hebrew,
+        0x0600..=0x06FF | 0x0750..=0x077F => Script::Arabic,
+        0x0900..=0x0DFF => Script::Indic,
+        0x0E00..=0x0E7F => Script::Thai,
+        0x1100..=0x11FF | 0xAC00..=0xD7AF => Script::Hangul,
+        0x3040..=0x30FF | 0x3400..=0x4DBF | 0x4E00..=0x9FFF | 0xF900..=0xFAFF => Script::Cjk,
+        _ => Script::Other,
+    })
+}
+
+/// Provider-fault detector (A04): leaked chat-template control tokens, or a
+/// large share of letters in scripts the conversation never used. Returns a
+/// short reason, or `None` for ordinary output. Model prose in another
+/// language the user wrote in is never flagged.
+pub fn degenerate_output(captured: &[u8], streaming: bool, request: &Value) -> Option<String> {
+    let text = response_text(captured, streaming);
+    let leaked = text.match_indices("<|").find_map(|(start, _)| {
+        let rest = &text[start + 2..];
+        let end = rest.find("|>")?;
+        let name = &rest[..end];
+        (!name.is_empty()
+            && name.len() <= 32
+            && name.chars().all(|c| c.is_ascii_alphanumeric() || c == '_'))
+        .then(|| format!("<|{name}|>"))
+    });
+    if let Some(token) = leaked {
+        return Some(format!("leaked template token {token}"));
+    }
+    let conversation = request["messages"].to_string();
+    let known: std::collections::HashSet<Script> =
+        conversation.chars().filter_map(script).collect();
+    let letters: Vec<Script> = text.chars().filter_map(script).collect();
+    if letters.len() < 40 {
+        return None;
+    }
+    let foreign = letters.iter().filter(|s| !known.contains(s)).count();
+    let scripts: std::collections::HashSet<&Script> = letters.iter().collect();
+    (foreign * 10 > letters.len() * 3 && scripts.len() >= 2).then(|| {
+        format!(
+            "{}% of letters in scripts absent from the conversation",
+            foreign * 100 / letters.len()
+        )
+    })
 }

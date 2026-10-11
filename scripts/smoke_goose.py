@@ -21,6 +21,7 @@ SECRET = "alt-fixture-key-" + os.urandom(12).hex()
 os.environ["ALT_SMOKE_KEY"] = SECRET
 MODEL = "alt-protocol-fixture"
 STALL_STARTED = threading.Event()
+GARBAGE_SENT = []
 STALL_RELEASE = threading.Event()
 
 
@@ -64,7 +65,13 @@ class Provider(BaseHTTPRequestHandler):
             STALL_RELEASE.wait(timeout=15)
             return
         tool_results = [m for m in messages if m["role"] == "tool"]
-        if any(m["role"] == "user" and "CUTOFF_FIXTURE" in str(m.get("content")) for m in messages) and not tool_results:
+        if any(m["role"] == "user" and "GARBAGE_FIXTURE" in str(m.get("content")) for m in messages):
+            # A04: the first reply is provider garbage with leaked template tokens.
+            text = "Clean answer after resend" if GARBAGE_SENT else "<|open|>垃圾 мусор 函数<|close|> λ"
+            GARBAGE_SENT.append(True)
+            message = {"role": "assistant", "content": text}
+            finish = "stop"
+        elif any(m["role"] == "user" and "CUTOFF_FIXTURE" in str(m.get("content")) for m in messages) and not tool_results:
             # A01: every output token went to reasoning; no answer, no tool call.
             message = {"role": "assistant", "content": "", "reasoning_content": "Thinking about the files in detail before acting"}
             finish = "length"
@@ -177,6 +184,13 @@ def main():
                 assert body.get('think') is False and body.get('reasoning_effort') == 'none', body
             else:
                 assert body.get('reasoning_effort') == 'none' and 'think' not in body, body
+            run('inference', '--output-guard', 'on')
+            guarded = run('run', 'GARBAGE_FIXTURE say hello', '--json')
+            assert 'Clean answer after resend' in guarded and '<|open|>' not in guarded, guarded[-4000:]
+            session = [json.loads(line) for line in guarded.splitlines()][0]['session']['id']
+            assert '<|open|>' not in run('export', session), "Discarded provider output reached the conversation"
+            assert len(GARBAGE_SENT) == 2, GARBAGE_SENT
+            run('inference', '--output-guard', 'auto')
             cancellation = subprocess.Popen([alt, "--data-dir", str(root / "state"), "--engine", goose,
                                               "run", "STALL_FIXTURE", "--json"], cwd=workspace,
                                              stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)

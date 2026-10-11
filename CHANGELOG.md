@@ -2,6 +2,19 @@
 
 ## Unreleased — 0.7 (work orders in docs/WORK_ORDERS_0.7.md)
 
+### A04 hosted-provider resilience
+
+- Retries for HTTP 429, 5xx and dropped connections with capped exponential
+  backoff that honours `Retry-After` (default 2, 0–8). Each retry counts as a model
+  call against the shared allowance and is logged in the receipt.
+- Output guard (automatic for remote servers, on or off): the relay holds each
+  response, detects leaked chat-template tokens (`<|…|>`) or mixed-script noise in
+  scripts the conversation never used, discards it once and resends. The discarded
+  bytes are kept as evidence and recorded as a provider fault, never as model
+  output; a second fault returns a clear error. Tokens stay charged.
+- Model output and sampling → *Provider retries* and *Output guard*, Ctrl+P →
+  *Hosted output guard*, and `alt inference --retries N --output-guard auto|on|off`.
+
 ### A03 provider presets and hosted discovery (+ B03 authenticated Ollama)
 
 - Presets fill the endpoint, key-variable name and thinking dialect: NVIDIA NIM,

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """New small-model settings and effort choices in a real PTY; no model inference."""
-import argparse,json,subprocess,tempfile,tomllib
+import time, argparse,json,subprocess,tempfile,tomllib
 from pathlib import Path
 from terminal_harness import Terminal
 
@@ -14,6 +14,11 @@ def main():
         def choose(index):term.send(b'\x1b[B'*index+b'\r')
         def settings():term.send(b'\x10');term.wait('Command palette');term.send(b'setting: model and runtime');term.wait('▸ Setting: Model and runtime');term.send(b'\r');term.wait('Model and runtime settings')
         def preferences():return tomllib.loads((state/'preferences.toml').read_text())
+        def saved(key,value):
+            # The status line can still show the previous identical notice; poll the file.
+            end=time.monotonic()+10
+            while time.monotonic()<end and preferences().get(key)!=value:time.sleep(0.1)
+            return preferences().get(key)==value
         def allocation():return next(iter(tomllib.loads((state/'config.toml').read_text())['profiles'].values()))['inference']
         try:
             term.wait('Alt');settings();choose(5);term.wait('Model output and sampling');choose(0);term.wait('Set Total output tokens');term.send(b'\x15');term.paste('600');term.send(b'\r');term.wait('Model allocation saved');assert allocation()['output_tokens']==600
@@ -21,8 +26,8 @@ def main():
             settings();choose(5);term.wait('Model output and sampling');choose(3);term.wait('Set Temperature');term.send(b'\x15\r');term.wait('Model allocation saved');assert 'temperature' not in allocation()
             settings();choose(4);term.wait('Task workflow');choose(1);term.wait('Task workflow saved');assert preferences()['workflow']=='host'
             settings();choose(3);term.wait('Choose a task skill');choose(1);term.wait('Skill choice saved');assert preferences()['active_skill']=='python-repair'
-            term.send(b'\x10');term.wait('Command palette');term.send(b'setting: tool focus');term.wait('▸ Setting: Tool focus');term.send(b'\r');term.wait('Which tools fit this task?');choose(5);term.wait('Tool focus saved');assert preferences()['tool_profile']=='compact-lines'
-            term.send(b'\x10');term.wait('Command palette');term.send(b'setting: tool focus');term.wait('▸ Setting: Tool focus');term.send(b'\r');term.wait('Which tools fit this task?');choose(4);term.wait('Tool focus saved');assert preferences()['tool_profile']=='compact'
+            term.send(b'\x10');term.wait('Command palette');term.send(b'setting: tool focus');term.wait('▸ Setting: Tool focus');term.send(b'\r');term.wait('Which tools fit this task?');choose(5);term.wait('Tool focus saved');assert saved('tool_profile','compact-lines')
+            term.send(b'\x10');term.wait('Command palette');term.send(b'setting: tool focus');term.wait('▸ Setting: Tool focus');term.send(b'\r');term.wait('Which tools fit this task?');choose(4);term.wait('Tool focus saved');assert saved('tool_profile','compact')
             settings();choose(0);term.wait('Reviewed instruction improvements');term.wait('Activation requires');term.send(b'\x1b')
             settings();choose(1);term.wait('Explore independently checked candidates');term.paste('Repair the behavior');term.send(b'\r');term.wait('Choose effort');term.wait('Thorough');choose(2);term.wait('Shared candidate allowance');term.wait('Standard');term.wait('Extended');choose(3);term.wait('Shared time in seconds');term.send(b'\x15');term.paste('120');term.send(b'\r');term.wait('Shared generated tokens');term.send(b'\x1b');assert not (state/'candidates').exists()
             term.close()
