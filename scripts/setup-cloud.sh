@@ -51,7 +51,7 @@ if not binary.exists() or hashlib.sha256(binary.read_bytes()).hexdigest() != bin
 PY
 
 cd "$repo_dir"
-python3 -m pip install --target /workspace/.alt-tools/python -r requirements-dev.txt --upgrade
+python3 -m pip install --require-hashes --target /workspace/.alt-tools/python -r requirements-dev.txt --upgrade
 cargo build --locked
 cargo test --locked
 cargo fmt --all --check

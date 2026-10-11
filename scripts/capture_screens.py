@@ -34,6 +34,8 @@ def palette(query):
 
 
 PLANS = {
+    "a07": [("wait", "Alt"), ("send", b"\x1b2"), ("wait", "Workspace"), ("send", b"tools"), ("send", b"\r"),
+            ("wait", "Review this action"), ("shot", "terminal-approval"), ("send", b"\x0e")],
     "board": [("wait", "Alt"), ("send", b"\x10"), ("wait", "Command palette"), ("send", b"setting:"), ("wait", "Setting: Context"),
               ("shot", "palette-settings"), ("send", b"\x1b"), *palette("setting: tool focus"), ("wait", "Which tools fit"),
               ("shot", "palette-setting-opened"), ("send", b"\x1b")],

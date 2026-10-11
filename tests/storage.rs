@@ -72,6 +72,7 @@ fn history_retention_archives_first_and_restores_without_overwriting() {
                     api_key_env: None,
                     local_model: None,
                     inference: None,
+                    runtime_key: None,
                 },
             })
             .unwrap();
@@ -134,6 +135,7 @@ fn retention_never_deletes_a_conversation_that_exceeds_restore_limits() {
                 api_key_env: None,
                 local_model: None,
                 inference: None,
+                runtime_key: None,
             },
         })
         .unwrap();

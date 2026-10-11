@@ -510,6 +510,9 @@ impl Project {
                 } else {
                     format!("{base}/{name}")
                 };
+                if p.is_protected(&path) {
+                    continue;
+                }
                 let kind = entry.file_type()?;
                 if kind.is_symlink() {
                     continue;

@@ -31,6 +31,9 @@ pub struct Profile {
     /// Missing older settings are materialized on the next save, preserving their allocation.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub inference: Option<crate::inference::Settings>,
+    /// Per-launch key of an Alt-owned runtime. Never saved.
+    #[serde(skip)]
+    pub runtime_key: Option<String>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, clap::ValueEnum)]
@@ -79,6 +82,9 @@ impl Profile {
     }
 
     pub fn key(&self) -> Result<Option<String>> {
+        if let Some(key) = &self.runtime_key {
+            return Ok(Some(key.clone()));
+        }
         self.api_key_env
             .as_ref()
             .map(|name| {

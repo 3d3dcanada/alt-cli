@@ -312,12 +312,16 @@ fn activity_column(frame: &mut Frame, app: &mut App, area: Rect) {
                 MUTED(),
             ),
             line(
-                if app.trust_session {
-                    "Tools trusted for this session"
-                } else {
-                    "Tool actions request approval"
+                match (app.trust_session, app.trust_host) {
+                    (_, true) => "Project and terminal actions trusted this session",
+                    (true, false) => "Project actions trusted; terminal still asks",
+                    _ => "Tool actions request approval",
                 },
-                if app.trust_session { WARN() } else { MUTED() },
+                if app.trust_session || app.trust_host {
+                    WARN()
+                } else {
+                    MUTED()
+                },
             ),
         ],
     );
@@ -2023,12 +2027,17 @@ fn permission_modal(frame: &mut Frame, app: &mut App, area: Rect) {
             .block(block(" Proposed action / file changes ", false)),
         rows[1],
     );
+    let host = crate::toolbox::ApprovalScope::of(params) == crate::toolbox::ApprovalScope::Host;
     paragraph(
         frame,
         rows[2],
         line(
-            "Allow this session accepts future tool requests in this conversation until you reconnect. Reject is selected initially. Ctrl+Y allows once; Ctrl+N rejects.",
-            MUTED(),
+            if host {
+                "TERMINAL / EXTERNAL TOOL: runs with your own permissions. \"Allow terminal this session\" is separate from project trust and lasts until you reconnect. Ctrl+Y allows once; Ctrl+N rejects."
+            } else {
+                "Allow this session accepts future project actions (edits, checks, skill helpers) until you reconnect; terminal still asks. Ctrl+Y allows once; Ctrl+N rejects."
+            },
+            if host { WARN() } else { MUTED() },
         ),
     );
     let cols = Layout::horizontal([
@@ -2037,10 +2046,12 @@ fn permission_modal(frame: &mut Frame, app: &mut App, area: Rect) {
         Constraint::Percentage(40),
     ])
     .split(rows[3]);
-    for (i, label) in ["Reject", "Allow once", "Allow this session"]
-        .iter()
-        .enumerate()
-    {
+    let blanket = if host {
+        "Allow terminal this session"
+    } else {
+        "Allow this session"
+    };
+    for (i, label) in ["Reject", "Allow once", blanket].iter().enumerate() {
         frame.render_widget(
             Paragraph::new(format!(" {label} ")).style(
                 Style::default()
@@ -2493,6 +2504,7 @@ mod tests {
                     api_key_env: None,
                     local_model: None,
                     inference: None,
+                    runtime_key: None,
                 },
             )
             .unwrap();

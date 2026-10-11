@@ -149,6 +149,8 @@ alt models search 'Qwen3 4B heretic'
 alt models import /path/to/model.gguf --uncensored --use
 alt run 'Inspect this project and explain its test commands'
 alt --access trusted run 'Run this project’s checks' --allow-tools --json
+# terminal commands and external tools need their own flag:
+alt --access trusted run 'Install and test' --allow-terminal --json
 alt state backup /path/outside-alt-state/backup.tar.gz
 ```
 

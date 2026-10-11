@@ -143,7 +143,7 @@ async fn worker(
                 let _ = tx.try_send(Update::Progress(p));
             })
             .await?;
-        profile.endpoint = runtime.endpoint.clone();
+        runtime.attach(&mut profile);
         local_runtime = Some(runtime);
     }
     let _ = updates

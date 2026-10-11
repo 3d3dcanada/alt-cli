@@ -264,9 +264,15 @@ enum Action {
         prompt: String,
         #[arg(long)]
         resume: Option<String>,
-        /// Approve requested actions within the selected access profile for this invocation.
+        /// Approve project actions (checkpointed edits, configured checks, skill helpers)
+        /// within the selected access profile for this invocation. Terminal and
+        /// external tools still need --allow-terminal.
         #[arg(long)]
         allow_tools: bool,
+        /// Also approve terminal commands and external MCP tools (host permissions;
+        /// they still require Full access). Implies --allow-tools; never implied by it.
+        #[arg(long)]
+        allow_terminal: bool,
         /// Emit structured events instead of readable text.
         #[arg(long)]
         json: bool,
@@ -1049,7 +1055,15 @@ async fn run() -> Result<()> {
                     alt_cli::extensions::save(&root, &c)?;
                     json!({"saved":true,"enabled":false})
                 }
-                ExtensionAction::Check { name } => alt_cli::extensions::probe(&root, &name).await?,
+                ExtensionAction::Check { name } => {
+                    // Same rule as the TUI: discovery starts a host program or contacts
+                    // a remote server, so it needs the effective access to be Full.
+                    alt_cli::extensions::require_full_access(
+                        args.access
+                            .unwrap_or(Preferences::load(&root)?.access_policy),
+                    )?;
+                    alt_cli::extensions::probe(&root, &name).await?
+                }
                 ExtensionAction::Select { name, tools } => {
                     alt_cli::extensions::select(&root, &name, tools)?;
                     json!({"saved":true,"scope":"Selected tools are available in Full access after reconnect"})
@@ -1141,6 +1155,7 @@ async fn run() -> Result<()> {
                     api_key_env,
                     local_model: None,
                     inference: None,
+                    runtime_key: None,
                 },
             )?;
             println!("Created {}", root.join("config.toml").display());
@@ -1212,6 +1227,9 @@ async fn run() -> Result<()> {
         "Agent engine missing. Open Alt and install it from Home, or pass --engine PATH",
     )?;
     let cwd = std::env::current_dir()?.canonicalize()?;
+    if let Some(warning) = alt_cli::project::broad_root_warning(&cwd) {
+        eprintln!("Warning: {warning}");
+    }
     if matches!(command, Action::Doctor) {
         let mut profile = profile.clone();
         let _local = if profile.local_model.is_some() {
@@ -1223,7 +1241,7 @@ async fn run() -> Result<()> {
                 |_| {},
             )
             .await?;
-            profile.endpoint = local.endpoint.clone();
+            local.attach(&mut profile);
             Some(local)
         } else {
             None
@@ -1315,7 +1333,7 @@ async fn run() -> Result<()> {
             |_| {},
         )
         .await?;
-        effective.endpoint = local.endpoint.clone();
+        local.attach(&mut effective);
         Some(local)
     } else {
         None
@@ -1395,6 +1413,7 @@ async fn run() -> Result<()> {
         Action::Run {
             prompt,
             allow_tools,
+            allow_terminal,
             json,
             timeout,
             ..
@@ -1404,10 +1423,10 @@ async fn run() -> Result<()> {
                 &store,
                 &session,
                 &prompt,
-                if allow_tools {
-                    Approval::Allow
-                } else {
-                    Approval::Deny
+                match (allow_tools, allow_terminal) {
+                    (_, true) => Approval::AllowWithTerminal,
+                    (true, false) => Approval::Allow,
+                    (false, false) => Approval::Deny,
                 },
                 json,
                 timeout,
@@ -1542,6 +1561,7 @@ async fn model_action(root: &std::path::Path, command: ModelAction) -> Result<()
                 api_key_env: None,
                 local_model: Some(artifact.id.clone()),
                 inference: None,
+                runtime_key: None,
             },
         )?;
         config.default_profile = name;
@@ -1554,7 +1574,10 @@ async fn model_action(root: &std::path::Path, command: ModelAction) -> Result<()
 #[derive(Clone, Copy)]
 enum Approval {
     Deny,
+    /// Project-scope actions only (checkpointed edits, configured checks, skill helpers).
     Allow,
+    /// Project and host scope (terminal and external tools), each explicitly opted in.
+    AllowWithTerminal,
     Ask,
 }
 
@@ -1651,7 +1674,11 @@ async fn handle_event(
             } else {
                 match allow {
                     Approval::Deny => false,
-                    Approval::Allow => true,
+                    Approval::Allow => {
+                        alt_cli::toolbox::ApprovalScope::of(&params)
+                            == alt_cli::toolbox::ApprovalScope::Project
+                    }
+                    Approval::AllowWithTerminal => true,
                     Approval::Ask => {
                         println!(
                             "\nTool request: {}\n{}\nAllow once? [y/N]",
@@ -1683,7 +1710,7 @@ async fn handle_event(
                     if allow {
                         "allowed once"
                     } else {
-                        "denied; use TUI or --allow-tools"
+                        "denied; use the TUI, --allow-tools (project actions) or --allow-terminal (terminal/external tools)"
                     }
                 );
             }

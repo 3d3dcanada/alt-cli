@@ -719,6 +719,7 @@ impl App {
             api_key_env: (!key.is_empty()).then(|| key.into()),
             local_model: None,
             inference: None,
+            runtime_key: None,
         };
         profile.validate()?;
         ensure!(
@@ -801,7 +802,7 @@ impl App {
                 KeyCode::Enter => return self.test_form(),
                 KeyCode::Char('m') if ctrl => {
                     let draft = self.draft(form)?;
-                    self.dialog=Some(Dialog::Input{title:"Enter a model identifier".into(),hint:"Use the exact name from your server. This saves without checking its inventory.".into(),editor:Editor::default(),action:InputAction::ManualModel(draft),multiline:false});
+                    self.dialog=Some(Dialog::Input{title:"Enter a model identifier".into(),hint:"Use the exact name from your server. This saves without checking its inventory.".into(),editor:Editor::default(),action:InputAction::ManualModel(Box::new(draft)),multiline:false});
                     return Ok(());
                 }
                 _ => form.fields[form.focus].key(key, false),

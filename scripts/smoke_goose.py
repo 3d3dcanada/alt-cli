@@ -131,7 +131,10 @@ def main():
             denied = [json.loads(line) for line in run("run", "Run fixture check", "--json").splitlines()]
             assert not (workspace / "fixture-evidence.txt").exists(), "Unapproved shell tool executed"
             assert any(e["type"] == "permission_decision" and not e["allow"] for e in denied), json.dumps(denied)[-10000:]
-            allowed = [json.loads(line) for line in run("run", "Run fixture check", "--allow-tools", "--json").splitlines()]
+            project_only = [json.loads(line) for line in run("run", "Run fixture check", "--allow-tools", "--json").splitlines()]
+            assert not (workspace / "fixture-evidence.txt").exists(), "--allow-tools approved a terminal command"
+            assert any(e["type"] == "permission_decision" and not e["allow"] for e in project_only), json.dumps(project_only)[-10000:]
+            allowed = [json.loads(line) for line in run("run", "Run fixture check", "--allow-tools", "--allow-terminal", "--json").splitlines()]
             assert (workspace / "fixture-evidence.txt").read_text() == "ALT_TOOL_OK"
             assert any(e["type"] == "permission_decision" and e["allow"] for e in allowed)
             assert any(e["type"] == "update" and "ALT_TOOL_OK" in json.dumps(e) for e in allowed)
@@ -143,7 +146,7 @@ def main():
             connection=root/'mcp.json'
             connection.write_text(json.dumps({"name":"fixture_ext","transport":{"type":"stdio","command":"python3","args":[str(Path(__file__).resolve().parents[1]/'tests/fixtures/mcp_server.py')]},"enabled":False,"selected_tools":[]}))
             run('extensions','add',str(connection));run('extensions','check','fixture_ext');run('extensions','select','fixture_ext','counter')
-            external=[json.loads(line) for line in run('run','EXTERNAL_FIXTURE call the counter tool','--allow-tools','--json').splitlines()]
+            external=[json.loads(line) for line in run('run','EXTERNAL_FIXTURE call the counter tool','--allow-terminal','--json').splitlines()]
             assert any(e['type']=='permission_decision' and e['allow'] for e in external),external
             assert any(e['type']=='update' and 'Observed tool result:' in json.dumps(e) and '1' in json.dumps(e) for e in external),external
             run('extensions','disable','fixture_ext')
