@@ -614,6 +614,11 @@ impl App {
                 return self.dialog_key(KeyEvent::new(KeyCode::Char('s'), KeyModifiers::CONTROL));
             }
             "test-form" => return self.test_form(),
+            "manual-model" => {
+                if let Some(Dialog::Connection(form)) = self.dialog.clone() {
+                    return self.manual_model(&form);
+                }
+            }
             _ => {}
         }
         Ok(())
@@ -709,6 +714,23 @@ impl App {
             let models = models::inventory(&draft.profile).await?;
             Ok(JobResult::Tested(draft, models))
         })
+    }
+    fn manual_model(&mut self, form: &ConnectionForm) -> Result<()> {
+        let draft = self.draft(form)?;
+        let current = if form.original.is_some() {
+            draft.profile.model.clone()
+        } else {
+            String::new()
+        };
+        self.dialog = Some(Dialog::Input {
+            title: "Enter a model identifier".into(),
+            hint: "Use the exact name from your server. This saves without checking its inventory."
+                .into(),
+            editor: Editor::new(current),
+            action: InputAction::ManualModel(Box::new(draft)),
+            multiline: false,
+        });
+        Ok(())
     }
     pub(super) fn draft(&self, form: &ConnectionForm) -> Result<ConnectionDraft> {
         let key = form.fields[2].text.trim();
@@ -832,10 +854,11 @@ impl App {
                 KeyCode::Tab | KeyCode::Down => form.focus = (form.focus + 1) % 3,
                 KeyCode::BackTab | KeyCode::Up => form.focus = (form.focus + 2) % 3,
                 KeyCode::Enter => return self.test_form(),
-                KeyCode::Char('m') if ctrl => {
-                    let draft = self.draft(form)?;
-                    self.dialog=Some(Dialog::Input{title:"Enter a model identifier".into(),hint:"Use the exact name from your server. This saves without checking its inventory.".into(),editor:Editor::default(),action:InputAction::ManualModel(Box::new(draft)),multiline:false});
-                    return Ok(());
+                // B07: Ctrl+M arrives as Enter in ordinary terminals; Alt+M is distinct.
+                KeyCode::Char('m') | KeyCode::Char('M')
+                    if ctrl || key.modifiers.contains(KeyModifiers::ALT) =>
+                {
+                    return self.manual_model(form);
                 }
                 _ => form.fields[form.focus].key(key, false),
             },

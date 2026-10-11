@@ -83,6 +83,9 @@
 - B06 (audit A10): an explicitly selected llama-server or agent engine is
   authoritative. If it is missing, Alt says so and names the path instead of
   silently using the managed or PATH copy.
+- B07 (audit A18): manual model-ID entry moved from Ctrl+M (sent as Enter by most
+  terminals) to Alt+M and a *Type model ID* button; allowance recovery was already in
+  the palette (N06).
 
 ### A10 harness labels and matched re-run script (prepared; owner PC runs it)
 
