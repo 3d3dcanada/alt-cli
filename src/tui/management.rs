@@ -206,6 +206,43 @@ impl App {
             );
             return Ok(());
         }
+        if action == "motion" {
+            let current = self.motion.level;
+            let items = crate::tui::motion::Level::ALL
+                .iter()
+                .map(|level| {
+                    (
+                        format!(
+                            "{}{}",
+                            level.label(),
+                            if *level == current {
+                                "  · current"
+                            } else {
+                                ""
+                            }
+                        ),
+                        level.describe().to_string(),
+                        "motion-select".into(),
+                        json!({"level":level.saved_name()}),
+                    )
+                })
+                .collect();
+            self.manager_menu(
+                "Motion",
+                "How much the interface animates. Input is never delayed; Off draws every frame in its final state.",
+                items,
+            );
+            return Ok(());
+        }
+        if action == "motion-select" {
+            let name = state["level"].as_str().context("Motion level")?;
+            let level = crate::tui::motion::Level::from_name(name);
+            self.preferences.motion = level.saved_name().to_owned();
+            self.preferences.save(&self.root)?;
+            self.motion.set_level(level);
+            self.notify(format!("Motion: {}. {}", level.label(), level.describe()));
+            return Ok(());
+        }
         if action == "theme-select" {
             let name = state["name"].as_str().context("Theme")?;
             self.theme = crate::tui::theme::by_name(name);

@@ -196,6 +196,9 @@ pub struct Preferences {
     /// offered them; nothing is deleted.
     #[serde(default)]
     pub skills_disabled: Vec<String>,
+    /// Interface motion: full | reduced | off. `ALT_MOTION` overrides it.
+    #[serde(default = "default_motion")]
+    pub motion: String,
 }
 
 impl Default for Preferences {
@@ -217,6 +220,7 @@ impl Default for Preferences {
             theme: crate::tui::theme::DEFAULT.to_owned(),
             layout: default_layout(),
             skills_disabled: Vec::new(),
+            motion: default_motion(),
         }
     }
 }
@@ -277,6 +281,10 @@ impl Preferences {
 
 fn default_theme() -> String {
     crate::tui::theme::DEFAULT.to_owned()
+}
+
+fn default_motion() -> String {
+    "full".to_owned()
 }
 
 fn default_layout() -> String {

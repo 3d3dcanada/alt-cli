@@ -1,6 +1,7 @@
 mod app;
 mod input;
 mod keys;
+pub(crate) mod motion;
 mod task;
 pub(crate) mod theme;
 mod view;

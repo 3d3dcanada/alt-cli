@@ -2,7 +2,7 @@
 // the per-frame theme instead of hard-coded values.
 #![allow(non_snake_case)]
 
-use super::{app::*, input::Editor, theme};
+use super::{app::*, input::Editor, motion, theme};
 use crate::{display_text, models::human_bytes};
 use ratatui::{
     Frame,
@@ -114,10 +114,25 @@ fn buttons(frame: &mut Frame, app: &mut App, area: Rect, items: &[(&str, &'stati
     }
 }
 
+/// A smooth horizontal bar: whole cells plus one eighth-block partial cell.
+pub(crate) fn meter_bar(fill: f64, width: usize) -> String {
+    const PARTS: [char; 8] = [' ', '▏', '▎', '▍', '▌', '▋', '▊', '▉'];
+    let eighths = (fill.clamp(0.0, 1.0) * width as f64 * 8.0).round() as usize;
+    let full = (eighths / 8).min(width);
+    let mut bar = "█".repeat(full);
+    if full < width {
+        let part = eighths % 8;
+        bar.push(if part == 0 { '·' } else { PARTS[part] });
+        bar.push_str(&"·".repeat(width - full - 1));
+    }
+    bar
+}
+
 pub fn draw(frame: &mut Frame, app: &mut App) {
     let area = frame.area();
     theme::set(*app.theme);
     app.frame = app.frame.wrapping_add(1);
+    app.motion.tick();
     app.hits.clear();
     frame.render_widget(
         Block::default().style(Style::default().bg(BG()).fg(TEXT())),
@@ -168,12 +183,11 @@ pub fn draw(frame: &mut Frame, app: &mut App) {
     // second line animates while a task runs so the state is visible at a glance.
     let meter = match (app.context_used, app.context_size) {
         (Some(used), Some(size)) if size > 0 => {
-            let width = 10usize;
-            let filled = ((used.min(size) as f64 / size as f64) * width as f64).round() as usize;
+            // The bar glides to each new reading in eighth-cell steps.
+            let fill = app.motion.glide("ctx", used.min(size) as f64 / size as f64);
             format!(
-                " ctx ▕{}{}▏ {}K/{}K",
-                "▮".repeat(filled.min(width)),
-                "·".repeat(width.saturating_sub(filled.min(width))),
+                " ctx ▕{}▏ {}K/{}K",
+                meter_bar(fill, 10),
                 used / 1024,
                 size / 1024
             )
@@ -188,13 +202,13 @@ pub fn draw(frame: &mut Frame, app: &mut App) {
                 "Waiting for your approval"
             },
             WARN(),
-            th.spinner[(app.frame as usize) % th.spinner.len()],
+            th.spinner[motion::spin(th.spinner.len())],
         )
     } else if app.connecting {
         (
             "Connecting…",
             WARN(),
-            th.spinner[(app.frame as usize) % th.spinner.len()],
+            th.spinner[motion::spin(th.spinner.len())],
         )
     } else if app.connected {
         ("Connected · saved locally", GOOD(), "")
@@ -534,6 +548,13 @@ fn footer(frame: &mut Frame, app: &mut App, area: Rect) {
                 job.progress.stage,
                 job.started.elapsed().as_secs()
             )
+        };
+        // Progress glides between reports; a fresh job starts from empty.
+        let ratio = if ratio <= 0.0 {
+            app.motion.glide("job", 0.0);
+            0.0
+        } else {
+            app.motion.glide("job", ratio)
         };
         let progress = Rect::new(inner.x, inner.y, inner.width.saturating_sub(10), 1);
         frame.render_widget(
@@ -1016,7 +1037,7 @@ fn chat(frame: &mut Frame, app: &mut App, area: Rect) {
             }
         }
         if app.busy {
-            let frame_index = (app.frame as usize) % th.spinner.len();
+            let frame_index = motion::spin(th.spinner.len());
             lines.push(Line::from(vec![
                 Span::styled(format!("{} ", th.spinner[frame_index]), style(WARN())),
                 Span::styled(
@@ -2572,6 +2593,52 @@ mod tests {
             })
             .collect::<Vec<_>>()
             .join("\n")
+    }
+    #[test]
+    fn meters_fill_in_eighth_cell_steps() {
+        assert_eq!(meter_bar(0.0, 4), "····");
+        assert_eq!(meter_bar(1.0, 4), "████");
+        assert_eq!(meter_bar(0.5, 4), "██··");
+        assert_eq!(meter_bar(0.5625, 4), "██▎·");
+        assert_eq!(meter_bar(0.59375, 4), "██▍·");
+        for step in 0..=80 {
+            assert_eq!(meter_bar(step as f64 / 80.0, 10).chars().count(), 10);
+        }
+    }
+    #[tokio::test]
+    async fn motion_is_a_saved_setting_reachable_from_settings_and_palette() {
+        let (dir, mut app) = setup();
+        assert!(App::settings_tab_indexes(0).contains(&23));
+        assert!(
+            app.palette_items()
+                .iter()
+                .any(|(label, _, _)| label.starts_with("Setting: Motion:"))
+        );
+        app.manager_action("motion", serde_json::json!({})).unwrap();
+        assert!(render(&mut app, 80, 24).contains("Reduced"));
+        app.manager_action("motion-select", serde_json::json!({"level":"reduced"}))
+            .unwrap();
+        assert_eq!(app.motion.level, motion::Level::Reduced);
+        let saved = std::fs::read_to_string(dir.path().join("preferences.toml")).unwrap();
+        assert!(saved.contains("motion = \"reduced\""), "{saved}");
+    }
+    #[tokio::test]
+    async fn adaptive_pacing_runs_fast_only_while_animating() {
+        let (_dir, mut app) = setup();
+        app.motion = motion::Motion::new(motion::Level::Full);
+        app.motion.dismiss_splash();
+        app.motion.pin(Some(0.0));
+        assert_eq!(app.motion.frame_period(), motion::IDLE_FRAME);
+        app.context_used = Some(1024);
+        app.context_size = Some(8192);
+        render(&mut app, 100, 30);
+        app.context_used = Some(6144);
+        render(&mut app, 100, 30);
+        assert_eq!(app.motion.frame_period(), motion::ACTIVE_FRAME);
+        app.motion.pin(Some(motion::GLIDE_MS + 1.0));
+        let text = render(&mut app, 100, 30);
+        assert!(text.contains("6K/8K"), "{text}");
+        assert_eq!(app.motion.frame_period(), motion::IDLE_FRAME);
     }
     #[tokio::test]
     async fn every_page_and_dialog_renders_at_supported_sizes() {
