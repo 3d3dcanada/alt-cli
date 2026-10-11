@@ -41,7 +41,52 @@ pub struct Settings {
     /// Which request fields this server understands for reasoning control.
     #[serde(default)]
     pub dialect: Dialect,
+    /// A02 open parameters. Each is an explicit choice; unset sends nothing.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub repeat_penalty: Option<f64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub presence_penalty: Option<f64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub frequency_penalty: Option<f64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub seed: Option<i64>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub stop: Vec<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub typical_p: Option<f64>,
+    /// A JSON object merged into every request last. Keys Alt owns are refused.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub extra_body: Option<String>,
+    /// Ollama only: `server-default` stops Alt sending `options.num_ctx`.
+    #[serde(default)]
+    pub ollama_context: OllamaContext,
+    /// Ollama only: how long the server keeps the model loaded (`5m`, `-1`, `0`).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub keep_alive: Option<String>,
 }
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize, clap::ValueEnum)]
+#[serde(rename_all = "kebab-case")]
+pub enum OllamaContext {
+    /// Send the profile context as `options.num_ctx`.
+    #[default]
+    Profile,
+    /// Send nothing; the server or model tag decides.
+    ServerDefault,
+}
+
+/// Request fields Alt owns. `extra_body` may not replace them.
+pub const RESERVED_BODY_KEYS: [&str; 9] = [
+    "model",
+    "messages",
+    "tools",
+    "tool_choice",
+    "stream",
+    "stream_options",
+    "max_tokens",
+    "max_completion_tokens",
+    "n",
+];
 
 /// `default | off | low | medium | high | budget:N`. Default sends nothing.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
@@ -198,7 +243,83 @@ impl Settings {
             output_parameter: OutputParameter::MaxTokens,
             thinking: Thinking::Default,
             dialect: Dialect::Auto,
+            repeat_penalty: None,
+            presence_penalty: None,
+            frequency_penalty: None,
+            seed: None,
+            stop: Vec::new(),
+            typical_p: None,
+            extra_body: None,
+            ollama_context: OllamaContext::Profile,
+            keep_alive: None,
         }
+    }
+    /// Parse and check `extra_body`: a JSON object without Alt-owned keys.
+    pub fn extra_object(&self) -> Result<serde_json::Map<String, Value>> {
+        let Some(text) = self.extra_body.as_deref().filter(|t| !t.trim().is_empty()) else {
+            return Ok(serde_json::Map::new());
+        };
+        ensure!(
+            text.len() <= 16 * 1024,
+            "Extra request JSON must be at most 16 KiB"
+        );
+        let value: Value =
+            serde_json::from_str(text).context("Extra request fields must be valid JSON")?;
+        let object = value
+            .as_object()
+            .cloned()
+            .context("Extra request fields must be a JSON object, for example {\"top_a\":0.1}")?;
+        for key in object.keys() {
+            ensure!(
+                !RESERVED_BODY_KEYS.contains(&key.as_str()),
+                "Alt owns `{key}` (model, messages, tools, streaming and output-token fields); remove it from the extra request fields"
+            );
+        }
+        Ok(object)
+    }
+    /// Sampling and penalty fields in this server's spelling, or an error naming
+    /// a choice the server cannot accept.
+    fn parameter_fields(&self, p: &Profile) -> Result<serde_json::Map<String, Value>> {
+        let dialect = self.resolved_dialect(p);
+        let mut fields = serde_json::Map::new();
+        if let Some(v) = self.presence_penalty {
+            fields.insert("presence_penalty".into(), json!(v));
+        }
+        if let Some(v) = self.frequency_penalty {
+            fields.insert("frequency_penalty".into(), json!(v));
+        }
+        if let Some(v) = self.seed {
+            fields.insert("seed".into(), json!(v));
+        }
+        if !self.stop.is_empty() {
+            fields.insert("stop".into(), json!(self.stop));
+        }
+        if let Some(v) = self.repeat_penalty {
+            let name = match dialect {
+                Dialect::LlamaCpp | Dialect::Ollama => "repeat_penalty",
+                Dialect::ChatTemplate => "repetition_penalty",
+                _ => anyhow::bail!(
+                    "This server's OpenAI-style API has no repeat penalty; use presence/frequency penalty, pick its dialect, or put the field in extra request JSON"
+                ),
+            };
+            fields.insert(name.into(), json!(v));
+        }
+        if let Some(v) = self.typical_p {
+            ensure!(
+                matches!(dialect, Dialect::LlamaCpp | Dialect::Ollama),
+                "typical_p is a llama.cpp/Ollama sampler; pick that dialect or use extra request JSON"
+            );
+            fields.insert("typical_p".into(), json!(v));
+        }
+        if p.provider == Provider::Ollama {
+            if self.ollama_context == OllamaContext::Profile {
+                fields.insert("options".into(), json!({"num_ctx": p.context_tokens}));
+            }
+            if let Some(v) = &self.keep_alive {
+                fields.insert("keep_alive".into(), json!(v));
+            }
+        }
+        Ok(fields)
     }
     pub fn resolved_dialect(&self, p: &Profile) -> Dialect {
         match self.dialect {
@@ -214,6 +335,33 @@ impl Settings {
             (Thinking::Default, Some(n)) => Thinking::Budget(n),
             (choice, _) => choice,
         }
+    }
+    /// Penalties, seed, stop, Ollama context, then `extra_body` merged last.
+    pub fn apply_parameters(
+        &self,
+        p: &Profile,
+        obj: &mut serde_json::Map<String, Value>,
+    ) -> Result<()> {
+        for key in [
+            "presence_penalty",
+            "frequency_penalty",
+            "seed",
+            "stop",
+            "repeat_penalty",
+            "repetition_penalty",
+            "typical_p",
+            "keep_alive",
+            "options",
+        ] {
+            obj.remove(key);
+        }
+        for (key, value) in self.parameter_fields(p)? {
+            obj.insert(key, value);
+        }
+        for (key, value) in self.extra_object()? {
+            obj.insert(key, value);
+        }
+        Ok(())
     }
     /// Write the reasoning fields for this dialect into a request and return a
     /// record of exactly what was sent, for the receipt.
@@ -318,6 +466,41 @@ impl Settings {
             self.top_k.is_none_or(|n| n >= -1),
             "top_k must be -1 or greater"
         );
+        for (name, value) in [
+            ("presence_penalty", self.presence_penalty),
+            ("frequency_penalty", self.frequency_penalty),
+        ] {
+            ensure!(
+                value.is_none_or(|n| n.is_finite() && (-2.0..=2.0).contains(&n)),
+                "{name} must be between -2 and 2"
+            );
+        }
+        ensure!(
+            self.repeat_penalty
+                .is_none_or(|n| n.is_finite() && (0.0..=5.0).contains(&n)),
+            "repeat penalty must be 0..5 (1 means off)"
+        );
+        ensure!(
+            self.typical_p
+                .is_none_or(|n| n.is_finite() && n > 0.0 && n <= 1.0),
+            "typical_p must be >0 and <=1"
+        );
+        ensure!(
+            self.stop.len() <= 16 && self.stop.iter().all(|s| !s.is_empty() && s.len() <= 256),
+            "Use up to 16 non-empty stop sequences of at most 256 bytes"
+        );
+        ensure!(
+            self.keep_alive.as_deref().is_none_or(|k| {
+                let k = k.trim();
+                !k.is_empty()
+                    && k.len() <= 16
+                    && k.chars()
+                        .all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '.')
+            }),
+            "keep_alive looks like 5m, 1h, 0 or -1"
+        );
+        self.extra_object()?;
+        self.parameter_fields(p)?;
         ensure!(
             self.total_generated_tokens.is_none_or(|n| n > 0)
                 && self.max_requests.is_none_or(|n| n > 0),
@@ -378,13 +561,14 @@ impl Settings {
             }
         }
         self.apply_thinking(p, obj, self.output_tokens);
+        self.apply_parameters(p, obj)?;
         if obj.get("stream") == Some(&json!(true)) {
             obj.insert("stream_options".into(), json!({"include_usage":true}));
         }
         Ok(())
     }
     pub fn accounting(&self, p: &Profile) -> Value {
-        json!({"settings":self,"input_allowance":p.context_tokens-self.output_tokens,"total_output_allowance":self.output_tokens,"reasoning_allowance":self.reasoning_tokens,"action_headroom":self.action_headroom,"accounting":"Owned runtime measures the full rendered chat/tools before forwarding when its template/tokenizer endpoints are available. Each receipt records measurement or unknown; server usage is authoritative. External native context is unqualified.","native_context":"Owned runtime configured; external server must be inspected separately","thinking_support":"Budget only affects a supported thinking parser; non-thinking checkpoints do not gain a thinking mode.","thinking_control":{"choice":String::from(self.effective_thinking()),"dialect":self.resolved_dialect(p).label(),"fields":self.resolved_dialect(p).fields()}})
+        json!({"settings":self,"input_allowance":p.context_tokens-self.output_tokens,"total_output_allowance":self.output_tokens,"reasoning_allowance":self.reasoning_tokens,"action_headroom":self.action_headroom,"accounting":"Owned runtime measures the full rendered chat/tools before forwarding when its template/tokenizer endpoints are available. Each receipt records measurement or unknown; server usage is authoritative. External native context is unqualified.","native_context":"Owned runtime configured; external server must be inspected separately","thinking_support":"Budget only affects a supported thinking parser; non-thinking checkpoints do not gain a thinking mode.","thinking_control":{"choice":String::from(self.effective_thinking()),"dialect":self.resolved_dialect(p).label(),"fields":self.resolved_dialect(p).fields()},"request_parameters":self.parameter_fields(p).unwrap_or_default(),"extra_body":self.extra_object().unwrap_or_default()})
     }
 }
 
@@ -459,6 +643,10 @@ pub struct Status {
     /// Responses on this connection that ended in a reasoning-only cutoff.
     #[serde(default)]
     pub reasoning_cutoffs: u32,
+    /// Ollama only: the context the loaded model actually uses, read from
+    /// `/api/ps` after a response. `None` until measured or when not reported.
+    #[serde(default)]
+    pub ollama_context: Option<u64>,
 }
 impl Status {
     fn new(p: &Profile) -> Self {
@@ -475,6 +663,7 @@ impl Status {
             action_headroom: s.action_headroom,
             reasoning_allowance: s.reasoning_tokens,
             reasoning_cutoffs: 0,
+            ollama_context: None,
         }
     }
 }
@@ -733,6 +922,25 @@ pub fn reasoning_cutoff(raw: &[u8], streaming: bool) -> bool {
     }
     length && reasoning && !answer
 }
+/// Read the loaded context of `model` from Ollama's `/api/ps`.
+pub async fn ollama_loaded_context(
+    client: &reqwest::Client,
+    p: &Profile,
+    key: Option<&str>,
+) -> Option<u64> {
+    let mut request = client
+        .get(format!("{}/api/ps", p.endpoint.trim_end_matches('/')))
+        .timeout(Duration::from_secs(3));
+    if let Some(key) = key {
+        request = request.bearer_auth(key);
+    }
+    let value = bounded_json(request.send().await.ok()?).await.ok()?;
+    value["models"].as_array()?.iter().find_map(|m| {
+        (m["name"].as_str() == Some(&p.model) || m["model"].as_str() == Some(&p.model))
+            .then(|| m["context_length"].as_u64())
+            .flatten()
+    })
+}
 pub fn cost(evidence: &Path) -> Result<Value> {
     let mut requests = 0u32;
     let mut charged = 0u64;
@@ -848,6 +1056,10 @@ async fn serve(
             .context("Chat request must be an object")?,
         allowance,
     );
+    // Extra request fields stay last, after the per-call thinking allocation.
+    for (key, value) in settings.extra_object()? {
+        body[key] = value;
+    }
     // Measure the actual allocated body, including any reduced thinking budget.
     // Input rejection leaves the shared reservation untouched.
     live_status.send_modify(|s| s.stage = Stage::MeasuringInput);
@@ -966,6 +1178,11 @@ async fn serve(
     let complete =
         status.is_success() && !truncated && response_complete(&captured, body["stream"] == true);
     let cutoff = complete && reasoning_cutoff(&captured, body["stream"] == true);
+    let ollama_context = if complete && p.provider == Provider::Ollama {
+        ollama_loaded_context(client, p, key).await
+    } else {
+        None
+    };
     let generated = usage
         .as_ref()
         .and_then(|u| u["completion_tokens"].as_u64())
@@ -978,7 +1195,7 @@ async fn serve(
     crate::config::atomic_write(
         &evidence.join(format!("{id}-receipt.json")),
         &serde_json::to_vec(
-            &json!({"complete":complete,"status":status.as_u16(),"input_accounting":input,"response_sha256":crate::project::digest(&captured),"response_truncated":truncated,"request_sha256":crate::project::digest(&serde_json::to_vec(&body)?),"usage":usage,"generated_tokens":generated,"charged_generated_tokens":charged,"allowance":allowance,"provider_budget_violation":charged>allowance as u64,"thinking":thinking_sent,"reasoning_cutoff":cutoff}),
+            &json!({"complete":complete,"status":status.as_u16(),"input_accounting":input,"response_sha256":crate::project::digest(&captured),"response_truncated":truncated,"request_sha256":crate::project::digest(&serde_json::to_vec(&body)?),"usage":usage,"generated_tokens":generated,"charged_generated_tokens":charged,"allowance":allowance,"provider_budget_violation":charged>allowance as u64,"thinking":thinking_sent,"reasoning_cutoff":cutoff,"ollama_loaded_context":ollama_context}),
         )?,
     )?;
     live_status.send_modify(|s| {
@@ -990,6 +1207,9 @@ async fn serve(
         }
         if cutoff {
             s.reasoning_cutoffs += 1;
+        }
+        if ollama_context.is_some() {
+            s.ollama_context = ollama_context;
         }
         s.stage = if !complete {
             Stage::Interrupted

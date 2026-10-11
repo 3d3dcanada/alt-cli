@@ -175,7 +175,8 @@ impl Engine {
                 // but Ollama 0.35's OpenAI handler only accepts top-level max_tokens.
                 // Use the standard compatible client for chat, retaining native
                 // Ollama inventory/evaluation elsewhere and the exact selected tag.
-                // Native context remains a server/tag setting, unlike Alt's budget.
+                // The relay replaces engine options with only the selected
+                // options.num_ctx (A02) and reads the loaded context from /api/ps.
                 command
                     .env("GOOSE_PROVIDER", "openai")
                     .env("OPENAI_BASE_URL", &relay.endpoint);

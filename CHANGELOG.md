@@ -2,6 +2,23 @@
 
 ## Unreleased — 0.7 (work orders in docs/WORK_ORDERS_0.7.md)
 
+### A02 open parameter surface
+
+- Request parameters per connection: repeat penalty (spelled per server),
+  presence/frequency penalty, seed, stop sequences, typical-p, and an extra
+  request JSON object merged last. Alt-owned keys (`model`, `messages`, `tools`,
+  `tool_choice`, `stream`, `stream_options`, output-token fields, `n`) are refused.
+- Ollama receives `options.num_ctx` from the connection context and an optional
+  `keep_alive` unless *server default* is chosen; Alt reads the loaded context back
+  from `/api/ps` and says when the server ignored it.
+- Owned llama-server: mmproj, MoE-on-CPU layers, tensor override and split, main
+  GPU, RoPE/YaRN scaling, mlock, no-mmap, chat-template file, draft model for
+  speculative decoding, and `extra_args` (binding, key, model, alias and context
+  flags refused). The argv comes from one pure function (`runtime::server_args`).
+- TUI: Settings → Models → *Advanced parameters* and Ctrl+P, with labelled fields
+  and a raw JSON view of the exact request fields and runtime argv. CLI:
+  `alt params set|unset|show`.
+
 ### A01 reasoning control and thinking-cutoff recovery
 
 - One **Thinking** setting (`default | off | low | medium | high | budget:N`),

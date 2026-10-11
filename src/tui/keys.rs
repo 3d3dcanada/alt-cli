@@ -666,6 +666,7 @@ impl App {
             17 => return self.manager_action("tools-focus", serde_json::json!({})),
             18 => return self.manager_action("qualify-preview", serde_json::json!({})),
             19 => return self.manager_action("inference-thinking", serde_json::json!({})),
+            20 => return self.manager_action("params-menu", serde_json::json!({})),
             12 => return self.manager_action("manage-tools", serde_json::json!({})),
             13 => return self.manager_action("manage-storage", serde_json::json!({})),
             14 => return self.manager_action("manage-models", serde_json::json!({})),
@@ -816,7 +817,7 @@ impl App {
                 KeyCode::Up => *selected = selected.saturating_sub(1),
                 KeyCode::Down => *selected = (*selected + 1).min(models.len().saturating_sub(1)),
                 KeyCode::Enter => {
-                    let mut draft = draft.clone();
+                    let mut draft = (**draft).clone();
                     draft.profile.model =
                         models.get(*selected).context("Select a model")?.id.clone();
                     return self.save_connection(draft);

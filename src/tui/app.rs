@@ -253,7 +253,7 @@ pub enum Dialog {
     },
     Connection(ConnectionForm),
     PickModel {
-        draft: ConnectionDraft,
+        draft: Box<ConnectionDraft>,
         models: Vec<models::ServerModel>,
         selected: usize,
     },
@@ -570,7 +570,7 @@ impl App {
     pub fn settings_tab_indexes(tab: usize) -> &'static [usize] {
         const TABS: [&[usize]; 5] = [
             &[2, 3, 4],
-            &[0, 19, 10, 11, 16],
+            &[0, 19, 20, 10, 11, 16],
             &[8, 17, 12],
             &[1, 5, 6, 9, 15, 18],
             &[7, 13, 14],
@@ -708,6 +708,11 @@ impl App {
                 "Off, low, medium, high or server default; sent in fields this server understands."
                     .into(),
             ),
+            (
+                "Advanced parameters".into(),
+                "Penalties, seed, stop, extra request JSON, Ollama context and llama-server options."
+                    .into(),
+            ),
         ]
     }
 
@@ -808,6 +813,14 @@ impl App {
                 "Reasoning control translated for this server".into(),
                 MenuAction::Manager {
                     action: "inference-thinking".into(),
+                    state: serde_json::json!({}),
+                },
+            ),
+            (
+                "Advanced parameters".into(),
+                "Penalties, seed, stop, extra JSON, Ollama context, llama-server options".into(),
+                MenuAction::Manager {
+                    action: "params-menu".into(),
                     state: serde_json::json!({}),
                 },
             ),
@@ -1695,7 +1708,7 @@ impl App {
                             self.error("The server is reachable but has no models. Load one in your model application, then test again.");
                         } else {
                             self.dialog = Some(Dialog::PickModel {
-                                draft,
+                                draft: Box::new(draft),
                                 models,
                                 selected: 0,
                             });
@@ -3191,6 +3204,7 @@ mod recovery_tests {
             action_headroom: 256,
             reasoning_allowance: None,
             reasoning_cutoffs: 0,
+            ollama_context: None,
         };
         app.workspace_update(workspace::Update::Inference(status.clone()))
             .unwrap();
