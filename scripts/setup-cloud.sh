@@ -74,6 +74,7 @@ python3 scripts/test_process_state.py -v
 python3 scripts/test_release_verification.py -v
 python3 scripts/test_pc_matrix.py -v
 bash scripts/pc_matrix_0_7.sh --dry-run > /dev/null
+bash scripts/pc_matrix_0_9.sh --dry-run > /dev/null
 python3 -m unittest discover -s training/tests -v
 python3 scripts/smoke_skills.py
 python3 scripts/smoke_analysis.py

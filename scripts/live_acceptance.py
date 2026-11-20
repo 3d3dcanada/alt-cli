@@ -22,6 +22,8 @@ p.add_argument('--check-args',action='store_true',help='Validate arguments and e
 p.add_argument('--instruction-draft',type=Path,help='Trial this bounded offline supplement for this campaign only')
 p.add_argument('--interface',choices=['cli','tui'],default='cli');p.add_argument('--width',type=int,default=80);p.add_argument('--height',type=int,default=24)
 p.add_argument('--followup-prompt',action='append',default=[],help='Send a follow-up in the same actual TUI conversation after a normal turn; the total deadline/allowance remains shared')
+p.add_argument('--access',choices=['guided','trusted'],default='guided',help='Guided (default): reviewed edits, Bubblewrap-isolated checks, no terminal. Trusted adds --allow-terminal with host permissions')
+p.add_argument('--gpu-layers',type=int,default=0,help='Managed runtime GPU layers (0 = CPU; 99 = full offload)');p.add_argument('--cache-k');p.add_argument('--cache-v');p.add_argument('--flash-attention',choices=['true','false'])
 a=p.parse_args()
 if a.uncensored:
  assert a.artifact_label in (None,'uncensored'),'--uncensored conflicts with --artifact-label'
@@ -41,7 +43,7 @@ assert a.cases is None or all(n in CASES for n in a.cases.split(',')), 'Unknown 
 a.cases=a.cases or ','.join(DEVELOPMENT if a.partition=='development' else HELD_OUT if a.partition=='held-out' else CASES);assert a.runtime or (a.endpoint and a.model_id),'Choose managed runtime or explicit endpoint/model';assert a.repeats>=1
 assert a.runtime or a.thinking=='default','Configure reasoning on the external server; this switch controls only an owned runtime'
 if a.check_args:
- print(json.dumps({'arguments':'valid','artifact_label':a.artifact_label,'cases':a.cases.split(','),'contexts':a.contexts,'repeats':a.repeats,'tool_profile':a.tool_profile,'output_tokens':a.output_tokens,'thinking_level':a.thinking_level,'runtime':bool(a.runtime),'endpoint':a.endpoint,'model_id':a.model_id}))
+ print(json.dumps({'arguments':'valid','access':a.access,'gpu_layers':a.gpu_layers,'artifact_label':a.artifact_label,'cases':a.cases.split(','),'contexts':a.contexts,'repeats':a.repeats,'tool_profile':a.tool_profile,'output_tokens':a.output_tokens,'thinking_level':a.thinking_level,'runtime':bool(a.runtime),'endpoint':a.endpoint,'model_id':a.model_id}))
  raise SystemExit(0)
 binary=a.binary.resolve();artifact=a.model.resolve() if a.model else None
 if artifact:
@@ -62,7 +64,7 @@ for source in ['live_acceptance.py','live_tui_turn.py','acceptance_projects.py',
  if not target.exists():shutil.copy2(Path(__file__).parent/source,target)
  else:assert hashlib.sha256(target.read_bytes()).hexdigest()==hashlib.sha256((Path(__file__).parent/source).read_bytes()).hexdigest(), "Resume evaluator source changed"
 binary=frozen
-config={'oracle_version':ORACLE_VERSION,'context_scope':'Managed runtime native window and engine budget' if a.runtime else 'Engine budget; external native window is configured on server/tag and inspected separately','model_file':artifact.name if artifact else None,'sha256':a.sha256,'bytes':artifact.stat().st_size if artifact else None,'artifact_label':a.artifact_label,'artifact_scope':{'uncensored':'Explicit user-selected publisher-labelled uncensored/abliterated artifact; no fallback','standard':'Explicit user-selected standard (not uncensored) artifact; no fallback','hosted':'Hosted API model identified by --model-id; provider weights are not hashable locally'}[a.artifact_label],'api_key_env':a.api_key_env,'thinking_level':a.thinking_level,'dialect':a.dialect,'provider':a.provider,'endpoint':a.endpoint,'model_id':a.model_id,'runtime':str(a.runtime) if a.runtime else 'external','contexts':[int(x)for x in a.contexts.split(',')],'repeats':a.repeats,'timeout_seconds':a.timeout,'binary_sha256':hashlib.sha256(binary.read_bytes()).hexdigest(),'physical_gpu_tested':False,'verification_plan':a.verification_plan,'history_notes':a.history_notes}
+config={'oracle_version':ORACLE_VERSION,'context_scope':'Managed runtime native window and engine budget' if a.runtime else 'Engine budget; external native window is configured on server/tag and inspected separately','model_file':artifact.name if artifact else None,'sha256':a.sha256,'bytes':artifact.stat().st_size if artifact else None,'artifact_label':a.artifact_label,'artifact_scope':{'uncensored':'Explicit user-selected publisher-labelled uncensored/abliterated artifact; no fallback','standard':'Explicit user-selected standard (not uncensored) artifact; no fallback','hosted':'Hosted API model identified by --model-id; provider weights are not hashable locally'}[a.artifact_label],'api_key_env':a.api_key_env,'thinking_level':a.thinking_level,'dialect':a.dialect,'provider':a.provider,'endpoint':a.endpoint,'model_id':a.model_id,'runtime':str(a.runtime) if a.runtime else 'external','contexts':[int(x)for x in a.contexts.split(',')],'repeats':a.repeats,'timeout_seconds':a.timeout,'binary_sha256':hashlib.sha256(binary.read_bytes()).hexdigest(),'physical_gpu_tested':bool(a.runtime and a.gpu_layers>0),'access':a.access,'gpu':{'layers':a.gpu_layers,'cache_k':a.cache_k,'cache_v':a.cache_v,'flash_attention':a.flash_attention}if a.runtime else None,'verification_plan':a.verification_plan,'history_notes':a.history_notes}
 config.update({'cases':a.cases.split(','),'partition':a.partition,'tool_profile':a.tool_profile,'threads':a.threads,'batch':a.batch,'engine_sha256':hashlib.sha256(a.engine.read_bytes()).hexdigest(),'runtime_sha256':hashlib.sha256(a.runtime.read_bytes()).hexdigest() if a.runtime else None,'fixture_sha256':hashlib.sha256(json.dumps({name:CASES[name] for name in a.cases.split(',')},sort_keys=True).encode()).hexdigest()})
 config['suite']=a.suite
 config['interface']=a.interface
@@ -102,14 +104,19 @@ for context in config['contexts']:
    if run_dir.exists():
     interrupted=root/'interrupted';interrupted.mkdir(exist_ok=True);run_dir.rename(interrupted/(label+'-'+str(time.time_ns())))
    run_dir.mkdir();project,oracle=setup(name,run_dir);oracle_hash=oracle_inputs(run_dir);state=run_dir/'state';state.mkdir()
-   (state/'preferences.toml').write_text(f'project={json.dumps(str(project))}\ncontext_tokens={context}\nmax_turns=12\naccess_policy="trusted"\n'+(f'runtime_path={json.dumps(str(a.runtime.resolve()))}\n'if a.runtime else '')+(f'tool_profile={json.dumps(a.tool_profile)}\n[runtime]\nthreads={a.threads}\nbatch={a.batch}\n' if subprocess.check_output([str(binary),'--version'],text=True).strip()!='alt 0.4.1' else ''))
+   (state/'preferences.toml').write_text(f'project={json.dumps(str(project))}\ncontext_tokens={context}\nmax_turns=12\naccess_policy={json.dumps(a.access)}\n'+(f'runtime_path={json.dumps(str(a.runtime.resolve()))}\n'if a.runtime else '')+(f'tool_profile={json.dumps(a.tool_profile)}\n[runtime]\nthreads={a.threads}\nbatch={a.batch}\n' if subprocess.check_output([str(binary),'--version'],text=True).strip()!='alt 0.4.1' else ''))
    (state/'runtime.toml').write_text(f'threads={a.threads}\n')
    if a.thinking!='default':
     with (state/'preferences.toml').open('a') as settings:settings.write('thinking='+('true' if a.thinking=='on' else 'false')+'\n')
-   base=[str(binary),'--data-dir',str(state),'--engine',str(a.engine.resolve()),'--access','trusted']
+   base=[str(binary),'--data-dir',str(state),'--engine',str(a.engine.resolve()),'--access',a.access]
    claim=['--uncensored'] if a.artifact_label=='uncensored' else []
    arguments=['models','import',str(artifact),*claim,'--use']if a.runtime else ['init','--model',a.model_id,'--provider',a.provider,'--endpoint',a.endpoint,'--context',str(context),'--max-turns','12',*claim]+(['--api-key-env',a.api_key_env] if a.api_key_env else [])
+   setup_started=time.monotonic()
    init=subprocess.run(base+arguments,cwd=project,capture_output=True,text=True,timeout=180);(run_dir/'setup.stdout').write_text(init.stdout);(run_dir/'setup.stderr').write_text(init.stderr);assert init.returncode==0,init.stderr
+   if a.runtime:
+    gpu=['--gpu-layers',str(a.gpu_layers)]+(['--cache-k',a.cache_k]if a.cache_k else[])+(['--cache-v',a.cache_v]if a.cache_v else[])+(['--flash-attention',a.flash_attention]if a.flash_attention else[])
+    subprocess.run(base+['runtime',*gpu],cwd=project,check=True,capture_output=True)
+   setup_seconds=round(time.monotonic()-setup_started,2)
    allocation=[]
    for field in ['output_tokens','reasoning_tokens','temperature','top_p','generated_tokens','requests']:
     if getattr(a,field) is not None:allocation+=['--'+field.replace('_','-'),str(getattr(a,field))]
@@ -144,7 +151,7 @@ for context in config['contexts']:
     peak=tui['sampled_alt_tree_peak_rss_bytes'];timed_out=tui['timed_out'];exit_code=tui['process_exit']
    else:
     with (run_dir/'turn.jsonl').open('w')as out,(run_dir/'turn.stderr').open('w')as err:
-     proc=subprocess.Popen(base+['run',prompt,'--allow-tools','--allow-terminal','--json','--timeout',str(a.timeout)]+(['--instruction-draft',str(a.instruction_draft.resolve())] if a.instruction_draft else []),cwd=project,stdout=out,stderr=err,start_new_session=True)
+     proc=subprocess.Popen(base+['run',prompt,'--allow-tools']+(['--allow-terminal']if a.access=='trusted' else[])+['--json','--timeout',str(a.timeout)]+(['--instruction-draft',str(a.instruction_draft.resolve())] if a.instruction_draft else []),cwd=project,stdout=out,stderr=err,start_new_session=True)
      try:
       while proc.poll()is None:
        peak=max(peak,memory_tree(proc.pid))
@@ -162,7 +169,7 @@ for context in config['contexts']:
     except json.JSONDecodeError:pass
    updates=[e.get('data',{}).get('update',{}) for e in events if e.get('type')=='update'];calls=[u for u in updates if u.get('sessionUpdate')=='tool_call'];failed=[u for u in updates if u.get('status')=='failed'];prose=''.join(u.get('content',{}).get('text','')for u in updates if u.get('sessionUpdate')=='agent_message_chunk')
    source={str(f.relative_to(project)):f.read_text(errors='replace')for f in project.rglob('*')if f.is_file() and not any(part in ['target','.git','__pycache__']for part in f.relative_to(project).parts) and f.stat().st_size<1024*1024}
-   result={'case':name,'context':context,'repeat':repeat+1,'passed':after['passed']and intact,'cli_exit':exit_code if a.interface=='cli' else None,'process_exit':exit_code,'interface':a.interface,'wall_seconds':round(time.monotonic()-started,2),'outer_timeout':timed_out,'sampled_alt_tree_peak_rss_bytes':peak,'rss_scope':'Alt and descendant processes; external model server excluded'if a.endpoint else 'Alt, Goose and managed inference runtime','vram':None,'oracle_unchanged':intact,'before':before,'after':after,'tool_calls':calls,'failed_tool_updates':len(failed),'final_prose':prose,'prose_accuracy':'Retained for manual assessment; not inferred from process exit','resulting_source':source}
+   result={'case':name,'context':context,'repeat':repeat+1,'passed':after['passed']and intact,'setup_seconds':setup_seconds,'load_average':os.getloadavg(),'cli_exit':exit_code if a.interface=='cli' else None,'process_exit':exit_code,'interface':a.interface,'wall_seconds':round(time.monotonic()-started,2),'outer_timeout':timed_out,'sampled_alt_tree_peak_rss_bytes':peak,'rss_scope':'Alt and descendant processes; external model server excluded'if a.endpoint else 'Alt, Goose and managed inference runtime','vram':None,'oracle_unchanged':intact,'before':before,'after':after,'tool_calls':calls,'failed_tool_updates':len(failed),'final_prose':prose,'prose_accuracy':'Retained for manual assessment; not inferred from process exit','resulting_source':source}
    if tui:result['tui']=tui
    context_views=[]
    for database in state.glob('projects/*/project.db'):
