@@ -31,7 +31,12 @@ impl Store {
         crate::schema::compatible(&root.join("sessions.db"), 1)?;
         let mut db = Connection::open(root.join("sessions.db"))?;
         db.busy_timeout(std::time::Duration::from_secs(5))?;
-        db.execute_batch("PRAGMA journal_mode=WAL;")?;
+        // Every streamed chunk is one append. With WAL, `synchronous=NORMAL`
+        // stays consistent after a crash and only skips the per-commit fsync
+        // (measured 550 ms mean per append on a busy disk, so a long reply
+        // lagged minutes behind the model); a power loss can drop the newest
+        // events, never corrupt older ones. Edits keep their own journal.
+        db.execute_batch("PRAGMA journal_mode=WAL; PRAGMA synchronous=NORMAL;")?;
         crate::schema::migrate(&mut db,&root.join("sessions.db"),1,concat!("
             CREATE TABLE IF NOT EXISTS sessions (
                 id TEXT PRIMARY KEY, engine_id TEXT NOT NULL, cwd TEXT NOT NULL,
@@ -480,5 +485,19 @@ impl Store {
         }
         tx.commit()?;
         Ok(session.id)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn appends_skip_the_per_commit_fsync() {
+        let dir = tempfile::tempdir().unwrap();
+        let store = super::Store::open(dir.path()).unwrap();
+        let sync: i64 = store
+            .0
+            .pragma_query_value(None, "synchronous", |r| r.get(0))
+            .unwrap();
+        assert_eq!(sync, 1, "NORMAL: one fsync per append made streaming lag");
     }
 }

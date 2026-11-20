@@ -8,7 +8,7 @@ use alt_cli::{
 };
 use anyhow::{Context, Result, bail, ensure};
 use clap::{Parser, Subcommand};
-use serde_json::json;
+use serde_json::{Value, json};
 use std::{io::Write, path::PathBuf, time::Duration};
 
 #[derive(Parser)]
@@ -600,7 +600,8 @@ enum InstallComponent {
 async fn main() {
     if let Err(error) = run().await {
         eprintln!("alt: {}", display_text(&format!("{error:#}")));
-        std::process::exit(1);
+        // `timeout(1)` convention, so scripts can tell a timeout from a failure.
+        std::process::exit(if error.is::<TimedOut>() { 124 } else { 1 });
     }
 }
 
@@ -1737,10 +1738,20 @@ async fn headless(
     let deadline = tokio::time::sleep(Duration::from_secs(timeout));
     tokio::pin!(deadline);
     let mut interrupted = false;
+    let mut timed_out = false;
     let shutdown = alt_cli::process::shutdown_signal();
     tokio::pin!(shutdown);
+    let started = tokio::time::Instant::now();
+    let mut waiting = tokio::time::interval_at(started + WAITING_EVERY, WAITING_EVERY);
     loop {
         tokio::select! {
+            _ = waiting.tick() => {
+                if let Some(line) = waiting_line(engine, &session.profile.model, started.elapsed()) {
+                    if json_output { println!("{line}"); } else {
+                        eprintln!("Waiting for {}: {} s, {}{}", line["model"].as_str().unwrap_or(""), line["elapsed_s"], line["stage_label"].as_str().unwrap_or(""), match line["retries"].as_u64() { Some(0) | None => String::new(), Some(n) => format!(", {n} provider retr{}", if n == 1 { "y" } else { "ies" }) });
+                    }
+                }
+            }
             result = &mut response => {
                 let turn_failed = !matches!(&result, Ok(Ok(_)));
                 // Response and notification channels are separate; drain all
@@ -1764,6 +1775,7 @@ async fn headless(
                 let event = json!({"type":"turn_end","data":result});
                 store.append(&session.id, &event)?;
                 if json_output { println!("{event}"); } else { println!(); }
+                if timed_out { return Err(timed_out_report(engine, store, session, timeout, json_output)?.into()); }
                 if interrupted { bail!("Turn cancelled"); }
                 return Ok(());
             }
@@ -1777,13 +1789,72 @@ async fn headless(
                 deadline.as_mut().reset(tokio::time::Instant::now() + Duration::from_secs(5));
             }
             _ = &mut deadline => {
+                // A timed-out turn ends the same way whether or not the engine
+                // acknowledges the cancel in time; dropping it stops the engine.
+                if timed_out { return Err(timed_out_report(engine, store, session, timeout, json_output)?.into()); }
                 if interrupted { bail!("Engine did not stop within 5 seconds; shutting it down"); }
                 engine.cancel(&session.engine_id).await?;
                 interrupted = true;
+                timed_out = true;
                 deadline.as_mut().reset(tokio::time::Instant::now() + Duration::from_secs(5));
             }
         }
     }
+}
+
+const WAITING_EVERY: Duration = Duration::from_secs(15);
+
+/// A turn ended by `--timeout`; exits with 124.
+#[derive(Debug)]
+struct TimedOut(String);
+impl std::fmt::Display for TimedOut {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(&self.0)
+    }
+}
+impl std::error::Error for TimedOut {}
+
+/// One waiting line while a model request is in flight; `None` otherwise.
+fn waiting_line(engine: &Engine, model: &str, elapsed: Duration) -> Option<Value> {
+    let status = engine.inference_status()?;
+    use alt_cli::inference::Stage;
+    matches!(
+        status.stage,
+        Stage::MeasuringInput | Stage::WaitingForOutput | Stage::ReceivingOutput
+    )
+    .then(|| json!({"type":"waiting","model":model,"elapsed_s":elapsed.as_secs(),"stage":status.stage,"stage_label":status.stage.label(),"requests_issued":status.requests_issued,"retries":status.provider_retries}))
+}
+
+/// Record and print what the timed-out turn already changed on disk.
+fn timed_out_report(
+    engine: &Engine,
+    store: &Store,
+    session: &Session,
+    timeout: u64,
+    json_output: bool,
+) -> Result<TimedOut> {
+    let changes = engine.changes()?;
+    let applied: Vec<_> = changes.iter().filter(|c| c.status == "applied").collect();
+    let event = json!({"type":"timeout","timeout_s":timeout,"session":session.id,"changes":applied.iter().map(|c| json!({"id":c.id,"path":c.path,"status":c.status})).collect::<Vec<_>>()});
+    store.append(&session.id, &event)?;
+    if json_output {
+        println!("{event}");
+    }
+    let summary = if applied.is_empty() {
+        "no files were changed".to_owned()
+    } else {
+        let list = applied
+            .iter()
+            .map(|c| format!("{} (change {})", display_text(&c.path), c.id))
+            .collect::<Vec<_>>()
+            .join(", ");
+        format!(
+            "already changed on disk: {list}; review with `alt task changes`, undo one with `alt task undo <change>`"
+        )
+    };
+    Ok(TimedOut(format!(
+        "Turn stopped by --timeout {timeout} s; {summary}"
+    )))
 }
 
 async fn handle_event(

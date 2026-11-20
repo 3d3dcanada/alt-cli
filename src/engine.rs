@@ -438,6 +438,13 @@ impl Engine {
             .transpose()
     }
 
+    /// Checkpointed edits recorded for the current task, newest first.
+    pub fn changes(&self) -> Result<Vec<crate::project::Change>> {
+        self.bridge.as_ref().map_or(Ok(Vec::new()), |b| {
+            crate::project::Project::open(&b.data, &b.cwd)?.changes(Some(&self.task))
+        })
+    }
+
     /// Reconstruct a bounded context from Alt's durable ledger. Never reload legacy unrestricted tools.
     pub async fn restore_session(&mut self, cwd: &Path) -> Result<()> {
         self.new_session(cwd).await?;

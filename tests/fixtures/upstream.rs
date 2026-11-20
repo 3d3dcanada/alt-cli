@@ -11,6 +11,7 @@ pub struct Reply {
     pub headers: Vec<(String, String)>,
     pub content_type: &'static str,
     pub body: String,
+    pub delay: std::time::Duration,
 }
 impl Reply {
     pub fn json(body: serde_json::Value) -> Self {
@@ -19,7 +20,13 @@ impl Reply {
             headers: vec![],
             content_type: "application/json",
             body: body.to_string(),
+            delay: std::time::Duration::ZERO,
         }
+    }
+    /// Hold the reply this long after the request arrives (a slow provider).
+    pub fn after(mut self, delay: std::time::Duration) -> Self {
+        self.delay = delay;
+        self
     }
     pub fn sse(events: &[serde_json::Value]) -> Self {
         let mut body: String = events.iter().map(|e| format!("data: {e}\n\n")).collect();
@@ -29,6 +36,7 @@ impl Reply {
             headers: vec![],
             content_type: "text/event-stream",
             body,
+            delay: std::time::Duration::ZERO,
         }
     }
     pub fn status(status: u16, body: &str) -> Self {
@@ -37,6 +45,7 @@ impl Reply {
             headers: vec![],
             content_type: "application/json",
             body: body.into(),
+            delay: std::time::Duration::ZERO,
         }
     }
     /// Accept the request, then close the connection without replying.
@@ -46,6 +55,7 @@ impl Reply {
             headers: vec![],
             content_type: "application/json",
             body: String::new(),
+            delay: std::time::Duration::ZERO,
         }
     }
     pub fn header(mut self, name: &str, value: &str) -> Self {
@@ -123,6 +133,7 @@ pub async fn start(replies: Vec<Reply>) -> Upstream {
                 drop(connection);
                 continue;
             }
+            tokio::time::sleep(reply.delay).await;
             let extra: String = reply
                 .headers
                 .iter()

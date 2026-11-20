@@ -101,9 +101,12 @@ policy is separate: `--access trusted` selects Full access; other values are
 `guided` and `review-only`. The TUI uses its saved Settings choice. Full access
 can run arbitrary commands with normal host permissions. `--json` writes events
 to stdout, with session IDs and diagnostics on stderr. The default timeout is
-600 seconds; change it with `--timeout SECONDS`. Cancellation, failure and timeout
-exit nonzero. A successful process exit or natural model turn is not proof that
-the requested behavior passed checks.
+600 seconds; change it with `--timeout SECONDS`. Cancellation and failure exit 1;
+a timeout exits 124 and names the files the turn already changed (with change IDs
+for `alt task undo`), as a `timeout` event in `--json`. While a model request is in
+flight, a waiting line (model, seconds, provider retries) appears every 15 seconds:
+on stderr in text mode, as a `waiting` event in `--json`. A successful process exit
+or natural model turn is not proof that the requested behavior passed checks.
 
 `plain` offers a text conversation with per-action approval; `/quit` leaves it.
 Exports and logs can contain project data. Choose what to share when reporting a bug.

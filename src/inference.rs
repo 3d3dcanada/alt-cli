@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
 use std::{
     path::{Path, PathBuf},
-    time::Duration,
+    time::{Duration, Instant},
 };
 use tokio::{
     io::{AsyncBufReadExt, AsyncReadExt, AsyncWriteExt, BufReader},
@@ -1094,7 +1094,9 @@ async fn serve(
             return Ok(());
         }
     };
+    let queued = Instant::now();
     let mut budget = budget.lock().await;
+    let lock_wait = queued.elapsed();
     if budget.0 == 0 || budget.1 == 0 {
         live_status.send_modify(|s| s.stage = Stage::AllowanceExhausted);
         let bytes = serde_json::to_vec(
@@ -1182,6 +1184,14 @@ async fn serve(
     let mut retry_log: Vec<Value> = Vec::new();
     let mut faults: Vec<Value> = Vec::new();
     let mut extra_charged: u64 = 0;
+    // Where the seconds go: provider time is measured here, so the turn's
+    // wall time minus these totals is Alt and engine time.
+    let sent = Instant::now();
+    let sent_at_ms = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map_or(0, |d| d.as_millis() as u64);
+    let mut headers_after: Option<Duration> = None;
+    let mut first_byte_after: Option<Duration> = None;
     // One resend after a discarded degenerate response; retries are separate.
     let (status, captured, truncated) = loop {
         let response = match send_with_retries(
@@ -1216,6 +1226,7 @@ async fn serve(
             }
         };
         let status = response.status();
+        headers_after.get_or_insert_with(|| sent.elapsed());
         let mut stream = response.bytes_stream();
         let mut captured = Vec::new();
         let mut truncated = false;
@@ -1230,6 +1241,9 @@ async fn serve(
                 tokio::fs::File::create(evidence.join(format!("{id}-response.raw"))).await?;
             while let Some(chunk) = stream.next().await {
                 let chunk = chunk?;
+                if !chunk.is_empty() {
+                    first_byte_after.get_or_insert_with(|| sent.elapsed());
+                }
                 let observed_stage = live_status.borrow().stage;
                 if !chunk.is_empty() && observed_stage != Stage::ReceivingOutput {
                     live_status.send_modify(|s| s.stage = Stage::ReceivingOutput);
@@ -1253,6 +1267,9 @@ async fn serve(
         // Guarded: hold the whole response, check it, then forward or discard.
         while let Some(chunk) = stream.next().await {
             let chunk = chunk?;
+            if !chunk.is_empty() {
+                first_byte_after.get_or_insert_with(|| sent.elapsed());
+            }
             if live_status.borrow().stage != Stage::ReceivingOutput {
                 live_status.send_modify(|s| s.stage = Stage::ReceivingOutput);
             }
@@ -1323,6 +1340,8 @@ async fn serve(
         // The resend is another model call against the shared allowance.
         budget.1 = budget.1.saturating_sub(1);
     };
+    let ms = |d: Option<Duration>| d.map(|d| d.as_millis() as u64);
+    let timing = json!({"sent_at_unix_ms":sent_at_ms,"queued_ms":lock_wait.as_millis() as u64,"headers_ms":ms(headers_after),"first_byte_ms":ms(first_byte_after),"provider_total_ms":sent.elapsed().as_millis() as u64});
     let usage = response_usage(&captured, streaming);
     let complete = status.is_success() && !truncated && response_complete(&captured, streaming);
     let cutoff = complete && reasoning_cutoff(&captured, streaming);
@@ -1345,7 +1364,7 @@ async fn serve(
     crate::config::atomic_write(
         &evidence.join(format!("{id}-receipt.json")),
         &serde_json::to_vec(
-            &json!({"complete":complete,"status":status.as_u16(),"input_accounting":input,"response_sha256":crate::project::digest(&captured),"response_truncated":truncated,"request_sha256":crate::project::digest(&serde_json::to_vec(&body)?),"usage":usage,"generated_tokens":generated,"charged_generated_tokens":charged,"allowance":allowance,"provider_budget_violation":generated.unwrap_or(0)>allowance as u64,"thinking":thinking_sent,"reasoning_cutoff":cutoff,"ollama_loaded_context":ollama_context,"retries":retry_log.len(),"retry_log":retry_log,"provider_faults":faults,"output_guard":guarded}),
+            &json!({"complete":complete,"status":status.as_u16(),"input_accounting":input,"response_sha256":crate::project::digest(&captured),"response_truncated":truncated,"request_sha256":crate::project::digest(&serde_json::to_vec(&body)?),"usage":usage,"generated_tokens":generated,"charged_generated_tokens":charged,"allowance":allowance,"provider_budget_violation":generated.unwrap_or(0)>allowance as u64,"thinking":thinking_sent,"reasoning_cutoff":cutoff,"ollama_loaded_context":ollama_context,"retries":retry_log.len(),"retry_log":retry_log,"provider_faults":faults,"output_guard":guarded,"timing":timing}),
         )?,
     )?;
     live_status.send_modify(|s| {
@@ -1396,7 +1415,7 @@ fn response_usage(captured: &[u8], streaming: bool) -> Option<Value> {
 /// Send one request, retrying 429, 5xx and connection failures with capped
 /// exponential backoff that honours `Retry-After`. Each retry is another
 /// model call against the shared request allowance; retries are logged.
-async fn send_with_retries(
+pub(crate) async fn send_with_retries(
     client: &reqwest::Client,
     url: &str,
     body: &Value,
@@ -1426,7 +1445,9 @@ async fn send_with_retries(
             Ok(response) => retry_after(response.headers()),
             Err(_) => None,
         }
-        .unwrap_or_else(|| Duration::from_millis(500u64 << attempt.min(6)))
+        // 2 s, 4 s, ...: an overloaded hosted model (HTTP 529) answered the
+        // same way three times within 1.5 s with the old 0.5 s base.
+        .unwrap_or_else(|| Duration::from_millis(2000u64 << attempt.min(4)))
         .min(Duration::from_secs(30));
         log.push(json!({"attempt":attempt+1,"status":outcome.as_ref().map(|r| r.status().as_u16()).ok(),"error":outcome.as_ref().err().map(|e| e.to_string()),"wait_ms":wait.as_millis() as u64}));
         drop(outcome);

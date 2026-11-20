@@ -110,15 +110,21 @@ pub async fn probe(root: &Path, p: &Profile) -> Result<Value> {
         Provider::Openai => format!("{}/chat/completions", p.endpoint.trim_end_matches('/')),
         Provider::Ollama => format!("{}/v1/chat/completions", p.endpoint.trim_end_matches('/')),
     };
-    let mut request = client.post(url).json(&body);
-    if let Some(key) = &key {
-        request = request.bearer_auth(key);
-    }
     let started = std::time::Instant::now();
-    let response = request
-        .send()
-        .await
-        .context("The probe request could not reach the model")?;
+    // Same retries and backoff as the inference relay (429, 5xx, dropped connections).
+    let mut retry_log = Vec::new();
+    let mut unlimited_requests = u32::MAX;
+    let response = crate::inference::send_with_retries(
+        &client,
+        &url,
+        &body,
+        key.as_deref(),
+        settings.retries,
+        &mut unlimited_requests,
+        &mut retry_log,
+    )
+    .await
+    .context("The probe request could not reach the model")?;
     let status = response.status().as_u16();
     let bytes = response.bytes().await?;
     ensure!(
@@ -149,7 +155,7 @@ pub async fn probe(root: &Path, p: &Profile) -> Result<Value> {
     let tool_called = message["tool_calls"]
         .as_array()
         .is_some_and(|calls| calls.iter().any(|c| c["function"]["name"] == "probe_echo"));
-    let observed = json!({"http_status":status,"finish_reason":finish,"tool_call":tool_called,"reasoning_seen":reasoning,"answer_text":!content.trim().is_empty(),"completion_tokens":reply["usage"]["completion_tokens"],"output_allowance":allowance,"seconds":started.elapsed().as_secs_f32()});
+    let observed = json!({"http_status":status,"finish_reason":finish,"tool_call":tool_called,"reasoning_seen":reasoning,"answer_text":!content.trim().is_empty(),"completion_tokens":reply["usage"]["completion_tokens"],"output_allowance":allowance,"seconds":started.elapsed().as_secs_f32(),"retries":retry_log.len(),"retry_log":retry_log});
     let suggestions = suggest(p, &facts, &observed);
     let report = json!({"schema":1,"model":p.model,"provider":p.provider,"endpoint":p.endpoint,"server":facts,"observed":observed,"suggestions":suggestions,"scope":"One bounded request with the model's default thinking; suggestions are not applied until you choose one"});
     let path = report_path(root, p);

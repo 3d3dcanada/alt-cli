@@ -220,6 +220,13 @@ fn cli_streams_exports_resumes_and_denies_by_default() {
         .args(["run", "wait", "--timeout", "1"])
         .output()
         .unwrap();
-    assert!(!cancelled.status.success());
-    assert!(String::from_utf8_lossy(&cancelled.stderr).contains("Turn cancelled"));
+    assert_eq!(
+        cancelled.status.code(),
+        Some(124),
+        "a timeout has its own exit code"
+    );
+    assert!(
+        String::from_utf8_lossy(&cancelled.stderr)
+            .contains("Turn stopped by --timeout 1 s; no files were changed")
+    );
 }

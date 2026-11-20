@@ -3,6 +3,8 @@
 import json
 import os
 import sys
+import threading
+import urllib.request
 
 pending = None
 waiting = None
@@ -57,6 +59,24 @@ for line in sys.stdin:
         if prompt == "wait":
             waiting = identifier
             text("waiting")
+            continue
+        if prompt == "stuck":
+            # Never answers, not even a cancel (an engine blocked on a provider).
+            text("stuck")
+            continue
+        if prompt == "slow-model":
+            # One model call through Alt's relay, like a real engine turn.
+            def call(identifier=identifier):
+                body = json.dumps({"model": "fixture", "stream": False,
+                                   "messages": [{"role": "user", "content": "hi"}]}).encode()
+                request = urllib.request.Request(
+                    os.environ["OPENAI_BASE_URL"] + "/chat/completions", data=body,
+                    headers={"Content-Type": "application/json"})
+                with urllib.request.urlopen(request, timeout=120) as response:
+                    response.read()
+                text("model answered\n")
+                reply(identifier, {"stopReason": "end_turn"})
+            threading.Thread(target=call, daemon=True).start()
             continue
         if prompt == "tools":
             pending = identifier

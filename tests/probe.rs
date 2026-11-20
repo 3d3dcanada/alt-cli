@@ -99,6 +99,24 @@ async fn ollama_reports_capabilities_and_a_working_tool_call_needs_no_change() {
 }
 
 #[tokio::test]
+async fn an_overloaded_provider_is_retried_like_the_relay() {
+    let server = upstream::start(vec![
+        Reply::status(404, r#"{"error":"no props"}"#),
+        Reply::status(529, r#"{"error":"overloaded"}"#),
+        Reply::json(json!({"choices":[{"message":{"role":"assistant","content":null,"tool_calls":[{"id":"1","type":"function","function":{"name":"probe_echo","arguments":"{\"text\":\"ok\"}"}}]},"finish_reason":"tool_calls"}],"usage":{"completion_tokens":12}})),
+    ])
+    .await;
+    let root = tempfile::tempdir().unwrap();
+    let p = profile(&server.endpoint, Provider::Openai);
+    let report = probe::probe(root.path(), &p).await.unwrap();
+    assert_eq!(report["observed"]["http_status"], 200);
+    assert_eq!(report["observed"]["tool_call"], true);
+    assert_eq!(report["observed"]["retries"], 1);
+    assert_eq!(report["observed"]["retry_log"][0]["status"], 529);
+    assert_eq!(server.requests.lock().unwrap().len(), 3);
+}
+
+#[tokio::test]
 async fn an_openai_compatible_server_without_tool_calls_gets_compact_tools() {
     let server = upstream::start(vec![
         Reply::status(404, r#"{"error":"no props"}"#),
