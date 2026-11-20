@@ -1356,7 +1356,7 @@ async fn run() -> Result<()> {
     let root = root.canonicalize()?;
     let preferences = Preferences::load(&root)?;
     let binary = runtime::find_engine(&root, &args.engine, &preferences).context(
-        "Agent engine missing. Open Alt and install it from Home, or pass --engine PATH",
+        "Agent engine is not installed in this data folder. Run `alt install engine`, or name one with --engine PATH (an engine on PATH is not used unless named)",
     )?;
     let cwd = std::env::current_dir()?.canonicalize()?;
     if let Some(warning) = alt_cli::project::broad_root_warning(&cwd) {
@@ -1397,10 +1397,12 @@ async fn run() -> Result<()> {
         println!(
             "{}",
             display_text(&format!(
-                "Endpoint reachable; model listed: {}\nACP v1 ready: {} {}\nContext: {} tokens; turn limit: {}\nInference/tool quality has not been tested by this check.",
+                "Endpoint reachable; model listed: {}\nACP v1 ready: {} {}\nEngine: {}\nIsolated checks (Guided): {}\nContext: {} tokens; turn limit: {}\nInference/tool quality has not been tested by this check.",
                 profile.model,
                 info["agentInfo"]["name"].as_str().unwrap_or("unknown"),
                 info["agentInfo"]["version"].as_str().unwrap_or("unknown"),
+                binary.display(),
+                isolation_line(&alt_cli::sandbox::probe().await),
                 profile.context_tokens,
                 profile.max_turns
             ))
@@ -2172,4 +2174,37 @@ async fn job_action(
         "Job did not complete successfully"
     );
     Ok(())
+}
+
+/// One doctor line for Guided-mode check isolation, with the fix when the kernel
+/// policy (not a missing package) is what refuses it.
+fn isolation_line(i: &alt_cli::sandbox::Isolation) -> String {
+    if i.available {
+        return format!("available ({})", i.detail);
+    }
+    let fix = if ["Permission denied", "uid map", "not permitted"]
+        .iter()
+        .any(|s| i.detail.contains(s))
+    {
+        " Fix (once, as root): allow user namespaces for /usr/bin/bwrap with an AppArmor profile containing `userns,`, then `apparmor_parser -r` it; see README, Isolation. Until then Guided checks cannot run and nothing is verified. Full access checks run unisolated."
+    } else {
+        " Until this is fixed Guided checks cannot run and nothing is verified. Full access checks run unisolated."
+    };
+    format!("UNAVAILABLE. {}.{fix}", i.detail.trim_end_matches('.'))
+}
+
+#[cfg(test)]
+mod isolation_line_tests {
+    #[test]
+    fn a_kernel_refusal_names_the_fix_and_says_nothing_is_verified() {
+        let line = super::isolation_line(&alt_cli::sandbox::Isolation {
+            available: false,
+            detail: "Isolation is unavailable: bwrap: setting up uid map: Permission denied".into(),
+        });
+        assert!(line.starts_with("UNAVAILABLE"), "{line}");
+        assert!(
+            line.contains("userns,") && line.contains("nothing is verified"),
+            "{line}"
+        );
+    }
 }

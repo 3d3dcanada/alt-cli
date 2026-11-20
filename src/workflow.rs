@@ -31,6 +31,8 @@ pub fn packet(p: &Project, task: &str) -> Result<Value> {
         "plan"
     } else if check.as_ref().is_some_and(|c| c.cancelled) {
         "recover"
+    } else if check.as_ref().is_some_and(not_run) {
+        "blocked"
     } else if verification.complete && verification.behavioral_acceptance {
         "review"
     } else if check
@@ -51,6 +53,7 @@ pub fn packet(p: &Project, task: &str) -> Result<Value> {
     let recovery = recovery(p, task)?;
     let decision = match stage {
         "plan" => "Save a brief model plan or explicitly select host workflow.",
+        "blocked" => NOT_RUN,
         "recover" => {
             "Inspect the observed failure at its current source location; change the hypothesis or implementation before repeating."
         }
@@ -90,6 +93,19 @@ pub fn packet(p: &Project, task: &str) -> Result<Value> {
 
 fn failed(c: &crate::project::CheckResult) -> bool {
     c.exit_code != Some(0) || c.error.is_some() || c.timed_out || c.cancelled
+}
+
+/// What a model is told when a check never started (isolation unavailable, runner
+/// missing). There are no failed cases to read, and an empty list is not a pass.
+pub const NOT_RUN: &str = "This check did not run, so nothing is verified on this revision. Do not describe it as passed or failed: report it as unverified and quote its reason. Rerunning will not help until that reason is fixed.";
+
+/// The command never started: no exit code, no output, and a recorded reason.
+pub fn not_run(c: &crate::project::CheckResult) -> bool {
+    c.exit_code.is_none()
+        && !c.timed_out
+        && !c.cancelled
+        && c.error.is_some()
+        && c.output.is_empty()
 }
 
 /// Names quoted from integrity-checked saved reports. These are observations,
@@ -209,7 +225,7 @@ pub fn recovery(p: &Project, task: &str) -> Result<Option<Value>> {
         .query_map([task], |r| r.get::<_, String>(0))?
         .map(|row| Ok(serde_json::from_str::<crate::project::CheckResult>(&row?)?))
         .collect::<Result<Vec<_>>>()?;
-    let Some(latest) = checks.first().filter(|c| failed(c)) else {
+    let Some(latest) = checks.first().filter(|c| failed(c) && !not_run(c)) else {
         return Ok(None);
     };
     let fingerprint = failure_identity(p, latest)?;

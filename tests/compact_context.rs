@@ -577,3 +577,46 @@ async fn compact_context_prioritizes_actual_failures_over_historical_claims() {
     assert!(memory.find("ACTUAL_DIAGNOSTIC_731") < memory.find("All tests definitely pass"));
     assert!(!p.verification().unwrap().behavioral_acceptance);
 }
+
+#[tokio::test]
+async fn a_check_that_never_started_is_blocked_not_a_repair_loop() {
+    use std::sync::{Arc, atomic::AtomicBool};
+    let data = tempfile::tempdir().unwrap();
+    let cwd = tempfile::tempdir().unwrap();
+    std::fs::write(cwd.path().join("calc.py"), "def calc(x): return x\n").unwrap();
+    {
+        let p = Project::open(data.path(), cwd.path()).unwrap();
+        p.start_task("t", "calc repair").unwrap();
+        p.note("t", "plan", "Patch then check", "user").unwrap();
+        p.set_check(&alt_cli::project::CheckSpec {
+            name: "behavior".into(),
+            argv: vec![
+                cwd.path()
+                    .join("missing-runner")
+                    .to_string_lossy()
+                    .into_owned(),
+            ],
+            timeout_secs: 10,
+            contract: Default::default(),
+        })
+        .unwrap();
+    }
+    let check = alt_cli::sandbox::run(
+        data.path().into(),
+        cwd.path().into(),
+        "t".into(),
+        "behavior".into(),
+        Policy::Trusted,
+        Arc::new(AtomicBool::new(false)),
+    )
+    .await
+    .unwrap();
+    assert!(check.exit_code.is_none() && check.output.is_empty());
+    assert!(alt_cli::workflow::not_run(&check));
+    let p = Project::open(data.path(), cwd.path()).unwrap();
+    let packet = alt_cli::workflow::packet(&p, "t").unwrap();
+    assert_eq!(packet["stage"], "blocked");
+    assert_eq!(packet["next_decision"], alt_cli::workflow::NOT_RUN);
+    assert!(packet["facts"]["recovery"].is_null());
+    assert!(!p.verification().unwrap().behavioral_acceptance);
+}

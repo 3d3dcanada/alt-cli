@@ -224,6 +224,27 @@ mod selection_tests {
         preferences.runtime_path = Some(managed.clone());
         assert_eq!(find_runtime(root.path(), &preferences), Some(managed));
     }
+    #[test]
+    fn an_engine_on_path_is_never_used_unless_named() {
+        use std::os::unix::fs::PermissionsExt;
+        let root = tempfile::tempdir().unwrap();
+        let stray = root.path().join("bin/goose");
+        std::fs::create_dir_all(stray.parent().unwrap()).unwrap();
+        std::fs::write(&stray, "#!/bin/sh\n").unwrap();
+        std::fs::set_permissions(&stray, std::fs::Permissions::from_mode(0o755)).unwrap();
+        // The lookup never consults PATH for the default name, so this holds whatever
+        // PATH contains on the machine running the test.
+        if !Path::new("/workspace/.alt-tools/goose").exists() {
+            assert_eq!(
+                find_engine(root.path(), Path::new("goose"), &Preferences::default()),
+                None
+            );
+        }
+        assert_eq!(
+            find_engine(root.path(), &stray, &Preferences::default()),
+            Some(stray)
+        );
+    }
 }
 
 #[cfg(test)]
@@ -320,8 +341,10 @@ pub fn find_engine(root: &Path, requested: &Path, preferences: &Preferences) -> 
     if let Some(selected) = preferences.engine_path.as_deref() {
         return find_executable(selected);
     }
+    // Only the engine installed in the data folder runs by default. A `goose` that
+    // happens to be on PATH is another version with another tool set: it must be
+    // named with --engine or selected in Settings, never picked up silently.
     find_executable(&root.join("tools/goose"))
-        .or_else(|| find_executable(Path::new("goose")))
         .or_else(|| find_executable(Path::new("/workspace/.alt-tools/goose")))
 }
 

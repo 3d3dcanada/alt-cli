@@ -378,45 +378,7 @@ async fn serve_connection(stream: UnixStream, s: &Service) -> Result<()> {
                     v["symbols"],
                     v["text"].as_str().unwrap_or("")
                 ),
-                "run_check" | "terminal" => format!(
-                    "Evidence ID: {}\nExit code: {} · timeout: {} · cancelled: {}\n{}\n{}\n{}{}{}",
-                    v["id"].as_str().unwrap_or(""),
-                    v["exit_code"],
-                    v["timed_out"],
-                    v["cancelled"],
-                    v["error"].as_str().unwrap_or(""),
-                    if request.name == "run_check" {
-                        v["workflow"]["facts"]["diagnostic"]["output_preview"]
-                            .as_str()
-                            .unwrap_or("")
-                    } else {
-                        v["output"].as_str().unwrap_or("")
-                    },
-                    v["workflow"]["next_decision"]
-                        .as_str()
-                        .or_else(|| v["next_action"].as_str())
-                        .unwrap_or(""),
-                    if request.name == "run_check" {
-                        "\nChecks run on disposable project copies. Traceback paths under /tmp refer to that completed snapshot, not the working project. Use project-relative read/edit paths; preserve raw traceback evidence."
-                    } else {
-                        ""
-                    },
-                    if request.name == "run_check" {
-                        format!(
-                            "\nObserved failed cases: {}\n{}",
-                            v["workflow"]["facts"]["recovery"]["failed_cases"],
-                            v["current_reads"]
-                                .as_array()
-                                .into_iter()
-                                .flatten()
-                                .map(crate::compact_context::read_packet)
-                                .collect::<Vec<_>>()
-                                .join("\n")
-                        )
-                    } else {
-                        String::new()
-                    }
-                ),
+                "run_check" | "terminal" => check_text(&request.name, &v),
                 _ => serde_json::to_string(&v)?,
             };
             let preview = if text.chars().count() > 48_000 {
@@ -435,6 +397,52 @@ async fn serve_connection(stream: UnixStream, s: &Service) -> Result<()> {
     bytes.push(b'\n');
     writer.write_all(&bytes).await?;
     Ok(())
+}
+
+/// Plain text a model reads after run_check or terminal. A check that never started
+/// gets its reason and the not-run instruction only: no repair hint, no failed-case list.
+fn check_text(name: &str, v: &Value) -> String {
+    let check = name == "run_check";
+    let not_run = check && v["workflow"]["stage"] == "blocked";
+    format!(
+        "Evidence ID: {}\nExit code: {} · timeout: {} · cancelled: {}\n{}\n{}\n{}{}{}",
+        v["id"].as_str().unwrap_or(""),
+        v["exit_code"],
+        v["timed_out"],
+        v["cancelled"],
+        v["error"].as_str().unwrap_or(""),
+        if check {
+            v["workflow"]["facts"]["diagnostic"]["output_preview"]
+                .as_str()
+                .unwrap_or("")
+        } else {
+            v["output"].as_str().unwrap_or("")
+        },
+        v["workflow"]["next_decision"]
+            .as_str()
+            .or_else(|| v["next_action"].as_str())
+            .unwrap_or(""),
+        if check && !not_run {
+            "\nChecks run on disposable project copies. Traceback paths under /tmp refer to that completed snapshot, not the working project. Use project-relative read/edit paths; preserve raw traceback evidence."
+        } else {
+            ""
+        },
+        if check && !not_run {
+            format!(
+                "\nObserved failed cases: {}\n{}",
+                v["workflow"]["facts"]["recovery"]["failed_cases"],
+                v["current_reads"]
+                    .as_array()
+                    .into_iter()
+                    .flatten()
+                    .map(crate::compact_context::read_packet)
+                    .collect::<Vec<_>>()
+                    .join("\n")
+            )
+        } else {
+            String::new()
+        }
+    )
 }
 
 fn tool_failed(v: &Value) -> bool {
@@ -461,6 +469,25 @@ mod evidence_tests {
         ] {
             assert_eq!(ApprovalScope::of(&params), ApprovalScope::Host);
         }
+    }
+    #[test]
+    fn a_check_that_never_ran_reads_as_unverified_not_as_an_empty_failure_list() {
+        let refused = json!({"id":"e1","exit_code":null,"timed_out":false,"cancelled":false,
+            "error":"Isolation is unavailable: bwrap: loopback: Failed RTM_NEWADDR. No command ran.",
+            "workflow":{"stage":"blocked","next_decision":crate::workflow::NOT_RUN,
+                "facts":{"recovery":null,"diagnostic":{"output_preview":""}}}});
+        let text = check_text("run_check", &refused);
+        assert!(text.contains("Isolation is unavailable"), "{text}");
+        assert!(text.contains("nothing is verified"), "{text}");
+        assert!(!text.contains("Observed failed cases"), "{text}");
+        assert!(
+            !text.contains("failed cases and current implementation"),
+            "{text}"
+        );
+        let ran = json!({"id":"e2","exit_code":1,"timed_out":false,"cancelled":false,
+            "workflow":{"stage":"recover","next_decision":"Read the actual failed cases",
+                "facts":{"recovery":{"failed_cases":["t::a"]},"diagnostic":{"output_preview":"FAILED"}}}});
+        assert!(check_text("run_check", &ran).contains("Observed failed cases: [\"t::a\"]"));
     }
     #[test]
     fn invalid_evidence_is_a_tool_failure_even_when_command_exits_zero() {
@@ -959,7 +986,9 @@ async fn execute(
             let mut value = serde_json::to_value(&result)?;
             let p = Project::open(&s.data, &s.cwd)?;
             value["workflow"] = crate::workflow::packet(&p, &c.task)?;
-            if result.exit_code != Some(0) || result.error.is_some() {
+            if crate::workflow::not_run(&result) {
+                value["next_action"] = json!(crate::workflow::NOT_RUN);
+            } else if result.exit_code != Some(0) || result.error.is_some() {
                 let changes = p.task(&c.task)?.changes;
                 value["next_action"] = json!(if changes == 0 && s.tool_profile.is_compact() {
                     "No tracked edit has been applied. Use the enabled editor as a native tool call with a current read handle and actual replacement source, then rerun this check."

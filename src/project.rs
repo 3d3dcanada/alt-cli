@@ -1252,6 +1252,8 @@ impl Project {
             "Results",
             if let Some(hint) = recovery.as_ref().and_then(|r| r["hint"].as_str()) {
                 hint
+            } else if crate::workflow::not_run(result) {
+                crate::workflow::NOT_RUN
             } else if passed {
                 "Review the changes and what this check covers"
             } else {
