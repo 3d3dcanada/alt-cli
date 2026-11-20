@@ -2,12 +2,14 @@
 """Deterministic ACP peer. No model, network, or shell tools are used."""
 import json
 import os
+import subprocess
 import sys
 import threading
 import urllib.request
 
 pending = None
 waiting = None
+servers = []
 
 
 def send(value):
@@ -38,6 +40,24 @@ for line in sys.stdin:
         reply(identifier, {"protocolVersion": 1, "agentCapabilities": {"loadSession": True},
                            "agentInfo": {"name": "fixture", "version": "1"}})
     elif method == "session/new":
+        # Like Goose 1.53: start each listed MCP server and finish its handshake
+        # before answering. ALT_FIXTURE_NO_TOOLS models an engine that drops them.
+        for server in servers:
+            server.kill()
+        servers = []
+        if not os.environ.get("ALT_FIXTURE_NO_TOOLS"):
+            for extension in request["params"].get("_meta", {}).get("enabledExtensions", []):
+                if extension.get("type") != "mcp" or extension["server"]["name"] != "alt":
+                    continue
+                spec = extension["server"]
+                server = subprocess.Popen([spec["command"], *spec["args"]], stdin=subprocess.PIPE,
+                                          stdout=subprocess.PIPE, text=True)
+                server.stdin.write(json.dumps({"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {
+                    "protocolVersion": "2024-11-05", "capabilities": {},
+                    "clientInfo": {"name": "fixture", "version": "1"}}}) + "\n")
+                server.stdin.flush()
+                server.stdout.readline()
+                servers.append(server)
         reply(identifier, {"sessionId": "fixture-session"})
     elif method == "session/close":
         reply(identifier, {})

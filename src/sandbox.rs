@@ -58,6 +58,44 @@ pub async fn probe() -> Isolation {
         }
     }
 }
+
+/// One line for Guided-mode check isolation, with the fix when the kernel policy
+/// (not a missing package) is what refuses it. Shared by `alt doctor` and the TUI.
+pub fn isolation_line(i: &Isolation) -> String {
+    if i.available {
+        return format!("available ({})", i.detail);
+    }
+    let fix = if ["Permission denied", "uid map", "not permitted"]
+        .iter()
+        .any(|s| i.detail.contains(s))
+    {
+        " Fix (once, as root): allow user namespaces for /usr/bin/bwrap with an AppArmor profile containing `userns,`, then `apparmor_parser -r` it; see README, Isolation. Until then Guided checks cannot run and nothing is verified. Full access checks run unisolated."
+    } else {
+        " Until this is fixed Guided checks cannot run and nothing is verified. Full access checks run unisolated."
+    };
+    format!(
+        "UNAVAILABLE. {}.{fix}",
+        i.detail.trim().trim_end_matches('.')
+    )
+}
+
+#[cfg(test)]
+mod isolation_line_tests {
+    #[test]
+    fn a_kernel_refusal_names_the_fix_and_says_nothing_is_verified() {
+        let line = super::isolation_line(&super::Isolation {
+            available: false,
+            detail: "Isolation is unavailable: bwrap: setting up uid map: Permission denied\n"
+                .into(),
+        });
+        assert!(!line.contains('\n'), "{line}");
+        assert!(line.starts_with("UNAVAILABLE"), "{line}");
+        assert!(
+            line.contains("userns,") && line.contains("nothing is verified"),
+            "{line}"
+        );
+    }
+}
 fn base() -> Command {
     let mut c = Command::new("bwrap");
     c.args([

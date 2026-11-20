@@ -119,3 +119,85 @@ fn a_timeout_ends_cleanly_even_when_the_engine_never_stops() {
     assert_eq!(timeout["timeout_s"], 1);
     assert_eq!(timeout["changes"], json!([]));
 }
+
+#[test]
+fn a_session_without_alt_tools_is_refused_before_any_prompt() {
+    let (dir, project) = setup("http://127.0.0.1:9/v1");
+    let trace = dir.path().join("trace.jsonl");
+    let out = cli(dir.path(), &project)
+        .env("ALT_FIXTURE_NO_TOOLS", "1")
+        .env("ALT_FIXTURE_TRACE", &trace)
+        .args(["run", "hello"])
+        .output()
+        .unwrap();
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    assert!(!out.status.success(), "{stderr}");
+    assert!(
+        stderr.contains("tool server did not attach") && stderr.contains("No model request"),
+        "{stderr}"
+    );
+    let methods = std::fs::read_to_string(&trace).unwrap();
+    assert!(methods.contains("session/new"), "{methods}");
+    assert!(!methods.contains("session/prompt"), "{methods}");
+    // The same fixture with the handshake runs the turn.
+    let ok = run(dir.path(), &project, &["hello"]);
+    assert!(
+        ok.status.success(),
+        "{}",
+        String::from_utf8_lossy(&ok.stderr)
+    );
+}
+
+#[test]
+fn doctor_prints_every_line_without_an_engine_and_never_runs_one_from_path() {
+    let (dir, project) = setup("http://127.0.0.1:9/v1");
+    let bin = dir.path().join("bin");
+    std::fs::create_dir(&bin).unwrap();
+    let marker = dir.path().join("stray-goose-ran");
+    let stray = bin.join("goose");
+    std::fs::write(&stray, format!("#!/bin/sh\ntouch '{}'\n", marker.display())).unwrap();
+    use std::os::unix::fs::PermissionsExt;
+    std::fs::set_permissions(&stray, std::fs::Permissions::from_mode(0o755)).unwrap();
+    let path = format!("{}:{}", bin.display(), std::env::var("PATH").unwrap());
+    let out = Command::new(env!("CARGO_BIN_EXE_alt"))
+        .arg("--data-dir")
+        .arg(dir.path())
+        .arg("doctor")
+        .env("PATH", path)
+        .current_dir(&project)
+        .output()
+        .unwrap();
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    assert!(!out.status.success(), "{stdout}{stderr}");
+    for expected in [
+        "Endpoint UNREACHABLE",
+        "Engine: NOT FOUND",
+        "alt install engine",
+        "Isolated checks (Guided): ",
+        "Access mode: Guided changes",
+        "Checks configured in this project: none",
+        "Full access: the terminal and checks run on this computer",
+    ] {
+        assert!(stdout.contains(expected), "{expected} missing:\n{stdout}");
+    }
+    assert!(!stdout.contains("unknown unknown"), "{stdout}");
+    assert!(stderr.contains("alt doctor found a problem"), "{stderr}");
+    assert!(!marker.exists(), "doctor ran the goose found on PATH");
+}
+
+#[test]
+fn doctor_labels_an_engine_that_is_not_the_tested_version() {
+    let (dir, project) = setup("http://127.0.0.1:9/v1");
+    let out = cli(dir.path(), &project).arg("doctor").output().unwrap();
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(!out.status.success(), "{stdout}");
+    assert!(
+        stdout.contains("fixture 1 · ACP v1 · Alt tools attached"),
+        "{stdout}"
+    );
+    assert!(
+        stdout.contains("NOT the tested Goose 1.53.0. Run `alt install engine`"),
+        "{stdout}"
+    );
+}

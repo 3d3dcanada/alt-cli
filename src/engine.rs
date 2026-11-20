@@ -4,7 +4,7 @@ use anyhow::{Context, Result, bail, ensure};
 use serde_json::{Value, json};
 use std::{
     collections::HashMap,
-    path::Path,
+    path::{Path, PathBuf},
     process::Stdio,
     sync::{Arc, Mutex},
     time::Duration,
@@ -43,6 +43,7 @@ pub struct Engine {
     local_tokenizer: Option<Profile>,
     relay: Option<crate::inference::Relay>,
     instruction_draft: Option<String>,
+    program: PathBuf,
 }
 
 /// Read one newline-delimited frame without allowing unbounded allocation.
@@ -104,6 +105,31 @@ fn goose_provider_error(params: &Value) -> Option<String> {
     }
 }
 
+/// Goose's own platform extensions. Alt names its tool server per session, but a
+/// session that loses that list falls back to the configured defaults; with
+/// these off it gets no tools rather than Goose's shell, apps or extension
+/// manager outside Alt's access mode, approvals and undo.
+const GOOSE_BUILTINS: [&str; 10] = [
+    "developer",
+    "analyze",
+    "apps",
+    "chatrecall",
+    "code_execution",
+    "extensionmanager",
+    "skills",
+    "summon",
+    "todo",
+    "tom",
+];
+
+fn disabled_builtins() -> String {
+    GOOSE_BUILTINS.iter().fold("extensions:\n".into(), |out, name| format!("{out}  {name}:\n    enabled: false\n    type: platform\n    name: {name}\n    description: Disabled by Alt; Alt owns execution\n"))
+}
+
+/// The session has no Alt tools: the engine dropped or could not start the
+/// tool server. A model must never run with only the engine's built-ins.
+pub const TOOLS_NOT_ATTACHED: &str = "Alt's tool server did not attach to the engine session, so the model would run without Alt's tools, access mode, approvals or undo. No model request was sent. Run `alt doctor`; if the engine is not the one Alt installs, run `alt install engine`";
+
 impl Engine {
     pub async fn goose(binary: &Path, root: &Path, cwd: &Path, profile: &Profile) -> Result<Self> {
         Self::goose_with_policy(
@@ -130,7 +156,10 @@ impl Engine {
         crate::config::private_dir(&goose_root)?;
         let goose_root = goose_root.canonicalize()?;
         crate::config::private_dir(&goose_root.join("config"))?;
-        crate::config::atomic_write(&goose_root.join("config/config.yaml"),b"extensions:\n  developer:\n    enabled: false\n    type: platform\n    name: developer\n    description: Disabled by Alt; Alt owns execution\n")?;
+        crate::config::atomic_write(
+            &goose_root.join("config/config.yaml"),
+            disabled_builtins().as_bytes(),
+        )?;
         let mut command = Command::new(binary);
         command
             .arg("acp")
@@ -204,6 +233,7 @@ impl Engine {
             .stderr(Stdio::piped())
             .kill_on_drop(true);
         crate::process::configure(&mut command);
+        let program = PathBuf::from(command.as_std().get_program());
         let mut child = command
             .spawn()
             .context("Cannot launch engine; install Goose 1.53.0 or pass --engine PATH")?;
@@ -300,6 +330,7 @@ impl Engine {
             local_tokenizer: None,
             relay: None,
             instruction_draft: None,
+            program,
         })
     }
 
@@ -400,12 +431,27 @@ impl Engine {
             .map(|b| b.extensions())
             .transpose()?
             .unwrap_or(json!([]));
+        let attached = self.bridge.as_ref().map(|b| b.attached());
         let result = self
             .call(
                 "session/new",
                 json!({"cwd":cwd,"mcpServers":[],"_meta":{"enabledExtensions":extensions}}),
             )
             .await?;
+        if let (Some(before), Some(bridge)) = (attached, &self.bridge) {
+            // Goose 1.53 starts each session's tool server before answering
+            // session/new; the bounded wait covers the socket hand-off on a
+            // loaded machine. An engine that ignores the list never attaches.
+            let deadline = tokio::time::Instant::now() + Duration::from_secs(10);
+            while bridge.attached() == before {
+                ensure!(
+                    tokio::time::Instant::now() < deadline,
+                    "{TOOLS_NOT_ATTACHED}. Engine: {}",
+                    self.program.display()
+                );
+                tokio::time::sleep(Duration::from_millis(25)).await;
+            }
+        }
         self.active_session = result["sessionId"].as_str().map(str::to_owned);
         Ok(result)
     }

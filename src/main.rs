@@ -9,7 +9,11 @@ use alt_cli::{
 use anyhow::{Context, Result, bail, ensure};
 use clap::{Parser, Subcommand};
 use serde_json::{Value, json};
-use std::{io::Write, path::PathBuf, time::Duration};
+use std::{
+    io::Write,
+    path::{Path, PathBuf},
+    time::Duration,
+};
 
 #[derive(Parser)]
 #[command(
@@ -1038,7 +1042,7 @@ async fn run() -> Result<()> {
                     let mut prefs = prefs;
                     prefs.access_policy = args.access.unwrap_or(prefs.access_policy);
                     let engine = runtime::find_engine(&root, &args.engine, &prefs)
-                        .context("Install or select the engine first")?;
+                        .context(runtime::ENGINE_MISSING)?;
                     let (cancel, _) = transfer_status();
                     serde_json::to_value(
                         alt_cli::candidates::run(
@@ -1355,60 +1359,16 @@ async fn run() -> Result<()> {
     private_dir(&root)?;
     let root = root.canonicalize()?;
     let preferences = Preferences::load(&root)?;
-    let binary = runtime::find_engine(&root, &args.engine, &preferences).context(
-        "Agent engine is not installed in this data folder. Run `alt install engine`, or name one with --engine PATH (an engine on PATH is not used unless named)",
-    )?;
+    let found = runtime::find_engine(&root, &args.engine, &preferences);
     let cwd = std::env::current_dir()?.canonicalize()?;
     if let Some(warning) = alt_cli::project::broad_root_warning(&cwd) {
         eprintln!("Warning: {warning}");
     }
     if matches!(command, Action::Doctor) {
-        let mut profile = profile.clone();
-        let _local = if profile.local_model.is_some() {
-            let local = runtime::LocalRuntime::start(
-                &root,
-                &preferences,
-                &profile,
-                std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false)),
-                |_| {},
-            )
-            .await?;
-            local.attach(&mut profile);
-            Some(local)
-        } else {
-            None
-        };
-        let models = model_ids(&profile).await?;
-        ensure!(
-            models.contains(&profile.model),
-            "Configured model is absent from the server's inventory; use `alt models`"
-        );
-        let mut engine = Engine::goose_with_policy(
-            &binary,
-            &root,
-            &cwd,
-            &profile,
-            args.access.unwrap_or(preferences.access_policy),
-        )
-        .await?;
-        let result = engine.initialize().await;
-        engine.shutdown().await;
-        let info = result?;
-        println!(
-            "{}",
-            display_text(&format!(
-                "Endpoint reachable; model listed: {}\nACP v1 ready: {} {}\nEngine: {}\nIsolated checks (Guided): {}\nContext: {} tokens; turn limit: {}\nInference/tool quality has not been tested by this check.",
-                profile.model,
-                info["agentInfo"]["name"].as_str().unwrap_or("unknown"),
-                info["agentInfo"]["version"].as_str().unwrap_or("unknown"),
-                binary.display(),
-                isolation_line(&alt_cli::sandbox::probe().await),
-                profile.context_tokens,
-                profile.max_turns
-            ))
-        );
-        return Ok(());
+        let access = args.access.unwrap_or(preferences.access_policy);
+        return doctor(&root, &cwd, found.as_deref(), profile, &preferences, access).await;
     }
+    let binary = found.context(runtime::ENGINE_MISSING)?;
     let store = Store::open(&root)?;
     let resume = match &command {
         Action::Tui { resume } | Action::Plain { resume } | Action::Run { resume, .. } => {
@@ -1580,6 +1540,135 @@ async fn run() -> Result<()> {
         local.stop().await;
     }
     result
+}
+
+/// Prints every line it can establish, even with no engine or an unreachable
+/// endpoint, then fails if anything it found is broken.
+async fn doctor(
+    root: &Path,
+    cwd: &Path,
+    binary: Option<&Path>,
+    profile: &Profile,
+    preferences: &Preferences,
+    access: alt_cli::project::Policy,
+) -> Result<()> {
+    let mut lines = Vec::new();
+    let mut broken = Vec::new();
+    let mut profile = profile.clone();
+    let mut endpoint = true;
+    let _local = if profile.local_model.is_some() {
+        match runtime::LocalRuntime::start(
+            root,
+            preferences,
+            &profile,
+            std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false)),
+            |_| {},
+        )
+        .await
+        {
+            Ok(local) => {
+                local.attach(&mut profile);
+                Some(local)
+            }
+            Err(error) => {
+                lines.push(format!("Model runtime: FAILED to start: {error:#}"));
+                broken.push("model runtime");
+                endpoint = false;
+                None
+            }
+        }
+    } else {
+        None
+    };
+    if endpoint {
+        match model_ids(&profile).await {
+            Ok(models) if models.contains(&profile.model) => lines.push(format!(
+                "Endpoint reachable; model listed: {}",
+                profile.model
+            )),
+            Ok(_) => {
+                lines.push(format!(
+                    "Endpoint reachable, but model {} is not in its inventory; use `alt models`",
+                    profile.model
+                ));
+                broken.push("model");
+            }
+            Err(error) => {
+                lines.push(format!(
+                    "Endpoint UNREACHABLE: {}: {error:#}",
+                    profile.endpoint
+                ));
+                broken.push("endpoint");
+            }
+        }
+    }
+    match binary {
+        None => {
+            lines.push(format!("Engine: NOT FOUND. {}", runtime::ENGINE_MISSING));
+            broken.push("engine");
+        }
+        Some(binary) => {
+            let checked = match Engine::goose_with_policy(binary, root, cwd, &profile, access).await
+            {
+                Ok(mut engine) => {
+                    let result = async {
+                        let info = engine.initialize().await?;
+                        engine.new_session(cwd).await?;
+                        anyhow::Ok(info)
+                    }
+                    .await;
+                    engine.shutdown().await;
+                    result
+                }
+                Err(error) => Err(error),
+            };
+            match checked {
+                Ok(info) => {
+                    let version = info["agentInfo"]["version"].as_str();
+                    lines.push(format!(
+                        "Engine: {} · {} {} · ACP v1 · Alt tools attached",
+                        binary.display(),
+                        info["agentInfo"]["name"].as_str().unwrap_or("engine"),
+                        version.unwrap_or("(version not reported)")
+                    ));
+                    if version != Some(runtime::ENGINE_VERSION) {
+                        lines.push(format!("Engine version: NOT the tested Goose {}. Run `alt install engine` to use the tested one", runtime::ENGINE_VERSION));
+                    }
+                }
+                Err(error) => {
+                    lines.push(format!("Engine: {}: FAILED: {error:#}", binary.display()));
+                    broken.push("engine");
+                }
+            }
+        }
+    }
+    let isolation = alt_cli::sandbox::probe().await;
+    lines.push(format!(
+        "Isolated checks (Guided): {}",
+        alt_cli::sandbox::isolation_line(&isolation)
+    ));
+    if !isolation.available && access == alt_cli::project::Policy::Guided {
+        broken.push("isolation");
+    }
+    lines.push(format!("Access mode: {}", access.label()));
+    lines.push(match alt_cli::project::Project::open(root, cwd).and_then(|p| p.checks()) {
+        Ok(checks) if checks.is_empty() => "Checks configured in this project: none. Nothing a model does here is verified until you add one (`alt task configure-check NAME -- COMMAND`)".into(),
+        Ok(checks) => format!("Checks configured in this project: {}", checks.iter().map(|c| c.name.as_str()).collect::<Vec<_>>().join(", ")),
+        Err(error) => format!("Checks configured in this project: could not read them: {error:#}"),
+    });
+    lines.push("Full access: the terminal and checks run on this computer with your permissions, unisolated".into());
+    lines.push(format!(
+        "Context: {} tokens; turn limit: {}",
+        profile.context_tokens, profile.max_turns
+    ));
+    lines.push("Inference/tool quality has not been tested by this check.".into());
+    println!("{}", display_text(&lines.join("\n")));
+    ensure!(
+        broken.is_empty(),
+        "alt doctor found a problem ({}); the fix is on its line above",
+        broken.join(", ")
+    );
+    Ok(())
 }
 
 fn transfer_status() -> (models::Cancel, impl FnMut(models::Progress)) {
@@ -1763,7 +1852,7 @@ async fn headless(
                 }
                 let result = response_value(result)?;
                 if let Some(verification) = engine.verification()? {
-                    let note = if verification.complete { "All required checks passed on current files. Review their coverage." } else if verification.requirements.is_empty() { "Verification is not configured. Choose required checks in Task; a model response does not establish completion." } else { "Required checks are not complete on current files. Inspect Task verification before considering this finished." };
+                    let note = verification.summary();
                     let evidence = json!({"type":"verification","data":verification,"note":note});
                     store.append(&session.id, &evidence)?;
                     if json_output { println!("{evidence}"); } else { println!("\n\nAlt verification: {note}"); }
@@ -2025,10 +2114,7 @@ async fn task_action(
             }
             let result = p.verification()?;
             println!("{}", serde_json::to_string_pretty(&result)?);
-            ensure!(
-                result.complete,
-                "Required checks are incomplete; inspect the verification report"
-            );
+            ensure!(result.complete, "{}", result.summary());
             return Ok(());
         }
         TaskAction::Pin { text } => json!({"id":p.pin(&text)?}),
@@ -2073,6 +2159,12 @@ async fn task_action(
             let result =
                 alt_cli::sandbox::run(root.into(), cwd, task, name, policy, cancel).await?;
             println!("{}", serde_json::to_string_pretty(&result)?);
+            ensure!(
+                !alt_cli::workflow::not_run(&result),
+                "Nothing was verified: {} did not run ({}); evidence saved",
+                result.name,
+                alt_cli::workflow::one_line(result.error.as_deref().unwrap_or(""))
+            );
             ensure!(
                 result.exit_code == Some(0)
                     && result.error.is_none()
@@ -2174,37 +2266,4 @@ async fn job_action(
         "Job did not complete successfully"
     );
     Ok(())
-}
-
-/// One doctor line for Guided-mode check isolation, with the fix when the kernel
-/// policy (not a missing package) is what refuses it.
-fn isolation_line(i: &alt_cli::sandbox::Isolation) -> String {
-    if i.available {
-        return format!("available ({})", i.detail);
-    }
-    let fix = if ["Permission denied", "uid map", "not permitted"]
-        .iter()
-        .any(|s| i.detail.contains(s))
-    {
-        " Fix (once, as root): allow user namespaces for /usr/bin/bwrap with an AppArmor profile containing `userns,`, then `apparmor_parser -r` it; see README, Isolation. Until then Guided checks cannot run and nothing is verified. Full access checks run unisolated."
-    } else {
-        " Until this is fixed Guided checks cannot run and nothing is verified. Full access checks run unisolated."
-    };
-    format!("UNAVAILABLE. {}.{fix}", i.detail.trim_end_matches('.'))
-}
-
-#[cfg(test)]
-mod isolation_line_tests {
-    #[test]
-    fn a_kernel_refusal_names_the_fix_and_says_nothing_is_verified() {
-        let line = super::isolation_line(&alt_cli::sandbox::Isolation {
-            available: false,
-            detail: "Isolation is unavailable: bwrap: setting up uid map: Permission denied".into(),
-        });
-        assert!(line.starts_with("UNAVAILABLE"), "{line}");
-        assert!(
-            line.contains("userns,") && line.contains("nothing is verified"),
-            "{line}"
-        );
-    }
 }

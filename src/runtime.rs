@@ -172,6 +172,8 @@ pub struct Hardware {
     pub available_ram: u64,
     pub threads: usize,
     pub gpu: String,
+    /// Guided-check isolation; None until the probe answers.
+    pub isolation: Option<crate::sandbox::Isolation>,
 }
 
 // Container usage includes reclaimable disk cache. Match the conservative
@@ -302,6 +304,7 @@ pub async fn hardware() -> Hardware {
             .map(usize::from)
             .unwrap_or(1),
         gpu: "No NVIDIA GPU detected; CPU mode is available".into(),
+        isolation: Some(crate::sandbox::probe().await),
     };
     if let Ok(limit) = std::fs::read_to_string("/sys/fs/cgroup/memory.max")
         && let Ok(limit) = limit.trim().parse::<u64>()
@@ -332,6 +335,12 @@ pub async fn hardware() -> Hardware {
     }
     data
 }
+
+/// The engine version Alt pins, installs and tests (`Component::Engine`).
+pub const ENGINE_VERSION: &str = "1.53.0";
+
+/// The one message for every place that needs an engine and has none.
+pub const ENGINE_MISSING: &str = "The agent engine is not installed in this data folder. Run `alt install engine` (or choose Install the agent engine on Home), or name one with --engine PATH. A goose on PATH is never used unless named";
 
 pub fn find_engine(root: &Path, requested: &Path, preferences: &Preferences) -> Option<PathBuf> {
     if requested != Path::new("goose") {

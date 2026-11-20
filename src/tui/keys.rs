@@ -344,7 +344,24 @@ impl App {
             5 => self.action("templates")?,
             6 => {
                 if self.engine_ready() {
-                    self.notify("The agent engine is installed. You can start a conversation.");
+                    let engine = crate::runtime::find_engine(
+                        &self.root,
+                        &self.requested_engine,
+                        &self.preferences,
+                    );
+                    self.dialog = Some(Dialog::Notice {
+                        title: "Agent engine and check isolation".into(),
+                        body: format!(
+                            "Engine: {}\n\nIsolated checks (Guided): {}\n\nAccess mode: {}. Full access runs the terminal and checks on this computer with your permissions, unisolated.\n\n`alt doctor` prints the same lines from a shell.",
+                            engine.map_or_else(|| "not found".into(), |p| p.display().to_string()),
+                            self.hardware.isolation.as_ref().map_or_else(
+                                || "still being checked; reopen in a moment".into(),
+                                crate::sandbox::isolation_line
+                            ),
+                            self.preferences.access_policy.label()
+                        ),
+                        scroll: 0,
+                    });
                 } else {
                     self.install_dialog(Component::Engine);
                 }

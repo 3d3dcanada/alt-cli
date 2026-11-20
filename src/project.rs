@@ -298,7 +298,7 @@ impl Project {
                     phase: r.get(3)?,
                     next: r.get(4)?,
                     changes: 0,
-                    check_status: "No checks recorded".into(),
+                    check_status: "Nothing verified: no check has run for this task".into(),
                 })
             },
         )?;
@@ -326,6 +326,14 @@ impl Project {
                 )
             {
                 "Check ran zero tests".into()
+            } else if crate::workflow::not_run(&check) {
+                format!(
+                    "Nothing verified: {} did not run ({})",
+                    check.name,
+                    crate::workflow::one_line(
+                        check.error.as_deref().unwrap_or("no reason recorded")
+                    )
+                )
             } else if check.error.is_some() {
                 "Check could not run".into()
             } else if check.timed_out {

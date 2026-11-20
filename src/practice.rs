@@ -70,7 +70,7 @@ pub fn prepare_test(
     let mut prefs = crate::config::Preferences::load(source)?;
     prefs.engine_path = Some(
         crate::runtime::find_engine(source, engine, &prefs)
-            .context("Install the agent engine before running a PC live repair test")?
+            .context(crate::runtime::ENGINE_MISSING)?
             .canonicalize()?,
     );
     if profile.local_model.is_some() {

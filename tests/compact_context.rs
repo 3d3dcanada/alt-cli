@@ -620,3 +620,74 @@ async fn a_check_that_never_started_is_blocked_not_a_repair_loop() {
     assert!(packet["facts"]["recovery"].is_null());
     assert!(!p.verification().unwrap().behavioral_acceptance);
 }
+
+#[tokio::test]
+async fn a_task_where_no_check_ran_never_reads_as_finished_or_passed() {
+    use std::sync::{Arc, atomic::AtomicBool};
+    let data = tempfile::tempdir().unwrap();
+    let cwd = tempfile::tempdir().unwrap();
+    {
+        let p = Project::open(data.path(), cwd.path()).unwrap();
+        p.start_task("t", "calc repair").unwrap();
+        assert!(
+            p.task("t")
+                .unwrap()
+                .check_status
+                .starts_with("Nothing verified")
+        );
+        let summary = p.verification().unwrap().summary();
+        assert!(summary.starts_with("Nothing was verified"), "{summary}");
+        p.set_check(&alt_cli::project::CheckSpec {
+            name: "behavior".into(),
+            argv: vec![
+                cwd.path()
+                    .join("missing-runner")
+                    .to_string_lossy()
+                    .into_owned(),
+            ],
+            timeout_secs: 10,
+            contract: Default::default(),
+        })
+        .unwrap();
+        p.set_requirement(&alt_cli::project_services::Requirement {
+            name: "behaves".into(),
+            description: String::new(),
+            check_name: "behavior".into(),
+        })
+        .unwrap();
+        let summary = p.verification().unwrap().summary();
+        assert!(summary.starts_with("Nothing was verified"), "{summary}");
+    }
+    let check = alt_cli::sandbox::run(
+        data.path().into(),
+        cwd.path().into(),
+        "t".into(),
+        "behavior".into(),
+        Policy::Trusted,
+        Arc::new(AtomicBool::new(false)),
+    )
+    .await
+    .unwrap();
+    assert!(alt_cli::workflow::not_run(&check));
+    let p = Project::open(data.path(), cwd.path()).unwrap();
+    let verification = p.verification().unwrap();
+    assert_eq!(verification.requirements[0].status, "did not run");
+    let reason = verification.requirements[0].reason.clone().unwrap();
+    let summary = verification.summary();
+    assert!(
+        summary.starts_with("Nothing was verified: behaves did not run")
+            && summary.contains(&reason)
+            && !summary.contains("passed"),
+        "{summary}"
+    );
+    let status = p.task("t").unwrap().check_status;
+    assert!(
+        status.starts_with("Nothing verified: behavior did not run"),
+        "{status}"
+    );
+    // bwrap's stderr ends in a newline; status sentences stay on one line.
+    assert_eq!(
+        alt_cli::workflow::one_line("bwrap: Operation not permitted\n. No command ran."),
+        "bwrap: Operation not permitted. No command ran."
+    );
+}

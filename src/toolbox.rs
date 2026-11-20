@@ -13,7 +13,7 @@ use std::{
     path::{Path, PathBuf},
     sync::{
         Arc, Mutex,
-        atomic::{AtomicBool, Ordering},
+        atomic::{AtomicBool, AtomicUsize, Ordering},
     },
     time::Duration,
 };
@@ -186,6 +186,7 @@ pub struct Bridge {
     pub cwd: PathBuf,
     pub policy: Policy,
     pub tool_profile: ToolProfile,
+    attached: Arc<AtomicUsize>,
 }
 #[derive(Clone)]
 struct Service {
@@ -198,7 +199,11 @@ struct Service {
     context: Arc<Mutex<ContextState>>,
     cancel: Arc<AtomicBool>,
     extensions: Arc<crate::extensions::Manager>,
+    attached: Arc<AtomicUsize>,
 }
+/// Sent by `alt tool-server` when an engine session completes the MCP handshake.
+/// Never a tool: it is counted before dispatch and never journaled.
+const ATTACHED: &str = "alt:attached";
 impl Bridge {
     pub fn start(data: &Path, cwd: &Path, policy: Policy) -> Result<Self> {
         let directory = tempfile::Builder::new().prefix("alt-ipc-").tempdir()?;
@@ -209,6 +214,7 @@ impl Bridge {
         let decisions: Decisions = Arc::default();
         let context = Arc::new(Mutex::new(ContextState::default()));
         let cancel = Arc::new(AtomicBool::new(false));
+        let attached = Arc::new(AtomicUsize::new(0));
         let service = Service {
             data: data.into(),
             cwd: cwd.into(),
@@ -219,6 +225,7 @@ impl Bridge {
             context: context.clone(),
             cancel: cancel.clone(),
             extensions: Arc::default(),
+            attached: attached.clone(),
         };
         let listener = tokio::spawn(async move {
             // One tool at a time keeps ordering and checkpoint ownership deterministic.
@@ -243,7 +250,12 @@ impl Bridge {
             cwd: cwd.into(),
             policy,
             tool_profile: crate::config::Preferences::load(data)?.tool_profile,
+            attached,
         })
+    }
+    /// How many engine sessions have attached Alt's tool server so far.
+    pub fn attached(&self) -> usize {
+        self.attached.load(Ordering::SeqCst)
     }
     pub fn context(&self, task: &str, session: &str) {
         *self.context.lock().expect("tool context") = ContextState {
@@ -300,6 +312,10 @@ async fn serve_connection(stream: UnixStream, s: &Service) -> Result<()> {
         .await?;
     ensure!(buf.len() <= 1024 * 1024, "Tool request exceeds 1 MiB");
     let request: Request = serde_json::from_slice(&buf)?;
+    if request.name == ATTACHED {
+        s.attached.fetch_add(1, Ordering::SeqCst);
+        return Ok(());
+    }
     let context = s.context.lock().expect("context").clone();
     let signature = project::digest(&serde_json::to_vec(&request)?);
     let id = format!("alt:{}", uuid::Uuid::new_v4());
@@ -1096,14 +1112,27 @@ pub async fn stdio(socket: &Path, profile: ToolProfile) -> Result<()> {
             continue;
         };
         let result: Result<Value> = match v["method"].as_str().unwrap_or("") {
-            "initialize" => Ok(
-                json!({"protocolVersion":"2024-11-05","capabilities":{"tools":{}},"serverInfo":{"name":"Alt controlled tools","version":env!("CARGO_PKG_VERSION")}}),
-            ),
+            "initialize" => {
+                // Tell the workspace this session really carries Alt's tools. If the
+                // socket is gone the workspace is too, and it reports the missing tools.
+                if let Ok(mut stream) = UnixStream::connect(socket).await {
+                    let mut hello = serde_json::to_vec(&Request {
+                        name: ATTACHED.into(),
+                        arguments: json!({}),
+                    })?;
+                    hello.push(b'\n');
+                    let _ = stream.write_all(&hello).await;
+                }
+                Ok(
+                    json!({"protocolVersion":"2024-11-05","capabilities":{"tools":{}},"serverInfo":{"name":"Alt controlled tools","version":env!("CARGO_PKG_VERSION")}}),
+                )
+            }
             "ping" => Ok(json!({})),
             "tools/list" => Ok(focused_tools(profile)),
             "tools/call" => {
                 async {
                     let name = v["params"]["name"].as_str().context("Missing tool name")?;
+                    ensure!(name != ATTACHED, "Unknown tool");
                     let mut stream = UnixStream::connect(socket)
                         .await
                         .context("Alt workspace disconnected")?;

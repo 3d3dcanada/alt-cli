@@ -23,6 +23,9 @@ pub struct RequirementStatus {
     pub evidence: Option<String>,
     pub check_kind: crate::verification::Kind,
     pub coverage: String,
+    /// Why a check did not run or could not complete, quoted from its result.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub reason: Option<String>,
 }
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Verification {
@@ -31,6 +34,46 @@ pub struct Verification {
     pub scope: String,
     pub requirements: Vec<RequirementStatus>,
     pub source_snapshot: Option<String>,
+}
+impl Verification {
+    /// The one end-of-task sentence for `alt run`, `alt task` and the TUI. A task
+    /// where no required check passed never reads as finished or passed.
+    pub fn summary(&self) -> String {
+        if self.behavioral_acceptance {
+            return "Required independent behavioral assertions passed on current files. Review their stated coverage.".into();
+        }
+        if self.complete {
+            return "Required checks passed on current files. Behavioral coverage remains unknown; review what each check covers.".into();
+        }
+        if self.requirements.is_empty() {
+            return "Nothing was verified: no required checks are set for this project. Choose required checks in Task; a model response or tool activity does not establish completion.".into();
+        }
+        let passed = self
+            .requirements
+            .iter()
+            .filter(|r| r.status == "passed on current files")
+            .count();
+        let open = self
+            .requirements
+            .iter()
+            .filter(|r| r.status != "passed on current files")
+            .map(|r| match &r.reason {
+                Some(reason) => format!("{} {} ({})", r.requirement.name, r.status, reason),
+                None => format!("{} {}", r.requirement.name, r.status),
+            })
+            .collect::<Vec<_>>()
+            .join("; ");
+        if passed == 0 {
+            format!(
+                "Nothing was verified: {open}. This task is not finished; open Task verification."
+            )
+        } else {
+            format!(
+                "Not finished: {passed} of {} required checks passed on current files; {open}.",
+                self.requirements.len()
+            )
+        }
+    }
 }
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct IndexReport {
@@ -359,6 +402,7 @@ impl Project {
                 {
                     "zero tests"
                 }
+                (Some(c), _) if crate::workflow::not_run(c) => "did not run",
                 (Some(c), _) if c.error.is_some() => "could not complete",
                 (Some(c), _) if c.cancelled => "cancelled",
                 (Some(c), _) if c.timed_out => "timed out",
@@ -390,6 +434,10 @@ impl Project {
                     "command result; behavioral coverage unknown"
                 }
                 .into(),
+                reason: check
+                    .as_ref()
+                    .filter(|_| matches!(status, "did not run" | "could not complete"))
+                    .and_then(|c| c.error.as_deref().map(crate::workflow::one_line)),
                 evidence: check.map(|c| c.id),
             });
         }

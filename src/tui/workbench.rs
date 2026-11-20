@@ -243,11 +243,7 @@ impl App {
             "verification-status" => {
                 self.launch_project("Reading verification evidence", |p, _| {
                     let v = p.verification()?;
-                    let mut body: String = if v.complete {
-                        format!("{}\n", v.scope)
-                    } else {
-                        "Required checks are not complete.\n".into()
-                    };
+                    let mut body = format!("{}\n", v.summary());
                     for r in v.requirements {
                         body.push_str(&format!(
                             "\n{}: {}\n{}\nEvidence: {}\n",

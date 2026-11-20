@@ -99,6 +99,15 @@ fn failed(c: &crate::project::CheckResult) -> bool {
 /// missing). There are no failed cases to read, and an empty list is not a pass.
 pub const NOT_RUN: &str = "This check did not run, so nothing is verified on this revision. Do not describe it as passed or failed: report it as unverified and quote its reason. Rerunning will not help until that reason is fixed.";
 
+/// A recorded reason on one line: tool stderr keeps its own line breaks, which
+/// would split a status sentence.
+pub fn one_line(text: &str) -> String {
+    text.split_whitespace()
+        .collect::<Vec<_>>()
+        .join(" ")
+        .replace(" .", ".")
+}
+
 /// The command never started: no exit code, no output, and a recorded reason.
 pub fn not_run(c: &crate::project::CheckResult) -> bool {
     c.exit_code.is_none()

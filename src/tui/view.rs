@@ -1064,8 +1064,12 @@ fn dashboard(frame: &mut Frame, app: &mut App, area: Rect, labels: &[(&str, &str
         (
             " ◇ TOOLS ",
             tools.to_string(),
-            app.preferences.access_policy.label().to_string(),
-            if app.engine_ready() { GOOD() } else { WARN() },
+            app.isolation_status().0.to_string(),
+            if app.engine_ready() && app.isolation_status().1 {
+                GOOD()
+            } else {
+                WARN()
+            },
         ),
     ];
     for (i, (title, value, detail, color)) in statuses.into_iter().enumerate() {
@@ -1187,11 +1191,15 @@ fn home(frame: &mut Frame, app: &mut App, area: Rect) {
             ),
             line(
                 if app.engine_ready() {
-                    "Agent engine ready · conversations stay on this computer"
+                    format!("Agent engine ready · {}", app.isolation_status().0)
                 } else {
-                    "Agent engine missing · install it below when you are ready"
+                    "Agent engine missing · install it below, or run `alt install engine`".into()
                 },
-                if app.engine_ready() { GOOD() } else { WARN() },
+                if app.engine_ready() && app.isolation_status().1 {
+                    GOOD()
+                } else {
+                    WARN()
+                },
             ),
         ],
     );
@@ -1230,7 +1238,11 @@ fn home(frame: &mut Frame, app: &mut App, area: Rect) {
             } else {
                 "Install the agent engine"
             },
-            "A separate local component that gives your model tools.",
+            if app.engine_ready() && !app.isolation_status().1 {
+                "Guided checks cannot run here. Enter shows why and the fix."
+            } else {
+                "A separate local component that gives your model tools."
+            },
         ),
         (
             "Keep a project brief",
@@ -2694,11 +2706,13 @@ fn task(frame: &mut Frame, app: &mut App, area: Rect) {
         let verification = app.task_view.verification.as_ref();
         let evidence = verification
             .map(|v| {
+                let passed = v
+                    .requirements
+                    .iter()
+                    .filter(|r| r.status == "passed on current files")
+                    .count();
                 if v.requirements.is_empty() {
-                    format!(
-                        "No completion requirements set · latest check: {}",
-                        t.check_status
-                    )
+                    format!("No required checks set · {}", t.check_status)
                 } else {
                     format!(
                         "{} · {}/{} required checks current",
@@ -2706,13 +2720,12 @@ fn task(frame: &mut Frame, app: &mut App, area: Rect) {
                             "Independent assertion passed"
                         } else if v.complete {
                             "Commands passed; behavioral coverage unknown"
+                        } else if passed == 0 {
+                            "Nothing verified; press V for why"
                         } else {
                             "Work remains; press V for details"
                         },
-                        v.requirements
-                            .iter()
-                            .filter(|r| r.status == "passed on current files")
-                            .count(),
+                        passed,
                         v.requirements.len(),
                     )
                 }

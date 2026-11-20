@@ -137,7 +137,7 @@ async fn worker(
     );
     let binary=runtime::find_engine(&root,&requested_engine,&preferences).with_context(|| match &preferences.engine_path {
             Some(selected)=>format!("The selected agent engine {} is missing or not executable. Alt does not substitute another engine: choose it again or clear it in Settings",selected.display()),
-            None=>"The agent engine is not installed. Choose Install agent engine on Home, or set its path in Settings".into(),
+            None=>runtime::ENGINE_MISSING.into(),
         })?;
     let mut local_runtime = None;
     if profile.local_model.is_some() {

@@ -102,6 +102,33 @@ silently running on the host. **Review only** is also available. File checkpoint
 cover Alt edits; they do not undo arbitrary terminal, database or remote effects.
 Tool focus is a separate explicit choice; **All** is the default.
 
+## Isolation
+
+`alt doctor` and the Home screen report whether Guided checks can run isolated.
+Until they can, Guided checks do not run and nothing is verified; Full access
+checks still run, unisolated, with your permissions.
+
+Where AppArmor restricts unprivileged user namespaces (recent Ubuntu releases),
+Bubblewrap fails with `setting up uid map: Permission denied` or
+`loopback: Failed RTM_NEWADDR: Operation not permitted`. To allow it for
+Bubblewrap only, run once as root:
+
+```bash
+sudo tee /etc/apparmor.d/bwrap >/dev/null <<'EOF'
+abi <abi/4.0>,
+include <tunables/global>
+
+profile bwrap /usr/bin/bwrap flags=(unconfined) {
+  userns,
+  include if exists <local/bwrap>
+}
+EOF
+sudo apparmor_parser -r /etc/apparmor.d/bwrap
+```
+
+Then run `alt doctor` again; the isolation line should read `available`.
+If Bubblewrap is missing, install the `bubblewrap` package instead.
+
 ## Models and older computers
 
 | Connection | Address or input | Notes |

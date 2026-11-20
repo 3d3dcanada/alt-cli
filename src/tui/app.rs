@@ -966,6 +966,14 @@ impl App {
         scored.sort_by(|a, b| b.0.cmp(&a.0).then(a.1.0.cmp(&b.1.0)));
         scored.into_iter().map(|(_, item)| item).collect()
     }
+    /// Short Guided-check isolation state for Home; the fix is one Enter away.
+    pub fn isolation_status(&self) -> (&'static str, bool) {
+        match &self.hardware.isolation {
+            None => ("Checking check isolation", true),
+            Some(i) if i.available => ("Guided checks isolated", true),
+            Some(_) => ("Guided checks cannot run", false),
+        }
+    }
     pub fn engine_ready(&self) -> bool {
         runtime::find_engine(&self.root, &self.requested_engine, &self.preferences).is_some()
     }
@@ -1197,10 +1205,7 @@ impl App {
                 .context("Choose a connection first. Open Connections to get started")?;
             (name.into(), p.clone())
         };
-        ensure!(
-            self.engine_ready(),
-            "Install the agent engine from Home before starting a conversation"
-        );
+        ensure!(self.engine_ready(), runtime::ENGINE_MISSING);
         let mut options = workspace::Options {
             root: self.root.clone(),
             requested_engine: self.requested_engine.clone(),
@@ -1697,23 +1702,10 @@ impl App {
                     }
                     Ok(JobResult::Task(view)) => {
                         if view.announce_verification {
-                            let notice = match &view.verification {
-                                Some(v) if v.behavioral_acceptance => {
-                                    "Required independent behavioral assertions passed on current files. Review their stated coverage in Task."
-                                }
-                                Some(v) if v.complete => {
-                                    "Required commands passed on current files. Behavioral coverage remains unknown; review their contracts in Task."
-                                }
-                                Some(v) if v.requirements.is_empty() => {
-                                    "Verification is not configured. Choose required checks in Task; tool activity alone does not establish completion."
-                                }
-                                Some(_) => {
-                                    "Required checks are not complete on current files. Open Task to inspect failures or run verification."
-                                }
-                                None => {
-                                    "Verification could not be read. Open Task to inspect the saved evidence."
-                                }
-                            };
+                            let notice = view.verification.as_ref().map_or_else(
+                                || "Nothing was verified: the verification record could not be read. Open Task to inspect the saved evidence.".into(),
+                                |v| v.summary(),
+                            );
                             self.add_message("Verification", notice);
                         }
                         self.task_view = *view;
