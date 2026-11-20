@@ -46,3 +46,4 @@ life (HTTP 410).
 | Order | Result | Open |
 | --- | --- | --- |
 | P01 | Pinned 1.99.0; fmt, strict Clippy, 200 tests and release build green at normal load; version `0.9.0-dev`; baseline re-run: 697 s, edit correct (independent check pass), exit 1 after `--timeout 600` overran by about 97 s | Wall-clock-bound TUI lock tests (`recovery_tests`) flake under heavy host load, on unchanged `main` too |
+| P02 | `cargo audit --deny warnings` clean: rustls 0.23.46, rustls-webpki 0.103.17, tokio 1.53.3, rustix 1.1.6, rusqlite 0.41.1 (`libsqlite3-sys` 0.39.1) with its `fallible_uint` feature so integer columns keep checked conversions without call-site changes; an existing sessions database lists and exports identically with the old and new build; README model ID and status updated | — |

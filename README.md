@@ -50,8 +50,8 @@ Pick the model from the server's list (type to search long hosted catalogs).
 Headless, the same in one line:
 
 ```bash
-alt init --preset nvidia --model z-ai/glm-5.3     # or: --preset ollama --model qwen3:8b
-alt probe                                          # one short request; suggests settings
+alt init --preset nvidia --model minimaxai/minimax-m3.1-flash   # or: --preset ollama --model qwen3:8b
+alt probe                                                        # one short request; suggests settings
 ```
 
 **Probe this model** (Ctrl+P) sends one bounded request and suggests settings
@@ -75,7 +75,7 @@ reasoning are detected and offered a labelled recovery; see
 Everything is reachable with the keyboard or mouse: **Ctrl+P** lists every page,
 setting and action; **F1** opens help; the TUI stays usable at 80×24.
 
-**Status: 0.7 in development on `main` (latest release 0.6.0 beta 3) · Linux
+**Status: 0.9 in development (latest release 0.6.0 beta 3) · Linux
 x86_64 · Apache-2.0.** Model reliability and hardware support are measured
 separately from application tests; see [Status and evidence](#status-and-evidence).
 
@@ -168,10 +168,10 @@ Keys are referenced by environment-variable name, not saved in model profiles.
 - [Workspace guide](docs/WORKSPACE_GUIDE.md) · [Motion](docs/MOTION.md) · [CLI reference](docs/CLI.md)
 - [Verification contracts](docs/VERIFICATION_CONTRACTS.md) · [Runtime qualification](docs/QUALIFICATION.md)
 - [Architecture](docs/ARCHITECTURE.md) · [Contributing](CONTRIBUTING.md) · [Changelog](CHANGELOG.md)
-- [Implementation and evidence](docs/IMPLEMENTATION.md) · [0.7 work orders](docs/WORK_ORDERS_0.7.md) · [PC test guide](docs/PC_TESTING.md)
+- [Implementation and evidence](docs/IMPLEMENTATION.md) · [0.7 work orders](docs/WORK_ORDERS_0.7.md) · [0.9 work orders](docs/WORK_ORDERS_0.9.md) · [PC test guide](docs/PC_TESTING.md)
 - [Research and project history](docs/research/README.md) · [Documentation index](docs/README.md)
 
-Current source validation includes **162 Rust tests**, strict Clippy, both adapter
+Current source validation includes **200 Rust tests**, strict Clippy, both adapter
 fixtures for both compact edit formats, and actual small-terminal permission,
 edit/check/undo and conversation-continuation journeys. Compact follow-ups retain
 the complete original request as context, with the latest user message taking
