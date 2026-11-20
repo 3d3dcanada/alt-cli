@@ -8,10 +8,12 @@ import argparse
 import json
 import os
 from pathlib import Path
+import re
 import subprocess
 import signal
 import tempfile
 import threading
+import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 REQUESTS = []
@@ -23,6 +25,50 @@ MODEL = "alt-protocol-fixture"
 STALL_STARTED = threading.Event()
 GARBAGE_SENT = []
 STALL_RELEASE = threading.Event()
+SLOW_RELEASE = threading.Event()
+FIXED = 'print("hello")\n'
+
+
+def scripted(messages, tools):
+    """Request-counting fixture model: it obeys every directive Alt sends (a plan
+    request, a refused edit, "run a fresh check") and otherwise takes the shortest
+    path. Counts measure what Alt makes a model spend, not model quality."""
+    names = {t["function"]["name"].split("__")[-1]: t["function"]["name"] for t in tools}
+    done = [c["function"]["name"].split("__")[-1] for m in messages if m["role"] == "assistant" for c in (m.get("tool_calls") or [])]
+    results = [json.dumps(m.get("content")) for m in messages if m["role"] == "tool"]
+    last = results[-1] if results else ""
+    sent = json.dumps([m.get("content") for m in messages if m["role"] in ("system", "user")])
+    user = next(str(m.get("content")) for m in reversed(messages) if m["role"] == "user")
+
+    def call(*items):
+        return {"role": "assistant", "content": None, "tool_calls": [
+            {"id": f"count-{len(done)}-{i}", "type": "function", "function": {"name": names[n], "arguments": json.dumps(a)}}
+            for i, (n, a) in enumerate(items)]}, "tool_calls"
+
+    def answer(text):
+        return {"role": "assistant", "content": text}, "stop"
+
+    if "remember" not in done and any(s in sent + last for s in ("Host workflow stage: plan", "No plan saved", "Save a short plan with remember")):
+        return call(("remember", {"kind": "plan", "text": "Inspect, change, run, report."}))
+    if "COUNT_PARALLEL" in user:
+        return call(("read", {"path": "app.py"}), ("read", {"path": "notes.txt"})) if not results else answer(f"Read {len(results)} files in one round.")
+    if "COUNT_QUESTION" in user:
+        return call(("list", {})) if "list" not in done else answer("Files here: app.py, notes.txt.")
+    applied = any("Applied checkpoint" in r or '\\"checkpoint\\":' in r for r in results)
+    if not (applied or "applied app.py" in sent):
+        reads = [r for r in results if "Range handle:" in r]
+        if not reads or "Read this file again" in last:
+            return call(("read", {"path": "app.py"}))
+        handle = re.search(r"Range handle: ([^\s\\\"]+)", reads[-1]).group(1)
+        return call(("edit", {"path": "app.py", "operation": "handle", "handle": handle, "new_text": FIXED, "reason": "Fix the typo"}))
+    if ("Run a fresh check" in last or "run a fresh configured check" in last) and "run_check" not in done:
+        return call(("run_check", {"name": "check"}))
+    if "terminal" not in done and "Full access terminal" not in sent:
+        if "COUNT_SLOW" in user and not SLOW_RELEASE.is_set():
+            SLOW_RELEASE.wait(timeout=60)
+            return None
+        return call(("terminal", {"command": "python3 app.py"}))
+    return answer("Fixed the typo in app.py; python3 app.py printed hello.")
 
 
 class Provider(BaseHTTPRequestHandler):
@@ -65,7 +111,12 @@ class Provider(BaseHTTPRequestHandler):
             STALL_RELEASE.wait(timeout=15)
             return
         tool_results = [m for m in messages if m["role"] == "tool"]
-        if any(m["role"] == "user" and "GARBAGE_FIXTURE" in str(m.get("content")) for m in messages):
+        if any(m["role"] == "user" and "COUNT_" in str(m.get("content")) for m in messages):
+            step = scripted(messages, request.get("tools", []))
+            if step is None:
+                return
+            message, finish = step
+        elif any(m["role"] == "user" and "GARBAGE_FIXTURE" in str(m.get("content")) for m in messages):
             # A04: the first reply is provider garbage with leaked template tokens.
             text = "Clean answer after resend" if GARBAGE_SENT else "<|open|>垃圾 мусор 函数<|close|> λ"
             GARBAGE_SENT.append(True)
@@ -106,8 +157,8 @@ class Provider(BaseHTTPRequestHandler):
             self.send_header("Content-Type", "text/event-stream")
             self.end_headers()
             delta = dict(message)
-            if "tool_calls" in delta:
-                delta["tool_calls"][0]["index"] = 0
+            for index, item in enumerate(delta.get("tool_calls") or []):
+                item["index"] = index
             chunk = {"id": "fixture-response", "object": "chat.completion.chunk", "created": 1, "model": MODEL,
                      "choices": [{"index": 0, "delta": delta, "finish_reason": None}]}
             final = {**chunk, "choices": [{"index": 0, "delta": {}, "finish_reason": finish}], "usage": response["usage"]}
@@ -123,6 +174,8 @@ def main():
     parser.add_argument("--alt", default="target/debug/alt")
     parser.add_argument("--goose", required=True)
     parser.add_argument("--provider", choices=["openai", "ollama"], default="openai")
+    parser.add_argument("--dump", help="Write the first model request of each counted task here")
+    parser.add_argument("--measure", action="store_true", help="Report unmet request-count and turn-ending checks instead of failing")
     args = parser.parse_args()
     alt, goose = str(Path(args.alt).resolve()), str(Path(args.goose).resolve())
     server = ThreadingHTTPServer(("127.0.0.1", 0), Provider)
@@ -191,6 +244,75 @@ def main():
             assert '<|open|>' not in run('export', session), "Discarded provider output reached the conversation"
             assert len(GARBAGE_SENT) == 2, GARBAGE_SENT
             run('inference', '--output-guard', 'auto')
+
+            # F2: requests Alt makes a model spend, a turn ended by the turn limit
+            # or by --timeout, and continuing it with --resume.
+            def project(name):
+                folder = root / name
+                folder.mkdir()
+                (folder / "app.py").write_text('print("helo")\n')
+                (folder / "notes.txt").write_text("fixture notes\n")
+                return folder
+
+            def alt_in(folder, *arguments, state="state", timeout=90):
+                return subprocess.run([alt, "--data-dir", str(root / state), "--engine", goose, "--access", "trusted", *arguments],
+                                      cwd=folder, capture_output=True, text=True, timeout=timeout)
+
+            def counted(folder, prompt, *flags):
+                mark = len(REQUESTS)
+                result = alt_in(folder, "run", prompt, "--allow-terminal", "--json", *flags)
+                bodies = [r for p, r in REQUESTS[mark:] if p == '/v1/chat/completions']
+                calls = [c["function"]["name"].split("__")[-1] for b in bodies[-1:] for m in b["messages"] if m["role"] == "assistant" for c in (m.get("tool_calls") or [])]
+                if args.dump and bodies:
+                    Path(args.dump).mkdir(parents=True, exist_ok=True)
+                    Path(args.dump, f"{prompt.split()[0]}-{args.provider}-request1.json").write_text(json.dumps(bodies[0]["messages"], indent=1))
+                return result, bodies, calls
+
+            def counts():
+                question, q_bodies, q_calls = counted(project("count-question"), "COUNT_QUESTION what files are here?")
+                fix_dir = project("count-fix")
+                fix, f_bodies, f_calls = counted(fix_dir, "COUNT_FIX fix the typo in app.py and run python3 app.py")
+                parallel, p_bodies, _ = counted(project("count-parallel"), "COUNT_PARALLEL read app.py and notes.txt")
+                print(f"Request counts: (a) question {len(q_bodies)} {q_calls}; (b) one-file fix {len(f_bodies)} {f_calls}; parallel {len(p_bodies)}")
+                assert question.returncode == 0 and fix.returncode == 0 and parallel.returncode == 0, (question.stderr, fix.stderr, parallel.stderr)
+                assert len(q_bodies) <= 2, f"(a) a question about files took {len(q_bodies)} requests: {q_calls}"
+                assert "remember" not in f_calls and "run_check" not in f_calls, f"(b) spent requests on a forced plan or a missing check: {f_calls}"
+                assert (fix_dir / "app.py").read_text() == FIXED and len(f_bodies) == 4, (len(f_bodies), f_calls)
+                assert len(p_bodies) == 2 and sum(m["role"] == "tool" for m in p_bodies[1]["messages"]) == 2, "Parallel tool calls were not answered in one round"
+
+            def turn_limit():
+                limited_dir = project("count-limit")
+                init = alt_in(limited_dir, "init", "--model", MODEL, "--endpoint", endpoint, "--provider", args.provider, "--context", "8192", "--api-key-env", "ALT_SMOKE_KEY", "--max-turns", "2", state="limited")
+                assert init.returncode == 0, init.stderr
+                limited = alt_in(limited_dir, "run", "COUNT_FIX fix the typo in app.py and run python3 app.py", "--allow-terminal", state="limited")
+                print("Turn limit ending:\n" + limited.stderr.strip())
+                assert limited.returncode == 0 and "turn limit (2 model requests)" in limited.stderr, (limited.stdout, limited.stderr)
+                assert "changed on disk: app.py" in limited.stderr and "--resume" in limited.stderr, limited.stderr
+                session = re.search(r"Session: (\S+)", limited.stderr).group(1)
+                continued = alt_in(limited_dir, "run", "COUNT_FIX continue", "--resume", session, "--allow-terminal", state="limited")
+                assert continued.returncode == 0 and "printed hello" in continued.stdout, (continued.stdout, continued.stderr)
+
+            def timeout_resume():
+                slow_dir = project("count-timeout")
+                started = time.monotonic()
+                slow = alt_in(slow_dir, "run", "COUNT_SLOW fix the typo in app.py and run python3 app.py", "--allow-terminal", "--timeout", "45", timeout=150)
+                stopped_after = time.monotonic() - started
+                SLOW_RELEASE.set()
+                print(f"Timeout ending ({stopped_after:.1f} s, exit {slow.returncode}):\n" + slow.stderr.strip())
+                assert slow.returncode == 124 and "changed on disk: app.py" in slow.stderr and "--resume" in slow.stderr, (slow.stdout, slow.stderr)
+                session = re.search(r"Session: (\S+)", slow.stderr).group(1)
+                resumed = alt_in(slow_dir, "run", "COUNT_SLOW continue", "--resume", session, "--allow-terminal")
+                assert resumed.returncode == 0 and "printed hello" in resumed.stdout, (resumed.stdout, resumed.stderr)
+                assert (slow_dir / "app.py").read_text() == FIXED
+
+            for step in (counts, turn_limit, timeout_resume):
+                try:
+                    step()
+                except AssertionError as error:
+                    if not args.measure:
+                        raise
+                    print(f"NOT MET in {step.__name__}: {str(error)[-3000:]}")
+
             cancellation = subprocess.Popen([alt, "--data-dir", str(root / "state"), "--engine", goose,
                                               "run", "STALL_FIXTURE", "--json"], cwd=workspace,
                                              stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
@@ -200,11 +322,18 @@ def main():
                 engine_pids = [int(pid) for pid, parent in (line.split() for line in processes.splitlines())
                                if int(parent) == cancellation.pid]
                 assert engine_pids, "No child engine to verify cleanup"
+                mark = len(REQUESTS)
+                started = time.monotonic()
                 cancellation.send_signal(signal.SIGINT)
                 out, err = cancellation.communicate(timeout=10)
+                stopped_after = time.monotonic() - started
                 # Goose 1.53.0 does not interrupt a provider stalled before HTTP
-                # headers. Assert Alt's documented five-second kill fallback.
-                assert cancellation.returncode != 0 and "Engine did not stop within 5 seconds" in err, (out[-2000:], err)
+                # headers. Alt ends that request at its relay after the cancel, so
+                # the engine answers "cancelled" without the five-second kill
+                # fallback, and its retry never reaches the provider.
+                print(f"Stalled-provider cancel: Alt exited {stopped_after:.1f} s after SIGINT")
+                assert cancellation.returncode != 0 and "Turn cancelled" in err and "did not stop" not in err, (out[-2000:], err)
+                assert len(REQUESTS) == mark, "A model request reached the provider after the cancel"
                 remaining = subprocess.check_output(["ps", "-eo", "pid="], text=True).split()
                 assert all(str(pid) not in remaining for pid in engine_pids), "Owned engine leaked after cancellation"
             finally:
@@ -232,7 +361,7 @@ def main():
             tools = sorted({tool["function"]["name"] for _, body in REQUESTS for tool in body.get("tools", [])})
             assert sorted(name.split("__")[-1] for name in tools) == ["counter", "edit", "evidence", "list", "read", "remember", "run_check", "search", "skill", "terminal"], tools
             print(f"Tool inventory ({len(tools)}): {', '.join(tools)}")
-            print(f"PASS: real Goose / {args.provider}: inventory, ACP, denial, approval, shell evidence, export, resume, stalled-provider kill fallback, instructions ({len(REQUESTS)} fixture inference requests).")
+            print(f"PASS: real Goose / {args.provider}: inventory, ACP, denial, approval, shell evidence, export, resume, stalled-provider cancel, request counts, turn-limit and timeout endings with resume, instructions ({len(REQUESTS)} fixture inference requests).")
     finally:
         server.shutdown()
         server.server_close()

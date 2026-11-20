@@ -19,7 +19,7 @@ where
             ensure!(!cancel.load(Ordering::Relaxed), "Operation cancelled while waiting; no requested changes applied");
             match Project::open(&data, &cwd) {
                 Ok(project) => break project,
-                Err(error) if error.chain().any(|e| e.downcast_ref::<std::io::Error>().is_some_and(|e| e.kind() == std::io::ErrorKind::WouldBlock)) => {
+                Err(error) if busy(&error) => {
                     if Instant::now() >= deadline { bail!("Project is still busy after 10 seconds. Stop its active check or retry when it finishes; your draft is preserved"); }
                     std::thread::sleep(Duration::from_millis(10));
                 }
@@ -30,6 +30,14 @@ where
         project.check_cancel()?;
         operation(&mut project)
     }).await.context("Project worker stopped unexpectedly")?
+}
+
+/// Another Alt action holds the project lock (`Project::open` never blocks).
+pub fn busy(error: &anyhow::Error) -> bool {
+    error.chain().any(|e| {
+        e.downcast_ref::<std::io::Error>()
+            .is_some_and(|e| e.kind() == std::io::ErrorKind::WouldBlock)
+    })
 }
 
 pub fn task(project: &Project, preferred: Option<String>) -> Result<String> {

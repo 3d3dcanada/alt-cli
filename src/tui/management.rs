@@ -143,7 +143,7 @@ impl App {
             return Ok(());
         }
         if action == "workflow-settings" {
-            self.manager_menu("Task workflow","Access and model selection remain separate settings. Host workflow supplies inspect/patch/check/recover steps instead of requiring a model-written plan.",vec![("Model writes a plan".into(),"Existing behavior".into(),"workflow-save".into(),json!({"mode":"model-plan"})),("Host guides each step".into(),"Uses current source revisions and actual check results".into(),"workflow-save".into(),json!({"mode":"host"}))]);
+            self.manager_menu("Task workflow","Access and model selection remain separate settings. Host workflow supplies inspect/patch/check/recover steps instead of requiring a model-written plan.",vec![("Model writes a plan".into(),"Costs one model request before any action".into(),"workflow-save".into(),json!({"mode":"model-plan"})),("Host guides each step".into(),"Default. No plan request; uses current files and actual check results".into(),"workflow-save".into(),json!({"mode":"host"}))]);
             return Ok(());
         }
         if action == "workflow-save" {

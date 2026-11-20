@@ -192,7 +192,15 @@ impl Project {
         crate::schema::compatible(&state.join("project.db"), 4)?;
         let mut db = Connection::open(state.join("project.db"))?;
         db.busy_timeout(Duration::from_secs(5))?;
-        db.execute_batch("PRAGMA journal_mode=WAL; PRAGMA synchronous=FULL;")?;
+        // Every tool call opens and closes the project. FULL synced each commit and
+        // the close checkpointed the WAL: about five fsyncs per call, each up to
+        // seconds on a busy disk. WAL with NORMAL stays consistent after a crash;
+        // only the change journal is synced per write (`save_change`).
+        db.execute_batch("PRAGMA journal_mode=WAL; PRAGMA synchronous=NORMAL;")?;
+        db.set_db_config(
+            rusqlite::config::DbConfig::SQLITE_DBCONFIG_NO_CKPT_ON_CLOSE,
+            true,
+        )?;
         crate::schema::migrate(&mut db, &state.join("project.db"), 4, concat!("
           CREATE TABLE IF NOT EXISTS tasks(id TEXT PRIMARY KEY,goal TEXT NOT NULL,plan TEXT NOT NULL DEFAULT '',phase TEXT NOT NULL DEFAULT 'Inspect',next TEXT NOT NULL DEFAULT 'Inspect the relevant files',created TEXT DEFAULT CURRENT_TIMESTAMP);
           CREATE TABLE IF NOT EXISTS reads(task TEXT,path TEXT,hash TEXT,PRIMARY KEY(task,path));
@@ -1033,11 +1041,17 @@ impl Project {
         )?;
         Ok(change)
     }
+    /// Crash recovery reads this journal against file hashes, so each status is
+    /// synced before the file write it announces. A synced WAL commit also makes
+    /// every earlier commit durable.
     fn save_change(&self, c: &Change) -> Result<()> {
-        self.db.execute(
+        self.db.pragma_update(None, "synchronous", "FULL")?;
+        let saved = self.db.execute(
             "UPDATE changes SET status=?2,payload=?3 WHERE id=?1",
             params![c.id, c.status, serde_json::to_string(c)?],
-        )?;
+        );
+        self.db.pragma_update(None, "synchronous", "NORMAL")?;
+        saved?;
         Ok(())
     }
     pub fn changes(&self, task: Option<&str>) -> Result<Vec<Change>> {
@@ -1126,7 +1140,11 @@ impl Project {
         self.phase(
             &c.task,
             "Test",
-            "Run the configured checks against the changed files",
+            if self.checks()?.is_empty() {
+                crate::workflow::NO_CHECK
+            } else {
+                "Run the configured checks against the changed files"
+            },
         )?;
         self.note(
             &c.task,

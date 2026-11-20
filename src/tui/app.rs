@@ -1424,7 +1424,12 @@ impl App {
                 self.cancelling = false;
                 self.permissions.clear();
                 let reason = value["stopReason"].as_str().unwrap_or("end_turn");
-                if reason == "cancelled" {
+                if let Some(report) = value["report"].as_str() {
+                    // The turn limit or time limit ended the turn before the model
+                    // wrote its summary: say what the turn did and how to continue.
+                    self.add_message("Notice", report);
+                    self.notify("Turn stopped before the model finished. See the notice for what changed.");
+                } else if reason == "cancelled" {
                     self.notify("Task stopped. You can continue with another message.");
                 } else if self.turn_tools == 0 {
                     self.add_message("Notice", "No tools ran for this message. Earlier results do not verify a fresh check.");

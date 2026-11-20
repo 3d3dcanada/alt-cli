@@ -265,7 +265,8 @@ enum Action {
         endpoint: Option<String>,
         #[arg(long, default_value_t = 16384)]
         context: u32,
-        #[arg(long, default_value_t = 12)]
+        /// Model requests per message before the engine stops the turn.
+        #[arg(long, default_value_t = alt_cli::config::DEFAULT_MAX_TURNS)]
         max_turns: u32,
         /// Record your/publisher's uncensored claim (not independently verified).
         #[arg(long)]
@@ -317,8 +318,10 @@ enum Action {
         /// Emit structured events instead of readable text.
         #[arg(long)]
         json: bool,
-        #[arg(long, default_value_t = 600)]
-        timeout: u64,
+        /// Seconds before the turn is stopped. Default: the turn limit times
+        /// 240 s (a slow hosted request plus a default-length terminal command).
+        #[arg(long)]
+        timeout: Option<u64>,
         /// Trial a bounded offline instruction draft for this invocation; no activation.
         #[arg(long)]
         instruction_draft: Option<PathBuf>,
@@ -1498,7 +1501,8 @@ async fn run() -> Result<()> {
                     line.1.trim(),
                     Approval::Ask,
                     false,
-                    600,
+                    None,
+                    preferences.workflow,
                 )
                 .await?;
             }
@@ -1524,6 +1528,7 @@ async fn run() -> Result<()> {
                 },
                 json,
                 timeout,
+                preferences.workflow,
             )
             .await
         }
@@ -1658,9 +1663,12 @@ async fn doctor(
     });
     lines.push("Full access: the terminal and checks run on this computer with your permissions, unisolated".into());
     lines.push(format!(
-        "Context: {} tokens; turn limit: {}",
-        profile.context_tokens, profile.max_turns
+        "Context: {} tokens; turn limit: {} model requests; `alt run` timeout: {} s",
+        profile.context_tokens,
+        profile.max_turns,
+        profile.turn_timeout()
     ));
+    lines.push(format!("Workflow: {}", preferences.workflow.label()));
     lines.push("Inference/tool quality has not been tested by this check.".into());
     println!("{}", display_text(&lines.join("\n")));
     ensure!(
@@ -1811,14 +1819,24 @@ async fn headless(
     prompt: &str,
     allow: Approval,
     json_output: bool,
-    timeout: u64,
+    timeout: Option<u64>,
+    workflow: alt_cli::workflow::Mode,
 ) -> Result<()> {
+    let timeout = timeout.unwrap_or_else(|| session.profile.turn_timeout());
     ensure!(timeout > 0, "Timeout must be positive");
     eprintln!("Session: {}", session.id);
+    eprintln!(
+        "Workflow: {}. Turn limit: {} model requests; timeout {timeout} s.",
+        workflow.label(),
+        session.profile.max_turns
+    );
     let user = json!({"type":"user","text":prompt});
     store.append(&session.id, &user)?;
     if json_output {
-        println!("{}", json!({"type":"session","session":session}));
+        println!(
+            "{}",
+            json!({"type":"session","session":session,"workflow":workflow,"turn_limit":session.profile.max_turns,"timeout_s":timeout})
+        );
         println!("{user}");
     }
     let brief = store.brief(std::path::Path::new(&session.cwd))?;
@@ -1850,7 +1868,13 @@ async fn headless(
                 while let Some(event) = engine.try_event() {
                     handle_event(engine, store, session, event, if interrupted || turn_failed {Approval::Deny} else {allow}, json_output).await?;
                 }
-                let result = response_value(result)?;
+                // A timeout always ends with its report, even when the engine
+                // answers the cancel with an error.
+                let result = match response_value(result) {
+                    Err(_) if timed_out => return Err(TimedOut(ending_report(engine, store, session, Ending::Timeout(timeout), json_output).await?).into()),
+                    other => other?,
+                };
+                let limited = engine.take_turn_limit();
                 if let Some(verification) = engine.verification()? {
                     let note = verification.summary();
                     let evidence = json!({"type":"verification","data":verification,"note":note});
@@ -1866,8 +1890,12 @@ async fn headless(
                 let event = json!({"type":"turn_end","data":result});
                 store.append(&session.id, &event)?;
                 if json_output { println!("{event}"); } else { println!(); }
-                if timed_out { return Err(timed_out_report(engine, store, session, timeout, json_output)?.into()); }
+                if timed_out { return Err(TimedOut(ending_report(engine, store, session, Ending::Timeout(timeout), json_output).await?).into()); }
                 if interrupted { bail!("Turn cancelled"); }
+                if limited {
+                    let report = ending_report(engine, store, session, Ending::TurnLimit(session.profile.max_turns), json_output).await?;
+                    if !json_output { eprintln!("{}", display_text(&report)); }
+                }
                 return Ok(());
             }
             event = engine.next_event() => {
@@ -1882,7 +1910,7 @@ async fn headless(
             _ = &mut deadline => {
                 // A timed-out turn ends the same way whether or not the engine
                 // acknowledges the cancel in time; dropping it stops the engine.
-                if timed_out { return Err(timed_out_report(engine, store, session, timeout, json_output)?.into()); }
+                if timed_out { return Err(TimedOut(ending_report(engine, store, session, Ending::Timeout(timeout), json_output).await?).into()); }
                 if interrupted { bail!("Engine did not stop within 5 seconds; shutting it down"); }
                 engine.cancel(&session.engine_id).await?;
                 interrupted = true;
@@ -1916,36 +1944,45 @@ fn waiting_line(engine: &Engine, model: &str, elapsed: Duration) -> Option<Value
     .then(|| json!({"type":"waiting","model":model,"elapsed_s":elapsed.as_secs(),"stage":status.stage,"stage_label":status.stage.label(),"requests_issued":status.requests_issued,"retries":status.provider_retries}))
 }
 
-/// Record and print what the timed-out turn already changed on disk.
-fn timed_out_report(
+/// Why a turn ended before the model finished.
+#[derive(Clone, Copy)]
+enum Ending {
+    Timeout(u64),
+    TurnLimit(u32),
+}
+
+/// Record and return what a turn ended early already did and how to continue.
+async fn ending_report(
     engine: &Engine,
     store: &Store,
     session: &Session,
-    timeout: u64,
+    ending: Ending,
     json_output: bool,
-) -> Result<TimedOut> {
-    let changes = engine.changes()?;
-    let applied: Vec<_> = changes.iter().filter(|c| c.status == "applied").collect();
-    let event = json!({"type":"timeout","timeout_s":timeout,"session":session.id,"changes":applied.iter().map(|c| json!({"id":c.id,"path":c.path,"status":c.status})).collect::<Vec<_>>()});
+) -> Result<String> {
+    let (kind, stopped) = match ending {
+        Ending::Timeout(seconds) => ("timeout", format!("Turn stopped by --timeout {seconds} s")),
+        Ending::TurnLimit(turns) => ("turn_limit", format!("Turn stopped by the turn limit ({turns} model requests)")),
+    };
+    let next = format!("`alt run --resume {} \"continue\"` with the same approval flags, or a new request with --resume", session.id);
+    // The summary is never lost to a busy project: it degrades to a pointer.
+    let (report, text) = match engine.turn_report().await {
+        Ok(Some(report)) => {
+            let text = report.text(&stopped, &next);
+            (Some(report), text)
+        }
+        Ok(None) => (None, format!("{stopped}; no project record for this turn.\nContinue: {next}")),
+        Err(error) => (None, format!("{stopped}; what it changed could not be read ({error:#}); run `alt task changes`.\nContinue: {next}")),
+    };
+    let changes = report.as_ref().map_or(Vec::new(), |r| r.changed.iter().map(|(id, path)| json!({"id":id,"path":path,"status":"applied"})).collect());
+    let mut event = json!({"type":kind,"session":session.id,"changes":changes,"ran":report.as_ref().map(|r| &r.ran),"report":text});
+    if let Ending::Timeout(seconds) = ending {
+        event["timeout_s"] = json!(seconds);
+    }
     store.append(&session.id, &event)?;
     if json_output {
         println!("{event}");
     }
-    let summary = if applied.is_empty() {
-        "no files were changed".to_owned()
-    } else {
-        let list = applied
-            .iter()
-            .map(|c| format!("{} (change {})", display_text(&c.path), c.id))
-            .collect::<Vec<_>>()
-            .join(", ");
-        format!(
-            "already changed on disk: {list}; review with `alt task changes`, undo one with `alt task undo <change>`"
-        )
-    };
-    Ok(TimedOut(format!(
-        "Turn stopped by --timeout {timeout} s; {summary}"
-    )))
+    Ok(display_text(&text))
 }
 
 async fn handle_event(

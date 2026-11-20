@@ -201,6 +201,25 @@ struct Service {
     extensions: Arc<crate::extensions::Manager>,
     attached: Arc<AtomicUsize>,
 }
+impl Service {
+    /// The TUI and other Alt actions hold the project lock briefly. A tool call
+    /// waits for it, as `project_worker` does, instead of failing and costing the
+    /// model a request to retry.
+    async fn project(&self) -> Result<Project> {
+        let deadline = tokio::time::Instant::now() + Duration::from_secs(10);
+        loop {
+            match Project::open(&self.data, &self.cwd) {
+                Err(error)
+                    if crate::project_worker::busy(&error)
+                        && tokio::time::Instant::now() < deadline =>
+                {
+                    tokio::time::sleep(Duration::from_millis(10)).await
+                }
+                other => return other,
+            }
+        }
+    }
+}
 /// Sent by `alt tool-server` when an engine session completes the MCP handshake.
 /// Never a tool: it is counted before dispatch and never journaled.
 const ATTACHED: &str = "alt:attached";
@@ -321,7 +340,7 @@ async fn serve_connection(stream: UnixStream, s: &Service) -> Result<()> {
     let id = format!("alt:{}", uuid::Uuid::new_v4());
     let result = execute(s, &context, &id, &request, &signature).await;
     let failed = result.as_ref().map(tool_failed).unwrap_or(true);
-    if let Ok(p) = Project::open(&s.data, &s.cwd) {
+    if let Ok(p) = s.project().await {
         let _ = p.attempt(&context.task, &signature, Some(failed));
     }
     let value = match result {
@@ -363,7 +382,7 @@ async fn serve_connection(stream: UnixStream, s: &Service) -> Result<()> {
                 "edit_text" | "edit_lines" | "create_file" | "create_lines" | "delete_file"
                 | "replace_file" => {
                     format!(
-                        "Applied checkpoint {} to {}. {}Syntax parser: {} · parse errors: {} (parser only).\n{}{}\nrun_check names: {}. Run a fresh check; earlier results are stale.\n",
+                        "Applied checkpoint {} to {}. {}Syntax parser: {} · parse errors: {} (parser only).\n{}{}\n{}\n",
                         v["checkpoint"].as_str().unwrap_or(""),
                         v["path"].as_str().unwrap_or(""),
                         v["matched"].as_str().map(|m| format!("Note: {m}. ")).unwrap_or_default(),
@@ -382,7 +401,7 @@ async fn serve_connection(stream: UnixStream, s: &Service) -> Result<()> {
                                     "Use read for additional current source before editing again.".into()
                                 }
                             }),
-                        v["configured_checks"]
+                        v["next"].as_str().unwrap_or("")
                     )
                 }
                 "read" => format!(
@@ -706,7 +725,7 @@ async fn execute(
         s.tool_profile.label()
     );
     if s.policy != Policy::Trusted {
-        Project::open(&s.data, &s.cwd)?.attempt(&c.task, signature, None)?;
+        s.project().await?.attempt(&c.task, signature, None)?;
     }
     match r.name.as_str() {
         "extension" => {
@@ -725,7 +744,7 @@ async fn execute(
         }
         "list" => {
             ensure!(r.arguments == json!({}), "list takes no arguments");
-            let p = Project::open(&s.data, &s.cwd)?;
+            let p = s.project().await?;
             let files = p.browse()?;
             Ok(
                 json!({"files":files.iter().take(256).collect::<Vec<_>>(),"total_files":files.len(),"files_omitted":files.len().saturating_sub(256),"checks":p.checks()?,"verification":p.verification()?,"access":s.policy.label(),"alt_cli":std::env::current_exe()?,"data_directory":s.data,"workflow_help":"Use search for files beyond this bounded listing. Full access: use alt_cli --data-dir data_directory packs --help or jobs --help for structured workflows and persistent terminals. Quote paths as shell arguments. Call --help for exact options before a new command."}),
@@ -733,11 +752,11 @@ async fn execute(
         }
         "read" => {
             let a: ReadArgs = serde_json::from_value(r.arguments.clone())?;
-            Project::open(&s.data, &s.cwd)?.read(&c.task, &a.path, a.start_line, a.lines)
+            s.project().await?.read(&c.task, &a.path, a.start_line, a.lines)
         }
         "search" => {
             let a: SearchArgs = serde_json::from_value(r.arguments.clone())?;
-            Ok(json!(Project::open(&s.data, &s.cwd)?.search(&a.query)?))
+            Ok(json!(s.project().await?.search(&a.query)?))
         }
         "skill" => {
             let action = r.arguments["action"].as_str().unwrap_or("list");
@@ -802,7 +821,7 @@ async fn execute(
             }
         }
         "evidence" => {
-            let p = Project::open(&s.data, &s.cwd)?;
+            let p = s.project().await?;
             let id = r.arguments["id"]
                 .as_str()
                 .context("Evidence id is required")?;
@@ -824,7 +843,7 @@ async fn execute(
                 matches!(a.kind.as_str(), "plan" | "decision" | "next" | "hypothesis"),
                 "Model memory supports plan, decision, next; verification comes from actual tool results"
             );
-            Project::open(&s.data, &s.cwd)?.note(
+            s.project().await?.note(
                 &c.task,
                 &a.kind,
                 &a.text,
@@ -840,7 +859,7 @@ async fn execute(
             );
             let (change, path, operation, reason) = if r.name == "edit_text" {
                 let a: TextEditArgs = serde_json::from_value(r.arguments.clone())?;
-                let change = Project::open(&s.data, &s.cwd)?.prepare_text_edit(
+                let change = s.project().await?.prepare_text_edit(
                     &c.task,
                     &a.path,
                     &a.handle,
@@ -850,7 +869,7 @@ async fn execute(
                 (change, a.path, "handle".into(), a.reason)
             } else if r.name == "replace_file" {
                 let a: TextCreateArgs = serde_json::from_value(r.arguments.clone())?;
-                let change = Project::open(&s.data, &s.cwd)?.prepare_replace_file(
+                let change = s.project().await?.prepare_replace_file(
                     &c.task,
                     &a.path,
                     &a.new_text,
@@ -859,7 +878,7 @@ async fn execute(
                 (change, a.path, "replace whole file".into(), a.reason)
             } else if r.name == "create_file" {
                 let a: TextCreateArgs = serde_json::from_value(r.arguments.clone())?;
-                let change = Project::open(&s.data, &s.cwd)?.prepare_edit(
+                let change = s.project().await?.prepare_edit(
                     &c.task,
                     &a.path,
                     None,
@@ -871,7 +890,7 @@ async fn execute(
                 (change, a.path, "create".into(), a.reason)
             } else if r.name == "edit_lines" {
                 let a: LinesEditArgs = serde_json::from_value(r.arguments.clone())?;
-                let change = Project::open(&s.data, &s.cwd)?.prepare_lines_edit(
+                let change = s.project().await?.prepare_lines_edit(
                     &c.task,
                     &a.path,
                     Some(&a.handle),
@@ -882,12 +901,12 @@ async fn execute(
                 (change, a.path, "handle".into(), a.reason)
             } else if r.name == "create_lines" {
                 let a: CreateFileArgs = serde_json::from_value(r.arguments.clone())?;
-                let change = Project::open(&s.data, &s.cwd)?
+                let change = s.project().await?
                     .prepare_lines_edit(&c.task, &a.path, None, &a.lines, "create", &a.reason)?;
                 (change, a.path, "create".into(), a.reason)
             } else if r.name == "delete_file" {
                 let a: DeleteFileArgs = serde_json::from_value(r.arguments.clone())?;
-                let change = Project::open(&s.data, &s.cwd)?.prepare_lines_edit(
+                let change = s.project().await?.prepare_lines_edit(
                     &c.task,
                     &a.path,
                     Some(&a.handle),
@@ -903,7 +922,7 @@ async fn execute(
                     "new_text is required for create/replace. Send old_text and new_text as separate native tool arguments, not a JSON example inside a string."
                 );
                 let change = {
-                    let project = Project::open(&s.data, &s.cwd)?;
+                    let project = s.project().await?;
                     if a.operation == "handle" {
                         project.prepare_handle_edit(
                             &c.task,
@@ -950,11 +969,11 @@ async fn execute(
             )
             .await
             {
-                Project::open(&s.data, &s.cwd)?.reject(&change.id)?;
+                s.project().await?.reject(&change.id)?;
                 return Err(e);
             }
-            let applied = Project::open(&s.data, &s.cwd)?.apply(&change.id, s.policy)?;
-            let p = Project::open(&s.data, &s.cwd)?;
+            let applied = s.project().await?.apply(&change.id, s.policy)?;
+            let p = s.project().await?;
             let syntax = p
                 .bytes(&applied.path)?
                 .and_then(|bytes| String::from_utf8(bytes).ok())
@@ -971,13 +990,19 @@ async fn execute(
             } else {
                 None
             };
+            let checks = p.checks()?.into_iter().map(|c| c.name).collect::<Vec<_>>();
+            let next = if checks.is_empty() {
+                format!("Inspect any syntax errors. {}", crate::workflow::NO_CHECK)
+            } else {
+                format!("run_check names: {}. Inspect any syntax errors, then run a fresh configured check; earlier results are stale. Do not invent a check name.", serde_json::to_string(&checks)?)
+            };
             Ok(
-                json!({"checkpoint":applied.id,"path":applied.path,"sha256":applied.after_hash,"matched":applied.matched,"syntax":syntax,"current_read":current_read,"configured_checks":p.checks()?.iter().map(|c|&c.name).collect::<Vec<_>>(),"next":"Inspect any syntax errors, then run a fresh configured check. File changed; previous results are stale. Do not invent a check name."}),
+                json!({"checkpoint":applied.id,"path":applied.path,"sha256":applied.after_hash,"matched":applied.matched,"syntax":syntax,"current_read":current_read,"configured_checks":checks,"next":next}),
             )
         }
         "run_check" => {
             let a: CheckArgs = serde_json::from_value(r.arguments.clone())?;
-            let checks = Project::open(&s.data, &s.cwd)?.checks()?;
+            let checks = s.project().await?.checks()?;
             let check = checks.iter().find(|v| v.name == a.name).with_context(|| {
                 format!(
                     "No configured check named {:?}. {}",
@@ -1000,7 +1025,7 @@ async fn execute(
             )
             .await?;
             let mut value = serde_json::to_value(&result)?;
-            let p = Project::open(&s.data, &s.cwd)?;
+            let p = s.project().await?;
             value["workflow"] = crate::workflow::packet(&p, &c.task)?;
             if crate::workflow::not_run(&result) {
                 value["next_action"] = json!(crate::workflow::NOT_RUN);

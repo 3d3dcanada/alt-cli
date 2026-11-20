@@ -75,6 +75,117 @@ impl Verification {
         }
     }
 }
+
+/// Where a turn started, so a turn ended early can say what it did itself.
+#[derive(Debug, Clone, Copy, Default)]
+pub struct TurnMark {
+    changes: i64,
+    notes: i64,
+}
+
+/// What a turn did before the turn limit or a timeout ended it.
+#[derive(Debug, Clone, Default, Serialize)]
+pub struct TurnReport {
+    /// (change id, path) applied in this turn and still applied.
+    pub changed: Vec<(String, String)>,
+    /// Checks and terminal commands this turn ran, one each.
+    pub ran: Vec<String>,
+    pub verification: String,
+}
+impl TurnReport {
+    /// `stopped` says why the turn ended; `next` how to continue from here.
+    pub fn text(&self, stopped: &str, next: &str) -> String {
+        let changed = if self.changed.is_empty() {
+            "no files were changed".to_owned()
+        } else {
+            let list = self
+                .changed
+                .iter()
+                .map(|(id, path)| format!("{path} (change {id})"))
+                .collect::<Vec<_>>()
+                .join(", ");
+            format!(
+                "already changed on disk: {list}; review with `alt task changes`, undo one with `alt task undo <change>`"
+            )
+        };
+        let ran = if self.ran.is_empty() {
+            "no check or terminal command".to_owned()
+        } else {
+            self.ran.join("; ")
+        };
+        format!(
+            "{stopped}; {changed}\nRan: {ran}\nNot done: the model did not write its final summary. {}\nContinue: {next}",
+            self.verification
+        )
+    }
+}
+
+impl Project {
+    pub fn turn_mark(&self) -> Result<TurnMark> {
+        let max = |table: &str| -> Result<i64> {
+            Ok(self.db.query_row(
+                &format!("SELECT COALESCE(MAX(seq),0) FROM {table}"),
+                [],
+                |r| r.get(0),
+            )?)
+        };
+        Ok(TurnMark {
+            changes: max("changes")?,
+            notes: max("notes")?,
+        })
+    }
+    pub fn turn_report(&self, task: &str, mark: TurnMark) -> Result<TurnReport> {
+        let mut changes = self.db.prepare("SELECT id,json_extract(payload,'$.path') FROM changes WHERE task=?1 AND seq>?2 AND status='applied' ORDER BY seq")?;
+        let changed = changes
+            .query_map(params![task, mark.changes], |r| Ok((r.get(0)?, r.get(1)?)))?
+            .collect::<rusqlite::Result<Vec<_>>>()?;
+        let mut notes = self.db.prepare("SELECT body,source FROM notes WHERE task=?1 AND seq>?2 AND kind IN ('observation','failure') ORDER BY seq")?;
+        let mut ran = Vec::new();
+        for row in notes.query_map(params![task, mark.notes], |r| {
+            Ok((r.get::<_, String>(0)?, r.get::<_, String>(1)?))
+        })? {
+            let (body, source) = row?;
+            let exit = |text: &str| {
+                text.split_once("exit Some(")
+                    .and_then(|(_, rest)| rest.split_once(')'))
+                    .map_or("no exit code".to_owned(), |(code, _)| format!("exit {code}"))
+            };
+            if body.starts_with("Full access terminal ") {
+                let command = body
+                    .split_once("Command: ")
+                    .and_then(|(_, rest)| rest.lines().next())
+                    .unwrap_or("");
+                ran.push(format!(
+                    "terminal `{}` ({}{})",
+                    crate::project::bounded(command, 120),
+                    exit(&body),
+                    if body.contains("timeout true") { ", timed out" } else { "" }
+                ));
+            } else if body.starts_with("Check ") {
+                let payload: Option<String> = self
+                    .db
+                    .query_row("SELECT payload FROM checks WHERE id=?1", [&source], |r| {
+                        r.get(0)
+                    })
+                    .optional()?;
+                if let Some(c) = payload.and_then(|p| serde_json::from_str::<CheckResult>(&p).ok()) {
+                    ran.push(if crate::workflow::not_run(&c) {
+                        format!("check {} (did not run)", c.name)
+                    } else if c.timed_out {
+                        format!("check {} (timed out)", c.name)
+                    } else {
+                        format!("check {} ({})", c.name, exit(&format!("exit {:?}", c.exit_code)))
+                    });
+                }
+            }
+        }
+        Ok(TurnReport {
+            changed,
+            ran,
+            verification: self.verification()?.summary(),
+        })
+    }
+}
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct IndexReport {
     pub indexed: usize,

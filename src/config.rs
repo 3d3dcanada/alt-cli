@@ -36,6 +36,15 @@ pub struct Profile {
     pub runtime_key: Option<String>,
 }
 
+/// Model requests (engine turns) a new profile allows per message. A one-file
+/// fix with one command needs 4; each failed check costs 2 more (edit, rerun) and
+/// Alt refuses an identical call after its third failure, so one file with three
+/// repair rounds needs 10 and two such files 20, plus a listing or search.
+pub const DEFAULT_MAX_TURNS: u32 = 24;
+/// 120 s for the slowest observed hosted request (80-100 s measured) plus 120 s,
+/// the default `terminal` command timeout.
+pub const SECONDS_PER_REQUEST: u64 = 240;
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, clap::ValueEnum)]
 #[serde(rename_all = "kebab-case")]
 pub enum Provider {
@@ -63,6 +72,11 @@ impl Profile {
         }
         self.effective_inference().validate(self)?;
         Ok(())
+    }
+    /// Default seconds before a turn is stopped: every allowed model request may
+    /// take `SECONDS_PER_REQUEST`, so the turn limit, not the clock, ends a slow job.
+    pub fn turn_timeout(&self) -> u64 {
+        u64::from(self.max_turns) * SECONDS_PER_REQUEST
     }
     pub fn effective_inference(&self) -> crate::inference::Settings {
         self.inference
@@ -208,7 +222,7 @@ impl Default for Preferences {
             project: std::env::current_dir().unwrap_or_else(|_| PathBuf::from(".")),
             recent_projects: Vec::new(),
             context_tokens: 8192,
-            max_turns: 12,
+            max_turns: DEFAULT_MAX_TURNS,
             mouse: true,
             engine_path: None,
             runtime_path: None,

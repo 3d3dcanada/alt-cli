@@ -637,6 +637,11 @@ struct Live {
     status: tokio::sync::watch::Sender<Status>,
     /// Explicit per-connection thinking choice made after a cutoff.
     thinking: std::sync::Arc<std::sync::Mutex<Option<Thinking>>>,
+    /// Set by the user's Stop or a timeout until the next prompt: the relay
+    /// refuses model requests, so the engine's retry after an interrupted
+    /// request costs no provider call.
+    stopped: std::sync::Arc<std::sync::atomic::AtomicBool>,
+    interrupt: std::sync::Arc<tokio::sync::Notify>,
 }
 impl Live {
     fn settings(&self, p: &Profile) -> Settings {
@@ -754,8 +759,11 @@ impl Relay {
             budget,
             status,
             thinking: Default::default(),
+            stopped: Default::default(),
+            interrupt: Default::default(),
         };
         let service = live.clone();
+        let (interrupt, stopped) = (live.interrupt.clone(), live.stopped.clone());
         let client = reqwest::Client::builder()
             .redirect(reqwest::redirect::Policy::none())
             .connect_timeout(Duration::from_secs(15))
@@ -773,6 +781,9 @@ impl Relay {
                         });}, Err(_)=>break
                     },
                     _=children.join_next(),if !children.is_empty()=>{}
+                    // Goose 1.53 cannot interrupt a provider that has not sent
+                    // headers; closing its relay connection ends the request now.
+                    _=interrupt.notified()=>if stopped.load(std::sync::atomic::Ordering::SeqCst) {children.abort_all()},
                 }
             }
         });
@@ -786,6 +797,28 @@ impl Relay {
     }
     pub fn status(&self) -> Status {
         self.live.status.borrow().clone()
+    }
+    /// Stop or timeout: end in-flight model requests and refuse new ones until
+    /// `resume`. Interrupted requests keep their conservative receipts.
+    pub fn interrupt(&self) {
+        self.live
+            .stopped
+            .store(true, std::sync::atomic::Ordering::SeqCst);
+        self.live.interrupt.notify_one();
+        self.live.status.send_modify(|s| {
+            if matches!(
+                s.stage,
+                Stage::MeasuringInput | Stage::WaitingForOutput | Stage::ReceivingOutput
+            ) {
+                s.stage = Stage::Interrupted;
+            }
+        });
+    }
+    /// A new prompt re-arms the relay after a Stop.
+    pub fn resume(&self) {
+        self.live
+            .stopped
+            .store(false, std::sync::atomic::Ordering::SeqCst);
     }
     /// Change the thinking choice for the rest of this connection, after the
     /// user picked it (for example "thinking off" after a cutoff). Recorded as
@@ -1097,6 +1130,14 @@ async fn serve(
     let queued = Instant::now();
     let mut budget = budget.lock().await;
     let lock_wait = queued.elapsed();
+    if live.stopped.load(std::sync::atomic::Ordering::SeqCst) {
+        let bytes = serde_json::to_vec(
+            &json!({"error":{"message":"The turn was stopped; no model request was sent"}}),
+        )?;
+        writer.write_all(format!("HTTP/1.1 499 Client Closed Request\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n",bytes.len()).as_bytes()).await?;
+        writer.write_all(&bytes).await?;
+        return Ok(());
+    }
     if budget.0 == 0 || budget.1 == 0 {
         live_status.send_modify(|s| s.stage = Stage::AllowanceExhausted);
         let bytes = serde_json::to_vec(
@@ -1193,7 +1234,7 @@ async fn serve(
     let mut headers_after: Option<Duration> = None;
     let mut first_byte_after: Option<Duration> = None;
     // One resend after a discarded degenerate response; retries are separate.
-    let (status, captured, truncated) = loop {
+    let (status, captured, truncated, raw_file) = loop {
         let response = match send_with_retries(
             client,
             &url,
@@ -1261,8 +1302,7 @@ async fn serve(
                 writer.write_all(b"\r\n").await?;
                 writer.flush().await?;
             }
-            raw_file.sync_all().await?;
-            break (status, captured, truncated);
+            break (status, captured, truncated, Some(raw_file));
         }
         // Guarded: hold the whole response, check it, then forward or discard.
         while let Some(chunk) = stream.next().await {
@@ -1296,7 +1336,7 @@ async fn serve(
             writer.write_all(format!("HTTP/1.1 {} Provider\r\nContent-Type: {content}\r\nContent-Length: {}\r\nConnection: close\r\n\r\n",status.as_u16(),captured.len()).as_bytes()).await?;
             writer.write_all(&captured).await?;
             writer.flush().await?;
-            break (status, captured, truncated);
+            break (status, captured, truncated, None);
         };
         // Provider fault, never model output: keep the raw bytes as evidence.
         let n = faults.len() + 1;
@@ -1345,6 +1385,14 @@ async fn serve(
     let usage = response_usage(&captured, streaming);
     let complete = status.is_success() && !truncated && response_complete(&captured, streaming);
     let cutoff = complete && reasoning_cutoff(&captured, streaming);
+    // The engine may end its turn on the stream's [DONE] while the relay still
+    // records evidence; count the cutoff first so the turn's end can report it.
+    if cutoff {
+        live_status.send_modify(|s| s.reasoning_cutoffs += 1);
+    }
+    if let Some(file) = raw_file {
+        file.sync_all().await?;
+    }
     let ollama_context = if complete && p.provider == Provider::Ollama {
         ollama_loaded_context(client, p, key).await
     } else {
@@ -1373,9 +1421,6 @@ async fn serve(
         }
         if s.remaining_generated_tokens.is_some() {
             s.remaining_generated_tokens = Some(budget.0);
-        }
-        if cutoff {
-            s.reasoning_cutoffs += 1;
         }
         if ollama_context.is_some() {
             s.ollama_context = ollama_context;

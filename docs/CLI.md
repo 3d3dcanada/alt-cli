@@ -72,7 +72,9 @@ alt export SESSION_ID > conversation.jsonl
 For the compact small-model interface, choose `alt tools compact` (scalar text)
 or `alt tools compact-lines` (one source line per array item). `alt tools all`
 restores the original tool/context interface. These choices are independent of
-Full/Guided access. Set workflow with `alt workflow host` and output allocation
+Full/Guided access. The default workflow is `host`: Alt supplies the steps and no
+request is spent on a model-written plan; `alt workflow model-plan` requires one
+before the first edit (`alt doctor` and `alt run` print the active choice). Set output allocation
 with `alt inference --output-tokens 1024`, thinking with `alt inference --thinking off`
 (or `low`, `medium`, `high`, `default`, `budget:N`; `--dialect` names the server family); use the
 [usage guide](SMALL_MODEL_USAGE.md) for model-specific reasoning and context settings.
@@ -100,10 +102,14 @@ Alt did not tag need `--allow-terminal` (which implies `--allow-tools`). Access
 policy is separate: `--access trusted` selects Full access; other values are
 `guided` and `review-only`. The TUI uses its saved Settings choice. Full access
 can run arbitrary commands with normal host permissions. `--json` writes events
-to stdout, with session IDs and diagnostics on stderr. The default timeout is
-600 seconds; change it with `--timeout SECONDS`. Cancellation and failure exit 1;
-a timeout exits 124 and names the files the turn already changed (with change IDs
-for `alt task undo`), as a `timeout` event in `--json`. While a model request is in
+to stdout, with session IDs and diagnostics on stderr. A new profile allows 24
+model requests per message (`alt init --max-turns N`). The default timeout is that
+turn limit times 240 seconds (a slow hosted request plus a default-length terminal
+command); change it with `--timeout SECONDS`. Cancellation and failure exit 1;
+a timeout exits 124. A turn ended by the timeout or the turn limit prints what it
+changed on disk (with change IDs for `alt task undo`), the checks and terminal
+commands it ran, what is not done, and how to continue (`alt run --resume SESSION
+"continue"`); `--json` records it as a `timeout` or `turn_limit` event. While a model request is in
 flight, a waiting line (model, seconds, provider retries) appears every 15 seconds:
 on stderr in text mode, as a `waiting` event in `--json`. A successful process exit
 or natural model turn is not proof that the requested behavior passed checks.

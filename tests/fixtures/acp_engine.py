@@ -9,6 +9,7 @@ import urllib.request
 
 pending = None
 waiting = None
+failing = False
 servers = []
 
 
@@ -76,9 +77,18 @@ for line in sys.stdin:
         if prompt == "oversize":
             print("x" * (1024 * 1024 + 1), flush=True)
             continue
-        if prompt == "wait":
+        if prompt in ("wait", "wait-error"):
+            # wait-error answers the cancel with an error, like an engine whose
+            # provider connection was cut.
             waiting = identifier
+            failing = prompt == "wait-error"
             text("waiting")
+            continue
+        if prompt in ("turn-limit", "model-says-limit"):
+            # Goose 1.53's exact turn-limit message; only the engine's msg_ id marks it.
+            update("agent_message_chunk", content={"type": "text", "text": "I've reached the maximum number of actions I can do without user input. Would you like me to continue?"},
+                   _meta={"goose": {"messageId": "msg_fixture" if prompt == "turn-limit" else "chatcmpl-fixture"}})
+            reply(identifier, {"stopReason": "end_turn"})
             continue
         if prompt == "stuck":
             # Never answers, not even a cancel (an engine blocked on a provider).
@@ -111,7 +121,10 @@ for line in sys.stdin:
             text("final chunk\n")
             reply(identifier, {"stopReason": "end_turn"})
     elif method == "session/cancel" and waiting is not None:
-        reply(waiting, {"stopReason": "cancelled"})
+        if failing:
+            send({"id": waiting, "error": {"code": -32603, "message": "Network error: connection closed"}})
+        else:
+            reply(waiting, {"stopReason": "cancelled"})
         waiting = None
     elif identifier == "permission-1":
         allowed = request["result"]["outcome"].get("optionId") == "yes"

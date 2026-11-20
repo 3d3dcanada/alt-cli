@@ -356,6 +356,72 @@ async fn bridge_call(
         .unwrap();
     serde_json::from_str(&line).unwrap()
 }
+/// The default workflow reaches an edit without a model-written plan, and with no
+/// check configured nothing tells the model to run one.
+#[tokio::test]
+async fn default_workflow_edits_without_a_plan_request_and_never_asks_for_a_missing_check() {
+    use alt_cli::workflow::{Mode, NO_CHECK, begin, packet};
+    let data = tempfile::tempdir().unwrap();
+    let cwd = tempfile::tempdir().unwrap();
+    fs::write(cwd.path().join("app.py"), "print(\"helo\")\n").unwrap();
+    {
+        let p = Project::open(data.path(), cwd.path()).unwrap();
+        p.start_task("task", "Fix the typo").unwrap();
+        begin(&p, "task", Mode::default()).unwrap();
+        let first = packet(&p, "task").unwrap();
+        assert_eq!(first["stage"], "inspect");
+        let decision = first["next_decision"].as_str().unwrap();
+        assert!(decision.contains("No check is configured"), "{decision}");
+        assert!(!decision.contains("run a configured check"), "{decision}");
+        let state = p.task("task").unwrap();
+        assert!(!state.plan.contains("configured checks"), "{}", state.plan);
+        assert!(!state.next.contains("edit"), "{}", state.next);
+        // Model plan stays selectable and keeps its gate.
+        p.start_task("planned", "Fix the typo").unwrap();
+        begin(&p, "planned", Mode::ModelPlan).unwrap();
+        assert_eq!(packet(&p, "planned").unwrap()["stage"], "plan");
+        p.read("planned", "app.py", 1, 20).unwrap();
+        let refused = p
+            .prepare_edit("planned", "app.py", None, "helo", "hello", "replace", "Fix")
+            .unwrap_err();
+        assert!(refused.to_string().contains("Save a short plan"), "{refused}");
+    }
+    let mut bridge =
+        alt_cli::toolbox::Bridge::start(data.path(), cwd.path(), Policy::Guided).unwrap();
+    bridge.context("task", "session");
+    let read = bridge_call(bridge.path.clone(), "read", json!({"path":"app.py"})).await;
+    let text = read["content"][0]["text"].as_str().unwrap().to_owned();
+    let handle = text
+        .lines()
+        .find_map(|l| l.strip_prefix("Range handle: "))
+        .unwrap()
+        .to_owned();
+    let socket = bridge.path.clone();
+    let call = tokio::spawn(async move {
+        bridge_call(socket, "edit", json!({"path":"app.py","operation":"handle","handle":handle,"new_text":"print(\"hello\")\n","reason":"Fix the typo"})).await
+    });
+    let alt_cli::engine::Event::Permission { id, .. } = tokio::time::timeout(
+        std::time::Duration::from_secs(30),
+        bridge.events.recv(),
+    )
+    .await
+    .unwrap()
+    .unwrap() else {
+        panic!("Missing approval")
+    };
+    bridge.decision(id.as_str().unwrap(), true);
+    let edited = call.await.unwrap();
+    let result = edited["content"][0]["text"].as_str().unwrap();
+    assert_eq!(edited["isError"], false, "{result}");
+    assert!(result.contains("No check is configured"), "{result}");
+    assert!(!result.contains("fresh configured check"), "{result}");
+    let p = Project::open(data.path(), cwd.path()).unwrap();
+    let after = packet(&p, "task").unwrap();
+    assert_eq!(after["stage"], "report");
+    assert_eq!(after["next_decision"], NO_CHECK);
+    assert_eq!(p.task("task").unwrap().next, NO_CHECK);
+}
+
 #[tokio::test]
 async fn native_tool_bridge_cannot_bypass_approval_or_stale_checks() {
     let data = tempfile::tempdir().unwrap();

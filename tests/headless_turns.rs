@@ -97,6 +97,54 @@ async fn a_slow_provider_gets_waiting_lines_in_text_and_json() {
     );
 }
 
+/// Goose 1.53 does not stop while its provider request has no headers. A Stop
+/// ends that request at the relay, and the engine's retry costs no provider call.
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn a_stop_ends_the_in_flight_request_and_refuses_the_retry_until_the_next_prompt() {
+    let answer = json!({"choices":[{"message":{"role":"assistant","content":"hi"},"finish_reason":"stop"}],"usage":{"prompt_tokens":3,"completion_tokens":1}});
+    let stalled = upstream::start(vec![
+        Reply::json(answer.clone()).after(Duration::from_secs(60)),
+        Reply::json(answer),
+    ])
+    .await;
+    let root = tempfile::tempdir().unwrap();
+    let profile = alt_cli::config::Profile {
+        provider: alt_cli::config::Provider::Openai,
+        endpoint: stalled.endpoint.clone(),
+        model: "fixture".into(),
+        context_tokens: 8192,
+        max_turns: 2,
+        uncensored: false,
+        api_key_env: None,
+        local_model: None,
+        inference: None,
+        runtime_key: None,
+    };
+    let relay = alt_cli::inference::Relay::start(root.path(), &profile)
+        .await
+        .unwrap();
+    let url = format!("{}/chat/completions", relay.endpoint);
+    let body = json!({"model":"fixture","messages":[{"role":"user","content":"hi"}]});
+    let client = reqwest::Client::new();
+    let in_flight = tokio::spawn(client.post(&url).json(&body).send());
+    while stalled.requests.lock().unwrap().is_empty() {
+        tokio::time::sleep(Duration::from_millis(20)).await;
+    }
+    let stopped = Instant::now();
+    relay.interrupt();
+    let ended = tokio::time::timeout(Duration::from_secs(5), in_flight)
+        .await
+        .expect("the stalled request must end at the Stop")
+        .unwrap();
+    assert!(ended.is_err(), "{ended:?}");
+    assert!(stopped.elapsed() < Duration::from_secs(5));
+    let retry = client.post(&url).json(&body).send().await.unwrap();
+    assert_eq!(retry.status().as_u16(), 499);
+    assert_eq!(stalled.requests.lock().unwrap().len(), 1, "a refused retry reached the provider");
+    relay.resume();
+    assert_eq!(relay.status().requests_issued, 1);
+}
+
 #[test]
 fn a_timeout_ends_cleanly_even_when_the_engine_never_stops() {
     let (dir, project) = setup("http://127.0.0.1:9/v1");
@@ -118,6 +166,64 @@ fn a_timeout_ends_cleanly_even_when_the_engine_never_stops() {
         .expect("typed timeout event");
     assert_eq!(timeout["timeout_s"], 1);
     assert_eq!(timeout["changes"], json!([]));
+}
+
+fn session_id(stderr: &str) -> String {
+    stderr
+        .lines()
+        .find_map(|l| l.strip_prefix("Session: "))
+        .expect("session line")
+        .to_owned()
+}
+
+#[test]
+fn a_timed_out_turn_says_what_it_did_and_how_to_continue_and_resume_continues_it() {
+    let (dir, project) = setup("http://127.0.0.1:9/v1");
+    // The engine answers the cancel with an error: the report still prints.
+    let out = run(dir.path(), &project, &["wait-error", "--timeout", "1"]);
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    assert_eq!(out.status.code(), Some(124), "{stderr}");
+    let session = session_id(&stderr);
+    for expected in [
+        "Turn stopped by --timeout 1 s; no files were changed",
+        "Ran: no check or terminal command",
+        "Not done: the model did not write its final summary. Nothing was verified",
+        &format!("Continue: `alt run --resume {session} \"continue\"`"),
+    ] {
+        assert!(stderr.contains(expected), "{expected} missing:\n{stderr}");
+    }
+    let resumed = run(dir.path(), &project, &["hello", "--resume", &session]);
+    assert!(
+        resumed.status.success(),
+        "{}",
+        String::from_utf8_lossy(&resumed.stderr)
+    );
+    assert!(String::from_utf8_lossy(&resumed.stdout).contains("fixture response"));
+    assert_eq!(session_id(&String::from_utf8_lossy(&resumed.stderr)), session);
+}
+
+#[test]
+fn only_the_engine_turn_limit_message_ends_a_turn_with_its_report() {
+    let (dir, project) = setup("http://127.0.0.1:9/v1");
+    let out = run(dir.path(), &project, &["turn-limit", "--json"]);
+    assert!(out.status.success(), "{}", String::from_utf8_lossy(&out.stderr));
+    let event = String::from_utf8_lossy(&out.stdout)
+        .lines()
+        .map(|l| serde_json::from_str::<Value>(l).unwrap())
+        .find(|e| e["type"] == "turn_limit")
+        .expect("typed turn_limit event");
+    let report = event["report"].as_str().unwrap();
+    assert!(
+        report.starts_with("Turn stopped by the turn limit (24 model requests); no files were changed"),
+        "{report}"
+    );
+    assert!(report.contains("Continue: `alt run --resume"), "{report}");
+    let text = run(dir.path(), &project, &["turn-limit"]);
+    assert!(String::from_utf8_lossy(&text.stderr).contains("Ran: no check or terminal command"));
+    // The same words written by the model are not the engine's limit.
+    let prose = run(dir.path(), &project, &["model-says-limit"]);
+    assert!(prose.status.success());
+    assert!(!String::from_utf8_lossy(&prose.stderr).contains("Turn stopped"));
 }
 
 #[test]

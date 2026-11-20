@@ -190,8 +190,10 @@ async fn worker(
         .send(Update::Ready(Box::new(session.clone())))
         .await?;
     let mut response: Option<Response> = None;
-    let mut deadline = tokio::time::Instant::now() + Duration::from_secs(1200);
+    let mut deadline = tokio::time::Instant::now() + Duration::from_secs(session.profile.turn_timeout());
     let mut cancelling = false;
+    // The turn time limit (not the user) stopped this turn.
+    let mut timed_out = false;
     let mut heartbeat = tokio::time::interval(Duration::from_millis(200));
     heartbeat.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Skip);
     let mut last_inference = None;
@@ -211,10 +213,25 @@ async fn worker(
                     updates.send(Update::Event(event)).await?;
                 }
                 match response_value(result) {
-                    Ok(value)=>{store.append(&session.id,&json!({"type":"turn_end","data":value}))?;updates.send(Update::Done(value)).await?;},
+                    Ok(mut value)=>{
+                        let stopped = if engine.take_turn_limit() {
+                            Some(format!("Turn stopped by the turn limit ({} model requests)", session.profile.max_turns))
+                        } else if timed_out {
+                            Some(format!("Turn stopped by the turn time limit ({} s)", session.profile.turn_timeout()))
+                        } else { None };
+                        if let Some(stopped)=stopped {
+                            let next="send your next message; the task memory keeps what this turn did";
+                            value["report"]=json!(match engine.turn_report().await {
+                                Ok(Some(report))=>report.text(&stopped,next),
+                                Ok(None)=>format!("{stopped}.\nContinue: {next}"),
+                                Err(error)=>format!("{stopped}; what it changed could not be read ({error:#}). Open Task to review changes.\nContinue: {next}"),
+                            });
+                        }
+                        store.append(&session.id,&json!({"type":"turn_end","data":value}))?;updates.send(Update::Done(value)).await?;
+                    },
                     Err(error)=>{store.append(&session.id,&json!({"type":"error","text":error.to_string()}))?;updates.send(Update::Error(error.to_string())).await?;},
                 }
-                response=None;cancelling=false;
+                response=None;cancelling=false;timed_out=false;
             }
             event=engine.next_event()=>{
                 let event=event.context("The engine connection closed. Your session was saved; reconnect to continue")?;
@@ -262,7 +279,7 @@ async fn worker(
                     drop(prompt);
                     if let Some(flag)=&cancel_flag { flag.store(false,Ordering::Relaxed); }
                     match outcome {
-                        Ok(future)=>{response=Some(future);deadline=tokio::time::Instant::now()+Duration::from_secs(1200);cancelling=false;}
+                        Ok(future)=>{response=Some(future);deadline=tokio::time::Instant::now()+Duration::from_secs(session.profile.turn_timeout());cancelling=false;}
                         Err(error)=>{
                             store.append(&session.id,&json!({"type":"error","text":error.to_string()}))?;
                             updates.send(Update::Error(error.to_string())).await?;
@@ -332,7 +349,7 @@ async fn worker(
                     updates.send(Update::Error("The model did not stop in 5 seconds. Alt stopped its engine. Your conversation is saved; reconnect to continue.".into())).await?;
                     break;
                 }
-                engine.cancel(&session.engine_id).await?;cancelling=true;deadline=tokio::time::Instant::now()+Duration::from_secs(5);
+                engine.cancel(&session.engine_id).await?;cancelling=true;timed_out=true;deadline=tokio::time::Instant::now()+Duration::from_secs(5);
             }
         }
     }

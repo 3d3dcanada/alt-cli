@@ -4,20 +4,41 @@ use anyhow::Result;
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
 
-#[derive(Debug, Clone, Copy, Default, Serialize, Deserialize, clap::ValueEnum)]
+/// Host is the default: a model-written plan costs one model request before any
+/// useful action. Model plan stays selectable with `alt workflow model-plan`.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize, clap::ValueEnum)]
 #[serde(rename_all = "kebab-case")]
 pub enum Mode {
-    #[default]
     ModelPlan,
+    #[default]
     Host,
+}
+impl Mode {
+    pub fn label(self) -> &'static str {
+        match self {
+            Self::ModelPlan => "model writes a plan first (`alt workflow host` to skip it)",
+            Self::Host => "host steps, no model-written plan (`alt workflow model-plan` to require one)",
+        }
+    }
 }
 
 pub fn begin(p: &Project, task: &str, mode: Mode) -> Result<()> {
     if matches!(mode, Mode::Host) && p.task(task)?.plan.is_empty() {
-        p.note(task,"plan","Host workflow: inspect current source; reproduce with configured checks; patch using revision-bound handles; rerun required checks; recover from actual diagnostics.","host workflow (not a model-authored plan)")?;
+        let steps = if p.checks()?.is_empty() {
+            "Host workflow: answer questions from current files; for a change, inspect current source and patch using revision-bound handles. No check is configured in this project, so report changes as unverified."
+        } else {
+            "Host workflow: inspect current source; reproduce with configured checks; patch using revision-bound handles; rerun required checks; recover from actual diagnostics."
+        };
+        p.note(task, "plan", steps, "host workflow (not a model-authored plan)")?;
+        // Recording a plan moves the task to "apply an edit"; a host plan has
+        // not decided that a question needs one.
+        p.phase(task, "Inspect", "Inspect what the request needs")?;
     }
     Ok(())
 }
+
+/// What a model is told when a change exists and no check is configured.
+pub const NO_CHECK: &str = "No check is configured in this project, so nothing verifies this change. Do not run or invent a check; report what changed as unverified.";
 pub fn packet(p: &Project, task: &str) -> Result<Value> {
     let state = p.task(task)?;
     let check = p.latest_check(task)?;
@@ -27,6 +48,7 @@ pub fn packet(p: &Project, task: &str) -> Result<Value> {
         None
     };
     let verification = p.verification()?;
+    let unchecked = p.checks()?.is_empty();
     let stage = if state.plan.is_empty() {
         "plan"
     } else if check.as_ref().is_some_and(|c| c.cancelled) {
@@ -45,6 +67,8 @@ pub fn packet(p: &Project, task: &str) -> Result<Value> {
         .is_some_and(|c| c.exit_code != Some(0) || c.error.is_some() || c.timed_out)
     {
         "recover"
+    } else if state.changes > 0 && unchecked {
+        "report"
     } else if state.changes > 0 {
         "check"
     } else {
@@ -54,6 +78,10 @@ pub fn packet(p: &Project, task: &str) -> Result<Value> {
     let decision = match stage {
         "plan" => "Save a brief model plan or explicitly select host workflow.",
         "blocked" => NOT_RUN,
+        "report" => NO_CHECK,
+        "inspect" if unchecked => {
+            "Read what the request needs. No check is configured in this project, so a change cannot be verified here; say so when you report."
+        }
         "recover" => {
             "Inspect the observed failure at its current source location; change the hypothesis or implementation before repeating."
         }

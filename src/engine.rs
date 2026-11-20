@@ -44,6 +44,9 @@ pub struct Engine {
     relay: Option<crate::inference::Relay>,
     instruction_draft: Option<String>,
     program: PathBuf,
+    /// Set when the engine ended the current turn at its turn limit.
+    turn_limited: Arc<std::sync::atomic::AtomicBool>,
+    turn_mark: Option<crate::project_services::TurnMark>,
 }
 
 /// Read one newline-delimited frame without allowing unbounded allocation.
@@ -103,6 +106,19 @@ fn goose_provider_error(params: &Value) -> Option<String> {
     } else {
         None
     }
+}
+
+/// Goose 1.53 ends a turn at `GOOSE_MAX_TURNS` model requests with this exact
+/// engine-generated message and `stopReason: end_turn` (captured from the
+/// pinned engine). Model prose with the same words is not engine output.
+fn goose_turn_limit(params: &Value) -> bool {
+    let update = &params["update"];
+    update["sessionUpdate"] == "agent_message_chunk"
+        && update["_meta"]["goose"]["messageId"]
+            .as_str()
+            .is_some_and(|id| id.starts_with("msg_"))
+        && update["content"]["text"]
+            == "I've reached the maximum number of actions I can do without user input. Would you like me to continue?"
 }
 
 /// Goose's own platform extensions. Alt names its tool server per session, but a
@@ -244,6 +260,8 @@ impl Engine {
         let (tx, events) = mpsc::channel(128);
         let responses = pending.clone();
         let events_tx = tx.clone();
+        let turn_limited: Arc<std::sync::atomic::AtomicBool> = Arc::default();
+        let limited = turn_limited.clone();
         let reader = tokio::spawn(async move {
             let result: Result<()> = async {
                 let mut reader = BufReader::new(stdout);
@@ -257,6 +275,9 @@ impl Engine {
                             "session/update" if message.get("id").is_none() => {
                                 if let Some(error) = goose_provider_error(&message["params"]) {
                                     provider_error = Some(error);
+                                }
+                                if goose_turn_limit(&message["params"]) {
+                                    limited.store(true, std::sync::atomic::Ordering::SeqCst);
                                 }
                                 Event::Update(message["params"].clone())
                             }
@@ -331,7 +352,32 @@ impl Engine {
             relay: None,
             instruction_draft: None,
             program,
+            turn_limited,
+            turn_mark: None,
         })
+    }
+
+    /// True once if the engine ended the last turn at its turn limit.
+    pub fn take_turn_limit(&self) -> bool {
+        self.turn_limited
+            .swap(false, std::sync::atomic::Ordering::SeqCst)
+    }
+
+    /// What the current turn changed and ran, for a turn the limit or a timeout
+    /// ended. Waits for the project lock like other project work, never on the
+    /// stopped turn's cancel flag.
+    pub async fn turn_report(&self) -> Result<Option<crate::project_services::TurnReport>> {
+        let (Some(bridge), Some(mark)) = (&self.bridge, self.turn_mark) else {
+            return Ok(None);
+        };
+        let task = self.task.clone();
+        crate::project_worker::run(
+            bridge.data.clone(),
+            bridge.cwd.clone(),
+            Arc::default(),
+            move |p| p.turn_report(&task, mark).map(Some),
+        )
+        .await
     }
 
     async fn send(&mut self, message: Value) -> Result<()> {
@@ -529,6 +575,11 @@ impl Engine {
         brief: &str,
     ) -> Result<Response> {
         self.logical_session = Some(session.into());
+        self.turn_limited
+            .store(false, std::sync::atomic::Ordering::SeqCst);
+        if let Some(relay) = &self.relay {
+            relay.resume();
+        }
         let mut memory = String::new();
         let mut available_actions = String::new();
         let mut active = session.to_string();
@@ -568,7 +619,9 @@ impl Engine {
                     crate::skills::prompt(active_skill.as_deref(), text)?
                 ));
             }
-            memory = crate::project_worker::run(data.clone(), cwd.clone(), cancel.clone(), move |project| {
+            let mark;
+            (memory, mark) = crate::project_worker::run(data.clone(), cwd.clone(), cancel.clone(), move |project| {
+                let mark = project.turn_mark()?;
                 project.start_task(&task_copy, &request)?;
                 crate::workflow::begin(project,&task_copy,workflow)?;
                 let mut memory = if compact {
@@ -577,8 +630,9 @@ impl Engine {
                 if !compact && let Some(check) = project.latest_check(&task_copy)? {
                     memory.push_str(&format!("\nLast check observation (may be stale; use list for current verification): {} exit={:?}, error={:?}, tests={:?}.\n", check.name, check.exit_code, check.error, check.tests_run));
                 }
-                Ok(memory)
+                Ok((memory, mark))
             }).await?;
+            self.turn_mark = Some(mark);
             if let Some(profile) = &self.local_tokenizer {
                 // Counts this memory block with the selected llama.cpp tokenizer.
                 // Tool schemas, chat templates and generated replies remain engine-budgeted.
@@ -676,9 +730,17 @@ impl Engine {
         if let Some(bridge) = &self.bridge {
             bridge.cancel();
         }
-        let active = self.active_session.as_deref().unwrap_or(session);
-        self.send(json!({"jsonrpc":"2.0","method":"session/cancel","params":{"sessionId":active}}))
-            .await
+        let active = self.active_session.as_deref().unwrap_or(session).to_owned();
+        let sent = self
+            .send(json!({"jsonrpc":"2.0","method":"session/cancel","params":{"sessionId":active}}))
+            .await;
+        // Goose 1.53 does not stop while its provider request has no headers.
+        // Ending that request at the relay, after the cancel, lets it answer
+        // "cancelled" at once; before the cancel it would retry for seconds.
+        if let Some(relay) = &self.relay {
+            relay.interrupt();
+        }
+        sent
     }
 
     pub async fn permission(&mut self, id: Value, params: &Value, allow: bool) -> Result<()> {
